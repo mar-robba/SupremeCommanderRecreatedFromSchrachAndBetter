@@ -22,10 +22,13 @@ interpolates prev/cur by time
 3. `IntelSystem`: fog of war / radar (stub: everything is visible).
 4. `EconomySystem`: sum the production and the requests from the previous tick, compute efficiency, update storage.
 5. `OrderSystem` (parallel): the front order of each mobile unit becomes a movement goal and forced targets.
-6. `ConstructionSystem`: engineers build, repair, reclaim and assist (stub).
-7. `FactorySystem`: build queues, unit release, rally orders (stub).
-8. `PathSystem`: resolve path requests (stub: straight lines).
-9. `MovementSystem` (parallel, double-buffered `ScratchPos`): steering, turn rate, separation, terrain.
+6. `ConstructionSystem`: engineers build, repair, reclaim and assist (see Economy model).
+7. `FactorySystem`: build queues, unit release, rally orders.
+8. `PathSystem`: resolve path requests (HPA*-style sector regions + cached region goal fields + corridor A* +
+   string pulling; formation members splice a shared leader path; deterministic per-tick solve cap).
+   See `Pathfinding/PathService.cs` for the design.
+9. `MovementSystem` (parallel, double-buffered `ScratchPos`): waypoint following, turn rate, priority separation
+   (movers push idle friends), formation pace, stuck → repath, air orbiting, terrain/structure collision.
 10. `TargetingSystem`, `WeaponSystem`, `ProjectileSystem` (combat, see below; code in `Rts.Sim/Combat/`).
 11. `DamageSystem`: apply damage events in order and kill units.
 12. `CleanupSystem`: free dead slots, assassination rule (commander dies -> army defeated), victory.

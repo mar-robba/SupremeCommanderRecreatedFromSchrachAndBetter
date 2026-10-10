@@ -67,6 +67,7 @@ public static class CommandSystem
 
         bool formation = order.Type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol;
         Vector2[]? offsets = formation && units.Count > 1 ? FormationOffsets(w, units, order.Pos) : null;
+        if (!io.Queue) MovementSystem.AssignGroup(w, units, formation); // formation pace (pathfinding)
 
         for (int k = 0; k < units.Count; k++)
         {

@@ -37,8 +37,33 @@ public struct MoveState
     /// <summary>Goal for which PathId was computed (to detect goal changes).</summary>
     public Vector2 PathGoal;
     public float StuckTime;
-    /// <summary>Set by OrderSystem: true when the unit has arrived at Goal this tick.</summary>
+    /// <summary>Set by MovementSystem: true when the unit arrived at Goal (or at the nearest reachable point of an
+    /// unreachable Goal) during the last movement step. OrderSystem completes Move orders on it.</summary>
     public bool Arrived;
+
+    // ---- Pathfinding / movement extensions (owned by PathSystem + MovementSystem) ----
+    /// <summary>Formation group: units ordered together share a pace (slowest member). 0 = no group.
+    /// Set by CommandSystem via <see cref="Systems.MovementSystem.AssignGroup"/>.</summary>
+    public int GroupId;
+    /// <summary>Tick at which the unit started waiting for a path (0 = not waiting). Oldest requests are served first.</summary>
+    public int PathRequestTick;
+    /// <summary>Set by MovementSystem when the current path must be recomputed (blocked by terrain/structures).</summary>
+    public bool RepathRequested;
+    /// <summary>The path covers only the first part of a long route; PathSystem extends it near its end.</summary>
+    public bool PathPartial;
+    /// <summary>Goal unreachable: the path ends at the nearest reachable point and arriving there counts as arrival.</summary>
+    public bool PathToNearest;
+    /// <summary>Reusing a group leader's path failed: solve this unit's next path individually.</summary>
+    public bool PathNoShare;
+    /// <summary>NavGrid version the path was last validated against (structures placed/destroyed bump it).</summary>
+    public int PathNavVersion;
+    /// <summary>Seconds the unit has been held back by terrain/structures while trying to move.</summary>
+    public float BlockedTime;
+    /// <summary>Repaths requested because of being stuck, for the current goal.</summary>
+    public int StuckRepaths;
+    /// <summary>Air units: center of the idle orbit (last goal) and orbit direction (+1 CCW, -1 CW).</summary>
+    public Vector2 OrbitCenter;
+    public float OrbitDir;
 }
 
 /// <summary>Per-weapon state; units have up to UnitStore.MaxWeapons weapons (index = unit * MaxWeapons + w).</summary>
