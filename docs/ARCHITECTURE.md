@@ -85,7 +85,13 @@ interpolates prev/cur by time
 
 ## Client (`Rts.Client`)
 - `GameApp` main loop · `RtsCamera` (zoom to cursor, strategic view) · `SnapshotInterpolator`
-- `Rendering/`: `TerrainRenderer` (chunk meshes, baked lighting, picking), `UnitRenderer`, `IconRenderer`
-  (strategic icons when zoomed out), `Shaders`.
+- `Rendering/`: `TerrainRenderer` (chunk meshes + per-pixel terrain shader, sky, animated water, picking),
+  `UnitRenderer` (GPU-instanced procedural models from `UnitModels`/`MeshBuilder`, one draw per blueprint mesh,
+  team color per instance, turrets, construction holograms, sun `ShadowMap`), `EffectsRenderer` (projectiles +
+  pooled `ParticleSystem` for `EffectEvent`s, `QuadBatch` quads), `IconRenderer` + `IconAtlas` (procedural
+  strategic icons, crossfade with meshes), `Shaders` (GLSL 330 sources, `Atmosphere` lighting/haze),
+  `FrameView` (per-frame matrices, frustum culling), `PerfOverlay` (frame time, F8).
+  Unit model vertex colors: rgb = albedo, alpha = material tag (255 metal, 0 team color, 128 glow).
+  Debug: `--gallery` (all shapes), `--fxtest`/F9 (fake battle effects), F10 (explosion), `--stress N`.
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes.
 - `UI/Hud`: resources, selection summary, help.

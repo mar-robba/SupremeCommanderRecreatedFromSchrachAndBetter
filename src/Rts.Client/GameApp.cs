@@ -30,6 +30,13 @@ public sealed class ClientOptions
     public bool UiDemo;
     public string? UiPlace;
     public Vector2? MousePos;
+    /// <summary>Extra mixed units per army spawned in the demo (performance testing).</summary>
+    public int Stress;
+    /// <summary>Client-side fake projectiles/effects for testing visuals (also toggled with F9).</summary>
+    public bool FxTest;
+    /// <summary>Debug: render one model of every unit shape near the player start.</summary>
+    public bool Gallery;
+    public bool NoVsync;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -61,6 +68,11 @@ public sealed class ClientOptions
                     var mp = Next().Split(',').Select(float.Parse).ToArray();
                     o.MousePos = new Vector2(mp[0], mp[1]);
                     break;
+                case "--stress": o.Stress = int.Parse(Next()); o.Demo = true; break;
+                case "--fxtest": o.FxTest = true; break;
+                case "--gallery": o.Gallery = true; break;
+                case "--novsync": o.NoVsync = true; break;
+                case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
                 default: throw new ArgumentException("unknown argument " + a);
             }
         }
@@ -78,9 +90,9 @@ public static class GameApp
             Seed = opt.Seed, MapSize = opt.MapSize, Players = opt.Players,
             AiPlayers = Enumerable.Range(0, opt.Players).Select(i => i > 0).ToArray(),
         });
-        if (opt.Demo) SpawnDemo(sim);
+        if (opt.Demo) SpawnDemo(sim, opt.Stress);
 
-        Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | ConfigFlags.VSyncHint);
+        Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | (opt.NoVsync ? 0 : ConfigFlags.VSyncHint));
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(opt.Width, opt.Height, "RTS — Supreme Commander-like");
         Raylib.SetExitKey(KeyboardKey.Null);
@@ -89,15 +101,18 @@ public static class GameApp
         var terrain = sim.World.Terrain;
         using var runner = new SimRunner(sim);
         var interp = new SnapshotInterpolator(runner);
-        var camera = new RtsCamera(terrain);
+        var camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
         using var terrainR = new TerrainRenderer(terrain);
-        using var unitR = new UnitRenderer(db);
+        using var unitR = new UnitRenderer(db, terrain);
+        UnitRenderer.Gallery = opt.Gallery;
         var ctx = new GameContext
         {
             Db = db, Terrain = terrain, Runner = runner, Snapshots = interp, Camera = camera,
             TerrainRenderer = terrainR, Feedback = new FeedbackMarkers(), LocalArmy = 0,
             ArmyColors = sim.World.Armies.Select(a => ColorUtil.FromRgba(a.Color)).ToArray(),
         };
+        using var fx = new EffectsRenderer(ctx, opt.FxTest);
+        var perf = new PerfOverlay();
         var selection = new SelectionController(ctx);
         var hud = new Hud(ctx, selection);
         hud.ApplyStartupOptions(opt);
@@ -112,6 +127,7 @@ public static class GameApp
         while (!Raylib.WindowShouldClose())
         {
             float dt = Raylib.GetFrameTime();
+            perf.BeginFrame();
             interp.Update();
             bool overUi = hud.MouseOverUi();
             camera.Update(dt, overUi, ctx.PickGround);
@@ -133,6 +149,7 @@ public static class GameApp
             DrawSelection3D(ctx, selection, cur, prev, alpha);
             ctx.Feedback.Draw();
             terrainR.DrawWater();
+            fx.Draw(dt, cur, prev, alpha, interp.NewEffects);
             Raylib.EndMode3D();
 
             IconRenderer.Draw(ctx, cur, prev, alpha, selectedSet);
@@ -144,6 +161,7 @@ public static class GameApp
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             hud.Draw();
+            perf.Draw(unitR, fx);
             Raylib.EndDrawing();
 
             frame++;
@@ -153,6 +171,7 @@ public static class GameApp
                 Raylib.ExportImage(img, opt.ScreenshotPath);
                 Raylib.UnloadImage(img);
                 Console.WriteLine($"Screenshot saved: {opt.ScreenshotPath} (tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)");
+                Console.WriteLine(perf.Summary());
                 if (runner.Fault != null) Console.WriteLine("SIM FAULT: " + runner.Fault);
                 break;
             }
@@ -162,7 +181,7 @@ public static class GameApp
     }
 
     /// <summary>Demo battle: two groups of mixed T1 units per army near each base, attack-moving at each other.</summary>
-    private static void SpawnDemo(Simulation sim)
+    private static void SpawnDemo(Simulation sim, int stress = 0)
     {
         var w = sim.World;
         var db = w.Blueprints;
@@ -182,8 +201,25 @@ public static class GameApp
                 if (!h.IsNone) units.Add(h);
             }
             cmds.Add(new IssueOrderCommand(a, units.ToArray(), Order.AttackMoveTo(center), false));
+            if (stress > 0) cmds.Add(SpawnStress(w, a, sp, dir, right, center, stress));
         }
         sim.Step(cmds);
+    }
+
+    /// <summary>--stress N: N extra mixed mobile units for army a in a grid in front of its base (perf testing).</summary>
+    private static Command SpawnStress(SimWorld w, int a, Vector2 sp, Vector2 dir, Vector2 right, Vector2 center, int n)
+    {
+        var db = w.Blueprints;
+        var kinds = db.All.Where(b => b.IsMobile && !b.Has(UnitCategory.Commander)).Select(b => b.Index).ToArray();
+        int side = (int)MathF.Ceiling(MathF.Sqrt(n));
+        var units = new List<UnitHandle>(n);
+        for (int k = 0; k < n; k++)
+        {
+            var p = w.Terrain.Clamp(sp + dir * (24 + (k / side) * 1.9f) + right * ((k % side) - side * 0.5f) * 1.9f, 2f);
+            var h = w.SpawnUnit(kinds[k % kinds.Length], a, p, DMath.HeadingOf(dir));
+            if (!h.IsNone) units.Add(h);
+        }
+        return new IssueOrderCommand(a, units.ToArray(), Order.AttackMoveTo(center), false);
     }
 
     private static void DebugKeys(GameContext ctx)
