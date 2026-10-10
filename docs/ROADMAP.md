@@ -14,8 +14,9 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 - [x] Tests: determinism across thread counts, movement; benchmark (6k units ≈ 1.7 ms/tick)
 
 ## Phase 1 — Core gameplay (wave 1, parallel agents)
-- [ ] **Combat**: targeting (priorities, layers, visibility), turrets, direct/ballistic projectiles, beams,
-      area damage, air-to-air, bombers, veterancy, wrecks (mass value) on death
+- [x] **Combat** (merged 2026-10-10): targeting with priorities/layers/staggered scans, turrets, lead aiming,
+      ballistic artillery, bombs, beams, homing missiles, flak, layer-filtered area damage (bench 6k units ≈ 3 ms/tick)
+      - [ ] later: EnergyPerShot, veterancy bonuses, idle aircraft engaging, terrain blocking direct fire
 - [x] **Economy & construction** (merged 2026-10-10): flow economy with efficiency/stall, engineers
       build/assist/repair/reclaim, factories with queue/repeat/rally/refund, deposits, storage, wrecks (PropStore)
       - [ ] later: Capture, pause toggle, adjacency bonus, units drive out of the factory, reclaim energy from units
