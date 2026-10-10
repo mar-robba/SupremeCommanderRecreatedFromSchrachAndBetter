@@ -1,0 +1,52 @@
+{
+  "Id": "uef_t1_scout",
+  "Name": "Snoop",
+  "Description": "Fast land scout with long vision.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Scout",
+    "Intel",
+    "Tech1"
+  ],
+  "MaxHealth": 40,
+  "Radius": 0.4,
+  "Economy": {
+    "BuildCostMass": 8,
+    "BuildCostEnergy": 80,
+    "BuildTime": 40
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 4.5,
+    "Acceleration": 5,
+    "TurnRate": 180
+  },
+  "Intel": {
+    "VisionRadius": 40,
+    "RadarRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Machine Gun",
+      "Range": 10,
+      "Damage": 3,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "scout",
+    "Size": [
+      0.6,
+      0.5,
+      0.9
+    ],
+    "Icon": "land_direct"
+  }
+}

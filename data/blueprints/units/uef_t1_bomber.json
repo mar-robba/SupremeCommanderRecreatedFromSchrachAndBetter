@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t1_bomber",
+  "Name": "Scorcher",
+  "Description": "T1 bomber; drops bombs on ground targets.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Bomber",
+    "Tech1"
+  ],
+  "MaxHealth": 350,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 105,
+    "BuildCostEnergy": 2300,
+    "BuildTime": 500
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 11,
+    "Acceleration": 5,
+    "TurnRate": 80,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Bomb",
+      "Range": 4,
+      "Damage": 300,
+      "RateOfFire": 0.25,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 3,
+      "ProjectileVisual": "bomb",
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "bomber",
+    "Size": [
+      1.8,
+      0.6,
+      2.0
+    ],
+    "Icon": "air_bomber"
+  }
+}

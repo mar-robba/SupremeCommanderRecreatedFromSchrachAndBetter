@@ -1,0 +1,31 @@
+{
+  "Id": "uef_t1_mass_storage",
+  "Name": "Mass Storage",
+  "Description": "Stores 500 mass.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "MassStorage",
+    "Tech1"
+  ],
+  "MaxHealth": 1000,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 100,
+    "BuildCostEnergy": 600,
+    "BuildTime": 200,
+    "StorageMass": 500
+  },
+  "Visual": {
+    "Shape": "storage",
+    "Size": [
+      1.8,
+      1.0,
+      1.8
+    ],
+    "Icon": "eco_mass"
+  }
+}

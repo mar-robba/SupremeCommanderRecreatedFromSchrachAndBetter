@@ -1,0 +1,80 @@
+using System.Diagnostics;
+using System.Numerics;
+using Rts.Sim.Orders;
+using Rts.Sim.Snapshot;
+using Rts.Sim.Systems;
+using Rts.Sim.World;
+
+namespace Rts.Sim;
+
+/// <summary>
+/// The fixed-order tick pipeline. One call to <see cref="Step"/> advances the world by SimWorld.Dt (0.1 s).
+/// Deterministic: same initial world + same commands per tick => same state, regardless of thread count.
+/// </summary>
+public sealed class Simulation
+{
+    public readonly SimWorld World;
+    public double LastTickMs { get; private set; }
+
+    public Simulation(SimWorld world) => World = world;
+
+    public void Step(IReadOnlyList<Command> commands)
+    {
+        var sw = Stopwatch.StartNew();
+        var w = World;
+        w.Tick++;
+
+        CommandSystem.Run(w, commands);
+        w.Units.RebuildAliveList();
+        w.Projectiles.RebuildAliveList();
+        w.Grid.Rebuild(w.Units);
+
+        IntelSystem.Run(w);
+        EconomySystem.Run(w);
+        OrderSystem.Run(w);
+        ConstructionSystem.Run(w);
+        FactorySystem.Run(w);
+        PathSystem.Run(w);
+        MovementSystem.Run(w);
+        TargetingSystem.Run(w);
+        WeaponSystem.Run(w);
+        ProjectileSystem.Run(w);
+        DamageSystem.Run(w);
+        CleanupSystem.Run(w);
+
+        LastTickMs = sw.Elapsed.TotalMilliseconds;
+    }
+
+    public void Step() => Step(Array.Empty<Command>());
+
+    public void WriteSnapshot(SimSnapshot s)
+    {
+        SnapshotWriter.Write(World, s);
+        s.TickDurationMs = LastTickMs;
+    }
+
+    /// <summary>Hash of the gameplay-relevant state (for determinism tests and multiplayer desync checks).</summary>
+    public ulong StateHash()
+    {
+        var w = World;
+        var u = w.Units;
+        ulong h = 1469598103934665603UL;
+        void Mix(ulong v) { h ^= v; h *= 1099511628211UL; }
+        void MixF(float f) => Mix(BitConverter.SingleToUInt32Bits(f));
+        Mix((ulong)w.Tick);
+        for (int i = 0; i < u.Capacity; i++)
+        {
+            if (!u.Alive[i]) continue;
+            Mix((ulong)i); Mix((ulong)u.Gen[i]); Mix((ulong)u.Bp[i]); Mix((ulong)u.Army[i]);
+            MixF(u.Pos[i].X); MixF(u.Pos[i].Y); MixF(u.Heading[i]); MixF(u.Health[i]); MixF(u.BuildFraction[i]);
+        }
+        var p = w.Projectiles;
+        for (int i = 0; i < p.Capacity; i++)
+        {
+            if (!p.Alive[i]) continue;
+            Mix((ulong)i); MixF(p.Pos[i].X); MixF(p.Pos[i].Y); MixF(p.Pos[i].Z);
+        }
+        foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
+        return h;
+    }
+}

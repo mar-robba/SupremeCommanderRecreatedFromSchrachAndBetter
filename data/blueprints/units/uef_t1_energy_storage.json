@@ -1,0 +1,31 @@
+{
+  "Id": "uef_t1_energy_storage",
+  "Name": "Energy Storage",
+  "Description": "Stores 5000 energy.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "EnergyStorage",
+    "Tech1"
+  ],
+  "MaxHealth": 1000,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 120,
+    "BuildCostEnergy": 1200,
+    "BuildTime": 250,
+    "StorageEnergy": 5000
+  },
+  "Visual": {
+    "Shape": "storage",
+    "Size": [
+      1.8,
+      1.4,
+      1.8
+    ],
+    "Icon": "eco_energy"
+  }
+}

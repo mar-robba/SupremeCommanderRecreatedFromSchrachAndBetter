@@ -1,0 +1,46 @@
+{
+  "Id": "uef_t1_point_defense",
+  "Name": "T1 Point Defense",
+  "Description": "Direct-fire defensive turret.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 1300,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 180,
+    "BuildCostEnergy": 1100,
+    "BuildTime": 250
+  },
+  "Intel": {
+    "VisionRadius": 28
+  },
+  "Weapons": [
+    {
+      "Name": "Gauss Cannon",
+      "Range": 26,
+      "Damage": 40,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 35,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "defense",
+    "Size": [
+      1.6,
+      1.6,
+      1.6
+    ],
+    "Icon": "defense"
+  }
+}

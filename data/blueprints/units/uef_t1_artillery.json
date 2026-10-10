@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t1_artillery",
+  "Name": "Lobo",
+  "Description": "T1 mobile light artillery.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "IndirectFire",
+    "Artillery",
+    "Tech1"
+  ],
+  "MaxHealth": 200,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 36,
+    "BuildCostEnergy": 180,
+    "BuildTime": 180
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.6,
+    "Acceleration": 2.5,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Weapons": [
+    {
+      "Name": "Artillery Shell",
+      "Range": 30,
+      "Damage": 100,
+      "RateOfFire": 0.25,
+      "MuzzleVelocity": 20,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 1.5,
+      "Spread": 1.5,
+      "MinRange": 5
+    }
+  ],
+  "Visual": {
+    "Shape": "artillery",
+    "Size": [
+      1.0,
+      0.7,
+      1.4
+    ],
+    "Icon": "land_artillery"
+  }
+}

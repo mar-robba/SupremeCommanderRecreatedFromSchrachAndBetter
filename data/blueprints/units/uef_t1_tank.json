@@ -1,0 +1,50 @@
+{
+  "Id": "uef_t1_tank",
+  "Name": "MA12 Striker",
+  "Description": "T1 medium tank.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 300,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 56,
+    "BuildCostEnergy": 280,
+    "BuildTime": 280
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 3.0,
+    "Acceleration": 3,
+    "TurnRate": 110
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Weapons": [
+    {
+      "Name": "Gauss Cannon",
+      "Range": 18,
+      "Damage": 18,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 30,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "tank",
+    "Size": [
+      1.0,
+      0.7,
+      1.4
+    ],
+    "Icon": "land_direct"
+  }
+}

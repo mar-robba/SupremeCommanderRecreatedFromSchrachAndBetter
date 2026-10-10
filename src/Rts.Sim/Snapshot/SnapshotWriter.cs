@@ -1,0 +1,112 @@
+using Rts.Sim.Core;
+using Rts.Sim.Data;
+using Rts.Sim.Orders;
+using Rts.Sim.World;
+
+namespace Rts.Sim.Snapshot;
+
+/// <summary>Copies the world into a snapshot (on the sim thread, between ticks).</summary>
+public static class SnapshotWriter
+{
+    public static void Write(SimWorld w, SimSnapshot s)
+    {
+        var u = w.Units;
+        s.Tick = w.Tick;
+        s.WinningTeam = w.WinningTeam;
+        if (s.SlotToView.Length != u.Capacity) s.SlotToView = new int[u.Capacity];
+        Array.Fill(s.SlotToView, -1);
+        Ensure(ref s.Units, u.AliveCount);
+        s.UnitCount = 0;
+        s.OrderCount = 0;
+        s.FactoryQueueCount = 0;
+
+        for (int k = 0; k < u.AliveCount; k++)
+        {
+            int i = u.AliveList[k];
+            if (!u.IsActive(i)) continue;
+            var bp = w.BpOf(i);
+            ref var v = ref s.Units[s.UnitCount];
+            v.Index = i;
+            v.Gen = u.Gen[i];
+            v.Bp = u.Bp[i];
+            v.Army = u.Army[i];
+            v.Pos = DMath.To3(u.Pos[i], u.Elevation[i]);
+            v.Heading = u.Heading[i];
+            v.TurretHeading = bp.Weapons.Length > 0 ? u.Weapons[i * UnitStore.MaxWeapons].TurretHeading : u.Heading[i];
+            v.HealthFrac = bp.MaxHealth > 0 ? u.Health[i] / bp.MaxHealth : 1;
+            v.BuildFrac = u.BuildFraction[i];
+            v.Flags = u.Flags[i];
+            v.FactoryRepeat = u.Factory[i].Repeat;
+            v.WorkProgress = -1;
+            var building = u.Factory[i].Current.IsNone ? u.Builder[i].Target : u.Factory[i].Current;
+            if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
+
+            // Orders.
+            var orders = u.Orders[i].AsSpan();
+            v.OrderStart = s.OrderCount;
+            v.OrderCount = Math.Min(orders.Length, 32);
+            Ensure(ref s.Orders, s.OrderCount + v.OrderCount);
+            for (int o = 0; o < v.OrderCount; o++)
+            {
+                var dest = orders[o].Type is OrderType.Attack or OrderType.Guard or OrderType.Repair or OrderType.Reclaim
+                           && u.IsActive(orders[o].Target)
+                    ? u.Pos[orders[o].Target.Index]
+                    : orders[o].Destination;
+                s.Orders[s.OrderCount++] = new OrderView
+                {
+                    Type = orders[o].Type,
+                    Pos = DMath.To3(dest, w.Terrain.GetSurfaceHeight(dest)),
+                    BlueprintIndex = orders[o].BlueprintIndex,
+                };
+            }
+
+            // Factory queue.
+            var q = u.Factory[i].Queue;
+            v.QueueStart = s.FactoryQueueCount;
+            v.QueueCount = q?.Count ?? 0;
+            if (q != null && q.Count > 0)
+            {
+                Ensure(ref s.FactoryQueue, s.FactoryQueueCount + q.Count);
+                foreach (int b in q) s.FactoryQueue[s.FactoryQueueCount++] = b;
+            }
+
+            s.SlotToView[i] = s.UnitCount;
+            s.UnitCount++;
+        }
+
+        var p = w.Projectiles;
+        Ensure(ref s.Projectiles, p.AliveCount);
+        s.ProjectileCount = 0;
+        for (int k = 0; k < p.AliveCount; k++)
+        {
+            int i = p.AliveList[k];
+            if (!p.Alive[i]) continue;
+            s.Projectiles[s.ProjectileCount++] = new ProjectileView
+            {
+                Id = p.Id[i], Pos = p.Pos[i], Vel = p.Vel[i], Army = p.Army[i], SourceBp = p.SourceBp[i], WeaponIndex = p.WeaponIndex[i],
+            };
+        }
+
+        if (s.Armies.Length != w.Armies.Length) s.Armies = new ArmyView[w.Armies.Length];
+        for (int a = 0; a < w.Armies.Length; a++)
+        {
+            var ar = w.Armies[a];
+            var e = ar.Eco;
+            s.Armies[a] = new ArmyView
+            {
+                Index = a, Team = ar.Team, Color = ar.Color, Defeated = ar.Defeated, UnitCount = ar.UnitCount,
+                Mass = e.Mass, MassMax = e.MassMax, MassIncome = e.MassIncome, MassDemand = e.MassDemand, MassEfficiency = e.MassEfficiency,
+                Energy = e.Energy, EnergyMax = e.EnergyMax, EnergyIncome = e.EnergyIncome, EnergyDemand = e.EnergyDemand, EnergyEfficiency = e.EnergyEfficiency,
+            };
+        }
+
+        s.Effects.Clear();
+        s.Effects.AddRange(w.Events.Effects);
+        w.Events.Effects.Clear();
+    }
+
+    private static void Ensure<T>(ref T[] arr, int size)
+    {
+        if (arr.Length < size) Array.Resize(ref arr, Math.Max(size, arr.Length * 2));
+    }
+}

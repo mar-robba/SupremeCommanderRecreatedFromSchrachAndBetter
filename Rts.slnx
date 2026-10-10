@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Rts.Client/Rts.Client.csproj" />
+    <Project Path="src/Rts.Sim/Rts.Sim.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Rts.Sim.Tests/Rts.Sim.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/Rts.Bench/Rts.Bench.csproj" />
+  </Folder>
+</Solution>

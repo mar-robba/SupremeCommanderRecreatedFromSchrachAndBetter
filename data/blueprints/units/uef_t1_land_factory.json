@@ -1,0 +1,41 @@
+{
+  "Id": "uef_t1_land_factory",
+  "Name": "T1 Land Factory",
+  "Description": "Builds T1 land units.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Land",
+    "Factory",
+    "Tech1"
+  ],
+  "MaxHealth": 3200,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 240,
+    "BuildCostEnergy": 2100,
+    "BuildTime": 300,
+    "BuildRate": 20
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Visual": {
+    "Shape": "factory",
+    "Size": [
+      6,
+      2.2,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "uef_t1_engineer",
+    "uef_t1_tank",
+    "uef_t1_artillery",
+    "uef_t1_mobile_aa",
+    "uef_t1_scout"
+  ]
+}

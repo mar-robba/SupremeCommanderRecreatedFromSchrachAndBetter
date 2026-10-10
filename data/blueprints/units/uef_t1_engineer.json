@@ -1,0 +1,50 @@
+{
+  "Id": "uef_t1_engineer",
+  "Name": "T1 Engineer",
+  "Description": "Builds structures, repairs and reclaims.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "Tech1"
+  ],
+  "MaxHealth": 160,
+  "Radius": 0.5,
+  "Economy": {
+    "BuildCostMass": 52,
+    "BuildCostEnergy": 260,
+    "BuildTime": 260,
+    "BuildRate": 5
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 1.9,
+    "Acceleration": 2,
+    "TurnRate": 120
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Visual": {
+    "Shape": "engineer",
+    "Size": [
+      0.8,
+      0.6,
+      1.0
+    ],
+    "Icon": "land_engineer"
+  },
+  "Builds": [
+    "uef_t1_land_factory",
+    "uef_t1_air_factory",
+    "uef_t1_mass_extractor",
+    "uef_t1_power_generator",
+    "uef_t1_hydrocarbon",
+    "uef_t1_mass_storage",
+    "uef_t1_energy_storage",
+    "uef_t1_point_defense",
+    "uef_t1_aa_turret",
+    "uef_t1_radar"
+  ]
+}
