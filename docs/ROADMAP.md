@@ -24,8 +24,9 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
       formation speed, air movement (circling, landing), naval layer, stuck recovery
 - [ ] **Client visuals**: procedural meshes per Visual.Shape, GPU instancing, team colors, projectiles,
       explosions/muzzle flashes from EffectEvents, water shader, better strategic icons, camera tuning
-- [ ] **UI**: build menu (ACU/engineers), placement ghost with validity, factory queue panel, minimap,
-      unit info panel, tooltips, order buttons
+- [x] **UI** (merged 2026-10-10): build menu with tabs/tooltips/hotkeys, placement ghost (client-side validity,
+      deposit snap), factory panel (queue, progress, repeat), unit panel, order buttons, minimap, stall warning
+      - [ ] later: kills in snapshot, structure rotation in sim, drag-to-place lines, custom font
 
 ## Phase 2 — A playable skirmish
 - [ ] Fog of war + radar (IntelSystem, per-army visibility grids, client fog overlay)
