@@ -24,6 +24,12 @@ public sealed class ClientOptions
     public int Frames = 120;
     /// <summary>Optional camera override: x, z, distance.</summary>
     public Vector3? CameraXZD;
+    /// <summary>UI test helpers (see UI/UiStartup.cs): --select commander|engineer|factory|army, --ui-demo,
+    /// --ui-place &lt;blueprintId&gt;, --mouse x,y.</summary>
+    public string? Select;
+    public bool UiDemo;
+    public string? UiPlace;
+    public Vector2? MousePos;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -47,6 +53,13 @@ public sealed class ClientOptions
                 case "--camera":
                     var c = Next().Split(',').Select(float.Parse).ToArray();
                     o.CameraXZD = new Vector3(c[0], c[1], c[2]);
+                    break;
+                case "--select": o.Select = Next().ToLowerInvariant(); break;
+                case "--ui-demo": o.UiDemo = true; break;
+                case "--ui-place": o.UiPlace = Next(); break;
+                case "--mouse":
+                    var mp = Next().Split(',').Select(float.Parse).ToArray();
+                    o.MousePos = new Vector2(mp[0], mp[1]);
                     break;
                 default: throw new ArgumentException("unknown argument " + a);
             }
@@ -87,6 +100,7 @@ public static class GameApp
         };
         var selection = new SelectionController(ctx);
         var hud = new Hud(ctx, selection);
+        hud.ApplyStartupOptions(opt);
 
         var start = terrain.StartPositions[0];
         if (opt.CameraXZD is Vector3 cxz) camera.LookAt(cxz.X, cxz.Y, cxz.Z);
