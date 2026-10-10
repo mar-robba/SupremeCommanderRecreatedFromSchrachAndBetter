@@ -16,7 +16,9 @@ namespace Rts.Sim.Systems;
 /// - Straight shots/missiles hit the first enemy collision sphere along their path (any enemy on a layer the
 ///   weapon can target), else stop at the ground/water surface.
 /// - Ballistic shells and bombs explode on ground/water contact (or on their target's sphere).
-/// - Flak (area weapon fired at an aircraft) bursts near the target or when its timed fuse runs out.
+/// - Flak (area weapon fired at an aircraft) bursts at its closest approach when the target is inside the blast,
+///   else at its aim point (predicted intercept), else when its lifetime runs out.
+/// - Missiles steer (limited turn rate) toward the predicted intercept point of their target.
 /// - DamageRadius &gt; 0 → AreaDamageEvent (layers = weapon TargetMask), else DamageEvent to the unit hit
 ///   (ground hits damage the nearest enemy whose sphere contains the impact point, if any).
 /// </summary>
@@ -73,7 +75,11 @@ public static class ProjectileSystem
         int tj = u.IsActive(th) ? th.Index : -1;
 
         if ((flags & ProjectileFlags.Homing) != 0 && tj >= 0)
-            vel = Ballistics.Steer(vel, s.Center(u, tj) - pos0, HomingCos, HomingSin);
+        {
+            // Lead pursuit: steer at the predicted intercept point (handles circling aircraft).
+            var aim = Ballistics.LeadStraight(pos0, s.Center(u, tj), u.Move[tj].Velocity, s.Omega[tj], MathF.Max(1f, vel.Length()), out _);
+            vel = Ballistics.Steer(vel, aim - pos0, HomingCos, HomingSin);
+        }
         float g = P.Gravity[p];
         if (g != 0) vel.Y -= g * dt;
         var pos1 = pos0 + vel * dt;
@@ -94,16 +100,37 @@ public static class ProjectileSystem
             groundT = h0 <= 0 ? 0 : h0 / (h0 - h1);
         }
 
-        // Flak: proximity burst near its air target.
-        if ((flags & ProjectileFlags.ProximityFuse) != 0 && tj >= 0 && s.Layer[tj] == LayerMask.Air)
+        // Flak fuse: burst at the closest approach to the air target if it is inside the blast, or when passing the
+        // aim point (timed fuse set to the predicted intercept); if both happen this tick, the burst nearer the target.
+        if ((flags & ProjectileFlags.ProximityFuse) != 0)
         {
-            var c = s.Center(u, tj);
-            float t = Ballistics.ClosestParam(pos0, pos1, c);
-            var pt = Vector3.Lerp(pos0, pos1, t);
-            float burst = MathF.Max(P.DamageRadius[p] * 0.6f, s.Catalog.Units[u.Bp[tj]].HitRadius);
-            if (t <= groundT && Vector3.DistanceSquared(pt, c) <= burst * burst)
+            bool burst = false;
+            var at = pos1;
+            float best = float.MaxValue;
+            bool air = tj >= 0 && s.Layer[tj] == LayerMask.Air;
+            var c = air ? s.Center(u, tj) : P.TargetPos[p];
+            if (air)
             {
-                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Burst, Unit = -1, Pos = pt });
+                float t = Ballistics.ClosestParam(pos0, pos1, c);
+                var pt = Vector3.Lerp(pos0, pos1, t);
+                float d2 = Vector3.DistanceSquared(pt, c);
+                var ti = s.Catalog.Units[u.Bp[tj]];
+                float lethal = P.DamageRadius[p] + ti.TargetRadius;
+                if (t <= groundT && (t < 1f || d2 <= ti.HitRadius * ti.HitRadius) && d2 <= lethal * lethal)
+                {
+                    burst = true; at = pt; best = d2;
+                }
+            }
+            float ta = Ballistics.ClosestParam(pos0, pos1, P.TargetPos[p]);
+            if (ta < 1f && ta <= groundT)
+            {
+                var pa = Vector3.Lerp(pos0, pos1, ta);
+                float d2 = Vector3.DistanceSquared(pa, c);
+                if (!burst || d2 < best) { burst = true; at = pa; }
+            }
+            if (burst)
+            {
+                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Burst, Unit = -1, Pos = at });
                 return;
             }
         }
