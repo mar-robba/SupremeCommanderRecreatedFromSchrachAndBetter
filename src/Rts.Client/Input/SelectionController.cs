@@ -9,7 +9,8 @@ using Rts.Sim.Snapshot;
 namespace Rts.Client.Input;
 
 /// <summary>
-/// Selection (click / box / double-click same type), control groups and right-click orders.
+/// Selection (click / box / double-click same type), control groups, right-click orders, order modes
+/// (move / attack-move / patrol / guard) and structure placement (<see cref="BuildPlacement"/>).
 /// Talks to the sim ONLY via SimRunner.Enqueue(Command).
 /// </summary>
 public sealed class SelectionController
@@ -21,10 +22,23 @@ public sealed class SelectionController
     private double _lastClickTime;
     private UnitHandle _lastClicked = UnitHandle.None;
 
-    public enum CommandMode { Normal, AttackMove, Patrol }
+    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard }
     public CommandMode Mode = CommandMode.Normal;
 
-    public SelectionController(GameContext ctx) => _ctx = ctx;
+    /// <summary>Structure placement mode (build menu).</summary>
+    public readonly BuildPlacement Placement;
+
+    /// <summary>Units waiting for self-destruct confirmation (set by Ctrl+K / the order button; the HUD confirms).</summary>
+    public UnitHandle[]? PendingSelfDestruct;
+
+    /// <summary>Set by the HUD while a modal dialog is open: world input and hotkeys are ignored.</summary>
+    public bool InputBlocked;
+
+    public SelectionController(GameContext ctx)
+    {
+        _ctx = ctx;
+        Placement = new BuildPlacement(ctx);
+    }
 
     public bool IsDragging => _dragStart.HasValue && Vector2.Distance(_dragStart.Value, Raylib.GetMousePosition()) > 6;
     public Rectangle DragRect
@@ -43,15 +57,22 @@ public sealed class SelectionController
         PruneDead(snap);
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
+        if (InputBlocked) { _dragStart = null; return; }
 
         HandleHotkeys(ctrl, shift);
+
+        if (Placement.Active)
+        {
+            _dragStart = null;
+            Placement.Update(mouseOverUi, Selected, shift);
+            return;
+        }
 
         if (!mouseOverUi && Raylib.IsMouseButtonPressed(MouseButton.Left))
         {
             if (Mode != CommandMode.Normal)
             {
-                IssueAtCursor(shift, Mode);
-                if (!shift) Mode = CommandMode.Normal;
+                if (IssueAtCursor(shift, Mode) && !shift) Mode = CommandMode.Normal;
                 return;
             }
             _dragStart = Raylib.GetMousePosition();
@@ -74,11 +95,14 @@ public sealed class SelectionController
         if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { Mode = CommandMode.Normal; }
         if (Selected.Count > 0)
         {
-            if (Raylib.IsKeyPressed(KeyboardKey.S) && !ctrl) _ctx.Runner.Enqueue(new StopCommand(_ctx.LocalArmy, Selected.ToArray()));
-            if (Raylib.IsKeyPressed(KeyboardKey.A) && !ctrl) Mode = CommandMode.AttackMove;
-            if (Raylib.IsKeyPressed(KeyboardKey.P)) Mode = CommandMode.Patrol;
-            if (ctrl && Raylib.IsKeyPressed(KeyboardKey.K)) _ctx.Runner.Enqueue(new SelfDestructCommand(_ctx.LocalArmy, Selected.ToArray()));
+            if (Raylib.IsKeyPressed(KeyboardKey.S) && !ctrl) IssueStop();
+            if (Raylib.IsKeyPressed(KeyboardKey.A) && !ctrl) SetMode(CommandMode.AttackMove);
+            if (Raylib.IsKeyPressed(KeyboardKey.P) && !ctrl) SetMode(CommandMode.Patrol);
+            if (Raylib.IsKeyPressed(KeyboardKey.M) && !ctrl) SetMode(CommandMode.Move);
+            if (Raylib.IsKeyPressed(KeyboardKey.G) && !ctrl) SetMode(CommandMode.Guard);
+            if (ctrl && Raylib.IsKeyPressed(KeyboardKey.K)) RequestSelfDestruct();
         }
+        else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
         for (int g = 0; g <= 9; g++)
         {
             if (!Raylib.IsKeyPressed(KeyboardKey.Zero + g)) continue;
@@ -91,10 +115,77 @@ public sealed class SelectionController
         }
     }
 
+    /// <summary>Enters an order mode (cancels structure placement).</summary>
+    public void SetMode(CommandMode mode)
+    {
+        if (Selected.Count == 0) return;
+        Placement.Cancel();
+        Mode = mode;
+    }
+
+    public void IssueStop()
+    {
+        if (Selected.Count == 0) return;
+        _ctx.Runner.Enqueue(new StopCommand(_ctx.LocalArmy, Selected.ToArray()));
+    }
+
+    /// <summary>Asks for self-destruct confirmation (Ctrl+K twice or the dialog confirms).</summary>
+    public void RequestSelfDestruct()
+    {
+        if (Selected.Count == 0) return;
+        if (PendingSelfDestruct != null) { ConfirmSelfDestruct(); return; }
+        PendingSelfDestruct = Selected.ToArray();
+    }
+
+    public void ConfirmSelfDestruct()
+    {
+        if (PendingSelfDestruct is { Length: > 0 } units)
+            _ctx.Runner.Enqueue(new SelfDestructCommand(_ctx.LocalArmy, units));
+        PendingSelfDestruct = null;
+    }
+
     private void PruneDead(SimSnapshot snap)
     {
         Selected.RemoveAll(h => !snap.TryGetUnit(h.Index, h.Generation, out _));
     }
+
+    // ------------------------------------------------------------------ selection helpers (used by the HUD)
+
+    public void SelectOnly(IEnumerable<UnitHandle> units)
+    {
+        Selected.Clear();
+        foreach (var h in units) if (!Selected.Contains(h)) Selected.Add(h);
+    }
+
+    /// <summary>Keeps only selected units of blueprint bp.</summary>
+    public void NarrowToType(int bp)
+    {
+        var snap = _ctx.Snapshots.Current;
+        Selected.RemoveAll(h => !snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Bp != bp);
+    }
+
+    /// <summary>Removes selected units of blueprint bp.</summary>
+    public void RemoveType(int bp)
+    {
+        var snap = _ctx.Snapshots.Current;
+        Selected.RemoveAll(h => snap.TryGetUnit(h.Index, h.Generation, out var v) && v.Bp == bp);
+    }
+
+    /// <summary>Order at a world point (minimap clicks). Mode Normal = move (rally for factories).</summary>
+    public void IssueAtPoint(Vector2 p, CommandMode mode, bool queue)
+    {
+        if (Selected.Count == 0) return;
+        var order = mode switch
+        {
+            CommandMode.AttackMove => Order.AttackMoveTo(p),
+            CommandMode.Patrol => Order.PatrolTo(p),
+            _ => Order.MoveTo(p),
+        };
+        _ctx.Feedback.AddClickMarker(new Vector3(p.X, _ctx.Terrain.GetSurfaceHeight(p), p.Y), order.Type);
+        _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, Selected.ToArray(), order, queue));
+    }
+
+    // ------------------------------------------------------------------ picking
 
     /// <summary>Unit under the cursor (closest screen-space hit), or null.</summary>
     public UnitView? PickUnit(Vector2 mouse)
@@ -184,20 +275,24 @@ public sealed class SelectionController
             if ((mobile || !anyMobile) && !Selected.Contains(h)) Selected.Add(h);
     }
 
-    private void IssueAtCursor(bool queue, CommandMode mode)
+    /// <summary>Issues the order for the mode at the cursor. Returns false if nothing was issued.</summary>
+    private bool IssueAtCursor(bool queue, CommandMode mode)
     {
-        if (Selected.Count == 0) return;
+        if (Selected.Count == 0) return false;
         var mouse = Raylib.GetMousePosition();
         var units = Selected.ToArray();
         var target = PickUnit(mouse);
+        bool targetIsSelected = target is UnitView sv && Selected.Contains(new UnitHandle(sv.Index, sv.Gen));
         Order order;
-        if (mode == CommandMode.Normal && target is UnitView tv && _ctx.IsEnemy(tv.Army))
+        if (mode is CommandMode.Normal or CommandMode.AttackMove or CommandMode.Guard && target is UnitView tv && _ctx.IsEnemy(tv.Army))
             order = Order.AttackUnit(new UnitHandle(tv.Index, tv.Gen));
-        else if (mode == CommandMode.Normal && target is UnitView av && av.Army == _ctx.LocalArmy && !Selected.Contains(new UnitHandle(av.Index, av.Gen)))
+        else if (mode is CommandMode.Normal or CommandMode.Guard && target is UnitView av && av.Army == _ctx.LocalArmy && !targetIsSelected)
             order = Order.GuardUnit(new UnitHandle(av.Index, av.Gen));
+        else if (mode == CommandMode.Guard)
+            return false; // Guard/assist needs a friendly unit under the cursor.
         else
         {
-            if (_ctx.PickGround(mouse) is not Vector3 g) return;
+            if (_ctx.PickGround(mouse) is not Vector3 g) return false;
             var p = new Vector2(g.X, g.Z);
             order = mode switch
             {
@@ -208,5 +303,6 @@ public sealed class SelectionController
             _ctx.Feedback.AddClickMarker(g, order.Type);
         }
         _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, units, order, queue));
+        return true;
     }
 }
