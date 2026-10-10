@@ -68,6 +68,12 @@ internal sealed class CombatState
     public readonly CombatCatalog Catalog;
     /// <summary>Current targeting layer of each unit slot (valid for units in AliveList this tick).</summary>
     public readonly LayerMask[] Layer;
+    /// <summary>Estimated turn rate (rad/s, + = increasing heading) of each unit's ground velocity, from the change
+    /// of MoveState.Velocity since last tick (smoothed, capped by the blueprint turn rate). Used to lead targets
+    /// that circle (orbiting aircraft) or turn.</summary>
+    public readonly float[] Omega;
+    private readonly Vector2[] _prevVel;
+    private readonly int[] _prevGen;
     /// <summary>1 if the unit has a target within weapon range this tick (drives UnitFlags.Firing).</summary>
     public readonly byte[] Engaged;
     /// <summary>Per SpatialGrid cell: bit a set if a unit of army a is listed in the cell.</summary>
@@ -87,6 +93,10 @@ internal sealed class CombatState
         Catalog = new CombatCatalog(w.Blueprints);
         Layer = new LayerMask[w.Units.Capacity];
         Engaged = new byte[w.Units.Capacity];
+        Omega = new float[w.Units.Capacity];
+        _prevVel = new Vector2[w.Units.Capacity];
+        _prevGen = new int[w.Units.Capacity];
+        Array.Fill(_prevGen, -1);
         CellArmies = new ulong[w.Grid.Cols * w.Grid.Rows];
         EnemyArmies = new ulong[w.Armies.Length];
         _layerBody = ComputeLayers;
@@ -128,8 +138,27 @@ internal sealed class CombatState
         {
             int i = u.AliveList[k];
             Layer[i] = OrderSystem.LayerOf(w, i);
+
+            var v = u.Move[i].Velocity;
+            float omega = 0;
+            if (_prevGen[i] == u.Gen[i])
+            {
+                var pv = _prevVel[i];
+                if (pv.LengthSquared() > 0.25f && v.LengthSquared() > 0.25f)
+                {
+                    float raw = MathF.Atan2(pv.X * v.Y - pv.Y * v.X, Vector2.Dot(pv, v)) / SimWorld.Dt;
+                    float max = MathF.Max(0.1f, w.Blueprints[u.Bp[i]].Movement.TurnRate * DMath.Deg2Rad * 1.25f);
+                    omega = Math.Clamp(0.5f * (raw + Omega[i]), -max, max);
+                }
+            }
+            Omega[i] = omega;
+            _prevVel[i] = v;
+            _prevGen[i] = u.Gen[i];
         }
     }
+
+    /// <summary>Predicted ground position of unit j after t seconds (velocity + estimated turn rate).</summary>
+    public Vector2 Predict(UnitStore u, int j, float t) => Ballistics.PredictPosition(u.Pos[j], u.Move[j].Velocity, Omega[j], t);
 
     /// <summary>Aim/collision center of a unit in 3D.</summary>
     public Vector3 Center(UnitStore u, int j) =>

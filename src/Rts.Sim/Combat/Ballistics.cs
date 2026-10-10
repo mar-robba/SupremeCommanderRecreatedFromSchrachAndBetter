@@ -35,17 +35,52 @@ public static class Ballistics
         return ok;
     }
 
+    /// <summary>Max heading change assumed by <see cref="PredictPosition"/> before continuing straight.</summary>
+    public const float MaxPredictedTurn = MathF.PI * 0.75f;
+
     /// <summary>
-    /// Intercept point for a straight projectile of the given speed fired from muzzle at a target moving with
-    /// constant velocity (two fixed-point iterations; plenty for RTS ranges). <paramref name="time"/> = flight time.
+    /// Position after <paramref name="t"/> seconds of a unit moving at constant speed with velocity
+    /// <paramref name="vel"/> while turning at <paramref name="omega"/> rad/s (heading convention: positive = toward
+    /// increasing heading). The turn is capped at <see cref="MaxPredictedTurn"/>, after which motion continues straight.
+    /// Circling aircraft are therefore predicted on their circle instead of on its tangent.
     /// </summary>
-    public static Vector3 LeadStraight(Vector3 muzzle, Vector3 target, Vector3 targetVel, float speed, out float time)
+    public static Vector2 PredictPosition(Vector2 pos, Vector2 vel, float omega, float t)
+    {
+        if (t <= 0) return pos;
+        if (MathF.Abs(omega) < 0.02f) return pos + vel * t;
+        float a = omega * t;
+        float rest = 0;
+        if (MathF.Abs(a) > MaxPredictedTurn)
+        {
+            float capped = MathF.CopySign(MaxPredictedTurn, a);
+            rest = t - capped / omega;
+            a = capped;
+        }
+        float sn = MathF.Sin(a), oc = 1f - MathF.Cos(a);
+        // Integral of R(omega*tau) * vel over [0, a/omega].
+        var disp = new Vector2(vel.X * sn - vel.Y * oc, vel.X * oc + vel.Y * sn) / omega;
+        if (rest > 0)
+        {
+            float cs = 1f - oc;
+            disp += new Vector2(vel.X * cs - vel.Y * sn, vel.X * sn + vel.Y * cs) * rest;
+        }
+        return pos + disp;
+    }
+
+    /// <summary>
+    /// Intercept point for a straight projectile of the given speed fired from muzzle at a target with ground
+    /// velocity <paramref name="targetVel"/> turning at <paramref name="omega"/> rad/s (fixed-point iterations;
+    /// converges quickly because projectiles are much faster than units). <paramref name="time"/> = flight time.
+    /// </summary>
+    public static Vector3 LeadStraight(Vector3 muzzle, Vector3 target, Vector2 targetVel, float omega, float speed, out float time)
     {
         float t = Vector3.Distance(target, muzzle) / speed;
         var aim = target;
-        for (int it = 0; it < 2; it++)
+        var p0 = new Vector2(target.X, target.Z);
+        for (int it = 0; it < 3; it++)
         {
-            aim = target + targetVel * MathF.Min(t, 6f);
+            var p = PredictPosition(p0, targetVel, omega, MathF.Min(t, 6f));
+            aim = new Vector3(p.X, target.Y, p.Y);
             t = Vector3.Distance(aim, muzzle) / speed;
         }
         time = t;

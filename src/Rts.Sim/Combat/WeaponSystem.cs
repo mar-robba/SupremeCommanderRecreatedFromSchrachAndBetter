@@ -87,14 +87,15 @@ public static class WeaponSystem
 
             // What are we shooting at?
             int tj = -1;
-            Vector3 tc, tv = Vector3.Zero;
-            float tr = 0;
+            Vector3 tc;
+            Vector2 tv = Vector2.Zero;
+            float tom = 0, tr = 0;
             if (u.IsActive(ws.Target))
             {
                 tj = ws.Target.Index;
                 tc = s.Center(u, tj);
-                var mv = u.Move[tj].Velocity;
-                tv = new Vector3(mv.X, 0, mv.Y);
+                tv = u.Move[tj].Velocity;
+                tom = s.Omega[tj];
                 tr = s.Catalog.Units[u.Bp[tj]].TargetRadius;
             }
             else if (ws.HasGroundTarget)
@@ -112,7 +113,7 @@ public static class WeaponSystem
 
             if (winfo.Kind == WeaponKind.Bomb)
             {
-                if (UpdateBomb(w, s, i, wi, ref ws, winfo, wbp, tj, tc, tv, tr, shots)) engaged = true;
+                if (UpdateBomb(w, s, i, wi, ref ws, winfo, wbp, tj, tc, tv, tom, tr, shots)) engaged = true;
                 continue;
             }
 
@@ -125,11 +126,13 @@ public static class WeaponSystem
                 case WeaponKind.Ballistic:
                     solution = Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
                     aim = tc;
-                    if (tv != Vector3.Zero)
+                    if (tv != Vector2.Zero)
                     {
-                        for (int it = 0; it < 2; it++)
+                        var tp = new Vector2(tc.X, tc.Z);
+                        for (int it = 0; it < 3; it++)
                         {
-                            aim = tc + tv * flight;
+                            var pp = Ballistics.PredictPosition(tp, tv, tom, flight);
+                            aim = new Vector3(pp.X, tc.Y, pp.Y);
                             solution = Ballistics.SolveArc(muzzle, aim, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
                         }
                     }
@@ -140,7 +143,7 @@ public static class WeaponSystem
                     flight = 0;
                     break;
                 default:
-                    aim = Ballistics.LeadStraight(muzzle, tc, tv, wbp.MuzzleVelocity, out flight);
+                    aim = Ballistics.LeadStraight(muzzle, tc, tv, tom, wbp.MuzzleVelocity, out flight);
                     launch = SafeDir(aim - muzzle, ws.TurretHeading) * wbp.MuzzleVelocity;
                     break;
             }
@@ -201,9 +204,9 @@ public static class WeaponSystem
                 }
                 if (winfo.ProximityFuse && tj >= 0 && s.Layer[tj] == LayerMask.Air)
                 {
-                    // Flak: timed fuse set to burst at the predicted intercept point.
+                    // Flak: proximity fuse + timed fuse at the predicted intercept point (TargetPos).
                     flags |= ProjectileFlags.ProximityFuse;
-                    if (winfo.Kind == WeaponKind.Direct) life = flight + 0.15f;
+                    if (winfo.Kind == WeaponKind.Direct) life = flight + 0.5f;
                 }
 
                 shots.Add(new ShotRequest
@@ -234,7 +237,7 @@ public static class WeaponSystem
 
     /// <summary>Bomber logic. Returns true while engaging (target within acquisition range).</summary>
     private static bool UpdateBomb(SimWorld w, CombatState s, int i, int wi, ref WeaponState ws, in WeaponInfo winfo,
-        WeaponBlueprint wbp, int tj, Vector3 tc, Vector3 tv, float tr, List<ShotRequest> shots)
+        WeaponBlueprint wbp, int tj, Vector3 tc, Vector2 tv, float tom, float tr, List<ShotRequest> shots)
     {
         var u = w.Units;
         var pos = u.Pos[i];
@@ -253,7 +256,7 @@ public static class WeaponSystem
         float tFall = h > 0 ? MathF.Sqrt(2f * h / Ballistics.Gravity) : 0f;
         var v = u.Move[i].Velocity;
         var impact = pos + v * tFall;
-        var predicted = tpos + new Vector2(tv.X, tv.Z) * tFall;
+        var predicted = Ballistics.PredictPosition(tpos, tv, tom, tFall);
         // Release when the predicted impact lands within the blast (capped by Range) of the predicted target
         // position, at the best moment: while the target is still ahead by more than one tick of flight, wait.
         float tol = MathF.Min(wbp.Range, MathF.Max(wbp.DamageRadius, 0.5f)) + tr;
