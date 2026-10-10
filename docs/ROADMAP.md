@@ -16,8 +16,9 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 ## Phase 1 — Core gameplay (wave 1, parallel agents)
 - [ ] **Combat**: targeting (priorities, layers, visibility), turrets, direct/ballistic projectiles, beams,
       area damage, air-to-air, bombers, veterancy, wrecks (mass value) on death
-- [ ] **Economy & construction**: flow economy, engineers build/assist/repair/reclaim, factories with queues,
-      repeat, rally points, structures on deposits, storage, adjacency (later)
+- [x] **Economy & construction** (merged 2026-10-10): flow economy with efficiency/stall, engineers
+      build/assist/repair/reclaim, factories with queue/repeat/rally/refund, deposits, storage, wrecks (PropStore)
+      - [ ] later: Capture, pause toggle, adjacency bonus, units drive out of the factory, reclaim energy from units
 - [ ] **Pathfinding & movement**: grid/hierarchical A*, structure-aware, path cache, group movement keeping
       formation speed, air movement (circling, landing), naval layer, stuck recovery
 - [ ] **Client visuals**: procedural meshes per Visual.Shape, GPU instancing, team colors, projectiles,
