@@ -54,7 +54,8 @@ public static class OrderSystem
             case OrderType.AttackMove:
             {
                 var dest = w.Terrain.Clamp(o.Destination);
-                if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp)))
+                // ArrivedAt: also true at the nearest reachable point of an unreachable destination (and for air units).
+                if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp)) || MovementSystem.ArrivedAt(mv, dest))
                 {
                     q.Pop();
                     mv.HasGoal = false;
@@ -73,7 +74,7 @@ public static class OrderSystem
             {
                 var dest = w.Terrain.Clamp(o.Destination);
                 if (AnyWeaponEngaged(u, i, bp)) { mv.HasGoal = false; return; }
-                if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp) + 1f))
+                if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp) + 1f) || MovementSystem.ArrivedAt(mv, dest))
                 {
                     var again = o;
                     q.Pop();
