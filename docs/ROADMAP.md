@@ -13,17 +13,21 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 - [x] Client: terrain chunks, units as boxes, strategic icons, selection, orders, HUD, screenshot mode
 - [x] Tests: determinism across thread counts, movement; benchmark (6k units ≈ 1.7 ms/tick)
 
-## Phase 1 — Core gameplay (wave 1, parallel agents)
+## Phase 1 — Core gameplay (wave 1, parallel agents) ✅ merged 2026-10-10
 - [x] **Combat** (merged 2026-10-10): targeting with priorities/layers/staggered scans, turrets, lead aiming,
       ballistic artillery, bombs, beams, homing missiles, flak, layer-filtered area damage (bench 6k units ≈ 3 ms/tick)
       - [ ] later: EnergyPerShot, veterancy bonuses, idle aircraft engaging, terrain blocking direct fire
 - [x] **Economy & construction** (merged 2026-10-10): flow economy with efficiency/stall, engineers
       build/assist/repair/reclaim, factories with queue/repeat/rally/refund, deposits, storage, wrecks (PropStore)
       - [ ] later: Capture, pause toggle, adjacency bonus, units drive out of the factory, reclaim energy from units
-- [ ] **Pathfinding & movement**: grid/hierarchical A*, structure-aware, path cache, group movement keeping
-      formation speed, air movement (circling, landing), naval layer, stuck recovery
-- [ ] **Client visuals**: procedural meshes per Visual.Shape, GPU instancing, team colors, projectiles,
-      explosions/muzzle flashes from EffectEvents, water shader, better strategic icons, camera tuning
+- [x] **Pathfinding & movement** (merged 2026-10-10): HPA*-style sector regions + portals, cached goal fields,
+      corridor A* + string pulling, formation path sharing, per-tick solve cap, air orbit, naval/hover/amphibious,
+      priority separation, stuck → repath (1024 map, 6k units ≈ 2.5 ms/tick)
+      - [ ] later: exact unit clearance, per-unit MaxSlope, air landing/refuel, async nav build (first tick ~180 ms on 1024)
+- [x] **Client visuals** (merged 2026-10-10): procedural models for all shapes, instancing + culling, unit shadows,
+      team colors, construction hologram, projectiles, particles/decals, role icons, sky, water shader, smooth camera
+      (6k units: 170–360 FPS uncapped on Radeon 780M)
+      - [ ] later: terrain shadows, effects scaled by game speed, wreck (PropView) rendering
 - [x] **UI** (merged 2026-10-10): build menu with tabs/tooltips/hotkeys, placement ghost (client-side validity,
       deposit snap), factory panel (queue, progress, repeat), unit panel, order buttons, minimap, stall warning
       - [ ] later: kills in snapshot, structure rotation in sim, drag-to-place lines, custom font
