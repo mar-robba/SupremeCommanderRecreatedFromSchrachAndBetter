@@ -3,6 +3,21 @@ using Rts.Sim.Core;
 
 namespace Rts.Sim.World;
 
+/// <summary>Projectile behaviour bits (set by WeaponSystem, read by ProjectileSystem and the client).</summary>
+[Flags]
+public enum ProjectileFlags : byte
+{
+    None = 0,
+    /// <summary>Steers toward Target (missiles).</summary>
+    Homing = 1,
+    /// <summary>Gravity arc; explodes on ground/water contact.</summary>
+    Ballistic = 2,
+    /// <summary>Flak: bursts near its air target or when its timed fuse (TimeLeft) runs out.</summary>
+    ProximityFuse = 4,
+    /// <summary>Dropped by a bomber.</summary>
+    Bomb = 8,
+}
+
 /// <summary>SoA storage for projectiles in flight. Spawn/free only in sequential phases.</summary>
 public sealed class ProjectileStore
 {
@@ -25,6 +40,7 @@ public sealed class ProjectileStore
     public readonly float[] Gravity;
     /// <summary>Unique id for render interpolation.</summary>
     public readonly int[] Id;
+    public readonly ProjectileFlags[] Flags;
 
     public readonly int[] AliveList;
     public int AliveCount;
@@ -48,6 +64,7 @@ public sealed class ProjectileStore
         TimeLeft = new float[capacity];
         Gravity = new float[capacity];
         Id = new int[capacity];
+        Flags = new ProjectileFlags[capacity];
         AliveList = new int[capacity];
         _free = new Stack<int>(capacity);
         for (int i = capacity - 1; i >= 0; i--) _free.Push(i);
@@ -63,6 +80,7 @@ public sealed class ProjectileStore
         Pos[i] = pos; Vel[i] = vel; Army[i] = army; Source[i] = source; SourceBp[i] = sourceBp;
         WeaponIndex[i] = weaponIndex; Target[i] = target; TargetPos[i] = targetPos; Damage[i] = damage;
         DamageRadius[i] = damageRadius; TimeLeft[i] = timeLeft; Gravity[i] = gravity; Id[i] = _nextId++;
+        Flags[i] = ProjectileFlags.None;
         return i;
     }
 

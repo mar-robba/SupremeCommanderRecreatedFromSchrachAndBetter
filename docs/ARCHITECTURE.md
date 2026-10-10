@@ -26,7 +26,7 @@ interpolates prev/cur by time
 7. `FactorySystem`: build queues, unit release, rally orders (stub).
 8. `PathSystem`: resolve path requests (stub: straight lines).
 9. `MovementSystem` (parallel, double-buffered `ScratchPos`): steering, turn rate, separation, terrain.
-10. `TargetingSystem`, `WeaponSystem`, `ProjectileSystem` (stubs; combat).
+10. `TargetingSystem`, `WeaponSystem`, `ProjectileSystem` (combat, see below; code in `Rts.Sim/Combat/`).
 11. `DamageSystem`: apply damage events in order and kill units.
 12. `CleanupSystem`: free dead slots, assassination rule (commander dies -> army defeated), victory.
 
@@ -48,6 +48,19 @@ interpolates prev/cur by time
 - `EconomySystem` sums these per army and computes `efficiency = min(1, (stored + income·dt) / (demand·dt))` for
   each resource. Storage is clamped to [0, max], where max = sum of `Storage*` over complete units.
 - Consumers scale their progress by the efficiency (min of mass and energy for builders).
+
+## Combat model (`Rts.Sim/Combat`)
+- `CombatState.Of(world)` (attached via ConditionalWeakTable): per-tick cache of each unit's layer and a per-grid-cell
+  army bitmask, so scans/collisions skip cells without enemies. `CombatCatalog`: per-blueprint weapon kinds
+  (Direct, Homing = "missile", Ballistic, Bomb = ballistic + MuzzleVelocity 0, Beam = MuzzleVelocity 0).
+- Targeting priority: units that can shoot back at the shooter's layer, then other armed units, unarmed mobile,
+  armed structures, other structures; then distance, then index. Attack orders force targets; attack-ground
+  uses `WeaponState.HasGroundTarget`. Aircraft on attack-move/patrol chase their engaged target (OrderSystem).
+- Weapons lead moving targets (`MoveState.Velocity`); artillery (IndirectFire) uses the high ballistic arc;
+  bombs are released when the free-fall impact point lands on the predicted target position.
+- Projectiles: straight shots hit the first enemy collision sphere on their path, shells/bombs explode on the
+  ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
+  `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
 
 ## Client (`Rts.Client`)
 - `GameApp` main loop · `RtsCamera` (zoom to cursor, strategic view) · `SnapshotInterpolator`

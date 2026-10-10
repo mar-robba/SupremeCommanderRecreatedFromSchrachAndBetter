@@ -1,5 +1,6 @@
 using System.Numerics;
 using Rts.Sim.Core;
+using Rts.Sim.Data;
 using Rts.Sim.World;
 
 namespace Rts.Sim.Systems;
@@ -19,6 +20,7 @@ public static class DamageSystem
             foreach (int j in _tmp)
             {
                 if (!u.IsActive(j)) continue;
+                if (a.Layers != LayerMask.None && (OrderSystem.LayerOf(w, j) & a.Layers) == 0) continue;
                 float r = a.Radius + w.BpOf(j).Radius;
                 float d = Vector2.Distance(u.Pos[j], a.Center);
                 if (d > r) continue;
