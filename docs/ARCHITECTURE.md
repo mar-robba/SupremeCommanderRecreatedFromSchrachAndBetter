@@ -41,13 +41,31 @@ interpolates prev/cur by time
 - New per-unit state: add a field to the module struct in `World/Components.cs` and initialize it in your
   system's `InitUnit` (called from `UnitLifecycle.OnSpawn`).
 
-## Economy model (SupCom flow economy, to implement)
-- Each unit sets `Econ[i].MassProduction/EnergyProduction` (only when complete and not paused) and
-  `MassRequest/EnergyRequest` (per second) for consumption: build costs while building
-  (cost × buildRate / buildTime), upkeep such as mex/radar/shields.
-- `EconomySystem` sums these per army and computes `efficiency = min(1, (stored + income·dt) / (demand·dt))` for
-  each resource. Storage is clamped to [0, max], where max = sum of `Storage*` over complete units.
-- Consumers scale their progress by the efficiency (min of mass and energy for builders).
+## Economy model (SupCom flow economy) — `Rts.Sim/Economy/`
+- **Production/upkeep** come from blueprints: complete, non-`Paused` units produce `ProductionMass/Energy` and pay
+  `MaintenanceEnergy`. Units with upkeep (mass extractors) have their production scaled by energy efficiency.
+  Storage max = sum of `StorageMass/Energy` of complete units (the commander gives 650/4000; games start full).
+- **Requests**: consumers set `Econ[i].MassRequest/EnergyRequest` (per second) during tick T. `EconomySystem` (tick
+  T+1, before consumers) sums everything per army (per-chunk partial sums merged in chunk order), computes
+  `efficiency = min(1, (stored + income·dt) / (demand·dt))` per resource, writes `Econ[i].Efficiency` (min over the
+  resources that unit requested, 1 if none) and deducts exactly `request × Econ[i].Efficiency`.
+- **Pay first, then progress**: builders store the requested work in `Builder[i].PendingWork`; ConstructionSystem
+  applies it at T+1 scaled by `Econ[i].Efficiency`, so resources spent always equal work done. Assisting builders
+  reserve work on the target (`Builder[target].ReservedWork`) so they never overshoot. Any upkeep consumer
+  (radar, shields, energy weapons) should read `Econ[i].Efficiency`.
+- **Construction** (`ConstructionSystem`, sequential): front Build/Repair/Reclaim order of engineers/commander, and
+  Guard = assist (factory's current unit, an engineer's site, finish a site, or repair). Build range = 5 + target
+  half size (+2 commander). Mex/hydro sites snap to the nearest deposit within 4. Same unfinished allied structure
+  already at the site → assist; otherwise invalid placement → order dropped. Own units are pushed out of a new
+  footprint. `Order.State/Spawned` hold the site handle (Build) or the prop handle (Reclaim of a prop).
+- **Factories** (`FactorySystem`): front of `Factory.Queue` is spawned inside as `UnderConstruction`; on completion it
+  is moved to the exit (factory heading) and gets a copy of the factory's order queue (rally) or a short move.
+  Repeat re-appends; Dequeue of the item in progress cancels it with a refund; factory death kills the unfinished unit.
+- **Wrecks/props** (`World/PropStore`, `SimWorld.Props`): complete units leave a wreck worth
+  `BuildCostMass × WreckMassFraction` (unfinished or reclaimed units leave none). Reclaim speed = 2 mass/s per point
+  of BuildRate; reclaimed resources arrive as income next tick (`Econ[i].ReclaimMass/Energy`). New structures absorb
+  props under their footprint. The client sees them as `SimSnapshot.Props` (`PropView`); to reclaim one, send
+  `Order.ReclaimAt(UnitHandle.None, pos)`.
 
 ## Client (`Rts.Client`)
 - `GameApp` main loop · `RtsCamera` (zoom to cursor, strategic view) · `SnapshotInterpolator`
