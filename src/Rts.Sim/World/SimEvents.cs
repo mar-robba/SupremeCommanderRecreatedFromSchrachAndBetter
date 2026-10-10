@@ -1,5 +1,6 @@
 using System.Numerics;
 using Rts.Sim.Core;
+using Rts.Sim.Data;
 
 namespace Rts.Sim.World;
 
@@ -19,6 +20,9 @@ public struct AreaDamageEvent
     public float Amount;
     public UnitHandle Source;
     public int SourceArmy;
+    /// <summary>Only units currently on these layers are damaged (None = all layers). E.g. flak bursts only
+    /// hurt aircraft, bombs exploding on the ground don't hurt planes flying overhead.</summary>
+    public LayerMask Layers;
 }
 
 public enum EffectKind : byte

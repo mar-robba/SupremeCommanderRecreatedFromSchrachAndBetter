@@ -63,7 +63,7 @@ public static class OrderSystem
                 // Attack-move: hold position while any weapon is engaging.
                 if (o.Type == OrderType.AttackMove && AnyWeaponEngaged(u, i, bp))
                 {
-                    mv.HasGoal = false;
+                    if (!ChaseEngagedTarget(w, i, bp, ref mv)) mv.HasGoal = false;
                     return;
                 }
                 SetGoal(ref mv, dest, ArriveRadius(bp));
@@ -72,7 +72,7 @@ public static class OrderSystem
             case OrderType.Patrol:
             {
                 var dest = w.Terrain.Clamp(o.Destination);
-                if (AnyWeaponEngaged(u, i, bp)) { mv.HasGoal = false; return; }
+                if (AnyWeaponEngaged(u, i, bp)) { if (!ChaseEngagedTarget(w, i, bp, ref mv)) mv.HasGoal = false; return; }
                 if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp) + 1f))
                 {
                     var again = o;
@@ -136,6 +136,20 @@ public static class OrderSystem
         var ws = u.WeaponsOf(i);
         for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
             if (u.IsActive(ws[wi].Target)) return true;
+        return false;
+    }
+
+    /// <summary>Aircraft can't hold position while engaging: they fly at their target (bombing runs, dogfights).</summary>
+    private static bool ChaseEngagedTarget(SimWorld w, int i, UnitBlueprint bp, ref MoveState mv)
+    {
+        if (bp.Movement.Layer != MotionLayer.Air) return false;
+        var ws = w.Units.WeaponsOf(i);
+        for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
+        {
+            if (!w.Units.IsActive(ws[wi].Target)) continue;
+            SetGoal(ref mv, w.Units.Pos[ws[wi].Target.Index], ArriveRadius(bp));
+            return true;
+        }
         return false;
     }
 
