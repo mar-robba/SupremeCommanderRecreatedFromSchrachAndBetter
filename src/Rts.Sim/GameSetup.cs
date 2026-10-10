@@ -17,8 +17,9 @@ public sealed class SkirmishSettings
     public int[]? Teams;
     public string CommanderBlueprint = "uef_commander";
     public int UnitCapacity = 16384;
-    public float StartMass = 650;
-    public float StartEnergy = 4000;
+    /// <summary>Starting stored resources; negative = full storage (the commander's StorageMass/StorageEnergy).</summary>
+    public float StartMass = -1;
+    public float StartEnergy = -1;
 }
 
 public static class GameSetup
@@ -43,13 +44,20 @@ public static class GameSetup
                 Color = ArmyColors[a % ArmyColors.Length],
                 IsAI = a < s.AiPlayers.Length && s.AiPlayers[a],
             };
-            armies[a].Eco.Mass = s.StartMass;
-            armies[a].Eco.Energy = s.StartEnergy;
         }
 
         var world = new SimWorld(db, terrain, armies, (ulong)s.Seed, s.UnitCapacity);
         int cmd = db.IndexOf(s.CommanderBlueprint);
         if (cmd < 0) throw new InvalidOperationException($"Commander blueprint '{s.CommanderBlueprint}' not found");
+        // SupCom: storage comes from units (the commander at start); games begin with full storage.
+        var cmdEco = db[cmd].Economy;
+        foreach (var army in armies)
+        {
+            army.Eco.MassMax = cmdEco.StorageMass;
+            army.Eco.EnergyMax = cmdEco.StorageEnergy;
+            army.Eco.Mass = s.StartMass < 0 ? cmdEco.StorageMass : Math.Min(s.StartMass, cmdEco.StorageMass);
+            army.Eco.Energy = s.StartEnergy < 0 ? cmdEco.StorageEnergy : Math.Min(s.StartEnergy, cmdEco.StorageEnergy);
+        }
         var center = new Vector2(terrain.Width * 0.5f, terrain.Height * 0.5f);
         for (int a = 0; a < s.Players; a++)
         {

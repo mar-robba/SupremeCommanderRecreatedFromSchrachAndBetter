@@ -43,6 +43,26 @@ public struct ProjectileView
     public int WeaponIndex;
 }
 
+/// <summary>
+/// A reclaimable prop (unit wreck). Props don't move; track them across snapshots by <see cref="Id"/>.
+/// To reclaim one, issue <c>Order.ReclaimAt(UnitHandle.None, Pos)</c> (the sim picks the nearest prop to Pos).
+/// </summary>
+public struct PropView
+{
+    /// <summary>Unique, never reused id.</summary>
+    public int Id;
+    /// <summary>Blueprint of the unit that left this wreck (draw its mesh darkened/broken), -1 = generic prop.</summary>
+    public int Bp;
+    /// <summary>World position (y = terrain height; may be under water).</summary>
+    public Vector3 Pos;
+    public float Heading;
+    /// <summary>Footprint radius (structures: half footprint, units: unit radius).</summary>
+    public float Radius;
+    /// <summary>Remaining reclaimable mass / energy and the initial amounts (Mass/MassMax = how much is left).</summary>
+    public float Mass, MassMax;
+    public float Energy, EnergyMax;
+}
+
 public struct ArmyView
 {
     public int Index;
@@ -78,6 +98,10 @@ public sealed class SimSnapshot
 
     public ProjectileView[] Projectiles = new ProjectileView[256];
     public int ProjectileCount;
+
+    /// <summary>Reclaimable props / wrecks, [0..PropCount).</summary>
+    public PropView[] Props = new PropView[64];
+    public int PropCount;
 
     public ArmyView[] Armies = [];
     public readonly List<EffectEvent> Effects = new();

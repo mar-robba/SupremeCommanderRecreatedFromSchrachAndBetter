@@ -67,6 +67,16 @@ public struct BuilderState
     public UnitHandle Target;
     /// <summary>Build power actually applied last tick (after economy efficiency).</summary>
     public float AppliedRate;
+    /// <summary>
+    /// Work requested last tick on <see cref="Target"/> (fraction of the target's BuildTime for Build/Assist, fraction
+    /// of its MaxHealth for Repair), before efficiency. Resources for it are paid by EconomySystem at the start of the
+    /// next tick and the work is then applied scaled by <see cref="EconState.Efficiency"/> (pay first, then progress).
+    /// </summary>
+    public float PendingWork;
+    /// <summary>As a TARGET: work already requested on this unit this tick by all builders (avoids overshoot).</summary>
+    public float ReservedWork;
+    /// <summary>Tick in which <see cref="ReservedWork"/> was accumulated (stale values are ignored).</summary>
+    public int ReservedTick;
 }
 
 /// <summary>Factory production state (owned by FactorySystem).</summary>
@@ -92,4 +102,13 @@ public struct EconState
     /// <summary>Per-second production this tick (0 when under construction / paused).</summary>
     public float MassProduction;
     public float EnergyProduction;
+    /// <summary>
+    /// Fraction (0..1) of this unit's requests (build costs + upkeep) granted this tick by EconomySystem:
+    /// min of the army efficiencies of the resources it requested, 1 if it requested nothing. Consumers (builders,
+    /// upkeep users such as radar/shields) scale their work by it.
+    /// </summary>
+    public float Efficiency;
+    /// <summary>Resources gained by reclaiming this tick (per second); credited as income by EconomySystem next tick.</summary>
+    public float ReclaimMass;
+    public float ReclaimEnergy;
 }

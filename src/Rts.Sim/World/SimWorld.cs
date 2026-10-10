@@ -24,6 +24,8 @@ public sealed class SimWorld
     public readonly ProjectileStore Projectiles;
     public readonly SpatialGrid Grid;
     public readonly OccupancyGrid Occupancy;
+    /// <summary>Reclaimable wrecks/props (economy/construction module).</summary>
+    public readonly PropStore Props;
     public readonly SimEvents Events = new();
     /// <summary>Units killed this tick, freed by CleanupSystem.</summary>
     public readonly List<int> PendingDeaths = new();
@@ -46,6 +48,7 @@ public sealed class SimWorld
         Projectiles = new ProjectileStore(projectileCapacity);
         Grid = new SpatialGrid(terrain.Width, terrain.Height, 8f, unitCapacity);
         Occupancy = new OccupancyGrid(terrain.Width, terrain.Height);
+        Props = new PropStore(Math.Max(4096, unitCapacity));
         Paths = new PathService(this);
         Intel = new IntelService(this);
     }

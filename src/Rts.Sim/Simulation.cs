@@ -74,6 +74,7 @@ public sealed class Simulation
             if (!p.Alive[i]) continue;
             Mix((ulong)i); MixF(p.Pos[i].X); MixF(p.Pos[i].Y); MixF(p.Pos[i].Z);
         }
+        foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); }
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
         return h;
     }

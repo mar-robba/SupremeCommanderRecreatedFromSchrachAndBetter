@@ -87,6 +87,20 @@ public static class SnapshotWriter
             };
         }
 
+        var props = w.Props;
+        var propList = props.AliveList;
+        Ensure(ref s.Props, propList.Length);
+        s.PropCount = 0;
+        foreach (int i in propList)
+        {
+            s.Props[s.PropCount++] = new PropView
+            {
+                Id = props.Id[i], Bp = props.BlueprintIndex[i], Pos = DMath.To3(props.Pos[i], w.Terrain.GetHeight(props.Pos[i])),
+                Heading = props.Heading[i], Radius = props.Radius[i],
+                Mass = props.Mass[i], MassMax = props.MassMax[i], Energy = props.Energy[i], EnergyMax = props.EnergyMax[i],
+            };
+        }
+
         if (s.Armies.Length != w.Armies.Length) s.Armies = new ArmyView[w.Armies.Length];
         for (int a = 0; a < w.Armies.Length; a++)
         {
