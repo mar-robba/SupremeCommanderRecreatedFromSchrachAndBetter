@@ -138,12 +138,14 @@ internal static class MapConnectivity
         int cw = (n + f - 1) / f;
         int cn = cw * cw;
         var cost = new float[cn];
+        var avgH = new float[cn];
         var hasMain = new bool[cn];
         int stride = n + 1;
         for (int bz = 0; bz < cw; bz++)
         for (int bx = 0; bx < cw; bx++)
         {
             int ok = 0, wet = 0, total = 0;
+            float sumH = 0;
             bool m = false;
             for (int z = bz * f; z < Math.Min(n, bz * f + f); z++)
             for (int x = bx * f; x < Math.Min(n, bx * f + f); x++)
@@ -151,11 +153,14 @@ internal static class MapConnectivity
                 int c = z * n + x;
                 total++;
                 if (okMask[c] != 0) ok++;
-                if (h[z * stride + x] < water) wet++;
+                float hv = h[z * stride + x];
+                if (hv < water) wet++;
+                sumH += MathF.Max(hv, water);
                 if (labels[c] == main) m = true;
             }
             float landFrac = ok / (float)Math.Max(1, total), wetFrac = wet / (float)Math.Max(1, total);
             cost[bz * cw + bx] = 1f + 14f * (1f - landFrac) + 8f * wetFrac;
+            avgH[bz * cw + bx] = sumH / Math.Max(1, total);
             hasMain[bz * cw + bx] = m;
         }
 
@@ -177,7 +182,9 @@ internal static class MapConnectivity
                 int nx = x + dx, nz = z + dz;
                 if ((uint)nx >= (uint)cw || (uint)nz >= (uint)cw) continue;
                 int nb = nz * cw + nx;
-                float step = (cost[c] + cost[nb]) * 0.5f * (dx != 0 && dz != 0 ? 1.4142f : 1f);
+                // Climbing is expensive too (ramps are long): prefer level routes over hills and mesas.
+                float step = (cost[c] + cost[nb]) * 0.5f * (dx != 0 && dz != 0 ? 1.4142f : 1f)
+                             + 1.5f * MathF.Abs(avgH[nb] - avgH[c]);
                 float nd = d + step;
                 if (nd < dist[nb]) { dist[nb] = nd; parent[nb] = c; pq.Enqueue(nb, nd); }
             }

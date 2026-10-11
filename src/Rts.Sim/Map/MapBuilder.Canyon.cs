@@ -34,7 +34,7 @@ internal sealed partial class MapBuilder
 
         // Ring: start -> next start, bowed outwards through M; chokepoint where neighbors meet.
         float R = Vector2.Distance(s0, _center);
-        float rMid = N == 2 ? 0.38f * _n : MathF.Min(0.40f * _n, R * (1f + MathF.Cos(DMath.Pi / N)) * 0.5f);
+        float rMid = N == 2 ? 0.38f * _n : MathF.Min(0.36f * _n, R * (1f + MathF.Cos(DMath.Pi / N)) * 0.5f);
         var M = _center + DMath.Dir(_sym.Phi0 + DMath.Pi / N) * rMid;
         var ctrl = 2f * M - (s0 + s1) * 0.5f;
         var ring = new List<Vector2>();
@@ -99,6 +99,8 @@ internal sealed partial class MapBuilder
     {
         const float wall = 3.2f, edgeAmp = 1.6f;
         var valley = _valley!;
+        var lakeOk = _lakeOk!;
+        float kScale = MathF.Sqrt(_sc);
         foreach (var cap in caps)
         for (int k = 0; k < _sym.N; k++)
         {
@@ -126,6 +128,9 @@ internal sealed partial class MapBuilder
                     float m = 1f - MapMath.SmoothStep(r, r + wall, d);
                     int v = z * _stride + x;
                     if (m > valley[v]) valley[v] = m;
+                    // Lakes only well inside wide parts (plazas, pockets), never blocking a narrow valley.
+                    float lk = (1f - MapMath.SmoothStep(r - 7f, r - 3f, d)) * MapMath.SmoothStep(8.5f * kScale, 11f * kScale, r0);
+                    if (lk > lakeOk[v]) lakeOk[v] = lk;
                 }
             });
         }

@@ -48,7 +48,7 @@ internal sealed partial class MapBuilder
     // Symmetric fields at vertex resolution.
     private float[] _fA = [], _fD = [], _fL = [], _fR = [];
     /// <summary>Canyon: valley floor heights (lerp target) and the valley mask.</summary>
-    private float[]? _floor, _valley;
+    private float[]? _floor, _valley, _lakeOk;
 
     public MapBuilder(MapGenSettings s)
     {
@@ -87,7 +87,7 @@ internal sealed partial class MapBuilder
         if (_preset == MapPreset.Canyon) CarveValleys();
         if (_preset != MapPreset.Archipelago) ApplyLakes();
         FlattenStarts();
-        if (LandPreset) EnsureConnectivity(connectBig: _preset != MapPreset.Canyon);
+        if (LandPreset) EnsureConnectivity(connectBig: true);
 
         var deposits = PlaceDeposits();
         FlattenPads(deposits);
@@ -128,7 +128,7 @@ internal sealed partial class MapBuilder
         o[0] = _nHill.Fbm(qx / sa, qz / sa, hl ? 3 : 5);
         o[1] = _nDetail.Fbm(p.X / (S * 0.22f), p.Y / (S * 0.22f), 3);
         o[2] = _nLake.Fbm(qx / (S * 0.75f), qz / (S * 0.75f), 4);
-        o[3] = hl ? _nEdge.Fbm(p.X / (S * 0.35f), p.Y / (S * 0.35f), 2) : 0f;
+        o[3] = hl ? _nEdge.Fbm(p.X / (S * 0.5f), p.Y / (S * 0.5f), 2) : 0f;
     }
 
     private void ComputeFields()
@@ -202,6 +202,7 @@ internal sealed partial class MapBuilder
         {
             _floor = new float[_h.Length];
             _valley = new float[_h.Length];
+            _lakeOk = new float[_h.Length];
         }
 
         Parallel.For(0, _stride, z =>
@@ -233,7 +234,7 @@ internal sealed partial class MapBuilder
                         float xk = t * HighlandLevels;
                         float lvl = MathF.Min(MathF.Floor(xk), HighlandLevels - 1);
                         float fr = xk - lvl;
-                        float band = MapMath.Lerp(0.08f, 0.75f, MapMath.SmoothStep(0.10f, 0.22f, _fR[v]));
+                        float band = MapMath.Lerp(0.08f, 0.75f, MapMath.SmoothStep(0.03f, 0.15f, _fR[v]));
                         float step = MapMath.SmoothStep((fr - (1f - band)) / band);
                         h = TerraceHeight(lvl + step) + 0.5f * D;
                         break;
@@ -274,7 +275,7 @@ internal sealed partial class MapBuilder
         float frac = _water * 0.35f;
         if (frac <= 0.002f) return;
         float W = _w;
-        float r1 = _flatR + 22f, r2 = _flatR + 60f;
+        float r1 = _flatR + 18f, r2 = _flatR + 46f;
         // Lake suitability (minus the start-area suppression), -1 where lakes are not allowed.
         var lf = new float[_h.Length];
         Parallel.For(0, _stride, z =>
@@ -285,7 +286,7 @@ internal sealed partial class MapBuilder
                 float allowed = _preset switch
                 {
                     MapPreset.Highlands => MapMath.SmoothStep(W + 10f, W + 5f, _h[v]),
-                    MapPreset.Canyon => _valley![v],
+                    MapPreset.Canyon => _lakeOk![v],
                     _ => 1f,
                 };
                 float ds = DistToNearestStart(new Vector2(x, z));
@@ -366,6 +367,25 @@ internal sealed partial class MapBuilder
         }
     }
 
+    /// <summary>Optional components worth a corridor: on Canyon only valley floors (mesa tops stay unreachable).</summary>
+    private bool[] WorthConnecting(int[] labels, int count, List<int> sizes)
+    {
+        var worth = new bool[count];
+        if (_preset != MapPreset.Canyon)
+        {
+            Array.Fill(worth, true);
+            return worth;
+        }
+        var inValley = new int[count];
+        for (int c = 0; c < labels.Length; c++)
+        {
+            int l = labels[c];
+            if (l >= 0 && _valley![V(c % _n, c / _n)] > 0.5f) inValley[l]++;
+        }
+        for (int l = 0; l < count; l++) worth[l] = inValley[l] > sizes[l] * 0.6f;
+        return worth;
+    }
+
     /// <summary>
     /// Makes every start (and, if requested, every big land component) reachable from start 0 for units needing
     /// clearance 2 (3x3 free cells, e.g. the commander), which implies plain land connectivity.
@@ -397,11 +417,12 @@ internal sealed partial class MapBuilder
             if (connectBig && startsOk && round < maxRounds - 1)
             {
                 // Biggest first (deterministic: size desc, then label).
-                var big = Enumerable.Range(0, count).Where(c => c != main && sizes[c] >= bigMin && !targets.Contains(c))
+                var worth = WorthConnecting(labels, count, sizes);
+                var big = Enumerable.Range(0, count)
+                    .Where(c => c != main && sizes[c] >= bigMin && !targets.Contains(c) && worth[c])
                     .OrderByDescending(c => sizes[c]).ThenBy(c => c);
                 targets.AddRange(big);
             }
-            if (Environment.GetEnvironmentVariable("MAPDBG") != null) Console.WriteLine($"round {round}: comps {count} main {main} startsOk {startsOk} targets {targets.Count} [{string.Join(",", targets.Select(t => sizes[t]))}]");
             if (startsOk && targets.Count == 0) return;
             if (round == maxRounds || main < 0)
             {
