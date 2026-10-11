@@ -12,7 +12,7 @@ namespace Rts.Client.UI;
 /// Immediate-mode: input for panels is handled while drawing. <see cref="MouseOverUi"/> must be called first
 /// each frame (it computes the layout and blocks world input under every panel).
 /// </summary>
-public sealed class Hud
+public sealed class Hud : IDisposable
 {
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
@@ -44,6 +44,9 @@ public sealed class Hud
     }
 
     public Rectangle TopBarRect => _top;
+
+    /// <summary>Frees GPU resources (minimap texture) when the game ends.</summary>
+    public void Dispose() => _minimap.Dispose();
 
     /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse) for automated screenshots.</summary>
     public void ApplyStartupOptions(ClientOptions o)
