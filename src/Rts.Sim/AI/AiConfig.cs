@@ -58,6 +58,8 @@ public sealed class AiConfig
     /// <summary>Game time (s) after which waves aim for the enemy base/commander rather than outlying structures.</summary>
     public float PushTime = 900;
     public int BomberGroup = 4;
+    /// <summary>Send fresh pool units to reinforce an attacking wave that has lost strength (concentration of force).</summary>
+    public bool Reinforce;
 
     public static AiConfig For(AiDifficulty d) => d switch
     {
@@ -74,14 +76,15 @@ public sealed class AiConfig
         },
         AiDifficulty.Hard => new AiConfig
         {
+            // Hard = faster reactions, longer mex chains, earlier/steadier pressure and micro - not a bigger base.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
-            MaxEngineers = 14, EarlyEngineers = 5, MaxLandFactories = 8, MaxAirFactories = 2, AirFactoryTime = 300,
-            PowerMargin = 0.9f, MexChain = 2, MaxMassStorage = 3, MaxEnergyStorage = 3,
-            BasePointDefense = 3, BaseAntiAir = 4, ExpansionPointDefense = 5, QueueDepth = 2,
-            FirstAttackTime = 180, FirstWave = 8, WaveGrowth = 4, MaxWave = 60,
-            RetreatFraction = 0.4f, PullBackHealth = 0.3f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
-            PushTime = 720, BomberGroup = 5,
+            MaxEngineers = 12, EarlyEngineers = 4, MaxLandFactories = 7, MaxAirFactories = 1, AirFactoryTime = 360,
+            PowerMargin = 0.8f, MexChain = 2, MaxMassStorage = 2, MaxEnergyStorage = 1,
+            BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 4, QueueDepth = 2,
+            FirstAttackTime = 200, FirstWave = 8, WaveGrowth = 3, MaxWave = 50,
+            RetreatFraction = 0.35f, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
+            PushTime = 900, BomberGroup = 5, Reinforce = true,
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
     };

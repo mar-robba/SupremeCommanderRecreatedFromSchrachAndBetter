@@ -45,8 +45,8 @@ public sealed class AiEconomy
         _opening = b.Cfg.Difficulty switch
         {
             AiDifficulty.Easy => [Kind.Pgen, Kind.LandFactory, Kind.Mex, Kind.Mex, Kind.Pgen, Kind.Mex],
-            AiDifficulty.Hard => [Kind.LandFactory, Kind.Mex, Kind.Mex, Kind.Pgen, Kind.Hydro, Kind.Mex, Kind.Mex, Kind.Pgen, Kind.LandFactory],
-            _ => [Kind.LandFactory, Kind.Mex, Kind.Mex, Kind.Pgen, Kind.Hydro, Kind.Mex, Kind.Mex, Kind.Pgen],
+            AiDifficulty.Hard => [Kind.LandFactory, Kind.Mex, Kind.Pgen, Kind.Hydro, Kind.Mex, Kind.Pgen, Kind.Mex, Kind.Mex, Kind.Pgen],
+            _ => [Kind.LandFactory, Kind.Mex, Kind.Pgen, Kind.Hydro, Kind.Mex, Kind.Pgen, Kind.Mex, Kind.Mex],
         };
     }
 
@@ -85,6 +85,8 @@ public sealed class AiEconomy
         EnergyRatio = eco.EnergyMax > 0 ? eco.Energy / eco.EnergyMax : 0;
         EnergyStall = eco.EnergyEfficiency < 0.98f && EnergyRatio < 0.1f;
         MassStall = eco.MassEfficiency < 0.98f && MassRatio < 0.05f;
+        if (MassRatio > 0.75f && MassIncome > 8f) _floatThinks++;
+        else _floatThinks = Math.Max(0, _floatThinks - 2);
         Thinks++;
         if (eco.EnergyEfficiency < 0.5f) DeepEnergyStallThinks++;
         if (eco.MassEfficiency < 0.5f) DeepMassStallThinks++;
@@ -107,14 +109,43 @@ public sealed class AiEconomy
     public bool NeedPower()
     {
         int pg = InProgress(_b.BpPgen), hy = InProgress(_b.BpHydro);
-        float pending = 20f * pg + 100f * hy;
-        int maxConcurrent = 1 + V.Engineers.Count / 3 + (EnergyStall ? 1 : 0);
-        if (pg + hy >= maxConcurrent) return false;
-        float income = EnergyIncome + pending;
-        if (income < ProjectedEnergy() * Cfg.PowerMargin) return true;
-        if (EnergyRatio < 0.3f && income < EnergyDemand * 1.15f) return true;
-        return EnergyStall;
+        if (pg + hy >= 2 + V.Engineers.Count / 2) return false; // sanity cap on parallel power projects
+        float income = EnergyIncome + PendingPower();
+        if (EnergyStall) return income < EnergyDemand * 1.2f + 20f;
+        // Floating energy (storage nearly full, income covers the actual spending): don't sink mass into power.
+        if (EnergyRatio > 0.8f && income > EnergyDemand) return false;
+        // Keep income ahead of the real (smoothed) spending, and of what busy builders could spend.
+        float want = MathF.Max(EnergyDemand * 1.15f + 10f, ProjectedEnergy() * Cfg.PowerMargin);
+        if (income < want) return true;
+        return EnergyRatio < 0.3f && income < EnergyDemand * 1.2f;
     }
+
+    /// <summary>Energy income expected from power structures being built (weighted by progress; planned ones count
+    /// little because they may not start for a while).</summary>
+    private float PendingPower()
+    {
+        float p = 0;
+        int sites = 0;
+        var u = W.Units;
+        foreach (int s in V.Unfinished)
+        {
+            var bp = W.BpOf(s);
+            if (!bp.Has(UnitCategory.PowerGenerator)) continue;
+            p += bp.Economy.ProductionEnergy * (0.3f + 0.7f * u.BuildFraction[s]);
+            sites++;
+        }
+        foreach (var r in _b.Placement.Reserved)
+        {
+            if (r.Bp != _b.BpPgen && r.Bp != _b.BpHydro) continue;
+            if (sites > 0) { sites--; continue; } // already counted as a site
+            p += W.Blueprints[r.Bp].Economy.ProductionEnergy * 0.3f;
+        }
+        return p;
+    }
+
+    /// <summary>Mass has been piling up in storage for a while: spend it (more factories, engineers, defenses).</summary>
+    public bool Floating => _floatThinks >= 20;
+    private int _floatThinks;
 
     private int TotalWithReserved(int bp) => bp < 0 ? 0 : V.Count[bp] + _b.Placement.ReservedCount(bp);
 
@@ -122,11 +153,11 @@ public sealed class AiEconomy
     {
         if (_b.BpLandFactory < 0) return false;
         int n = TotalWithReserved(_b.BpLandFactory);
-        if (n >= Cfg.MaxLandFactories) return false;
+        if (n >= Cfg.MaxLandFactories + (Floating ? 3 : 0)) return false;
         if (n == 0) return true;
         if (InProgress(_b.BpLandFactory) > 0 || EnergyStall || EnergyRatio < 0.25f) return false;
-        if (MassIncome >= 4.5f * n + 1f) return true;
-        return MassRatio > 0.7f && EnergyRatio > 0.5f && _b.GameTime > 90;
+        if (n < Cfg.MaxLandFactories && MassIncome >= 4.5f * n + 1f) return true;
+        return (Floating || MassRatio > 0.7f) && EnergyRatio > 0.5f && _b.GameTime > 90;
     }
 
     private bool WantAirFactory()
@@ -160,6 +191,8 @@ public sealed class AiEconomy
         int len = q?.Count ?? 0;
         if (len >= Cfg.QueueDepth) return;
         if (len >= 1 && (EnergyStall || MassStall)) return;
+        // Deep energy stall: let the power catch up instead of starting more units (unless we lack engineers).
+        if (EnergyStall && EnergyIncome < EnergyDemand * 0.6f && V.Total(_b.BpEngineer) >= 2) return;
         var army = W.Armies[_b.Army];
         if (army.UnitCount + 4 >= army.UnitCap) return;
         int bp = air ? ChooseAir() : ChooseLand();
@@ -172,7 +205,7 @@ public sealed class AiEconomy
     {
         if (_b.GameTime < 150) return Cfg.EarlyEngineers;
         int t = Cfg.EarlyEngineers + (int)(MassIncome / 5f);
-        return Math.Min(Cfg.MaxEngineers, t);
+        return Math.Min(Cfg.MaxEngineers + (Floating ? 2 : 0), t + (Floating ? 2 : 0));
     }
 
     private int ChooseLand()
@@ -280,6 +313,16 @@ public sealed class AiEconomy
         {
             ref var info = ref _b.Info(e);
             if (info.HoldUntil > W.Tick) continue;
+            // Safety: engineers away from home flee from enemy firepower (and avoid that deposit for a while).
+            var epos = u.Pos[e];
+            if (Vector2.DistanceSquared(epos, _b.BasePos) > 30f * 30f && V.ThreatAt(epos, 12f) > 0)
+            {
+                if (info.Deposit >= 0) _depositBlockedUntil[info.Deposit] = W.Tick + 900;
+                info.Role = AiRole.Builder;
+                GoHome(e, 10f);
+                info.HoldUntil = W.Tick + 80;
+                continue;
+            }
             bool fresh = info.Role != AiRole.Builder;
             if (fresh) { info.Role = AiRole.Builder; info.Task = AiTask.None; }
             var q = u.Orders[e];
@@ -517,7 +560,7 @@ public sealed class AiEconomy
         }
         if (_b.BpPD < 0) return false;
         // Point defense at the base, facing the enemy.
-        if (_b.GameTime > 300 && MassRatio > 0.3f && CountNear(_b.BpPD, _b.BasePos, 35f) + _b.Placement.ReservedCount(_b.BpPD) < Cfg.BasePointDefense)
+        if (_b.GameTime > 300 && MassRatio > 0.3f && CountNear(_b.BpPD, _b.BasePos, 35f) + _b.Placement.ReservedCount(_b.BpPD) < Cfg.BasePointDefense + (Floating ? 2 : 0))
         {
             var side = Perp(_b.EnemyDir) * (_b.Rng(0xBD).Chance(0.5f) ? 1 : -1);
             if (TryBuildInBase(unit, _b.BpPD, Vector2.Normalize(_b.EnemyDir * 2f + side), 22, isCommander ? Cfg.CommanderRadius : 32, false)) return true;
@@ -525,7 +568,7 @@ public sealed class AiEconomy
         // Point defense next to outlying mass extractors.
         if (isCommander || _b.GameTime < 420 || MassRatio < 0.4f || Cfg.ExpansionPointDefense <= 0) return false;
         int expansionPd = V.Count[_b.BpPD] - CountNear(_b.BpPD, _b.BasePos, 35f) + _b.Placement.ReservedCount(_b.BpPD);
-        if (expansionPd >= Cfg.ExpansionPointDefense) return false;
+        if (expansionPd >= Cfg.ExpansionPointDefense + (Floating ? 2 : 0)) return false;
         var u = W.Units;
         int bestMex = -1;
         float bd = float.MaxValue;

@@ -30,6 +30,8 @@ public static class AiMatch
         Console.WriteLine($"AI match: map {mapSize}, seed {seed}, players {players} ({string.Join(" vs ", w.Armies.Select(a => a.IsAI ? a.AiDifficulty.ToString() : "passive"))}), threads {Par.MaxThreads}");
 
         int maxTicks = (int)(maxMinutes * 60 * SimWorld.TicksPerSecond);
+        // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).
+        int statusEvery = Math.Max(1, (int)(float.Parse(Environment.GetEnvironmentVariable("AI_STATUS_SECONDS") ?? "60", System.Globalization.CultureInfo.InvariantCulture) * SimWorld.TicksPerSecond));
         var deaths = new int[players];
         var tickMs = new List<double>(maxTicks);
         var total = Stopwatch.StartNew();
@@ -46,7 +48,7 @@ public static class AiMatch
                     if (firstDeathTick < 0) firstDeathTick = w.Tick;
                 }
             w.Events.Effects.Clear();
-            if (w.Tick % 600 == 0) PrintStatus(w, deaths);
+            if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
         }
 
         Console.WriteLine();
@@ -98,8 +100,31 @@ public static class AiMatch
             var e = army.Eco;
             var cmd = army.Commander;
             string hp = u.IsActive(cmd) ? $"{u.Health[cmd.Index] / w.BpOf(cmd.Index).MaxHealth * 100:F0}%" : "dead";
+            string mil = "";
+            var brain = AiSystem.StateOf(w)?.BrainOrNull(a);
+            if (brain != null)
+            {
+                int pool = 0, defend = 0, attack = 0;
+                for (int k = 0; k < u.AliveCount; k++)
+                {
+                    int i = u.AliveList[k];
+                    if (!u.IsActive(i) || u.Army[i] != a) continue;
+                    var role = brain.Info(i).Role;
+                    if (role == AiRole.Pool) pool++; else if (role == AiRole.Defend) defend++; else if (role == AiRole.Attack) attack++;
+                }
+                mil = $" pool={pool} defend={defend} attack={attack}/{brain.Military.Groups.Count}g waves={brain.Military.WavesLaunched}";
+                if (Environment.GetEnvironmentVariable("AI_GROUPS") == "1")
+                    foreach (var g in brain.Military.Groups)
+                    {
+                        var c = System.Numerics.Vector2.Zero;
+                        int idle = 0;
+                        foreach (int i in g.Members) { c += u.Pos[i]; if (u.Orders[i].IsEmpty) idle++; }
+                        c /= Math.Max(1, g.Members.Count);
+                        mil += $"\n      a{a} g{g.Id} {g.State}{(g.ReturnWhenDone ? " clear" : "")} n={g.Members.Count} idle={idle} at=({c.X:F0},{c.Y:F0}) target=({g.Target.X:F0},{g.Target.Y:F0}) age={(w.Tick - g.OrderTick) / 10}s";
+                    }
+            }
             line.Append($" | {army.Name}{(army.Defeated ? " DEFEATED" : "")}: n={army.UnitCount} mex={mex} pg={pgen} fac={fac} def={def} eng={eng} land={land} air={air} " +
-                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}");
+                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil}");
         }
         Console.WriteLine(line.ToString());
     }

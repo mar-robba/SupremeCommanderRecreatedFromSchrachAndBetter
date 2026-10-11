@@ -20,6 +20,8 @@ public sealed class AiGroup
     public int OrderTick;
     public Vector2 LastCentroid;
     public int StuckThinks;
+    /// <summary>Local clearing job (e.g. enemies camping our deposits): go back to the pool when done.</summary>
+    public bool ReturnWhenDone;
 }
 
 /// <summary>
@@ -252,8 +254,11 @@ public sealed class AiMilitary
 
         int threshold = Math.Min(Cfg.MaxWave, Cfg.FirstWave + Cfg.WaveGrowth * WavesLaunched);
         bool big = _pool.Count >= Cfg.MaxWave;
-        if (_b.GameTime < Cfg.FirstAttackTime && !big) return;
-        if (_pool.Count < threshold) return;
+        if ((_b.GameTime < Cfg.FirstAttackTime && !big) || _pool.Count < threshold)
+        {
+            if (!(Cfg.Reinforce && ReinforceGroup())) ClearOwnDeposits(strength);
+            return;
+        }
 
         // Only units that have gathered (near the rally) leave with the wave.
         _tmp.Clear();
@@ -279,6 +284,96 @@ public sealed class AiMilitary
         Groups.Add(g);
         WavesLaunched++;
         _b.Cmd.Order(g.Members, Order.AttackMoveTo(tpos));
+    }
+
+    private int _nextClearTick;
+    private int _nextReinforceTick;
+
+    /// <summary>Joins gathered pool units to the attacking wave that lost the most strength (Hard).</summary>
+    private bool ReinforceGroup()
+    {
+        if (W.Tick < _nextReinforceTick) return false;
+        var u = W.Units;
+        _tmp.Clear();
+        foreach (int i in _pool)
+            if (Vector2.DistanceSquared(u.Pos[i], _b.Rally) <= 30f * 30f) _tmp.Add(i);
+        if (_tmp.Count < 5) return false;
+        AiGroup? best = null;
+        float bestLoss = 0.25f;
+        foreach (var g in Groups)
+        {
+            if (g.State != AiGroupState.Attack || g.ReturnWhenDone || g.Members.Count == 0) continue;
+            float st = 0;
+            foreach (int i in g.Members) st += AiPerception.Strength(W, i, W.BpOf(i));
+            float loss = 1f - st / MathF.Max(1f, g.InitialStrength);
+            if (loss > bestLoss) { bestLoss = loss; best = g; }
+        }
+        if (best == null) return false;
+        _nextReinforceTick = W.Tick + 150;
+        foreach (int i in _tmp)
+        {
+            ref var info = ref _b.Info(i);
+            info.Role = AiRole.Attack;
+            info.Group = best.Id;
+            best.Members.Add(i);
+        }
+        _b.Cmd.Order(_tmp, Order.AttackMoveTo(best.Target));
+        return true;
+    }
+
+    /// <summary>
+    /// Enemies sitting on free mass deposits on our side of the map block expansion: when the pool clearly outguns
+    /// them, send it there (attack-move) and bring it back afterwards.
+    /// </summary>
+    private void ClearOwnDeposits(float poolStrength)
+    {
+        if (W.Tick < _nextClearTick || _pool.Count < 4 || poolStrength <= 0) return;
+        _nextClearTick = W.Tick + 200;
+        foreach (var g0 in Groups) if (g0.ReturnWhenDone) return; // one clearing job at a time
+        var u = W.Units;
+        // Units available at the rally point and their strength.
+        _tmp.Clear();
+        float st = 0;
+        foreach (int i in _pool)
+        {
+            if (Vector2.DistanceSquared(u.Pos[i], _b.Rally) > 30f * 30f) continue;
+            _tmp.Add(i);
+            st += AiPerception.Strength(W, i, W.BpOf(i));
+        }
+        if (_tmp.Count < 4) return;
+        var deps = W.Terrain.Deposits;
+        int best = -1;
+        float bestD = float.MaxValue;
+        for (int d = 0; d < deps.Length; d++)
+        {
+            var p = deps[d].Pos;
+            float dHome = Vector2.Distance(p, _b.BasePos);
+            if (dHome >= bestD) continue;
+            bool ourSide = true;
+            foreach (var es in _b.EnemyStarts)
+                if (Vector2.Distance(p, es) * 0.75f < dHome) { ourSide = false; break; } // clearly closer to us
+            if (!ourSide) continue;
+            int occ = W.Occupancy.At((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y));
+            if (occ >= 0 && u.Army[occ] == _b.Army) continue; // ours already
+            float t = V.ThreatAt(p, 16f);
+            if (t <= 0 || t * 1.5f > st) continue;
+            if (!_b.CanReachNear(MotionLayer.Land, 0.6f, _b.Rally, p, 2f)) continue;
+            best = d;
+            bestD = dHome;
+        }
+        if (best < 0) return;
+        var target = _b.FindStandable(deps[best].Pos, MotionLayer.Land);
+        var g = new AiGroup { Id = _nextGroupId++, State = AiGroupState.Attack, Target = target, InitialStrength = st, OrderTick = W.Tick,
+                              LastCentroid = Centroid(_tmp), ReturnWhenDone = true };
+        foreach (int i in _tmp)
+        {
+            ref var info = ref _b.Info(i);
+            info.Role = AiRole.Attack;
+            info.Group = g.Id;
+            g.Members.Add(i);
+        }
+        Groups.Add(g);
+        _b.Cmd.Order(g.Members, Order.AttackMoveTo(target));
     }
 
     private Vector2 Centroid(List<int> units)
@@ -440,6 +535,13 @@ public sealed class AiMilitary
             if (!targetGone && !stuck && idle < g.Members.Count) continue;
             if (!targetGone && !stuck && idle == g.Members.Count && W.Tick - g.OrderTick < 50) continue;
 
+            if (g.ReturnWhenDone)
+            {
+                g.State = AiGroupState.Retreat;
+                _b.Cmd.Order(g.Members, Order.MoveTo(_b.Rally));
+                g.OrderTick = W.Tick;
+                continue;
+            }
             if (ChooseTarget(centroid, strength, false, out var tpos, out var th))
             {
                 g.Target = tpos;
