@@ -7,6 +7,12 @@ using Rts.Sim.Orders;
 
 // Headless benchmark: N units per side attack-move across the map.
 // Usage: Rts.Bench [unitsPerSide] [ticks] [threads (0 = default)] [mapSize = 512]
+//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players]  (skirmish AI match, see AiMatch.cs)
+if (args.Length > 0 && args[0] is "ai" or "aipassive")
+{
+    AiMatch.Run(args[1..], passive: args[0] == "aipassive");
+    return;
+}
 int perSide = args.Length > 0 ? int.Parse(args[0]) : 2000;
 int ticks = args.Length > 1 ? int.Parse(args[1]) : 300;
 if (args.Length > 2 && int.Parse(args[2]) > 0) Par.MaxThreads = int.Parse(args[2]);
@@ -14,7 +20,7 @@ int mapSize = args.Length > 3 ? int.Parse(args[3]) : 512;
 
 var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
 var setup = Stopwatch.StartNew();
-var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings { MapSize = mapSize, Seed = 3, UnitCapacity = Math.Max(16384, perSide * 2 + 1000) });
+var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings { MapSize = mapSize, Seed = 3, UnitCapacity = Math.Max(16384, perSide * 2 + 1000), AiPlayers = [false, false] });
 var w = sim.World;
 string[] kinds = ["uef_t1_tank", "uef_t1_artillery", "uef_t1_mobile_aa", "uef_t1_interceptor"];
 var sides = new[] { new List<UnitHandle>(), new List<UnitHandle>() };
