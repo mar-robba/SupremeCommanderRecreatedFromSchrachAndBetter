@@ -165,4 +165,8 @@ public sealed class AiBrain
     }
 
     public UnitBlueprint Bp(int unit) => W.BpOf(unit);
+
+    /// <summary>Emits a diagnostics message (only when a tool installed <see cref="AiSystem.Trace"/>).</summary>
+    public void Trace(string msg) => AiSystem.Trace?.Invoke(Army, msg);
+    public bool Tracing => AiSystem.Trace != null;
 }

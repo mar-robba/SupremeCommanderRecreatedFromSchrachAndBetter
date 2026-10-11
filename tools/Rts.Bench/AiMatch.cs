@@ -38,12 +38,22 @@ public static class AiMatch
         // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).
         int statusEvery = Math.Max(1, (int)(float.Parse(Environment.GetEnvironmentVariable("AI_STATUS_SECONDS") ?? "60", System.Globalization.CultureInfo.InvariantCulture) * SimWorld.TicksPerSecond));
         var deaths = new int[players];
+        // Where units die (diagnostics): per army, [0] own base, [1] enemy base, [2] field; mobile and structures.
+        var deathZoneMobile = new int[players, 3];
+        var deathZoneStruct = new int[players, 3];
+        var mexLost = new int[players];
+        var starts = w.Terrain.StartPositions;
+        if (Environment.GetEnvironmentVariable("AI_TRACE") == "1")
+            AiSystem.Trace = (army, msg) => Console.WriteLine($"  <{Fmt(w.GameTime)}> a{army} {msg}");
         var tickMs = new List<double>(maxTicks);
         var total = Stopwatch.StartNew();
         int firstDeathTick = -1;
         for (int t = 0; t < maxTicks && w.WinningTeam < 0; t++)
         {
             sim.Step();
+            if (t == 0 && Environment.GetEnvironmentVariable("AI_OMNI") == "1")
+                for (int a = 0; a < players; a++)
+                    if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) br.Perception.RespectIntel = false; // omniscient AIs (comparison)
             tickMs.Add(sim.LastTickMs);
             // Effects are cosmetic and normally drained by the snapshot writer: count deaths, then drop them.
             foreach (var fx in w.Events.Effects)
@@ -51,9 +61,22 @@ public static class AiMatch
                 {
                     deaths[fx.Army]++;
                     if (firstDeathTick < 0) firstDeathTick = w.Tick;
+                    var p = new System.Numerics.Vector2(fx.Pos.X, fx.Pos.Z);
+                    int zone = 2;
+                    if (System.Numerics.Vector2.Distance(p, starts[fx.Army % starts.Length]) < 45f) zone = 0;
+                    else
+                        for (int a = 0; a < players; a++)
+                            if (a != fx.Army && System.Numerics.Vector2.Distance(p, starts[a % starts.Length]) < 45f) { zone = 1; break; }
+                    var dbp = (uint)fx.BlueprintIndex < (uint)db.Count ? db[fx.BlueprintIndex] : null;
+                    if (dbp != null && dbp.IsStructure) { deathZoneStruct[fx.Army, zone]++; if (dbp.Has(UnitCategory.MassExtractor)) mexLost[fx.Army]++; }
+                    else deathZoneMobile[fx.Army, zone]++;
                 }
             w.Events.Effects.Clear();
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
+            if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
+            if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
+                for (int a = 0; a < players; a++)
+                    if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) Console.Write($"  deposits seen by {w.Armies[a].Name}:\n{br.Economy.DescribeDeposits()}");
         }
 
         Console.WriteLine();
@@ -64,6 +87,9 @@ public static class AiMatch
         }
         else Console.WriteLine($"NO WINNER after {Fmt(w.GameTime)} game time (limit)");
         Console.WriteLine($"first unit death at {(firstDeathTick < 0 ? "never" : Fmt(firstDeathTick * SimWorld.Dt))}; deaths per army: {string.Join(", ", deaths)}");
+        for (int a = 0; a < players; a++)
+            Console.WriteLine($"  {w.Armies[a].Name} deaths by zone (own base / enemy base / field): mobile {deathZoneMobile[a, 0]}/{deathZoneMobile[a, 1]}/{deathZoneMobile[a, 2]}, " +
+                              $"structures {deathZoneStruct[a, 0]}/{deathZoneStruct[a, 1]}/{deathZoneStruct[a, 2]} (mex {mexLost[a]})");
         foreach (var army in w.Armies)
         {
             var s = army.Stats;
@@ -81,6 +107,52 @@ public static class AiMatch
         tickMs.Sort();
         Console.WriteLine($"sim tick ms: avg {tickMs.Average():F2} p50 {tickMs[tickMs.Count / 2]:F2} p95 {tickMs[(int)(tickMs.Count * 0.95)]:F2} max {tickMs[^1]:F2}; " +
                           $"wall {total.Elapsed.TotalSeconds:F1}s ({w.Tick / total.Elapsed.TotalSeconds:F0} ticks/s), hash {sim.StateHash():X16}");
+    }
+
+    /// <summary>AI_DUMP="seconds:army:group[,seconds...]": prints the members of an AI group (orders, movement, path).</summary>
+    private static void DumpGroup(SimWorld w, string spec)
+    {
+        foreach (var part in spec.Split(','))
+        {
+            var f = part.Split(':');
+            if (f.Length < 3 || w.Tick != (int)(float.Parse(f[0], System.Globalization.CultureInfo.InvariantCulture) * 10)) continue;
+            int army = int.Parse(f[1]), gid = int.Parse(f[2]);
+            var brain = AiSystem.StateOf(w)?.BrainOrNull(army);
+            var g = brain?.Military.Groups.FirstOrDefault(x => x.Id == gid);
+            if (g == null) { Console.WriteLine($"  dump: no group {gid} for army {army}"); continue; }
+            var u = w.Units;
+            Console.WriteLine($"  dump a{army} g{gid} {g.State} target=({g.Target.X:F1},{g.Target.Y:F1}) members={g.Members.Count}");
+            foreach (int i in g.Members)
+            {
+                ref var mv = ref u.Move[i];
+                var q = u.Orders[i];
+                string ord = q.IsEmpty ? "none" : $"{q.Current.Type}@({q.Current.Pos.X:F1},{q.Current.Pos.Y:F1})";
+                var p = u.Pos[i];
+                var path = w.Paths.PathOf(i);
+                string tgt = "";
+                for (int k = 0; k < w.BpOf(i).Weapons.Length; k++)
+                {
+                    var t = u.Weapons[i * UnitStore.MaxWeapons + k].Target;
+                    if (u.IsActive(t))
+                    {
+                        // Terrain line of fire (muzzle -> target center), max penetration below the surface.
+                        var a3 = new System.Numerics.Vector3(p.X, u.Elevation[i] + w.BpOf(i).Visual.Size.Y * 0.6f, p.Y);
+                        var tp = u.Pos[t.Index];
+                        var b3 = new System.Numerics.Vector3(tp.X, u.Elevation[t.Index] + w.BpOf(t.Index).Visual.Size.Y * 0.5f, tp.Y);
+                        float worst = 0;
+                        for (int sIdx = 1; sIdx < 64; sIdx++)
+                        {
+                            var q3 = System.Numerics.Vector3.Lerp(a3, b3, sIdx / 64f);
+                            worst = MathF.Max(worst, w.Terrain.GetSurfaceHeight(new System.Numerics.Vector2(q3.X, q3.Z)) - q3.Y);
+                        }
+                        tgt += $" tgt={w.BpOf(t.Index).Id}@({tp.X:F0},{tp.Y:F0}) h={u.Elevation[i]:F1}->{u.Elevation[t.Index]:F1} block={worst:F1}";
+                    }
+                }
+                Console.WriteLine($"    #{i} {w.BpOf(i).Id} pos=({p.X:F1},{p.Y:F1}) pass={w.Terrain.PassAt((int)p.X, (int)p.Y)} {ord} goal=({mv.Goal.X:F1},{mv.Goal.Y:F1}) hasGoal={mv.HasGoal} spd={mv.Speed:F2} " +
+                                  $"path={mv.PathId}[{mv.PathIndex}/{path.Length}] end={(path.Length > 0 ? $"({path[^1].X:F0},{path[^1].Y:F0})" : "-")} partial={mv.PathPartial} nearest={mv.PathToNearest} " +
+                                  $"stuck={mv.StuckTime:F1} blocked={mv.BlockedTime:F1} repaths={mv.StuckRepaths} grp={mv.GroupId}{tgt}");
+            }
+        }
     }
 
     private static string Pct(int a, int b) => b > 0 ? $"{100.0 * a / b:F0}%" : "-";

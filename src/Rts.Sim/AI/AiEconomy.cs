@@ -537,6 +537,26 @@ public sealed class AiEconomy
         return best;
     }
 
+    /// <summary>Debug: one line per mass/hydro deposit (distance to base, occupant, blacklist, threat, reachability).</summary>
+    public string DescribeDeposits()
+    {
+        var sb = new System.Text.StringBuilder();
+        var deps = W.Terrain.Deposits;
+        var u = W.Units;
+        for (int d = 0; d < deps.Length; d++)
+        {
+            var p = deps[d].Pos;
+            int occ = W.Occupancy.At((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y));
+            string who = occ < 0 ? "free" : u.Army[occ] == _b.Army ? (u.IsComplete(occ) ? "OURS" : "ours-site") : $"army{u.Army[occ]}";
+            int bpx = deps[d].Type == DepositType.Mass ? _b.BpMex : _b.BpHydro;
+            bool looksFree = bpx >= 0 && _b.Placement.DepositFree(d, bpx, out _);
+            bool reach = _b.CanReachNear(MotionLayer.Amphibious, 0.5f, _b.BasePos, p, 1.5f);
+            sb.Append($"    dep{d} {deps[d].Type} ({p.X:F0},{p.Y:F0}) dBase={Vector2.Distance(p, _b.BasePos):F0} {who} looksFree={looksFree} " +
+                      $"blocked={Math.Max(0, _depositBlockedUntil.Length > d ? _depositBlockedUntil[d] - W.Tick : 0) / 10}s threat={V.ThreatAt(p, 24f):F0} reserved={_b.Placement.IsDepositReserved(d)} reach={reach}\n");
+        }
+        return sb.ToString();
+    }
+
     /// <summary>Base structure at a free spot found by spiral search (preferred direction from the base center).</summary>
     private bool TryBuildInBase(int unit, int bp, Vector2 dir, float minR, float maxR, bool queue)
     {

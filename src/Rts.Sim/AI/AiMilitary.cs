@@ -20,6 +20,7 @@ public sealed class AiGroup
     public int OrderTick;
     public Vector2 LastCentroid;
     public int StuckThinks;
+    public int CheckTick;
     /// <summary>Local clearing job (e.g. enemies camping our deposits): go back to the pool when done.</summary>
     public bool ReturnWhenDone;
 }
@@ -283,6 +284,7 @@ public sealed class AiMilitary
         }
         Groups.Add(g);
         WavesLaunched++;
+        if (_b.Tracing) _b.Trace($"wave g{g.Id} n={g.Members.Count} st={waveStrength:F0} from ({centroid.X:F0},{centroid.Y:F0}) -> ({tpos.X:F0},{tpos.Y:F0}) d={Vector2.Distance(centroid, tpos):F0}");
         _b.Cmd.Order(g.Members, Order.AttackMoveTo(tpos));
     }
 
@@ -517,6 +519,7 @@ public sealed class AiMilitary
             float local = V.ThreatAt(centroid, 24f);
             if (Cfg.RetreatFraction > 0 && strength < g.InitialStrength * Cfg.RetreatFraction && local > strength)
             {
+                if (_b.Tracing) _b.Trace($"retreat g{g.Id} n={g.Members.Count} st={strength:F0}/{g.InitialStrength:F0} local={local:F0} at ({centroid.X:F0},{centroid.Y:F0})");
                 g.State = AiGroupState.Retreat;
                 _b.Cmd.Order(g.Members, Order.MoveTo(_b.Rally));
                 g.OrderTick = W.Tick;
@@ -525,12 +528,13 @@ public sealed class AiMilitary
 
             bool targetGone = !g.TargetUnit.IsNone ? !TargetStillKnown(g.TargetUnit) : idle == g.Members.Count;
             bool stuck = false;
-            if (W.Tick - g.OrderTick > 300)
+            if (W.Tick - g.OrderTick > 300 && W.Tick - g.CheckTick >= 100)
             {
-                if (Vector2.Distance(centroid, g.LastCentroid) < 3f) g.StuckThinks++;
+                if (Vector2.Distance(centroid, g.LastCentroid) < 5f) g.StuckThinks++;
                 else g.StuckThinks = 0;
                 g.LastCentroid = centroid;
-                stuck = g.StuckThinks >= 6 && local <= 0;
+                g.CheckTick = W.Tick;
+                stuck = g.StuckThinks >= 3 && local <= 0;
             }
             if (!targetGone && !stuck && idle < g.Members.Count) continue;
             if (!targetGone && !stuck && idle == g.Members.Count && W.Tick - g.OrderTick < 50) continue;
@@ -544,6 +548,7 @@ public sealed class AiMilitary
             }
             if (ChooseTarget(centroid, strength, false, out var tpos, out var th))
             {
+                if (_b.Tracing) _b.Trace($"retarget g{g.Id} n={g.Members.Count} {(targetGone ? "gone" : stuck ? "stuck" : "idle")} at ({centroid.X:F0},{centroid.Y:F0}) -> ({tpos.X:F0},{tpos.Y:F0})");
                 g.Target = tpos;
                 g.TargetUnit = th;
                 g.OrderTick = W.Tick;
