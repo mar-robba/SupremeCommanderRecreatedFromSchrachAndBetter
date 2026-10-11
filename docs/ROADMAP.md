@@ -61,12 +61,18 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
       retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
       - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
             no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
-- [~] Better map generator — done on branch worktree-agent-aee9b8d5b16b55e55, to integrate (see NEXT STEPS)
-- [~] Main menu / game setup screen, victory/defeat screens — same branch, to integrate
+- [~] Better map generator — done on branch worktree-agent-aee9b8d5b16b55e55, main merged into it (2026-10-11),
+      branch ready to merge: presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
+- [~] Main menu / game setup screen, victory/defeat screens — same branch, merged with main's audio/fog/AI:
+      GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
+      fog ViewArmy = local human (defeated player "Keep Watching" = fog off); settings: master/effects/music
+      volumes (saved) on an app-wide `AudioSystem` (menus: clicks + music); end screen `ArmyStats`
+      - [ ] AI on new presets: builds and fights everywhere, but Highlands/Canyon AI-vs-AI often end in a stalemate
+            (bench: Plains s42 winner 19:49, Lakes s5 winner 13:06, Highlands s7 none in 40 min, Canyon s3 none in 30)
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
-      - [ ] later: settings screen for volumes, a human listening pass on the sounds, veterancy bonuses in the sim
+      - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
 ## Phase 3 — SupCom depth
 - [ ] T2 and T3 tech: upgrades of factories/mexes, T2/T3 units for land, air, naval

@@ -139,8 +139,10 @@ interpolates prev/cur by time
 - `GameApp`: options + window + screen loop (`Menus/AppHost`, `IScreen`): `MainMenuScreen` → `SettingsScreen` /
   `SkirmishSetupScreen` (slots, map settings, live `MapPreview`) → `LoadingScreen` (sim built on a worker thread) →
   `InGameScreen` (pause menu on Esc, end screen with `ArmyStats`). CLI game arguments still start a game directly.
-- `GameSession`: one running game (runner, camera, renderers, input, HUD); `Frame()` is the in-game frame.
-  Add per-game client modules there (field + constructor + `Frame` + `Dispose`).
+- `GameSession`: one running game (runner, camera, renderers incl. fog/wrecks, input, HUD, cursor hints,
+  `GameAudio`); `Frame()` is the in-game frame. Add per-game client modules there (field + constructor + `Frame` +
+  `Dispose`). `GameSession.CreateSimulation(cfg)`: `GameConfig` slots → `SkirmishSettings` (AI slots set
+  `Army.IsAI` + `AiDifficulty`, so the in-sim skirmish AI drives them); fog `ViewArmy` = the human slot's army.
 - `RtsCamera` (zoom to cursor, strategic view) · `SnapshotInterpolator`
 - `Rendering/`: `TerrainRenderer` (chunk meshes + per-pixel terrain shader, sky, animated water, picking),
   `UnitRenderer` (GPU-instanced procedural models from `UnitModels`/`MeshBuilder`, one draw per blueprint mesh,
@@ -158,6 +160,9 @@ interpolates prev/cur by time
   music and reclaim/build hums into a real-time AudioStream; `GameAudio` maps snapshot `EffectEvent`s (incl.
   `WeaponIndex`) to positional one-shots (listener = camera focus, zoom ducking, pan, per-frame merging) and raises
   alerts (under attack, stall, unit ready). `UiSounds` = click/confirm/error requests. `--nosound`; no device = silent.
+  `AudioSystem` (app-wide, created once by `GameApp`): device + sound bank (synthesized once) + ambient stream +
+  `AudioSettings` volumes; each game's `GameAudio` drives it, menus call `MenuUpdate` (clicks + music). Volumes
+  come from `AppSettings` (settings screen, saved) unless `--volume/--sfx-volume/--music-volume` are given.
 - `Rendering/FogRenderer`: fog of war on the client. Uploads `SimSnapshot.Fog` into two R8 textures (previous/current
   tick, bilinear) sampled by terrain/water/unit shaders via `Shaders.FogOfWarFs` (unexplored dark, explored
   dimmed/desaturated, 5-tap soft edges, blended by the interpolation alpha); radar blips as army-colored ring sprites;
