@@ -32,6 +32,7 @@ public static class CleanupSystem
             if (!u.Alive[i]) continue;
             var bp = w.BpOf(i);
             if (bp.IsStructure) w.Occupancy.Clear(bp, u.Pos[i], i);
+            if (u.BuildFraction[i] >= 1f) w.Armies[u.Army[i]].Stats.UnitsLost++;
             w.Armies[u.Army[i]].UnitCount--;
             u.Free(i);
         }

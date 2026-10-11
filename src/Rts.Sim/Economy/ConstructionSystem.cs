@@ -120,6 +120,8 @@ public static class ConstructionSystem
         var bp = w.BpOf(t);
         u.BuildFraction[t] = 1f;
         u.Flags[t] &= ~UnitFlags.UnderConstruction;
+        var stats = w.Armies[u.Army[t]].Stats;
+        if (bp.IsStructure) stats.StructuresBuilt++; else stats.UnitsBuilt++;
         w.Events.Effects.Add(new EffectEvent
         {
             Kind = EffectKind.BuildComplete,

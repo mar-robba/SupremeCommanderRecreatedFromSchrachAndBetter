@@ -31,10 +31,15 @@ public sealed class Army
     public uint Color = 0xFFFFFFFF;
     public string Faction = "uef";
     public bool IsAI;
+    public AiDifficulty AiDifficulty;
     public bool Defeated;
     public UnitHandle Commander = UnitHandle.None;
     public int UnitCap = 1000;
     /// <summary>Live units owned (updated each tick).</summary>
     public int UnitCount;
     public readonly EconomyState Eco = new();
+    /// <summary>Game statistics (end screen).</summary>
+    public readonly ArmyStats Stats = new();
 }
+
+public enum AiDifficulty { Easy, Normal, Hard }
