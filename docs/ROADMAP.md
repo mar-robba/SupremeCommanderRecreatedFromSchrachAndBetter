@@ -17,11 +17,11 @@ Shared contracts (on main before wave 3 started):
 - New enum members (OrderType, CommandType, UnitCategory, snapshot fields) are appended at the END; shared files
   edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
 
-Wave 3 agents:
-- (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
-- (b) Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
-- (c) Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
-- (d) AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
+Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn a fresh agent in the same dir to resume):
+- (a) `agent-a53c9ba881c1db15f` T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
+- (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
+- (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
+- (d) `agent-a1c38e069748a3b2b` AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
 Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
