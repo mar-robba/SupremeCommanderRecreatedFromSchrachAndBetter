@@ -93,6 +93,18 @@ public sealed class UnitBlueprint
     /// <summary>Blueprint ids this unit can build (engineers: structures, factories: units).</summary>
     public string[] Builds = [];
     [JsonIgnore] public int[] BuildIndices = [];
+    /// <summary>
+    /// Builder ids that can also build this unit: at load it is appended to each builder's BuildIndices (after the
+    /// builder's own Builds, in blueprint load order). Lets a new unit add itself to existing build lists without
+    /// editing the builder's file. Unknown builder ids are ignored, so a unit may name builders added by other modules.
+    /// </summary>
+    public string[] BuiltBy = [];
+
+    /// <summary>Id of the blueprint this structure upgrades into in place (SupCom T1→T2→T3 factories/mexes). "" = none.</summary>
+    public string UpgradesTo = "";
+    /// <summary>Resolved UpgradesTo (-1 = none) and its inverse (the blueprint that upgrades into this one, -1 = none).</summary>
+    [JsonIgnore] public int UpgradesToIndex = -1;
+    [JsonIgnore] public int UpgradesFromIndex = -1;
 
     /// <summary>Fraction of mass cost left as reclaimable wreck on death (SupCom ~0.81 for most units).</summary>
     public float WreckMassFraction = 0.81f;

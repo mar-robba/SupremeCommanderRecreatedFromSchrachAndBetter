@@ -110,6 +110,35 @@ public sealed class BlueprintDb
                 throw new InvalidDataException($"Blueprint '{bp.Id}': mobile unit needs Movement.Layer");
             if (bp.Economy.BuildTime <= 0) bp.Economy.BuildTime = 1;
         }
+
+        // Second pass (needs every BuildIndices): BuiltBy back-references and upgrade chains.
+        foreach (var bp in _all)
+        {
+            foreach (var id in bp.BuiltBy)
+            {
+                if (!_byId.TryGetValue(id, out int builder)) continue;
+                var b = _all[builder];
+                if (Array.IndexOf(b.BuildIndices, bp.Index) < 0) b.BuildIndices = [.. b.BuildIndices, bp.Index];
+            }
+
+            bp.UpgradesToIndex = -1;
+            if (!string.IsNullOrEmpty(bp.UpgradesTo))
+            {
+                if (!_byId.TryGetValue(bp.UpgradesTo, out int to))
+                    throw new InvalidDataException($"Blueprint '{bp.Id}': UpgradesTo references unknown id '{bp.UpgradesTo}'");
+                if (to == bp.Index) throw new InvalidDataException($"Blueprint '{bp.Id}': UpgradesTo itself");
+                bp.UpgradesToIndex = to;
+            }
+        }
+        foreach (var bp in _all) bp.UpgradesFromIndex = -1;
+        foreach (var bp in _all)
+        {
+            if (bp.UpgradesToIndex < 0) continue;
+            var to = _all[bp.UpgradesToIndex];
+            if (to.UpgradesFromIndex >= 0)
+                throw new InvalidDataException($"Blueprint '{to.Id}': upgraded into from both '{_all[to.UpgradesFromIndex].Id}' and '{bp.Id}'");
+            to.UpgradesFromIndex = bp.Index;
+        }
     }
 }
 

@@ -42,6 +42,9 @@ interpolates prev/cur by time
 - `Terrain` (immutable): heightmap at the corners of 1×1 cells, water level, `PassFlags` per cell, deposits,
   start positions. `OccupancyGrid` (mutable) marks the cells covered by structures.
 - `BlueprintDb`: JSON blueprints. Categories become `UnitCategory` flags; `Builds` becomes `BuildIndices`.
+  A new unit can add itself to existing build lists with `BuiltBy: [builder ids]` (appended to those builders'
+  `BuildIndices` in load order; unknown builder ids are ignored). `UpgradesTo: "<id>"` declares an in-place
+  structure upgrade (resolved to `UpgradesToIndex`, inverse `UpgradesFromIndex`; strict).
 - New per-unit state: add a field to the module struct in `World/Components.cs` and initialize it in your
   system's `InitUnit` (called from `UnitLifecycle.OnSpawn`).
 

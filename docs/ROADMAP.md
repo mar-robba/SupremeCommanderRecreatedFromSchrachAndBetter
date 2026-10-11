@@ -2,25 +2,27 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (handoff 2026-10-11 — read this first in a new session)
-1. **Integrate the maps + menus branch** `worktree-agent-aee9b8d5b16b55e55` (worktree still at
-   `.claude/worktrees/agent-aee9b8d5b16b55e55`, clean, commit 504efcb). It has map presets (Plains/Lakes/Highlands/
-   Canyon/Archipelago, guaranteed land connectivity), main menu → setup with preview → game → pause → end screen with
-   stats, and the in-game loop moved from GameApp.cs to the new GameSession.cs. It branched BEFORE the audio, fog and AI
-   merges. Delegate to ONE agent working in that worktree:
-   - `git merge main`;
-   - move the audio/fog/wreck/context-order/cursor-hint wiring from the old GameApp loop into GameSession.cs;
-   - keep all CLI options;
-   - Army.cs: keep a single `AiDifficulty` enum;
-   - wire the menu volume to GameAudio, the setup AI difficulty to Army.AiDifficulty, and the fog ViewArmy to the local human;
-   - both test projects green, screenshots, commit.
-   Then merge that branch into main.
-2. **Wave 3** (4 parallel agents, worktrees):
-   - (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, engineers.
-   - (b) Strategic: shields, TML/TMD, nukes/anti-nuke, T3 artillery.
-   - (c) Naval: naval factory, ships/subs, sonar, torpedoes; makes Archipelago playable.
-   - (d) AI: RespectIntel=true, scouts/radar, balance. Since the fog merge, AI-vs-AI seed 42 has no winner in 30 min.
-3. Then Phase 3/4 (experimentals, transports, 2nd faction, save/replays, multiplayer).
+## ▶ NEXT STEPS (updated 2026-10-11 — read this first in a new session)
+Maps + menus are merged (main 1f1087f+). **Wave 3 is running: 4 agents in worktrees** (branches
+`worktree-agent-*`; check `git worktree list`). When an agent finishes, the orchestrator merges its branch into main,
+runs both test projects plus screenshots, then removes the worktree and branch. Merge order: (a) first, then (b), (c), (d).
+
+Shared contracts (on main before wave 3 started):
+- `BuiltBy: [builder ids]` in a blueprint adds it to those builders' build lists (unknown ids ignored), so agents add
+  units WITHOUT editing other builders' files. `UpgradesTo: "<id>"` declares an in-place upgrade
+  (`UpgradesToIndex` / `UpgradesFromIndex`); agent (a) implements the upgrade mechanism.
+- Reserved ids: `uef_t2_engineer`, `uef_t3_engineer` (owned by a), `uef_t2_land_factory`, `uef_t3_land_factory`,
+  `uef_t2_air_factory`, `uef_t3_air_factory`, `uef_t2_mass_extractor`, `uef_t3_mass_extractor` (a);
+  `uef_t1_naval_factory`, `uef_t2_naval_factory`, `uef_t3_naval_factory` (c).
+- New enum members (OrderType, CommandType, UnitCategory, snapshot fields) are appended at the END; shared files
+  edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
+
+Wave 3 agents:
+- (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
+- (b) Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
+- (c) Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
+- (d) AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
+Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
@@ -61,9 +63,8 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
       retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
       - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
             no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
-- [~] Better map generator — done on branch worktree-agent-aee9b8d5b16b55e55, main merged into it (2026-10-11),
-      branch ready to merge: presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
-- [~] Main menu / game setup screen, victory/defeat screens — same branch, merged with main's audio/fog/AI:
+- [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
+- [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
       fog ViewArmy = local human (defeated player "Keep Watching" = fog off); settings: master/effects/music
       volumes (saved) on an app-wide `AudioSystem` (menus: clicks + music); end screen `ArmyStats`
