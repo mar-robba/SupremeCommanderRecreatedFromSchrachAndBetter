@@ -15,6 +15,8 @@ public sealed class Simulation
 {
     public readonly SimWorld World;
     public double LastTickMs { get; private set; }
+    /// <summary>Commands produced by the skirmish AI this tick (reused list).</summary>
+    private readonly List<Command> _aiCommands = new();
 
     public Simulation(SimWorld world) => World = world;
 
@@ -25,6 +27,8 @@ public sealed class Simulation
         w.Tick++;
 
         CommandSystem.Run(w, commands);
+        AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands
+        CommandSystem.Run(w, _aiCommands);
         w.Units.RebuildAliveList();
         w.Projectiles.RebuildAliveList();
         w.Grid.Rebuild(w.Units);

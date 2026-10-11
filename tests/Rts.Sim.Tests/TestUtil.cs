@@ -15,8 +15,9 @@ public static class TestUtil
     /// <summary>Blueprints from the repository data folder (loaded once).</summary>
     public static BlueprintDb Db => _db ??= BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
 
+    /// <summary>Skirmish without AI players (tests drive every army themselves; AI tests opt in explicitly).</summary>
     public static Simulation NewSkirmish(int seed = 42, int mapSize = 256, int players = 2) =>
-        GameSetup.CreateSkirmish(Db, new SkirmishSettings { Seed = seed, MapSize = mapSize, Players = players });
+        GameSetup.CreateSkirmish(Db, new SkirmishSettings { Seed = seed, MapSize = mapSize, Players = players, AiPlayers = new bool[players] });
 
     public static UnitHandle Spawn(Simulation sim, string bp, int army, Vector2 pos, float heading = 0) =>
         sim.World.SpawnUnit(Db.IndexOf(bp), army, pos, heading, complete: true);

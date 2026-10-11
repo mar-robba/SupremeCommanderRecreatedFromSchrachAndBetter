@@ -17,7 +17,8 @@ interpolates prev/cur by time
 - Snapshots are pooled: `TakeLatest()` and then `Return()` (the `SnapshotInterpolator` handles this).
 
 ## Tick pipeline (`Simulation.Step`, fixed order)
-1. `CommandSystem`: validate and apply player commands (orders, factory queues, debug spawn).
+1. `CommandSystem`: validate and apply player commands (orders, factory queues, debug spawn); then
+   `AiSystem` (skirmish AI, `Rts.Sim/AI/`) lets AI armies think and its commands go through `CommandSystem` too.
 2. Rebuild `AliveList`s, then `SpatialGrid.Rebuild` (counting sort, 8-unit cells).
 3. `IntelSystem`: fog of war, radar, sonar, omni per team (see Intel model).
 4. `EconomySystem`: sum the production and the requests from the previous tick, compute efficiency, update storage.
@@ -99,6 +100,29 @@ interpolates prev/cur by time
 - Projectiles: straight shots hit the first enemy collision sphere on their path, shells/bombs explode on the
   ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
   `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
+
+## Skirmish AI (`Rts.Sim/AI`)
+- Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for
+  armies with `Army.IsAI && !Defeated`, and acts ONLY through normal `Command`s (`AiCommands`), like a player.
+  State per world via ConditionalWeakTable (`AiSystem.StateOf(w)`): one `AiBrain` per army + per-unit-slot
+  `AiUnitInfo` (role/task, generation-checked).
+- `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
+  offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig` (think speed,
+  caps, opening, wave timing/size, retreat/pull-back micro, reinforcement). Cost ≈ 0.01 ms/tick per AI.
+- `AiPerception`: the only window on enemies (scan → `AiView` lists, surface/anti-air threat maps, remembered enemy
+  structures). `RespectIntel=false` = omniscient for now; set true to obey `IntelService` (fog of war).
+- `AiEconomy`: commander opening (factory, mexes, pgens, hydro), engineer jobs (finish orphan sites, power when
+  income < max(smoothed demand, projected spending), mexes nearest the base first + chains, hydro, factories when
+  mass income/floating allows, air factory mid-game, PD/AA, storage/radar, repair, reclaim, assist factories),
+  task deadlines (stuck → reassign, deposit blacklist), engineers flee threats; factory queues (engineer target,
+  scouts, tank/artillery/mobile-AA mix by enemy air; interceptors/bombers).
+- `AiPlacement`: spiral search with `OccupancyGrid.CanPlace` + free margin (3 factories / 2 others, relaxed pass),
+  keeps deposits and the rally point clear, land-reachability for factories, reservations, failure cooldown.
+- `AiMilitary`: rally pool → attack waves (growing size) to the best reachable known enemy structure
+  (`PathService.CanReach`), retarget/stuck handling, retreat when beaten, base/expansion defense pulls nearby units,
+  clearing enemies off our deposits, commander retreats when hurt, interceptor patrols, bomber raids, scouts.
+- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1] [threads] [players]`
+  (`aipassive` = army 0 idle; env `AI_STATUS_SECONDS`, `AI_GROUPS=1` for more output).
 
 ## Client (`Rts.Client`)
 - `GameApp` main loop · `RtsCamera` (zoom to cursor, strategic view) · `SnapshotInterpolator`
