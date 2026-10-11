@@ -36,7 +36,11 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 - [x] Fog of war + radar (merged 2026-10-11): per-team bitset grids (vision/radar/sonar/omni/explored), parallel
       deterministic, ghosts of last-seen structures, fog-filtered snapshots, radar blips, client fog shader + minimap, F7/--nofog
       - [ ] later: fog wrecks/deposits, drop Attack orders on targets lost in fog, intel cost < 1 ms on 1024
-- [ ] Skirmish AI (build order, economy scaling, attack waves, defense) — `src/Rts.Sim/AI`
+- [x] Skirmish AI (merged 2026-10-11) — `src/Rts.Sim/AI`: deterministic in-sim AI issuing Commands; perception
+      layer + threat maps, opening build order, expansion, power balance, air factory, PD/AA, waves to reachable targets,
+      retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
+      - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
+            no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
 - [ ] Better map generator (rivers/lakes, cliffs, ramps, naval maps, more players)
 - [ ] Main menu / game setup screen, victory/defeat screens
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
