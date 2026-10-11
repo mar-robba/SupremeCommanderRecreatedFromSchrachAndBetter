@@ -11,10 +11,16 @@ public sealed class SkirmishSettings
     public int MapSize = 256;
     public int Seed = 42;
     public int Players = 2;
+    /// <summary>Map generator preset and water amount (0..1, negative = preset default).</summary>
+    public MapPreset MapPreset = MapPreset.Plains;
+    public float WaterAmount = -1;
     /// <summary>Which armies are AI-controlled (army 0 is the local human by default).</summary>
     public bool[] AiPlayers = [false, true];
     /// <summary>Team per army; default = every army on its own team (free for all).</summary>
     public int[]? Teams;
+    /// <summary>Optional per-army colors (0xRRGGBBAA) and names; defaults: <see cref="GameSetup.ArmyColors"/>, "Player"/"AI n".</summary>
+    public uint[]? Colors;
+    public string[]? Names;
     public string CommanderBlueprint = "uef_commander";
     public int UnitCapacity = 16384;
     /// <summary>Starting stored resources; negative = full storage (the commander's StorageMass/StorageEnergy).</summary>
@@ -32,16 +38,19 @@ public static class GameSetup
 
     public static Simulation CreateSkirmish(BlueprintDb db, SkirmishSettings s)
     {
-        var terrain = MapGenerator.Generate(new MapGenSettings { Size = s.MapSize, Players = s.Players, Seed = s.Seed });
+        var terrain = MapGenerator.Generate(new MapGenSettings
+        {
+            Size = s.MapSize, Players = s.Players, Seed = s.Seed, Preset = s.MapPreset, WaterAmount = s.WaterAmount,
+        });
         var armies = new Army[s.Players];
         for (int a = 0; a < s.Players; a++)
         {
             armies[a] = new Army
             {
                 Index = a,
-                Name = a == 0 ? "Player" : $"AI {a}",
+                Name = s.Names != null && a < s.Names.Length ? s.Names[a] : a == 0 ? "Player" : $"AI {a}",
                 Team = s.Teams != null && a < s.Teams.Length ? s.Teams[a] : a,
-                Color = ArmyColors[a % ArmyColors.Length],
+                Color = s.Colors != null && a < s.Colors.Length ? s.Colors[a] : ArmyColors[a % ArmyColors.Length],
                 IsAI = a < s.AiPlayers.Length && s.AiPlayers[a],
             };
         }
