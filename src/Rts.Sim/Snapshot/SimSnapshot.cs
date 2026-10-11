@@ -24,6 +24,8 @@ public struct UnitView
     /// <summary>0..1 progress of what the unit is building (factory/engineer), -1 if none.</summary>
     public float WorkProgress;
     public bool FactoryRepeat;
+    /// <summary>Units destroyed by this unit (veterancy kills, UnitStore.Kills).</summary>
+    public int Kills;
 }
 
 public struct OrderView

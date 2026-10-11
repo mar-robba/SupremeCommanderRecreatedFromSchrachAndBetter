@@ -200,10 +200,10 @@ internal static class CombatFx
 {
     public const int MaxPendingEffects = 32768;
 
-    public static void Add(SimWorld w, EffectKind kind, Vector3 pos, float size, int army, int bp)
+    public static void Add(SimWorld w, EffectKind kind, Vector3 pos, float size, int army, int bp, int weapon = 0)
     {
         var list = w.Events.Effects;
         if (list.Count >= MaxPendingEffects) return;
-        list.Add(new EffectEvent { Kind = kind, Pos = pos, Size = size, Army = army, BlueprintIndex = bp });
+        list.Add(new EffectEvent { Kind = kind, Pos = pos, Size = size, Army = army, BlueprintIndex = bp, WeaponIndex = weapon });
     }
 }

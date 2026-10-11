@@ -209,7 +209,7 @@ public static class ProjectileSystem
                 SourceArmy = army,
                 Layers = WeaponMask(w, p),
             });
-            CombatFx.Add(w, EffectKind.Explosion, imp.Pos, radius, army, bp);
+            CombatFx.Add(w, EffectKind.Explosion, imp.Pos, radius, army, bp, P.WeaponIndex[p]);
             return;
         }
         if (imp.Unit >= 0 && w.Units.IsActive(imp.Unit))
@@ -222,7 +222,7 @@ public static class ProjectileSystem
                 Amount = P.Damage[p],
             });
         }
-        CombatFx.Add(w, EffectKind.Impact, imp.Pos, 0.5f, army, bp);
+        CombatFx.Add(w, EffectKind.Impact, imp.Pos, 0.5f, army, bp, P.WeaponIndex[p]);
     }
 
     private static int NearestEnemyAt(SimWorld w, CombatState s, int army, LayerMask mask, Vector3 pos)

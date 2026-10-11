@@ -37,6 +37,7 @@ public static class SnapshotWriter
             v.BuildFrac = u.BuildFraction[i];
             v.Flags = u.Flags[i];
             v.FactoryRepeat = u.Factory[i].Repeat;
+            v.Kills = u.Kills[i];
             v.WorkProgress = -1;
             var building = u.Factory[i].Current.IsNone ? u.Builder[i].Target : u.Factory[i].Current;
             if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
