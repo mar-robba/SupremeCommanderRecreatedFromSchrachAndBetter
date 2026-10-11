@@ -3,6 +3,7 @@
   "Name": "T1 Radar",
   "Description": "Detects units at long range.",
   "Tech": 1,
+  "UpgradesTo": "uef_t2_radar",
   "Categories": [
     "Structure",
     "Intel",

@@ -1,0 +1,68 @@
+{
+  "Id": "uef_t2_fighter_bomber",
+  "Name": "Janus",
+  "Description": "T2 fighter-bomber: air cannon plus bombs.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Fighter",
+    "Bomber",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 800,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 200,
+    "BuildCostEnergy": 5000,
+    "BuildTime": 1600
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 14,
+    "Acceleration": 7,
+    "TurnRate": 100,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Air Cannon",
+      "Range": 22,
+      "Damage": 15,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 60,
+      "TargetLayers": [
+        "Air"
+      ],
+      "FiringTolerance": 20
+    },
+    {
+      "Name": "Bomb",
+      "Range": 4,
+      "Damage": 400,
+      "RateOfFire": 0.2,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 3,
+      "ProjectileVisual": "bomb",
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "bomber",
+    "Size": [
+      1.6,
+      0.55,
+      2.0
+    ],
+    "Icon": "air_bomber"
+  }
+}

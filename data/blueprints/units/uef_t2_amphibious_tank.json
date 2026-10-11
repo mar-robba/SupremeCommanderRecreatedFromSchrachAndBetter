@@ -1,0 +1,51 @@
+{
+  "Id": "uef_t2_amphibious_tank",
+  "Name": "Riptide",
+  "Description": "T2 hover tank: fast, crosses water.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 900,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 160,
+    "BuildCostEnergy": 800,
+    "BuildTime": 900
+  },
+  "Movement": {
+    "Layer": "Hover",
+    "MaxSpeed": 3.4,
+    "Acceleration": 3,
+    "TurnRate": 110
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Weapons": [
+    {
+      "Name": "Riot Gun",
+      "Range": 20,
+      "Damage": 8,
+      "RateOfFire": 5,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 180
+    }
+  ],
+  "Visual": {
+    "Shape": "hover_tank",
+    "Size": [
+      1.2,
+      0.8,
+      1.7
+    ],
+    "Icon": "land_direct"
+  }
+}

@@ -3,6 +3,7 @@
   "Name": "T1 Mass Extractor",
   "Description": "Extracts mass from a mass deposit.",
   "Tech": 1,
+  "UpgradesTo": "uef_t2_mass_extractor",
   "Categories": [
     "Structure",
     "Economy",
