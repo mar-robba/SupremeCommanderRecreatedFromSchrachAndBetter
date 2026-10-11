@@ -183,6 +183,7 @@ public sealed class Hud
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
             new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
             new("+ / - game speed · Space pause · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
+            new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
         ];
     }
 

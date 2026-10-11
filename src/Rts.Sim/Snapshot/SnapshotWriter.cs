@@ -57,6 +57,8 @@ public static class SnapshotWriter
                            && u.IsActive(orders[o].Target)
                     ? u.Pos[orders[o].Target.Index]
                     : orders[o].Destination;
+                // Fog of war: don't reveal where an unseen target is (the order line ends at the unit).
+                if (view != null && u.IsActive(orders[o].Target) && !w.Intel.IsVisible(viewArmy, orders[o].Target.Index)) dest = u.Pos[i];
                 s.Orders[s.OrderCount++] = new OrderView
                 {
                     Type = orders[o].Type,
