@@ -205,7 +205,8 @@ public sealed class SkirmishSetupScreen : IScreen
         else if (MapPresets.NeedsNaval(_cfg.Preset))
             Ui.TextRight("Bases are on separate islands", start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.TextDim);
         bool go = MenuUi.BigButton(start, "Start Game", problem == null, true, 16)
-                  || (problem == null && !MenuUi.FieldFocused && (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter)));
+                  || (problem == null && !MenuUi.FieldFocused && (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter)))
+                  || (_app.Options.AutoStart && problem == null && _preview.Terrain != null);
         if (go)
         {
             var s = AppSettings.Current;

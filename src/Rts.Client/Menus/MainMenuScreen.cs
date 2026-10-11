@@ -8,6 +8,8 @@ public sealed class MainMenuScreen : IScreen
 {
     private readonly AppHost _app;
 
+    private int _frames;
+
     public MainMenuScreen(AppHost app) => _app = app;
 
     public void Frame(float dt)
@@ -31,7 +33,8 @@ public sealed class MainMenuScreen : IScreen
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Quit", "Back to the desktop")) _app.QuitRequested = true;
 
         Ui.Text("Prototype · C# / .NET 10 · raylib", x, Ui.Sh - Ui.P(34), Ui.F(11), Ui.TextFaint);
-        if (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter)) _app.Go(new SkirmishSetupScreen(_app));
+        if (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter) || (_app.Options.FlowTest && ++_frames == 20))
+            _app.Go(new SkirmishSetupScreen(_app));
         Ui.DrawTooltip();
     }
 

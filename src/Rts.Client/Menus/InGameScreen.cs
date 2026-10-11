@@ -44,6 +44,7 @@ public sealed class InGameScreen : IScreen
         int overlayFrame = Math.Max(1, _opt.Frames - 15);
         if (_opt.PauseMenu && _frames == overlayFrame && _state == State.Playing) OpenPause();
         if (_opt.EndScreen && _frames == overlayFrame && _state != State.Stats) OpenStats();
+        if (_opt.FlowTest) FlowTestStep();
 
         switch (_state)
         {
@@ -135,6 +136,7 @@ public sealed class InGameScreen : IScreen
 
     private void OpenStats()
     {
+        if (_state == State.Paused) _s.Runner.Paused = _wasPaused;
         // Stop the sim thread: the world may now be read directly.
         _s.Runner.Stop();
         var (over, won) = _s.Outcome();
@@ -161,6 +163,23 @@ public sealed class InGameScreen : IScreen
                 break;
         }
         Ui.DrawTooltip();
+    }
+
+    private static int s_flowGames;
+    private int _flowIndex = -1;
+
+    /// <summary>--flow-test: pause, then alternately Restart / Quit to Menu (exercises disposal and re-creation).</summary>
+    private void FlowTestStep()
+    {
+        if (_flowIndex < 0) _flowIndex = ++s_flowGames;
+        if (_frames == 40) OpenPause();
+        if (_frames == 60) OpenStats();
+        if (_frames == 80)
+        {
+            Console.WriteLine($"flow-test: game {_flowIndex} -> {(_flowIndex % 2 == 1 ? "restart" : "main menu")}");
+            if (_flowIndex % 2 == 1) _app.StartGame(_s.Config, _opt);
+            else _app.ToMainMenu();
+        }
     }
 
     public void Dispose() => _s.Dispose();

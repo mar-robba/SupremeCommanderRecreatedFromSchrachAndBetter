@@ -55,6 +55,7 @@ public sealed class AppHost : IDisposable
     {
         FxTest = Options.FxTest, Gallery = Options.Gallery, ScreenshotPath = Options.ScreenshotPath,
         Frames = Options.Frames, PauseMenu = Options.PauseMenu, EndScreen = Options.EndScreen,
+        FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,
     };
 
     public void StartGame(GameConfig cfg, ClientOptions opt) => Go(new LoadingScreen(this, cfg.Clone(), opt));

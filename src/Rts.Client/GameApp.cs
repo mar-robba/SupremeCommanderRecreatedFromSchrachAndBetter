@@ -36,6 +36,11 @@ public sealed class ClientOptions
     /// <summary>Screenshot helpers: open the pause menu / end screen ~15 frames before the capture.</summary>
     public bool PauseMenu;
     public bool EndScreen;
+    /// <summary>Screenshot helper: the skirmish setup screen starts the game as soon as the preview is ready.</summary>
+    public bool AutoStart;
+    /// <summary>Debug: scripted menu flow (game → Restart → Quit to Menu → Skirmish → autostart → …) to exercise
+    /// screen switches and resource disposal.</summary>
+    public bool FlowTest;
     /// <summary>If set: run Frames frames, save a PNG screenshot here and exit (for automated visual checks).</summary>
     public string? ScreenshotPath;
     public int Frames = 120;
@@ -64,7 +69,7 @@ public sealed class ClientOptions
         {
             string a = args[i];
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
-            if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings")) gameArg = true;
+            if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -80,6 +85,8 @@ public sealed class ClientOptions
                 case "--setup": screen = StartScreen.Setup; break;
                 case "--settings": screen = StartScreen.Settings; break;
                 case "--pause-menu": o.PauseMenu = true; break;
+                case "--autostart": o.AutoStart = true; break;
+                case "--flow-test": o.FlowTest = o.AutoStart = true; break;
                 case "--endscreen": o.EndScreen = true; break;
                 case "--demo": o.Demo = true; break;
                 case "--size":
