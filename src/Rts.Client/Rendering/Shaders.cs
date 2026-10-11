@@ -135,6 +135,38 @@ public static unsafe class Shaders
         }
         """;
 
+    /// <summary>
+    /// Fog of war (see <see cref="FogRenderer"/>): explored/vision grid textures of the previous and current tick
+    /// (0 unexplored, 0.5 explored, 1 in vision), blended by the interpolation alpha and softened with a 5-tap filter.
+    /// Requires uniforms fogPrev, fogCur, fogOn, fogAlpha, fogScale, fogTexel (FogRenderer.Bind).
+    /// </summary>
+    public const string FogOfWarFs = """
+        uniform sampler2D fogPrev;
+        uniform sampler2D fogCur;
+        uniform float fogOn;
+        uniform float fogAlpha;
+        uniform vec2 fogScale;
+        uniform vec2 fogTexel;
+        float fogSample(vec2 uv) { return mix(texture(fogPrev, uv).r, texture(fogCur, uv).r, fogAlpha); }
+        float fogVisibility(vec2 xz) {
+            if (fogOn < 0.5) return 1.0;
+            vec2 uv = xz * fogScale;
+            vec2 o = fogTexel * 0.75;
+            return fogSample(uv) * 0.4
+                 + (fogSample(uv + o) + fogSample(uv - o) + fogSample(uv + vec2(o.x, -o.y)) + fogSample(uv + vec2(-o.x, o.y))) * 0.15;
+        }
+        vec3 applyFogOfWar(vec3 c, vec2 xz) {
+            float v = fogVisibility(xz);
+            if (v > 0.995) return c;
+            float explored = smoothstep(0.04, 0.5, v);
+            float vis = smoothstep(0.52, 0.98, v);
+            float lum = dot(c, vec3(0.299, 0.587, 0.114));
+            vec3 dim = mix(vec3(lum), c, 0.4) * 0.5 + vec3(0.0, 0.006, 0.018);
+            vec3 dark = vec3(lum) * 0.2 + vec3(0.014, 0.018, 0.03);
+            return mix(mix(dark, dim, explored), c, vis);
+        }
+        """;
+
     // ------------------------------------------------------------------ units (instanced)
 
     private const string UnitVs = """
@@ -161,7 +193,7 @@ public static unsafe class Shaders
         }
         """;
 
-    private static readonly string UnitLitFs = "#version 330\n" + CommonFs + ShadowFs + """
+    private static readonly string UnitLitFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -185,6 +217,7 @@ public static unsafe class Shaders
             float rim = pow(1.0 - max(dot(n, V), 0.0), 4.0) * 0.4;
             vec3 c = albedo * (amb * 0.95 + sunColor * ndl * mix(0.3, 0.95, sh)) + sunColor * spec + rim * skyAmb * 0.5;
             c = mix(c, vColor.rgb * 1.6, glow);
+            c = applyFogOfWar(c, vWorld.xz);
             c = applyFog(c, vWorld);
             finalColor = vec4(c, 1.0);
         }
@@ -246,7 +279,7 @@ public static unsafe class Shaders
         }
         """;
 
-    private static readonly string TerrainFs = "#version 330\n" + CommonFs + ShadowFs + """
+    private static readonly string TerrainFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -291,12 +324,13 @@ public static unsafe class Shaders
             // Outside the playable area: darken.
             vec2 o = max(vec2(0.0), max(-p, p - mapSize));
             col *= 1.0 - clamp(max(o.x, o.y) * 0.1, 0.0, 0.6);
+            col = applyFogOfWar(col, vWorld.xz);
             col = applyFog(col, vWorld);
             finalColor = vec4(col, 1.0);
         }
         """;
 
-    private static readonly string WaterFs = "#version 330\n" + CommonFs + """
+    private static readonly string WaterFs = "#version 330\n" + CommonFs + FogOfWarFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -337,6 +371,7 @@ public static unsafe class Shaders
             float foam = clamp(edge * (0.45 + 0.7 * fn) + lines * 0.3 * smoothstep(0.3, 0.8, fn), 0.0, 1.0);
             col = mix(col, vec3(0.93, 0.97, 1.0), foam * 0.85);
             float alpha = clamp(mix(0.32, 0.93, dk) + fres * 0.25 + foam * 0.6, 0.0, 1.0);
+            col = applyFogOfWar(col, vWorld.xz);
             col = applyFog(col, vWorld);
             finalColor = vec4(col, alpha);
         }

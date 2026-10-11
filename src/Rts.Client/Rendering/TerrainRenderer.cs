@@ -168,6 +168,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
         sp.Set("waterLevel", _waterLevel);
         sp.Set("mapSize", new Vector2(_t.Width, _t.Height));
         ShadowMap.Bind(sp);
+        FogRenderer.Bind(sp);
         foreach (var (mesh, box) in _chunks)
         {
             var c = (box.Min + box.Max) * 0.5f;
@@ -207,6 +208,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
         sp.Set("mapSize", new Vector2(_t.Width, _t.Height));
         sp.Set("waterLevel", _waterLevel);
         sp.Set("skyTop", Atmosphere.SkyTop);
+        FogRenderer.Bind(sp);
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();
         Raylib.DrawMesh(_water, _waterMat, Matrix4x4.Identity);

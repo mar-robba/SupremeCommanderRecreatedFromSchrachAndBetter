@@ -66,6 +66,14 @@ public static unsafe class IconRenderer
         var batch = _batch!;
         batch.Begin();
         byte a = (byte)(255 * fade);
+        // Fog of war: last-seen enemy structures ("ghosts"), dimmed, under the live icons.
+        for (int k = 0; k < cur.GhostCount; k++)
+        {
+            ref var g = ref cur.Ghosts[k];
+            if (!fv.WorldToScreen(g.Pos, out var gp)) continue;
+            var gcol = ColorUtil.Lerp(ctx.ArmyColors[g.Army], new Color(120, 120, 120, 255), 0.55f);
+            batch.Screen(new Vector2(MathF.Round(gp.X), MathF.Round(gp.Y)), _size[g.Bp], ColorUtil.WithAlpha(gcol, (byte)(a * 0.75f)), IconAtlas.Uv(_kind[g.Bp], ctx.Db[g.Bp].Tech, false));
+        }
         foreach (var bucket in Buckets)
         foreach (int k in bucket)
         {

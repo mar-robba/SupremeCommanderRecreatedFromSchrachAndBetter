@@ -41,6 +41,8 @@ public sealed class ClientOptions
     /// <summary>Audio options: --nosound, --sound (keep audio in screenshot runs), --volume F, --sfx-volume F,
     /// --music-volume F, --nomusic (see Audio/GameAudio.cs).</summary>
     public AudioSettings Audio = new();
+    /// <summary>Disable the fog of war (reveal all; also toggled with F7).</summary>
+    public bool NoFog;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -76,6 +78,7 @@ public sealed class ClientOptions
                 case "--fxtest": o.FxTest = true; break;
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
+                case "--nofog": o.NoFog = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio)) break;
@@ -97,6 +100,7 @@ public static class GameApp
             AiPlayers = Enumerable.Range(0, opt.Players).Select(i => i > 0).ToArray(),
         });
         if (opt.Demo) SpawnDemo(sim, opt.Stress);
+        if (opt.Demo) FogRenderer.SpawnDemoRadars(sim);
 
         Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | (opt.NoVsync ? 0 : ConfigFlags.VSyncHint));
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
@@ -117,6 +121,8 @@ public static class GameApp
             TerrainRenderer = terrainR, Feedback = new FeedbackMarkers(), LocalArmy = 0,
             ArmyColors = sim.World.Armies.Select(a => ColorUtil.FromRgba(a.Color)).ToArray(),
         };
+        using var fog = new FogRenderer(ctx, !opt.NoFog);
+        ctx.Fog = fog;
         using var fx = new EffectsRenderer(ctx, opt.FxTest);
         var perf = new PerfOverlay();
         var selection = new SelectionController(ctx);
@@ -137,6 +143,7 @@ public static class GameApp
             float dt = Raylib.GetFrameTime();
             perf.BeginFrame();
             interp.Update();
+            fog.Update(interp);
             bool overUi = hud.MouseOverUi();
             camera.Update(dt, overUi, ctx.PickGround);
             selection.Update(overUi);
@@ -164,6 +171,7 @@ public static class GameApp
 
             props.DrawStrategic(cur);
             IconRenderer.Draw(ctx, cur, prev, alpha, selectedSet);
+            fog.DrawBlips(cur, alpha);
             DrawHealthBars(ctx, selectedSet, cur, prev, alpha);
             if (selection.IsDragging)
             {

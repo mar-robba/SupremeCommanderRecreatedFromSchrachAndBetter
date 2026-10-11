@@ -123,6 +123,16 @@ public sealed unsafe class UnitRenderer : IDisposable
             AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
         }
 
+        // Fog of war: last-seen enemy structures ("ghosts"), greyed team color; the fog dims them further.
+        for (int k = 0; k < cur.GhostCount; k++)
+        {
+            ref var g = ref cur.Ghosts[k];
+            var model = Model(g.Bp);
+            if (!fv.SphereVisible(g.Pos + new Vector3(0, (model.MinY + model.MaxY) * 0.5f, 0), model.Radius)) continue;
+            var tc = (uint)g.Army < (uint)teamCols.Length ? teamCols[g.Army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
+            AddUnit(model, -1 - k, g.Pos, g.Heading, g.Heading, 0, Vector4.Lerp(tc, new Vector4(0.45f, 0.45f, 0.45f, 0), 0.5f), false, 1f, time);
+        }
+
         if (Gallery) AddGallery(time, teamCols);
 
         // 1) Shadow pass (units only).
@@ -149,6 +159,7 @@ public sealed unsafe class UnitRenderer : IDisposable
         Atmosphere.Apply(sp, fv);
         sp.Set("fade", fade);
         ShadowMap.Bind(sp);
+        FogRenderer.Bind(sp);
         sp.Use();
         foreach (var m in _active)
         {

@@ -40,6 +40,9 @@ Console.WriteLine($"setup {setup.Elapsed.TotalMilliseconds:F0} ms (first tick in
 var times = new List<double>();
 var pathMs = new List<double>();
 var moveMs = new List<double>();
+var intelMs = new List<double>();
+var snapMs = new List<double>();
+var snap = new Rts.Sim.Snapshot.SimSnapshot();
 var stats = w.Paths.Stats;
 long solves0 = stats.TotalSolves, exp0 = stats.TotalExpanded;
 var total = Stopwatch.StartNew();
@@ -49,6 +52,10 @@ for (int t = 0; t < ticks; t++)
     times.Add(sim.LastTickMs);
     pathMs.Add(stats.LastPathMs);
     moveMs.Add(stats.LastMoveMs);
+    intelMs.Add(w.Intel.LastUpdateMs);
+    var snapSw = Stopwatch.StartNew();
+    sim.WriteSnapshot(snap, 0); // fog-of-war filtered snapshot for army 0 (as the client does)
+    snapMs.Add(snapSw.Elapsed.TotalMilliseconds);
     if (Environment.GetEnvironmentVariable("BENCH_VERBOSE") == "1" && sim.LastTickMs > 8)
         Console.WriteLine($"  tick {w.Tick}: {sim.LastTickMs:F1} ms (path {stats.LastPathMs:F1}: {stats.LastRequests} req, {stats.LastSolves} solves, {stats.LastSplices} splices; move {stats.LastMoveMs:F1})");
 }
@@ -64,6 +71,8 @@ Console.WriteLine($"map={mapSize} units={w.Units.AliveCount} projectiles={w.Proj
 Console.WriteLine($"tick ms: {Summ(times)} (budget 100ms @10Hz)");
 Console.WriteLine($"  path ms: {Summ(pathMs)}");
 Console.WriteLine($"  move ms: {Summ(moveMs)}");
+Console.WriteLine($"  intel ms: {Summ(intelMs)} (fog grid {w.Intel.Cols}x{w.Intel.Rows})");
+Console.WriteLine($"  snapshot ms (view army 0, not in tick): {Summ(snapMs)}");
 long solves = stats.TotalSolves - solves0;
 Console.WriteLine($"  path solves={solves} splices={stats.TotalSplices} avgExpanded={(solves > 0 ? (double)(stats.TotalExpanded - exp0) / solves : 0):F0} goalFields={w.Paths.CachedGoalFields}");
 Console.WriteLine($"total {total.Elapsed.TotalSeconds:F1}s, hash={sim.StateHash():X16}");

@@ -11,8 +11,8 @@ namespace Rts.Sim.Systems;
 /// Weapons acquire targets. PARALLEL over Units.AliveList: each unit only writes its own WeaponState.
 /// Per weapon, in order:
 /// 1. Attack-ground (HasGroundTarget, set by OrderSystem): no unit target.
-/// 2. Forced target (front order is Attack on the unit OrderSystem put in WeaponState.Target): kept while alive,
-///    even out of range (the unit is moving to it).
+/// 2. Forced target (front order is Attack on the unit OrderSystem put in WeaponState.Target): kept while alive
+///    and detected by the army's intel, even out of range (the unit is moving to it).
 /// 3. Current target kept while valid (alive enemy, targetable layer, visible, within range and outside MinRange);
 ///    every <see cref="EngagedScanInterval"/> ticks a re-scan switches to a strictly higher-priority target.
 /// 4. Otherwise a staggered scan (every <see cref="IdleScanInterval"/>..+2 ticks, immediately after losing a target)
@@ -58,7 +58,8 @@ public static class TargetingSystem
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
-            if (!forced.IsNone && ws.Target == forced && u.IsActive(forced)) continue;
+            // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.
+            if (!forced.IsNone && ws.Target == forced && u.IsActive(forced) && CombatState.CanSee(w, army, forced.Index)) continue;
 
             bool had = !ws.Target.IsNone;
             if (had && u.IsActive(ws.Target) && CanEngage(w, s, army, pos, wbp.TargetMask, winfo.AcquireRange, wbp.MinRange, ws.Target.Index))
