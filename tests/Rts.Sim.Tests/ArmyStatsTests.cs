@@ -33,4 +33,50 @@ public class ArmyStatsTests
         Assert.Equal(1, w.Armies[1].Stats.UnitsKilled);
         Assert.Equal(0, w.Armies[0].Stats.UnitsKilled);
     }
+
+    [Fact]
+    public void WrecksAndReclaimDontDistortKillsAndLosses()
+    {
+        var sim = TestUtil.NewSkirmish();
+        var w = sim.World;
+        var cmd = w.Armies[0].Commander;
+        var tank = TestUtil.Spawn(sim, "uef_t1_tank", 1, CommanderPos(w) + new Vector2(14, 3));
+        sim.Step();
+        Systems.DamageSystem.Apply(w, tank.Index, 1e6f, cmd);
+        sim.Step();
+        Assert.Equal(1, w.Props.Count); // the tank left a wreck
+        Assert.Equal(1, w.Armies[0].Stats.UnitsKilled);
+        Assert.Equal(1, w.Armies[1].Stats.UnitsLost);
+        Assert.Equal(1, w.Units.Kills[cmd.Index]); // veterancy counter agrees
+
+        // Reclaiming the wreck gives mass but is neither a kill nor a loss.
+        float collected = w.Armies[0].Stats.MassCollected;
+        int p = w.Props.AliveList[0];
+        TestUtil.Run(sim, 120, new IssueOrderCommand(0, [cmd], Order.ReclaimAt(Core.UnitHandle.None, w.Props.Pos[p] + new Vector2(0.5f, 0)), false));
+        Assert.Equal(0, w.Props.Count);
+        Assert.True(w.Armies[0].Stats.MassCollected > collected + 40f);
+        Assert.Equal(1, w.Armies[0].Stats.UnitsKilled);
+        Assert.Equal(0, w.Armies[0].Stats.UnitsLost);
+        Assert.Equal(1, w.Armies[1].Stats.UnitsLost);
+        Assert.Equal(0, w.Armies[1].Stats.UnitsKilled);
+    }
+
+    [Fact]
+    public void CommanderKillDefeatsTheArmyAndEndsTheGame()
+    {
+        var sim = TestUtil.NewSkirmish();
+        var w = sim.World;
+        var cmd1 = w.Armies[1].Commander;
+        TestUtil.Spawn(sim, "uef_t1_engineer", 1, CommanderPos(w, 1) + new Vector2(6, 0));
+        var killer = TestUtil.Spawn(sim, "uef_t1_tank", 0, CommanderPos(w, 1) + new Vector2(-20, 0));
+        sim.Step();
+        Systems.DamageSystem.Apply(w, cmd1.Index, 1e6f, killer);
+        sim.Step();
+        Assert.True(w.Armies[1].Defeated);
+        Assert.Equal(w.Armies[0].Team, w.WinningTeam);
+        Assert.Equal(0, w.Armies[1].UnitCount);
+        Assert.Equal(1, w.Armies[0].Stats.UnitsKilled);  // the commander; the rest self-destructs
+        Assert.Equal(2, w.Armies[1].Stats.UnitsLost);    // commander + engineer
+        Assert.False(w.Armies[0].Defeated);
+    }
 }

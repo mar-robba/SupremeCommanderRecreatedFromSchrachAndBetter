@@ -54,9 +54,11 @@ public sealed class AppHost : IDisposable
 
     public void ToMainMenu() => Go(new MainMenuScreen(this));
 
-    /// <summary>Options for games started from the menus (no CLI startup helpers).</summary>
+    /// <summary>Options for games started from the menus: debug/audio/fog flags and the screenshot helpers
+    /// (--select, --camera, --mouse only matter in automated runs, e.g. --setup --autostart --select commander).</summary>
     public ClientOptions MenuGameOptions() => new()
     {
+        Select = Options.Select, CameraXZD = Options.CameraXZD, MousePos = Options.MousePos,
         FxTest = Options.FxTest, Gallery = Options.Gallery, ScreenshotPath = Options.ScreenshotPath,
         Frames = Options.Frames, PauseMenu = Options.PauseMenu, EndScreen = Options.EndScreen,
         FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,

@@ -20,7 +20,7 @@ public sealed class SettingsScreen : IScreen
         float x = Ui.P(80), y = Ui.Sh * 0.12f;
         MenuUi.ScreenTitle("Settings", "Changes apply immediately and are saved", x, y);
 
-        var panel = Ui.R(x, y + Ui.P(80), Ui.P(560), Ui.P(330));
+        var panel = Ui.R(x, y + Ui.P(80), Ui.P(560), Ui.P(300));
         Ui.Panel(panel);
         float lx = panel.X + Ui.P(20), cx = panel.X + Ui.P(200), rowH = Ui.P(32), cw = Ui.P(320);
         float ry = panel.Y + Ui.P(24);
