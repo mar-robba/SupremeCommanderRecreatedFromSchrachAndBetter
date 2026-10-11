@@ -7,6 +7,7 @@ Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to se
 - Build all: `dotnet build Rts.slnx`
 - Tests: `dotnet test tests/Rts.Sim.Tests` (headless, must stay green)
 - Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads]`
+- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard]`
 - Play: `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N]`
 - **Visual check (agents must use this after client changes):**
   `dotnet run --project src/Rts.Client -- --demo --screenshot screenshots/<name>.png --frames 120 --size 1280x720 [--camera x,z,dist]`

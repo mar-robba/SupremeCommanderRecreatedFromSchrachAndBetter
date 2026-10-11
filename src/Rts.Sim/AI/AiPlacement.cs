@@ -118,12 +118,10 @@ public sealed class AiPlacement
         }
         _b.Stats.SiteFailures++;
         if (cooldownTicks > 0) _failUntil[bp] = w.Tick + cooldownTicks;
-        if (Environment.GetEnvironmentVariable("AI_DEBUG") == "1" && !_dumped) { _dumped = true; Console.WriteLine($"[ai {_b.Army} t{w.Tick}] no site for {sbp.Id}\n" + Dump(center, (int)maxR + 6)); }
         return false;
     }
 
     private int[] _failUntil = [];
-    private bool _dumped;
 
     /// <summary>Debug: ASCII map around a point (# structure, ~ unbuildable, M/H deposit, R rally, r reserved, . free).</summary>
     public string Dump(Vector2 c, int r)
