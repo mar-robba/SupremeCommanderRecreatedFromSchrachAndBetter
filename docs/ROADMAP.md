@@ -2,6 +2,26 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
+## ▶ NEXT STEPS (handoff 2026-10-11 — read this first in a new session)
+1. **Integrate the maps + menus branch** `worktree-agent-aee9b8d5b16b55e55` (worktree still at
+   `.claude/worktrees/agent-aee9b8d5b16b55e55`, clean, commit 504efcb). It has map presets (Plains/Lakes/Highlands/
+   Canyon/Archipelago, guaranteed land connectivity), main menu → setup with preview → game → pause → end screen with
+   stats, and the in-game loop moved from GameApp.cs to the new GameSession.cs. It branched BEFORE the audio, fog and AI
+   merges. Delegate to ONE agent working in that worktree:
+   - `git merge main`;
+   - move the audio/fog/wreck/context-order/cursor-hint wiring from the old GameApp loop into GameSession.cs;
+   - keep all CLI options;
+   - Army.cs: keep a single `AiDifficulty` enum;
+   - wire the menu volume to GameAudio, the setup AI difficulty to Army.AiDifficulty, and the fog ViewArmy to the local human;
+   - both test projects green, screenshots, commit.
+   Then merge that branch into main.
+2. **Wave 3** (4 parallel agents, worktrees):
+   - (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, engineers.
+   - (b) Strategic: shields, TML/TMD, nukes/anti-nuke, T3 artillery.
+   - (c) Naval: naval factory, ships/subs, sonar, torpedoes; makes Archipelago playable.
+   - (d) AI: RespectIntel=true, scouts/radar, balance. Since the fog merge, AI-vs-AI seed 42 has no winner in 30 min.
+3. Then Phase 3/4 (experimentals, transports, 2nd faction, save/replays, multiplayer).
+
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
 - [x] Deterministic sim core: UnitStore SoA, handles, DetRandom, Par (deterministic parallel chunks)
@@ -41,8 +61,8 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
       retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
       - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
             no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
-- [ ] Better map generator (rivers/lakes, cliffs, ramps, naval maps, more players)
-- [ ] Main menu / game setup screen, victory/defeat screens
+- [~] Better map generator — done on branch worktree-agent-aee9b8d5b16b55e55, to integrate (see NEXT STEPS)
+- [~] Main menu / game setup screen, victory/defeat screens — same branch, to integrate
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
