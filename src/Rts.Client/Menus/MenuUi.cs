@@ -47,7 +47,9 @@ public static class MenuUi
         int fs = Ui.F(19);
         Ui.Text(label.ToUpperInvariant(), r.X + Ui.P(18), r.Y + (r.Height - fs) * 0.5f - (hint != null ? Ui.P(6) : 1), fs, enabled ? Ui.TextColor : Ui.TextFaint, true);
         if (hint != null) Ui.Text(hint, r.X + Ui.P(18), r.Y + r.Height * 0.5f + Ui.P(5), Ui.F(11), Ui.TextDim);
-        return enabled && Ui.LeftClickIn(r);
+        bool clicked = enabled && Ui.LeftClickIn(r);
+        if (clicked) Audio.UiSounds.Click();
+        return clicked;
     }
 
     /// <summary>Cycle button: returns +1 on left click, -1 on right click, 0 otherwise.</summary>

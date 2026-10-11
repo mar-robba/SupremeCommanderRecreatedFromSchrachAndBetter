@@ -272,6 +272,7 @@ public static class Ui
         Raylib.DrawRectangleLinesEx(r, active ? 2 : 1, border);
         bool left = enabled && LeftClickIn(r);
         bool right = enabled && RightClickIn(r);
+        if (left || right) Audio.UiSounds.Click();
         return new ButtonState(hover, left, right);
     }
 

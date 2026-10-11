@@ -152,6 +152,8 @@ public sealed class InGameScreen : IScreen
         {
             case EndScreen.Action.Continue:
                 _end = null;
+                // Defeated player keeps watching as an observer: no fog of war.
+                if (_s.Outcome() is (true, false)) _s.Fog.SetEnabled(false);
                 _s.Runner.Start();
                 _state = State.Playing;
                 break;

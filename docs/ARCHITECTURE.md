@@ -17,9 +17,10 @@ interpolates prev/cur by time
 - Snapshots are pooled: `TakeLatest()` and then `Return()` (the `SnapshotInterpolator` handles this).
 
 ## Tick pipeline (`Simulation.Step`, fixed order)
-1. `CommandSystem`: validate and apply player commands (orders, factory queues, debug spawn).
+1. `CommandSystem`: validate and apply player commands (orders, factory queues, debug spawn); then
+   `AiSystem` (skirmish AI, `Rts.Sim/AI/`) lets AI armies think and its commands go through `CommandSystem` too.
 2. Rebuild `AliveList`s, then `SpatialGrid.Rebuild` (counting sort, 8-unit cells).
-3. `IntelSystem`: fog of war / radar (stub: everything is visible).
+3. `IntelSystem`: fog of war, radar, sonar, omni per team (see Intel model).
 4. `EconomySystem`: sum the production and the requests from the previous tick, compute efficiency, update storage.
 5. `OrderSystem` (parallel): the front order of each mobile unit becomes a movement goal and forced targets.
 6. `ConstructionSystem`: engineers build, repair, reclaim and assist (see Economy model).
@@ -70,6 +71,23 @@ interpolates prev/cur by time
   props under their footprint. The client sees them as `SimSnapshot.Props` (`PropView`); to reclaim one, send
   `Order.ReclaimAt(UnitHandle.None, pos)`.
 
+## Intel model (fog of war, `Rts.Sim/Intel`)
+- Intel is per TEAM (allies share everything). `IntelService` (`world.Intel`) keeps per team bitsets over a grid of
+  2×2-unit cells: vision, radar, sonar, omni, plus an explored byte grid (0 unexplored / 128 explored / 255 visible).
+- `IntelSystem` recomputes everything each tick: sequential gather of complete units (structures and aircraft
+  included) counting-sorted by (team, row), then PARALLEL work items = (team, band of 16 rows), heaviest first; each
+  item writes only its own rows (deterministic, no atomics). Coverage is padded by half a cell diagonal: a unit within
+  VisionRadius of a viewer is always visible. Radar/sonar/omni with energy upkeep are off when paused or stalled.
+- Queries (thread-safe): `IsVisible(army, unit)` (vision; submerged units also need sonar/omni), `IsDetected`
+  (vision, or radar for land/air/surface, sonar for surface/sub, omni for all), `IsBlip`, `IsPositionVisible/
+  Explored/OnRadar`, `GetKnownStructures` (ghosts: last-seen enemy structures, forgotten when re-scouted dead).
+  Own/allied units are always visible; `Intel.Enabled = false` reveals everything.
+- Targeting only acquires and keeps targets the army detects (`CombatState.CanSee`), forced Attack targets included.
+- Snapshot: `SimRunner.ViewArmy` (client sets the local army; -1 = no fog). `IntelSnapshotWriter` filters the snapshot:
+  `Units` only has units the view army sees (enemy orders/queues stripped), radar contacts go to `Blips` (position,
+  army, velocity; no type/handle so they can't be selected or targeted as units), `Ghosts`, enemy projectiles and
+  effects only in vision, and the explored grid in `Fog` (`FogCols × FogRows`, `FogVersion`).
+
 ## Combat model (`Rts.Sim/Combat`)
 - `CombatState.Of(world)` (attached via ConditionalWeakTable): per-tick cache of each unit's layer and a per-grid-cell
   army bitmask, so scans/collisions skip cells without enemies. `CombatCatalog`: per-blueprint weapon kinds
@@ -94,6 +112,29 @@ interpolates prev/cur by time
 - Guarantee (tests in `MapGeneratorTests`): on every preset except Archipelago all starts are connected over
   `Terrain.CanTraverse(Land)`; deposits are buildable; start areas are flat; deterministic per seed; 1024 < 0.5 s.
 
+## Skirmish AI (`Rts.Sim/AI`)
+- Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for
+  armies with `Army.IsAI && !Defeated`, and acts ONLY through normal `Command`s (`AiCommands`), like a player.
+  State per world via ConditionalWeakTable (`AiSystem.StateOf(w)`): one `AiBrain` per army + per-unit-slot
+  `AiUnitInfo` (role/task, generation-checked).
+- `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
+  offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig` (think speed,
+  caps, opening, wave timing/size, retreat/pull-back micro, reinforcement). Cost ≈ 0.01 ms/tick per AI.
+- `AiPerception`: the only window on enemies (scan → `AiView` lists, surface/anti-air threat maps, remembered enemy
+  structures). `RespectIntel=false` = omniscient for now; set true to obey `IntelService` (fog of war).
+- `AiEconomy`: commander opening (factory, mexes, pgens, hydro), engineer jobs (finish orphan sites, power when
+  income < max(smoothed demand, projected spending), mexes nearest the base first + chains, hydro, factories when
+  mass income/floating allows, air factory mid-game, PD/AA, storage/radar, repair, reclaim, assist factories),
+  task deadlines (stuck → reassign, deposit blacklist), engineers flee threats; factory queues (engineer target,
+  scouts, tank/artillery/mobile-AA mix by enemy air; interceptors/bombers).
+- `AiPlacement`: spiral search with `OccupancyGrid.CanPlace` + free margin (3 factories / 2 others, relaxed pass),
+  keeps deposits and the rally point clear, land-reachability for factories, reservations, failure cooldown.
+- `AiMilitary`: rally pool → attack waves (growing size) to the best reachable known enemy structure
+  (`PathService.CanReach`), retarget/stuck handling, retreat when beaten, base/expansion defense pulls nearby units,
+  clearing enemies off our deposits, commander retreats when hurt, interceptor patrols, bomber raids, scouts.
+- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1] [threads] [players]`
+  (`aipassive` = army 0 idle; env `AI_STATUS_SECONDS`, `AI_GROUPS=1` for more output).
+
 ## Client (`Rts.Client`)
 - `GameApp`: options + window + screen loop (`Menus/AppHost`, `IScreen`): `MainMenuScreen` → `SettingsScreen` /
   `SkirmishSetupScreen` (slots, map settings, live `MapPreview`) → `LoadingScreen` (sim built on a worker thread) →
@@ -109,5 +150,19 @@ interpolates prev/cur by time
   `FrameView` (per-frame matrices, frustum culling), `PerfOverlay` (frame time, F8).
   Unit model vertex colors: rgb = albedo, alpha = material tag (255 metal, 0 team color, 128 glow).
   Debug: `--gallery` (all shapes), `--fxtest`/F9 (fake battle effects), F10 (explosion), `--stress N`.
-- `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes.
+  `PropRenderer` (wrecks from `SimSnapshot.Props`: the unit's model with a burnt-metal shader, sunk/tilted, embers +
+  smoke when fresh, sinking while reclaimed; gray dots in the strategic view). Effects/wreck animations run in game
+  time (`EffectsRenderer.GameDt`: frozen while paused, faster at 2x).
+- `Audio/`: everything synthesized at startup (no asset files). `Synth` (DSP layers) + `SoundBank` (recipes, variants,
+  gains/voice limits) → raylib Sounds with alias voice pools (`AudioEngine`); `AmbientSynth` renders wind, generative
+  music and reclaim/build hums into a real-time AudioStream; `GameAudio` maps snapshot `EffectEvent`s (incl.
+  `WeaponIndex`) to positional one-shots (listener = camera focus, zoom ducking, pan, per-frame merging) and raises
+  alerts (under attack, stall, unit ready). `UiSounds` = click/confirm/error requests. `--nosound`; no device = silent.
+- `Rendering/FogRenderer`: fog of war on the client. Uploads `SimSnapshot.Fog` into two R8 textures (previous/current
+  tick, bilinear) sampled by terrain/water/unit shaders via `Shaders.FogOfWarFs` (unexplored dark, explored
+  dimmed/desaturated, 5-tap soft edges, blended by the interpolation alpha); radar blips as army-colored ring sprites;
+  minimap fog/ghosts/blips; ghost structures are drawn greyed by `UnitRenderer`/`IconRenderer`. F7 / `--nofog`: reveal
+  all. Picking/selection need no special code: unseen enemies are simply not in the snapshot.
+- `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
+  `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.

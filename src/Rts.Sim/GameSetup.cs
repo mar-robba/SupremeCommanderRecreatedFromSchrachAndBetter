@@ -16,6 +16,8 @@ public sealed class SkirmishSettings
     public float WaterAmount = -1;
     /// <summary>Which armies are AI-controlled (army 0 is the local human by default).</summary>
     public bool[] AiPlayers = [false, true];
+    /// <summary>Skirmish AI difficulty per army (default Normal; only used for AI armies).</summary>
+    public AiDifficulty[]? AiDifficulties;
     /// <summary>Team per army; default = every army on its own team (free for all).</summary>
     public int[]? Teams;
     /// <summary>Optional per-army colors (0xRRGGBBAA) and names; defaults: <see cref="GameSetup.ArmyColors"/>, "Player"/"AI n".</summary>
@@ -52,6 +54,7 @@ public static class GameSetup
                 Team = s.Teams != null && a < s.Teams.Length ? s.Teams[a] : a,
                 Color = s.Colors != null && a < s.Colors.Length ? s.Colors[a] : ArmyColors[a % ArmyColors.Length],
                 IsAI = a < s.AiPlayers.Length && s.AiPlayers[a],
+                AiDifficulty = s.AiDifficulties != null && a < s.AiDifficulties.Length ? s.AiDifficulties[a] : AiDifficulty.Normal,
             };
         }
 

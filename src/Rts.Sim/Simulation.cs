@@ -15,6 +15,8 @@ public sealed class Simulation
 {
     public readonly SimWorld World;
     public double LastTickMs { get; private set; }
+    /// <summary>Commands produced by the skirmish AI this tick (reused list).</summary>
+    private readonly List<Command> _aiCommands = new();
 
     public Simulation(SimWorld world) => World = world;
 
@@ -25,6 +27,8 @@ public sealed class Simulation
         w.Tick++;
 
         CommandSystem.Run(w, commands);
+        AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands
+        CommandSystem.Run(w, _aiCommands);
         w.Units.RebuildAliveList();
         w.Projectiles.RebuildAliveList();
         w.Grid.Rebuild(w.Units);
@@ -47,9 +51,12 @@ public sealed class Simulation
 
     public void Step() => Step(Array.Empty<Command>());
 
-    public void WriteSnapshot(SimSnapshot s)
+    public void WriteSnapshot(SimSnapshot s) => WriteSnapshot(s, -1);
+
+    /// <summary>viewArmy &gt;= 0: fog-of-war filtered snapshot for that army (-1 = everything visible).</summary>
+    public void WriteSnapshot(SimSnapshot s, int viewArmy)
     {
-        SnapshotWriter.Write(World, s);
+        SnapshotWriter.Write(World, s, viewArmy);
         s.TickDurationMs = LastTickMs;
     }
 

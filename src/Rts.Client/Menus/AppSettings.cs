@@ -1,18 +1,21 @@
 using System.Text.Json;
 using Raylib_cs;
+using Rts.Client.Audio;
 
 namespace Rts.Client.Menus;
 
 /// <summary>
-/// User settings (persisted as JSON in the user's config folder): volume, fullscreen, window resolution and the
-/// last skirmish setup. <see cref="MasterVolume"/> is applied with raylib's SetMasterVolume when an audio
-/// device is open (audio code may also read it).
+/// User settings (persisted as JSON in the user's config folder): volumes, fullscreen, window resolution and the
+/// last skirmish setup. Volumes are copied into the live <see cref="AudioSettings"/> with <see cref="ApplyVolume"/>
+/// (the app-wide <see cref="AudioSystem"/> applies them every frame).
 /// </summary>
 public sealed class AppSettings
 {
     public static readonly (int w, int h)[] Resolutions = [(1280, 720), (1600, 900), (1920, 1080), (2560, 1440)];
 
     public float MasterVolume { get; set; } = 0.8f;
+    public float SfxVolume { get; set; } = 1f;
+    public float MusicVolume { get; set; } = 0.45f;
     public bool Fullscreen { get; set; }
     public int Width { get; set; } = 1600;
     public int Height { get; set; } = 900;
@@ -61,9 +64,12 @@ public sealed class AppSettings
         }
     }
 
-    public void ApplyVolume()
+    /// <summary>Copies the saved volumes into the live audio settings.</summary>
+    public void ApplyVolume(AudioSettings audio)
     {
-        if (Raylib.IsAudioDeviceReady()) Raylib.SetMasterVolume(Math.Clamp(MasterVolume, 0f, 1f));
+        audio.Master = Math.Clamp(MasterVolume, 0f, 1f);
+        audio.Sfx = Math.Clamp(SfxVolume, 0f, 1f);
+        audio.Music = Math.Clamp(MusicVolume, 0f, 1f);
     }
 
     /// <summary>Applies fullscreen (borderless) on/off.</summary>

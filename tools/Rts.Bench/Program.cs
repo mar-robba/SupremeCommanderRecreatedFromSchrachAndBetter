@@ -7,6 +7,12 @@ using Rts.Sim.Orders;
 
 // Headless benchmark: N units per side attack-move across the map.
 // Usage: Rts.Bench [unitsPerSide] [ticks] [threads (0 = default)] [mapSize = 512]
+//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players]  (skirmish AI match, see AiMatch.cs)
+if (args.Length > 0 && args[0] is "ai" or "aipassive")
+{
+    AiMatch.Run(args[1..], passive: args[0] == "aipassive");
+    return;
+}
 int perSide = args.Length > 0 ? int.Parse(args[0]) : 2000;
 int ticks = args.Length > 1 ? int.Parse(args[1]) : 300;
 if (args.Length > 2 && int.Parse(args[2]) > 0) Par.MaxThreads = int.Parse(args[2]);
@@ -14,7 +20,7 @@ int mapSize = args.Length > 3 ? int.Parse(args[3]) : 512;
 
 var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
 var setup = Stopwatch.StartNew();
-var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings { MapSize = mapSize, Seed = 3, UnitCapacity = Math.Max(16384, perSide * 2 + 1000) });
+var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings { MapSize = mapSize, Seed = 3, UnitCapacity = Math.Max(16384, perSide * 2 + 1000), AiPlayers = [false, false] });
 var w = sim.World;
 string[] kinds = ["uef_t1_tank", "uef_t1_artillery", "uef_t1_mobile_aa", "uef_t1_interceptor"];
 var sides = new[] { new List<UnitHandle>(), new List<UnitHandle>() };
@@ -40,6 +46,9 @@ Console.WriteLine($"setup {setup.Elapsed.TotalMilliseconds:F0} ms (first tick in
 var times = new List<double>();
 var pathMs = new List<double>();
 var moveMs = new List<double>();
+var intelMs = new List<double>();
+var snapMs = new List<double>();
+var snap = new Rts.Sim.Snapshot.SimSnapshot();
 var stats = w.Paths.Stats;
 long solves0 = stats.TotalSolves, exp0 = stats.TotalExpanded;
 var total = Stopwatch.StartNew();
@@ -49,6 +58,10 @@ for (int t = 0; t < ticks; t++)
     times.Add(sim.LastTickMs);
     pathMs.Add(stats.LastPathMs);
     moveMs.Add(stats.LastMoveMs);
+    intelMs.Add(w.Intel.LastUpdateMs);
+    var snapSw = Stopwatch.StartNew();
+    sim.WriteSnapshot(snap, 0); // fog-of-war filtered snapshot for army 0 (as the client does)
+    snapMs.Add(snapSw.Elapsed.TotalMilliseconds);
     if (Environment.GetEnvironmentVariable("BENCH_VERBOSE") == "1" && sim.LastTickMs > 8)
         Console.WriteLine($"  tick {w.Tick}: {sim.LastTickMs:F1} ms (path {stats.LastPathMs:F1}: {stats.LastRequests} req, {stats.LastSolves} solves, {stats.LastSplices} splices; move {stats.LastMoveMs:F1})");
 }
@@ -64,6 +77,8 @@ Console.WriteLine($"map={mapSize} units={w.Units.AliveCount} projectiles={w.Proj
 Console.WriteLine($"tick ms: {Summ(times)} (budget 100ms @10Hz)");
 Console.WriteLine($"  path ms: {Summ(pathMs)}");
 Console.WriteLine($"  move ms: {Summ(moveMs)}");
+Console.WriteLine($"  intel ms: {Summ(intelMs)} (fog grid {w.Intel.Cols}x{w.Intel.Rows})");
+Console.WriteLine($"  snapshot ms (view army 0, not in tick): {Summ(snapMs)}");
 long solves = stats.TotalSolves - solves0;
 Console.WriteLine($"  path solves={solves} splices={stats.TotalSplices} avgExpanded={(solves > 0 ? (double)(stats.TotalExpanded - exp0) / solves : 0):F0} goalFields={w.Paths.CachedGoalFields}");
 Console.WriteLine($"total {total.Elapsed.TotalSeconds:F1}s, hash={sim.StateHash():X16}");

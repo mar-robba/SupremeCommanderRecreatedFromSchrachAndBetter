@@ -47,6 +47,10 @@ public sealed class UnitPanel
         Raylib.DrawRectangleLinesEx(iconR, 1, Ui.PanelBorder);
         // Army color strip under the icon.
         Raylib.DrawRectangleRec(new Rectangle(iconR.X, iconR.Y + icon + Ui.P(3), icon, Ui.P(3)), _ctx.ArmyColors[v.Army]);
+        // Veterancy stars on the icon.
+        int vet = VeterancyLevel(bp, v.Kills);
+        for (int i = 0; i < vet; i++)
+            DrawStar(new Vector2(iconR.X + Ui.P(7) + i * Ui.P(10), iconR.Y + Ui.P(7)), Ui.P(5), new Color(255, 215, 80, 255));
 
         float tx = iconR.X + icon + Ui.P(8);
         float tw = r.X + r.Width - pad - tx;
@@ -92,6 +96,8 @@ public sealed class UnitPanel
 
         // Key stats (two compact columns).
         var stats = KeyStats(bp);
+        if (bp.Weapons.Length > 0 || v.Kills > 0)
+            stats.Insert(0, ("Kills", vet > 0 ? $"{v.Kills} (vet {vet})" : v.Kills.ToString(), vet > 0 ? new Color(255, 215, 80, 255) : Ui.TextColor));
         float colW = bw * 0.5f;
         for (int i = 0; i < stats.Count; i++)
         {
@@ -222,6 +228,32 @@ public sealed class UnitPanel
                     new($"Health {g.hp:0} / {g.max:0}", Ui.TextDim, 11.5f),
                     new("Click: select only these   Shift+click / right-click: deselect", Ui.TextFaint, 11),
                 });
+        }
+    }
+
+    /// <summary>Veterancy stars (0..5): a level every 3 kills per tech level (commander / experimentals: 20).
+    /// Cosmetic for now — the sim does not apply veterancy bonuses yet.</summary>
+    public static int VeterancyLevel(UnitBlueprint bp, int kills)
+    {
+        int per = bp.Has(UnitCategory.Commander) || bp.Has(UnitCategory.Experimental) ? 20 : 3 * Math.Max(1, bp.Tech);
+        return Math.Clamp(kills / per, 0, 5);
+    }
+
+    /// <summary>Filled five-pointed star (dark outline) centered at c.</summary>
+    public static void DrawStar(Vector2 c, float r, Color col)
+    {
+        Span<Vector2> pts = stackalloc Vector2[10];
+        for (int i = 0; i < 10; i++)
+        {
+            float a = -MathF.PI / 2 + i * MathF.PI / 5;
+            float rr = i % 2 == 0 ? r : r * 0.45f;
+            pts[i] = c + new Vector2(MathF.Cos(a), MathF.Sin(a)) * rr;
+        }
+        Raylib.DrawCircleV(c, r * 0.55f, new Color(0, 0, 0, 120));
+        for (int i = 0; i < 10; i++)
+        {
+            // Screen space (y down): (c, p[i+1], p[i]) is counter-clockwise on screen.
+            Raylib.DrawTriangle(c, pts[(i + 1) % 10], pts[i], col);
         }
     }
 

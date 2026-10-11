@@ -20,6 +20,8 @@ public sealed class GameContext
     public required FeedbackMarkers Feedback;
     public int LocalArmy;
     public Color[] ArmyColors = [];
+    /// <summary>Fog of war renderer (null before it is created).</summary>
+    public FogRenderer? Fog;
 
     public bool IsEnemy(int army)
     {

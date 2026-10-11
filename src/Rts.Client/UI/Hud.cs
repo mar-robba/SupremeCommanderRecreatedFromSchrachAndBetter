@@ -185,7 +185,9 @@ public sealed class Hud : IDisposable
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
             new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
-            new("+ / - game speed · Space pause · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
+            new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
+            new("Engineers: right-click wreck = reclaim, damaged / unfinished unit = repair, factory = assist · M (nothing selected) or Ctrl+M mute · Ctrl+Shift+M music", d, 11.5f),
+            new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
         ];
     }
 

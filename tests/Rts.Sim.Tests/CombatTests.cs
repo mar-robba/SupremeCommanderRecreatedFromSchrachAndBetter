@@ -90,6 +90,8 @@ public class CombatTests
     {
         var sim = CombatWorld.Flat();
         var arty = CombatWorld.Spawn(sim, "uef_t1_artillery", 0, 36, 64);
+        // Fog of war: the artillery (vision 18) needs a spotter to see targets 24 units away (scout: vision 40).
+        CombatWorld.Spawn(sim, "uef_t1_scout", 0, 36, 70);
         var tanks = new List<UnitHandle>();
         for (int r = 0; r < 3; r++)
         for (int c = 0; c < 3; c++)

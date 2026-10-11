@@ -96,6 +96,7 @@ public sealed class Minimap : IDisposable
         Ui.Panel(panel);
         Raylib.DrawRectangleRec(Ui.Inset(m, -1), Color.Black);
         Raylib.DrawTexturePro(_tex, new Rectangle(0, 0, _tex.Width, _tex.Height), m, Vector2.Zero, 0, Color.White);
+        _ctx.Fog?.DrawMinimapFog(m);
 
         Raylib.BeginScissorMode((int)m.X, (int)m.Y, (int)m.Width, (int)m.Height);
         float k = m.Width / _ctx.Terrain.Width;
@@ -139,6 +140,7 @@ public sealed class Minimap : IDisposable
             }
         }
 
+        _ctx.Fog?.DrawMinimapContacts(m, snap, dot); // fog of war: ghosts + radar blips
         DrawCameraView(m);
         Raylib.EndScissorMode();
         Raylib.DrawRectangleLinesEx(Ui.Inset(m, -1), 1, Ui.PanelBorder);

@@ -1,3 +1,4 @@
+using Rts.Client.Audio;
 using Rts.Sim.Data;
 
 namespace Rts.Client.Menus;
@@ -19,6 +20,8 @@ public sealed class AppHost : IDisposable
     public readonly BlueprintDb Db;
     /// <summary>Command-line options (screenshot mode, debug flags).</summary>
     public readonly ClientOptions Options;
+    /// <summary>App-wide audio (device, sound bank, music); volumes in <c>Audio.Settings</c>.</summary>
+    public readonly AudioSystem Audio;
     public IScreen Current = null!;
     private IScreen? _next;
     private MenuBackdrop? _backdrop;
@@ -26,10 +29,11 @@ public sealed class AppHost : IDisposable
     /// <summary>The skirmish setup being edited (kept between visits of the setup screen).</summary>
     public GameConfig SetupConfig;
 
-    public AppHost(BlueprintDb db, ClientOptions options)
+    public AppHost(BlueprintDb db, ClientOptions options, AudioSystem audio)
     {
         Db = db;
         Options = options;
+        Audio = audio;
         var s = AppSettings.Current;
         SetupConfig = new GameConfig
         {
@@ -56,6 +60,7 @@ public sealed class AppHost : IDisposable
         FxTest = Options.FxTest, Gallery = Options.Gallery, ScreenshotPath = Options.ScreenshotPath,
         Frames = Options.Frames, PauseMenu = Options.PauseMenu, EndScreen = Options.EndScreen,
         FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,
+        Audio = Options.Audio, VolumeGiven = Options.VolumeGiven, NoFog = Options.NoFog,
     };
 
     public void StartGame(GameConfig cfg, ClientOptions opt) => Go(new LoadingScreen(this, cfg.Clone(), opt));

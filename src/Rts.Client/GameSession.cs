@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Menus;
 using Rts.Client.Rendering;
@@ -30,6 +31,9 @@ public sealed class GameSession : IDisposable
     private readonly TerrainRenderer _terrainR;
     private readonly UnitRenderer _unitR;
     private readonly EffectsRenderer _fx;
+    private readonly FogRenderer _fog;
+    private readonly PropRenderer _props;
+    private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly SelectionController _selection;
     private readonly Hud _hud;
@@ -40,15 +44,18 @@ public sealed class GameSession : IDisposable
     public static Simulation CreateSimulation(BlueprintDb db, GameConfig cfg, out int localArmy)
     {
         var settings = cfg.ToSkirmish(out localArmy);
+        // AI slots: Army.IsAI + Army.AiDifficulty → driven by the in-sim skirmish AI (Rts.Sim/AI).
         var sim = GameSetup.CreateSkirmish(db, settings);
-        var open = cfg.OpenSlots.ToList();
-        for (int a = 0; a < sim.World.Armies.Length && a < open.Count; a++)
-            sim.World.Armies[a].AiDifficulty = open[a].Difficulty;
-        if (cfg.Demo) GameApp.SpawnDemo(sim, cfg.Stress);
+        if (cfg.Demo)
+        {
+            GameApp.SpawnDemo(sim, cfg.Stress);
+            FogRenderer.SpawnDemoRadars(sim);
+        }
         return sim;
     }
 
-    public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt)
+    /// <param name="audio">App-wide audio (null = this game opens its own device from <c>opt.Audio</c>).</param>
+    public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt, AudioSystem? audio = null)
     {
         Db = db;
         Sim = sim;
@@ -67,11 +74,17 @@ public sealed class GameSession : IDisposable
             TerrainRenderer = _terrainR, Feedback = new FeedbackMarkers(), LocalArmy = localArmy,
             ArmyColors = sim.World.Armies.Select(a => ColorUtil.FromRgba(a.Color)).ToArray(),
         };
+        // Fog of war: the runner filters snapshots for the local (human) army; --nofog / F7 reveal all.
+        _fog = new FogRenderer(Ctx, !opt.NoFog);
+        Ctx.Fog = _fog;
         _fx = new EffectsRenderer(Ctx, opt.FxTest);
         _perf = new PerfOverlay();
         _selection = new SelectionController(Ctx);
         _hud = new Hud(Ctx, _selection);
         _hud.ApplyStartupOptions(opt);
+        _props = new PropRenderer(Ctx, _fx.Particles);
+        UiSounds.Drain(); // drop clicks queued by the menus
+        _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
 
         var start = terrain.StartPositions[localArmy % terrain.StartPositions.Length];
         if (opt.CameraXZD is Vector3 cxz) _camera.LookAt(cxz.X, cxz.Y, cxz.Z);
@@ -82,6 +95,7 @@ public sealed class GameSession : IDisposable
 
     public SelectionController Selection => _selection;
     public SnapshotInterpolator Snapshots => _interp;
+    public FogRenderer Fog => _fog;
 
     /// <summary>
     /// True if Esc should open the pause menu: no command mode, no placement, no dialog. With units selected Esc
@@ -109,13 +123,15 @@ public sealed class GameSession : IDisposable
         var ctx = Ctx;
         _perf.BeginFrame();
         _interp.Update();
+        _fog.Update(_interp, keys: interactive);
         bool overUi = interactive && _hud.MouseOverUi();
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
             _selection.Update(overUi);
-            GameApp.DebugKeys(ctx);
         }
+        _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
+        if (interactive) GameApp.DebugKeys(ctx);
 
         var cur = _interp.Current;
         var prev = _interp.Prev;
@@ -128,13 +144,16 @@ public sealed class GameSession : IDisposable
         _terrainR.Draw(_camera.Camera);
         _terrainR.DrawDeposits();
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
+        _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
         ctx.Feedback.Draw();
         _terrainR.DrawWater();
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
 
+        _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
+        _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
         if (interactive)
         {
@@ -145,7 +164,9 @@ public sealed class GameSession : IDisposable
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             _hud.Draw();
+            CursorHint.Draw(ctx, _selection, overUi);
         }
+        _audio.DrawOverlay();
         _perf.Draw(_unitR, _fx);
     }
 
@@ -174,8 +195,11 @@ public sealed class GameSession : IDisposable
         if (_disposed) return;
         _disposed = true;
         Runner.Stop();
+        _audio.Dispose();
         _hud.Dispose();
+        _props.Dispose();
         _fx.Dispose();
+        _fog.Dispose();
         _unitR.Dispose();
         _terrainR.Dispose();
     }

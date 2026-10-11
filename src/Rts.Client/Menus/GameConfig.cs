@@ -88,6 +88,7 @@ public sealed class GameConfig
         {
             MapSize = MapSize, Seed = Seed, Players = n, MapPreset = Preset, WaterAmount = WaterAmount,
             AiPlayers = open.Select(s => s.Kind == SlotKind.AI).ToArray(),
+            AiDifficulties = open.Select(s => s.Difficulty).ToArray(),
             // Free-for-all slots get a unique team id; numbered teams share theirs.
             Teams = open.Select((s, a) => s.Team > 0 ? s.Team : 100 + a).ToArray(),
             Colors = open.Select(s => GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length]).ToArray(),

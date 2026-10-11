@@ -78,7 +78,7 @@ public sealed class LoadingScreen : IScreen
             if (!_shownFinal) { _shownFinal = true; return; }
             _done = true;
             var (sim, local) = _task.Result;
-            var session = new GameSession(_app.Db, sim, _cfg, local, _opt);
+            var session = new GameSession(_app.Db, sim, _cfg, local, _opt, _app.Audio);
             _app.Go(new InGameScreen(_app, session, _opt));
         }
     }

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Menus;
 using Rts.Client.Rendering;
@@ -59,6 +60,13 @@ public sealed class ClientOptions
     /// <summary>Debug: render one model of every unit shape near the player start.</summary>
     public bool Gallery;
     public bool NoVsync;
+    /// <summary>Audio options: --nosound, --sound (keep audio in screenshot runs), --volume F, --sfx-volume F,
+    /// --music-volume F, --nomusic (see Audio/GameAudio.cs).</summary>
+    public AudioSettings Audio = new();
+    /// <summary>A volume option was given on the command line (overrides the saved settings for this run).</summary>
+    public bool VolumeGiven;
+    /// <summary>Disable the fog of war (reveal all; also toggled with F7).</summary>
+    public bool NoFog;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -69,7 +77,9 @@ public sealed class ClientOptions
         {
             string a = args[i];
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
-            if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test")) gameArg = true;
+            // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
+            if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -111,8 +121,15 @@ public sealed class ClientOptions
                 case "--fxtest": o.FxTest = true; break;
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
+                case "--nofog": o.NoFog = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
-                default: throw new ArgumentException("unknown argument " + a);
+                default:
+                    if (AudioSettings.ParseArg(a, Next, o.Audio))
+                    {
+                        if (a is "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic") o.VolumeGiven = true;
+                        break;
+                    }
+                    throw new ArgumentException("unknown argument " + a);
             }
         }
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
@@ -152,12 +169,14 @@ public static class GameApp
         Raylib.SetExitKey(KeyboardKey.Null);
         Rlgl.SetClipPlanes(0.5, 6000);
         if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();
-        settings.ApplyVolume();
+        // Saved volumes, unless given on the command line; one audio device for the whole app (menus + games).
+        if (!opt.VolumeGiven) settings.ApplyVolume(opt.Audio);
+        var audio = new AudioSystem(opt.Audio, automated: opt.ScreenshotPath != null);
 
-        var app = new AppHost(db, opt);
+        var app = new AppHost(db, opt, audio);
         app.Current = opt.StartScreen switch
         {
-            StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt), opt),
+            StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt, audio), opt),
             StartScreen.Setup => new SkirmishSetupScreen(app),
             StartScreen.Settings => new SettingsScreen(app),
             _ => new MainMenuScreen(app),
@@ -170,6 +189,7 @@ public static class GameApp
             Raylib.BeginDrawing();
             app.Current.Frame(dt);
             Raylib.EndDrawing();
+            if (app.Current is not InGameScreen) audio.MenuUpdate(dt); // in game GameAudio drives the device
 
             frame++;
             if (opt.ScreenshotPath != null && frame >= opt.Frames)
@@ -183,6 +203,7 @@ public static class GameApp
             app.EndFrame();
         }
         app.Dispose();
+        audio.Dispose();
         Raylib.CloseWindow();
     }
 

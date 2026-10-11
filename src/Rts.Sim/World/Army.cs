@@ -20,6 +20,9 @@ public sealed class EconomyState
     public float EnergyEfficiency = 1;
 }
 
+/// <summary>Skirmish AI difficulty (reaction speed, build efficiency, attack timing, micro).</summary>
+public enum AiDifficulty { Easy, Normal, Hard }
+
 /// <summary>A player (human or AI). Index is used everywhere as the army id.</summary>
 public sealed class Army
 {
@@ -31,7 +34,8 @@ public sealed class Army
     public uint Color = 0xFFFFFFFF;
     public string Faction = "uef";
     public bool IsAI;
-    public AiDifficulty AiDifficulty;
+    /// <summary>Difficulty of the skirmish AI controlling this army (only used when IsAI).</summary>
+    public AiDifficulty AiDifficulty = AiDifficulty.Normal;
     public bool Defeated;
     public UnitHandle Commander = UnitHandle.None;
     public int UnitCap = 1000;
@@ -41,5 +45,3 @@ public sealed class Army
     /// <summary>Game statistics (end screen).</summary>
     public readonly ArmyStats Stats = new();
 }
-
-public enum AiDifficulty { Easy, Normal, Hard }
