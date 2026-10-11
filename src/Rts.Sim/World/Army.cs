@@ -42,4 +42,6 @@ public sealed class Army
     /// <summary>Live units owned (updated each tick).</summary>
     public int UnitCount;
     public readonly EconomyState Eco = new();
+    /// <summary>Game statistics (end screen).</summary>
+    public readonly ArmyStats Stats = new();
 }

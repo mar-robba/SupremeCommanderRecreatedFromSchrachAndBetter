@@ -2,24 +2,46 @@ using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Audio;
 using Rts.Client.Input;
+using Rts.Client.Menus;
 using Rts.Client.Rendering;
 using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
+using Rts.Sim.Map;
 using Rts.Sim.Orders;
 using Rts.Sim.World;
 
 namespace Rts.Client;
+
+/// <summary>Which client state the app starts in.</summary>
+public enum StartScreen { Game, MainMenu, Setup, Settings }
 
 public sealed class ClientOptions
 {
     public int Seed = 42;
     public int MapSize = 256;
     public int Players = 2;
+    public MapPreset Preset = MapPreset.Plains;
+    /// <summary>0..1, negative = preset default.</summary>
+    public float WaterAmount = -1;
+    public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
     public int Width = 1600;
     public int Height = 900;
+    /// <summary>
+    /// No arguments (or only window flags) → main menu; --menu / --setup / --settings → that screen; any game
+    /// argument (--demo, --map, --seed, --screenshot, --ui-demo, --stress, ...) → straight into a game as before.
+    /// </summary>
+    public StartScreen StartScreen = StartScreen.MainMenu;
+    /// <summary>Screenshot helpers: open the pause menu / end screen ~15 frames before the capture.</summary>
+    public bool PauseMenu;
+    public bool EndScreen;
+    /// <summary>Screenshot helper: the skirmish setup screen starts the game as soon as the preview is ready.</summary>
+    public bool AutoStart;
+    /// <summary>Debug: scripted menu flow (game → Restart → Quit to Menu → Skirmish → autostart → …) to exercise
+    /// screen switches and resource disposal.</summary>
+    public bool FlowTest;
     /// <summary>If set: run Frames frames, save a PNG screenshot here and exit (for automated visual checks).</summary>
     public string? ScreenshotPath;
     public int Frames = 120;
@@ -41,25 +63,46 @@ public sealed class ClientOptions
     /// <summary>Audio options: --nosound, --sound (keep audio in screenshot runs), --volume F, --sfx-volume F,
     /// --music-volume F, --nomusic (see Audio/GameAudio.cs).</summary>
     public AudioSettings Audio = new();
+    /// <summary>A volume option was given on the command line (overrides the saved settings for this run).</summary>
+    public bool VolumeGiven;
     /// <summary>Disable the fog of war (reveal all; also toggled with F7).</summary>
     public bool NoFog;
 
     public static ClientOptions Parse(string[] args)
     {
         var o = new ClientOptions();
+        StartScreen? screen = null;
+        bool gameArg = false;
         for (int i = 0; i < args.Length; i++)
         {
             string a = args[i];
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
+            // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
+            if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
-                case "--map": o.MapSize = int.Parse(Next()); break;
-                case "--players": o.Players = int.Parse(Next()); break;
+                case "--map": o.MapSize = int.Parse(Next()); o.MapSizeGiven = true; break;
+                case "--players": o.Players = int.Parse(Next()); o.PlayersGiven = true; break;
+                case "--preset":
+                    string pn = Next();
+                    if (!MapPresets.TryParse(pn, out o.Preset)) throw new ArgumentException("unknown preset " + pn + " (plains, lakes, highlands, canyon, archipelago)");
+                    o.PresetGiven = true;
+                    break;
+                case "--water": o.WaterAmount = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
+                case "--menu": screen = StartScreen.MainMenu; break;
+                case "--setup": screen = StartScreen.Setup; break;
+                case "--settings": screen = StartScreen.Settings; break;
+                case "--pause-menu": o.PauseMenu = true; break;
+                case "--autostart": o.AutoStart = true; break;
+                case "--flow-test": o.FlowTest = o.AutoStart = true; break;
+                case "--endscreen": o.EndScreen = true; break;
                 case "--demo": o.Demo = true; break;
                 case "--size":
                     var wh = Next().Split('x');
                     o.Width = int.Parse(wh[0]); o.Height = int.Parse(wh[1]);
+                    o.SizeGiven = true;
                     break;
                 case "--screenshot": o.ScreenshotPath = Path.GetFullPath(Next()); break;
                 case "--frames": o.Frames = int.Parse(Next()); break;
@@ -81,109 +124,72 @@ public sealed class ClientOptions
                 case "--nofog": o.NoFog = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
                 default:
-                    if (AudioSettings.ParseArg(a, Next, o.Audio)) break;
+                    if (AudioSettings.ParseArg(a, Next, o.Audio))
+                    {
+                        if (a is "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic") o.VolumeGiven = true;
+                        break;
+                    }
                     throw new ArgumentException("unknown argument " + a);
             }
         }
+        o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
         return o;
     }
 }
 
+/// <summary>
+/// Application shell: window, settings and the screen loop (<see cref="AppHost"/>: main menu → skirmish setup →
+/// loading → in-game with pause menu and end screen). The in-game frame lives in <see cref="GameSession.Frame"/>.
+/// Command-line game arguments still go straight into a game (automated screenshots rely on it).
+/// </summary>
 public static class GameApp
 {
     public static void Run(ClientOptions opt)
     {
+        AppSettings.Persist = opt.ScreenshotPath == null;
+        MenuUi.Automated = opt.ScreenshotPath != null;
+        var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
-        var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings
-        {
-            Seed = opt.Seed, MapSize = opt.MapSize, Players = opt.Players,
-            AiPlayers = Enumerable.Range(0, opt.Players).Select(i => i > 0).ToArray(),
-        });
-        if (opt.Demo) SpawnDemo(sim, opt.Stress);
-        if (opt.Demo) FogRenderer.SpawnDemoRadars(sim);
 
+        // Direct game (CLI): the simulation is created before the window, exactly as before the menus existed.
+        GameConfig? directCfg = null;
+        Simulation? directSim = null;
+        int directLocal = 0;
+        if (opt.StartScreen == StartScreen.Game)
+        {
+            directCfg = GameConfig.FromOptions(opt);
+            directSim = GameSession.CreateSimulation(db, directCfg, out directLocal);
+        }
+
+        int width = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Width : settings.Width;
+        int height = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Height : settings.Height;
         Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | (opt.NoVsync ? 0 : ConfigFlags.VSyncHint));
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
-        Raylib.InitWindow(opt.Width, opt.Height, "RTS — Supreme Commander-like");
+        Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
         Raylib.SetExitKey(KeyboardKey.Null);
         Rlgl.SetClipPlanes(0.5, 6000);
+        if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();
+        // Saved volumes, unless given on the command line; one audio device for the whole app (menus + games).
+        if (!opt.VolumeGiven) settings.ApplyVolume(opt.Audio);
+        var audio = new AudioSystem(opt.Audio, automated: opt.ScreenshotPath != null);
 
-        var terrain = sim.World.Terrain;
-        using var runner = new SimRunner(sim);
-        var interp = new SnapshotInterpolator(runner);
-        var camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
-        using var terrainR = new TerrainRenderer(terrain);
-        using var unitR = new UnitRenderer(db, terrain);
-        UnitRenderer.Gallery = opt.Gallery;
-        var ctx = new GameContext
+        var app = new AppHost(db, opt, audio);
+        app.Current = opt.StartScreen switch
         {
-            Db = db, Terrain = terrain, Runner = runner, Snapshots = interp, Camera = camera,
-            TerrainRenderer = terrainR, Feedback = new FeedbackMarkers(), LocalArmy = 0,
-            ArmyColors = sim.World.Armies.Select(a => ColorUtil.FromRgba(a.Color)).ToArray(),
+            StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt, audio), opt),
+            StartScreen.Setup => new SkirmishSetupScreen(app),
+            StartScreen.Settings => new SettingsScreen(app),
+            _ => new MainMenuScreen(app),
         };
-        using var fog = new FogRenderer(ctx, !opt.NoFog);
-        ctx.Fog = fog;
-        using var fx = new EffectsRenderer(ctx, opt.FxTest);
-        var perf = new PerfOverlay();
-        var selection = new SelectionController(ctx);
-        var hud = new Hud(ctx, selection);
-        hud.ApplyStartupOptions(opt);
-        using var props = new PropRenderer(ctx, fx.Particles);
-        using var audio = new GameAudio(ctx, opt.Audio, automated: opt.ScreenshotPath != null);
 
-        var start = terrain.StartPositions[0];
-        if (opt.CameraXZD is Vector3 cxz) camera.LookAt(cxz.X, cxz.Y, cxz.Z);
-        else camera.LookAt(start.X, start.Y, 70);
-
-        runner.Start();
         int frame = 0;
-        var selectedSet = new HashSet<long>();
-        while (!Raylib.WindowShouldClose())
+        while (!Raylib.WindowShouldClose() && !app.QuitRequested)
         {
             float dt = Raylib.GetFrameTime();
-            perf.BeginFrame();
-            interp.Update();
-            fog.Update(interp);
-            bool overUi = hud.MouseOverUi();
-            camera.Update(dt, overUi, ctx.PickGround);
-            selection.Update(overUi);
-            audio.Update(dt, interp, selection.Selected.Count, selection.InputBlocked);
-            DebugKeys(ctx);
-
-            var cur = interp.Current;
-            var prev = interp.Prev;
-            float alpha = interp.Alpha;
-            selectedSet.Clear();
-            foreach (var h in selection.Selected) selectedSet.Add(((long)h.Index << 32) | (uint)h.Generation);
-
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(new Color(118, 150, 185, 255));
-            Raylib.BeginMode3D(camera.Camera);
-            terrainR.Draw(camera.Camera);
-            terrainR.DrawDeposits();
-            if (camera.Distance < IconRenderer.HideMeshDistance) unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
-            props.Draw(cur, dt);
-            DrawSelection3D(ctx, selection, cur, prev, alpha);
-            ctx.Feedback.Draw();
-            terrainR.DrawWater();
-            fx.Draw(dt, cur, prev, alpha, interp.NewEffects);
-            Raylib.EndMode3D();
-
-            props.DrawStrategic(cur);
-            IconRenderer.Draw(ctx, cur, prev, alpha, selectedSet);
-            fog.DrawBlips(cur, alpha);
-            DrawHealthBars(ctx, selectedSet, cur, prev, alpha);
-            if (selection.IsDragging)
-            {
-                var r = selection.DragRect;
-                Raylib.DrawRectangleRec(r, new Color(80, 200, 80, 40));
-                Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
-            }
-            hud.Draw();
-            CursorHint.Draw(ctx, selection, overUi);
-            audio.DrawOverlay();
-            perf.Draw(unitR, fx);
+            app.Current.Frame(dt);
             Raylib.EndDrawing();
+            if (app.Current is not InGameScreen) audio.MenuUpdate(dt); // in game GameAudio drives the device
 
             frame++;
             if (opt.ScreenshotPath != null && frame >= opt.Frames)
@@ -191,18 +197,18 @@ public static class GameApp
                 var img = Raylib.LoadImageFromScreen();
                 Raylib.ExportImage(img, opt.ScreenshotPath);
                 Raylib.UnloadImage(img);
-                Console.WriteLine($"Screenshot saved: {opt.ScreenshotPath} (tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)");
-                Console.WriteLine(perf.Summary());
-                if (runner.Fault != null) Console.WriteLine("SIM FAULT: " + runner.Fault);
+                Console.WriteLine($"Screenshot saved: {opt.ScreenshotPath} {app.Current.ScreenshotInfo}");
                 break;
             }
+            app.EndFrame();
         }
-        runner.Stop();
+        app.Dispose();
+        audio.Dispose();
         Raylib.CloseWindow();
     }
 
     /// <summary>Demo battle: two groups of mixed T1 units per army near each base, attack-moving at each other.</summary>
-    private static void SpawnDemo(Simulation sim, int stress = 0)
+    public static void SpawnDemo(Simulation sim, int stress = 0)
     {
         var w = sim.World;
         var db = w.Blueprints;
@@ -243,7 +249,7 @@ public static class GameApp
         return new IssueOrderCommand(a, units.ToArray(), Order.AttackMoveTo(center), false);
     }
 
-    private static void DebugKeys(GameContext ctx)
+    public static void DebugKeys(GameContext ctx)
     {
         if (Raylib.IsKeyPressed(KeyboardKey.Space)) ctx.Runner.Paused = !ctx.Runner.Paused;
         if (Raylib.IsKeyPressed(KeyboardKey.Equal) || Raylib.IsKeyPressed(KeyboardKey.KpAdd)) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
@@ -256,7 +262,7 @@ public static class GameApp
         }
     }
 
-    private static void DrawSelection3D(GameContext ctx, SelectionController sel, Rts.Sim.Snapshot.SimSnapshot cur, Rts.Sim.Snapshot.SimSnapshot? prev, float alpha)
+    public static void DrawSelection3D(GameContext ctx, SelectionController sel, Rts.Sim.Snapshot.SimSnapshot cur, Rts.Sim.Snapshot.SimSnapshot? prev, float alpha)
     {
         foreach (var h in sel.Selected)
         {
@@ -285,7 +291,7 @@ public static class GameApp
         }
     }
 
-    private static void DrawHealthBars(GameContext ctx, HashSet<long> selected, Rts.Sim.Snapshot.SimSnapshot cur, Rts.Sim.Snapshot.SimSnapshot? prev, float alpha)
+    public static void DrawHealthBars(GameContext ctx, HashSet<long> selected, Rts.Sim.Snapshot.SimSnapshot cur, Rts.Sim.Snapshot.SimSnapshot? prev, float alpha)
     {
         if (ctx.Camera.Distance > IconRenderer.IconDistance) return;
         for (int k = 0; k < cur.UnitCount; k++)

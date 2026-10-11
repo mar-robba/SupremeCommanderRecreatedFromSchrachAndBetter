@@ -142,6 +142,11 @@ public static class EconomySystem
             float consumedEnergy = t.EnergyOnly * effE + t.BothEnergy * effBoth;
             eco.Mass = Math.Clamp(eco.Mass + (incomeMass - consumedMass) * dt, 0, eco.MassMax);
             eco.Energy = Math.Clamp(eco.Energy + (t.ProdEnergy - consumedEnergy) * dt, 0, eco.EnergyMax);
+            var stats = w.Armies[a].Stats;
+            stats.MassCollected += incomeMass * dt;
+            stats.EnergyCollected += t.ProdEnergy * dt;
+            stats.MassSpent += consumedMass * dt;
+            stats.EnergySpent += consumedEnergy * dt;
         }
 
         // Pass 2 (only units that requested something): per-unit efficiency, upkeep-scaled production.

@@ -50,14 +50,17 @@ public sealed class AudioSettings
 /// sound in a frame are merged (the loudest few play, slightly boosted) and each sound has a voice limit.</para>
 /// Degrades to a silent no-op without an audio device or with --nosound. Keys: M (nothing selected) or
 /// Ctrl+M mute, Ctrl+Shift+M music on/off.
+/// <para>Device, sound bank and ambient stream belong to the app-wide <see cref="AudioSystem"/> (shared by every
+/// game and the menus); this class is per game.</para>
 /// </summary>
 public sealed class GameAudio : IDisposable
 {
     private readonly GameContext _ctx;
     public readonly AudioSettings Settings;
-    private readonly AudioEngine _engine = new();
-    private readonly AmbientSynth _ambient = new(7);
-    private Task<float[][][]>? _bank;
+    private readonly AudioSystem _sys;
+    private readonly bool _ownsSystem;
+    private readonly AudioEngine _engine;
+    private readonly AmbientSynth _ambient;
     private readonly SoundId[][] _fire;
     private readonly string[][] _visual;
     private readonly float[][] _damageGain;
@@ -77,7 +80,6 @@ public sealed class GameAudio : IDisposable
     private double _lastAlert = -100, _lastCmdAlert = -100, _lastMassWarn = -100, _lastEnergyWarn = -100, _lastReady = -100;
     private int _massLowTicks, _energyLowTicks;
     private float _combatRate, _startFade;
-    private double _synthMs;
     private readonly List<(string text, Color color, double until)> _toasts = new();
 
     /// <summary>True when the audio device is open (sounds may still be loading for a moment).</summary>
@@ -86,10 +88,19 @@ public sealed class GameAudio : IDisposable
     /// <summary>One-shots started since startup (stats / tests).</summary>
     public int PlayedCount { get; private set; }
 
+    /// <summary>Standalone: creates (and disposes) its own <see cref="AudioSystem"/>.</summary>
     public GameAudio(GameContext ctx, AudioSettings settings, bool automated = false)
+        : this(ctx, new AudioSystem(settings, automated), ownsSystem: true) { }
+
+    /// <summary>Game audio on the shared app-wide <see cref="AudioSystem"/>.</summary>
+    public GameAudio(GameContext ctx, AudioSystem system, bool ownsSystem = false)
     {
         _ctx = ctx;
-        Settings = settings;
+        _sys = system;
+        _ownsSystem = ownsSystem;
+        _engine = system.Engine;
+        _ambient = system.Ambient;
+        Settings = system.Settings;
         var db = ctx.Db;
         _fire = new SoundId[db.Count][];
         _visual = new string[db.Count][];
@@ -101,16 +112,6 @@ public sealed class GameAudio : IDisposable
             _visual[b] = ws.Select(w => w.ProjectileVisual).ToArray();
             _damageGain[b] = ws.Select(w => Math.Clamp(0.75f + MathF.Sqrt(MathF.Max(0, w.Damage)) / 25f, 0.75f, 1.15f)).ToArray();
         }
-        if (!settings.Enabled || (automated && !settings.ForceOn)) return;
-        if (!_engine.Init()) return;
-        _bank = Task.Run(() =>
-        {
-            var sw = System.Diagnostics.Stopwatch.StartNew();
-            var all = SoundBank.GenerateAll();
-            _synthMs = sw.Elapsed.TotalMilliseconds;
-            return all;
-        });
-        _engine.OpenStream();
     }
 
     /// <summary>Fire sound of a weapon: visual first, then kind (ballistic = artillery) and damage class.</summary>
@@ -130,18 +131,8 @@ public sealed class GameAudio : IDisposable
     {
         HandleKeys(selectedCount, inputBlocked);
         var ui = UiSounds.Drain();
+        _sys.Update(dt);
         if (!_engine.Ready) return;
-        if (_bank is { IsCompleted: true } task)
-        {
-            if (task.IsCompletedSuccessfully)
-            {
-                _engine.LoadBank(task.Result);
-                Console.WriteLine($"Audio: {task.Result.Sum(v => v.Length)} sounds synthesized in {_synthMs:F0} ms");
-            }
-            else Console.Error.WriteLine("Sound synthesis failed: " + task.Exception?.GetBaseException().Message);
-            _bank = null;
-        }
-        _engine.SetMasterVolume(Settings.Muted ? 0f : Settings.Master);
         _startFade = MathF.Min(1f, _startFade + dt / 2.5f);
 
         var cur = interp.Current;
@@ -166,7 +157,7 @@ public sealed class GameAudio : IDisposable
         UpdateLoops(cur, paused);
         float zoomOut = SmoothStep(40f, 420f, _ctx.Camera.Distance);
         _ambient.WindGain = Settings.Ambient * (0.12f + 0.3f * zoomOut) * _startFade;
-        _ambient.MusicGain = Settings.MusicOn ? Settings.Music * _startFade : 0f;
+        _ambient.MusicGain = Settings.MusicOn ? Settings.Music * _sys.MusicFade : 0f;
         _ambient.Tension = Math.Clamp(_combatRate / 25f, 0f, 1f);
         _engine.PumpStream(_ambient);
     }
@@ -450,8 +441,9 @@ public sealed class GameAudio : IDisposable
 
     public void Dispose()
     {
-        try { _bank?.Wait(2000); } catch { /* synthesis errors are irrelevant at shutdown */ }
         if (_engine.Ready) Console.WriteLine($"Audio: {PlayedCount} one-shots played");
-        _engine.Dispose();
+        // Shared system: silence this game's hums (the menus keep the stream going with music only).
+        _ambient.ReclaimGain = _ambient.BuildGain = 0;
+        if (_ownsSystem) _sys.Dispose();
     }
 }

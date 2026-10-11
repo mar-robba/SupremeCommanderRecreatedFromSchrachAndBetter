@@ -3,12 +3,13 @@ using Rts.Sim;
 using Rts.Sim.AI;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
+using Rts.Sim.Map;
 using Rts.Sim.World;
 
 /// <summary>
 /// Headless skirmish AI match: every army is an AI (or army 0 is passive with "aipassive").
-/// Usage: Rts.Bench ai|aipassive [maxMinutes=30] [mapSize=256] [seed=42] [difficulties=normal,normal] [threads=0] [players=2]
-/// Prints a status line per game minute, then the winner, duration and per-AI cost (ms per tick).
+/// Usage: Rts.Bench ai|aipassive [maxMinutes=30] [mapSize=256] [seed=42] [difficulties=normal,normal] [threads=0] [players=2] [preset=plains]
+/// Prints a status line per game minute, then the winner, duration, end-screen statistics and per-AI cost (ms per tick).
 /// </summary>
 public static class AiMatch
 {
@@ -20,14 +21,18 @@ public static class AiMatch
         string[] diffs = args.Length > 3 ? args[3].Split(',') : ["normal"];
         if (args.Length > 4 && int.Parse(args[4]) > 0) Par.MaxThreads = int.Parse(args[4]);
         int players = args.Length > 5 ? int.Parse(args[5]) : 2;
+        var preset = MapPreset.Plains;
+        if (args.Length > 6 && !MapPresets.TryParse(args[6], out preset)) throw new ArgumentException("unknown preset " + args[6]);
 
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
         var ai = Enumerable.Range(0, players).Select(i => !passive || i > 0).ToArray();
-        var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings { MapSize = mapSize, Seed = seed, Players = players, AiPlayers = ai });
+        var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings
+        {
+            MapSize = mapSize, Seed = seed, Players = players, AiPlayers = ai, MapPreset = preset,
+            AiDifficulties = Enumerable.Range(0, players).Select(a => Enum.Parse<AiDifficulty>(diffs[Math.Min(a, diffs.Length - 1)], ignoreCase: true)).ToArray(),
+        });
         var w = sim.World;
-        for (int a = 0; a < players; a++)
-            w.Armies[a].AiDifficulty = Enum.Parse<AiDifficulty>(diffs[Math.Min(a, diffs.Length - 1)], ignoreCase: true);
-        Console.WriteLine($"AI match: map {mapSize}, seed {seed}, players {players} ({string.Join(" vs ", w.Armies.Select(a => a.IsAI ? a.AiDifficulty.ToString() : "passive"))}), threads {Par.MaxThreads}");
+        Console.WriteLine($"AI match: map {mapSize} {MapPresets.Name(preset)}, seed {seed}, players {players} ({string.Join(" vs ", w.Armies.Select(a => a.IsAI ? a.AiDifficulty.ToString() : "passive"))}), threads {Par.MaxThreads}");
 
         int maxTicks = (int)(maxMinutes * 60 * SimWorld.TicksPerSecond);
         // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).
@@ -59,6 +64,12 @@ public static class AiMatch
         }
         else Console.WriteLine($"NO WINNER after {Fmt(w.GameTime)} game time (limit)");
         Console.WriteLine($"first unit death at {(firstDeathTick < 0 ? "never" : Fmt(firstDeathTick * SimWorld.Dt))}; deaths per army: {string.Join(", ", deaths)}");
+        foreach (var army in w.Armies)
+        {
+            var s = army.Stats;
+            Console.WriteLine($"  {army.Name} stats: built {s.UnitsBuilt} units / {s.StructuresBuilt} structures, lost {s.UnitsLost}, killed {s.UnitsKilled}, " +
+                              $"mass {s.MassCollected:F0} collected / {s.MassSpent:F0} spent");
+        }
         var st = AiSystem.StateOf(w);
         for (int a = 0; a < players; a++)
         {

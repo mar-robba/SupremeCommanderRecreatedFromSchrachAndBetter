@@ -5,10 +5,13 @@ Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to se
 
 ## Commands (run from repo root)
 - Build all: `dotnet build Rts.slnx`
-- Tests: `dotnet test tests/Rts.Sim.Tests` (headless, must stay green)
+- Tests: `dotnet test tests/Rts.Sim.Tests` and `dotnet test tests/Rts.Client.Tests` (headless, must stay green)
 - Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads]`
-- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard]`
-- Play: `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N]`
+- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset]`
+- Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
+  `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
+  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` show overlays;
+  `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`)
 - **Visual check (agents must use this after client changes):**
   `dotnet run --project src/Rts.Client -- --demo --screenshot screenshots/<name>.png --frames 120 --size 1280x720 [--camera x,z,dist]`
   then Read the PNG to look at it. A display is available (X11/XWayland).

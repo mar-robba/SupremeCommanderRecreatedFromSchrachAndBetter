@@ -1,8 +1,12 @@
 using Rts.Client;
 
-// Usage: Rts.Client [--seed N] [--map 256|512|1024] [--players N] [--demo] [--size 1600x900]
+// Usage: Rts.Client                         -> main menu
+//        Rts.Client --menu | --setup | --settings [--preset P --map N --players N]  -> start in that screen
+//                   [--autostart] (setup: start as soon as the preview is ready) [--flow-test] (scripted menu flow)
+//        Rts.Client [--seed N] [--map 256|512|1024] [--players N] [--preset plains|lakes|highlands|canyon|archipelago]
+//                   [--water 0..1] [--demo] [--size 1600x900] [--pause-menu] [--endscreen]   -> straight into a game
 //                   [--screenshot out.png --frames 120] [--camera x,z,distance]
 //                   [--stress N] [--fxtest] [--gallery] [--novsync] [--debugwater H] [--nofog]
 //                   [--nosound] [--sound] [--volume F] [--sfx-volume F] [--music-volume F] [--nomusic]
-// Audio is off in --screenshot runs unless --sound is given.
+// Audio is off in --screenshot runs unless --sound is given. Audio and --nofog flags don't force a direct game.
 GameApp.Run(ClientOptions.Parse(args));

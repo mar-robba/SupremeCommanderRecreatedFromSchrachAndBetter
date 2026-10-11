@@ -52,6 +52,8 @@ public static class DamageSystem
         if (!u.IsActive(target) || amount <= 0) return;
         u.Health[target] -= amount;
         u.LastHitTick[target] = w.Tick;
-        if (u.Health[target] <= 0) w.KillUnit(target, source);
+        if (u.Health[target] > 0) return;
+        if (u.IsActive(source) && w.IsEnemy(u.Army[source.Index], u.Army[target])) w.Armies[u.Army[source.Index]].Stats.UnitsKilled++;
+        w.KillUnit(target, source);
     }
 }

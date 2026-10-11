@@ -12,7 +12,7 @@ namespace Rts.Client.UI;
 /// Immediate-mode: input for panels is handled while drawing. <see cref="MouseOverUi"/> must be called first
 /// each frame (it computes the layout and blocks world input under every panel).
 /// </summary>
-public sealed class Hud
+public sealed class Hud : IDisposable
 {
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
@@ -44,6 +44,9 @@ public sealed class Hud
     }
 
     public Rectangle TopBarRect => _top;
+
+    /// <summary>Frees GPU resources (minimap texture) when the game ends.</summary>
+    public void Dispose() => _minimap.Dispose();
 
     /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse) for automated screenshots.</summary>
     public void ApplyStartupOptions(ClientOptions o)
@@ -182,7 +185,7 @@ public sealed class Hud
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
             new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
-            new("+ / - game speed · Space pause · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
+            new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
             new("Engineers: right-click wreck = reclaim, damaged / unfinished unit = repair, factory = assist · M (nothing selected) or Ctrl+M mute · Ctrl+Shift+M music", d, 11.5f),
             new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
         ];

@@ -54,10 +54,10 @@ public sealed class FogRenderer : IDisposable
         _tick = int.MinValue; // re-upload both textures when data comes back
     }
 
-    /// <summary>Call once per frame after the interpolator update.</summary>
-    public void Update(SnapshotInterpolator interp)
+    /// <summary>Call once per frame after the interpolator update (keys = false while a menu overlay is open).</summary>
+    public void Update(SnapshotInterpolator interp, bool keys = true)
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.F7)) SetEnabled(!Enabled);
+        if (keys && Raylib.IsKeyPressed(KeyboardKey.F7)) SetEnabled(!Enabled);
         var cur = interp.Current;
         _alpha = interp.Alpha;
         _hasFog = cur.ViewArmy >= 0 && cur.FogCols > 0 && cur.Fog.Length >= cur.FogCols * cur.FogRows;
