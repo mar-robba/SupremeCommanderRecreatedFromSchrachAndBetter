@@ -312,7 +312,7 @@ public static class WeaponSystem
     private static void Emit(SimWorld w, in ShotRequest shot)
     {
         if (shot.Flash)
-            CombatFx.Add(w, EffectKind.MuzzleFlash, shot.FlashPos, 0.4f + MathF.Min(shot.Damage, 200f) / 250f, shot.Army, shot.Bp);
+            CombatFx.Add(w, EffectKind.MuzzleFlash, shot.FlashPos, 0.4f + MathF.Min(shot.Damage, 200f) / 250f, shot.Army, shot.Bp, shot.Weapon);
 
         if (shot.Instant)
         {
@@ -326,13 +326,13 @@ public static class WeaponSystem
                     Center = new Vector2(hitPos.X, hitPos.Z), Radius = shot.DamageRadius, Amount = shot.Damage,
                     Source = shot.Source, SourceArmy = shot.Army, Layers = mask,
                 });
-                CombatFx.Add(w, EffectKind.Explosion, hitPos, shot.DamageRadius, shot.Army, shot.Bp);
+                CombatFx.Add(w, EffectKind.Explosion, hitPos, shot.DamageRadius, shot.Army, shot.Bp, shot.Weapon);
             }
             else
             {
                 if (u.IsActive(shot.Target))
                     w.Events.Damage.Add(new DamageEvent { Target = shot.Target, Source = shot.Source, SourceArmy = shot.Army, Amount = shot.Damage });
-                CombatFx.Add(w, EffectKind.Impact, hitPos, 0.5f, shot.Army, shot.Bp);
+                CombatFx.Add(w, EffectKind.Impact, hitPos, 0.5f, shot.Army, shot.Bp, shot.Weapon);
             }
             return;
         }

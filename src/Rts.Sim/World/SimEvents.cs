@@ -44,6 +44,9 @@ public struct EffectEvent
     public float Size;
     public int Army;
     public int BlueprintIndex;
+    /// <summary>Combat effects (MuzzleFlash / Impact / Explosion): index of the weapon in BlueprintIndex's
+    /// Weapons array that caused it (client picks sounds/visuals per weapon). 0 for other kinds.</summary>
+    public int WeaponIndex;
 }
 
 /// <summary>Event lists filled during a tick. Parallel systems write into ChunkedBuffers and drain here.</summary>
