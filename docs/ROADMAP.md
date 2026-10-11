@@ -37,7 +37,10 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 - [ ] Skirmish AI (build order, economy scaling, attack waves, defense) — `src/Rts.Sim/AI`
 - [ ] Better map generator (rivers/lakes, cliffs, ramps, naval maps, more players)
 - [ ] Main menu / game setup screen, victory/defeat screens
-- [ ] Audio (raylib audio: weapons, explosions, UI)
+- [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
+      graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
+      kills + veterancy stars in unit panel; effects follow game speed
+      - [ ] later: settings screen for volumes, a human listening pass on the sounds, veterancy bonuses in the sim
 
 ## Phase 3 — SupCom depth
 - [ ] T2 and T3 tech: upgrades of factories/mexes, T2/T3 units for land, air, naval
