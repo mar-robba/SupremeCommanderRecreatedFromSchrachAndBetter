@@ -99,7 +99,7 @@ public static class AiMatch
             var cmd = army.Commander;
             string hp = u.IsActive(cmd) ? $"{u.Health[cmd.Index] / w.BpOf(cmd.Index).MaxHealth * 100:F0}%" : "dead";
             line.Append($" | {army.Name}{(army.Defeated ? " DEFEATED" : "")}: n={army.UnitCount} mex={mex} pg={pgen} fac={fac} def={def} eng={eng} land={land} air={air} " +
-                        $"M {e.MassIncome:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}");
+                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}");
         }
         Console.WriteLine(line.ToString());
     }

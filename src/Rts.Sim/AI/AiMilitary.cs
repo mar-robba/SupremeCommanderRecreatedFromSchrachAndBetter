@@ -137,7 +137,7 @@ public sealed class AiMilitary
             if (d < bestExpDist) { bestExpDist = d; _expThreatPos = p; }
         }
         if (_baseThreat > 0) _baseThreatPos = baseSum / _baseThreat;
-        if (bestExpDist < float.MaxValue) _expThreat = V.ThreatAt(_expThreatPos, 20f, includeAir: false);
+        if (bestExpDist < float.MaxValue) _expThreat = V.ThreatAt(_expThreatPos, 20f);
     }
 
     private void CommanderSafety()
@@ -310,7 +310,7 @@ public sealed class AiMilitary
             float score = d;
             if (bp.Has(UnitCategory.MassExtractor)) score -= 30f;
             else if (bp.HasAny(UnitCategory.PowerGenerator | UnitCategory.Engineer)) score -= 10f;
-            float defense = V.ThreatAt(ks.Pos, 24f, includeAir: false);
+            float defense = V.ThreatAt(ks.Pos, 24f);
             if (defense > strength * 0.8f) { if (!force && !push) continue; score += 150f; }
             if (push)
             {
@@ -335,7 +335,7 @@ public sealed class AiMilitary
         for (int a = 0; a < _b.Perception.EnemyCommanderPos.Length; a++)
         {
             if (_b.Perception.EnemyCommanderPos[a] is not Vector2 cp) continue;
-            if (!force && !push && V.ThreatAt(cp, 24f, includeAir: false) > strength * 0.8f) continue;
+            if (!force && !push && V.ThreatAt(cp, 24f) > strength * 0.8f) continue;
             if (!_b.CanReachNear(MotionLayer.Land, 0.6f, from, cp, 2f)) continue;
             pos = cp;
             return true;
@@ -346,7 +346,7 @@ public sealed class AiMilitary
         {
             float d = Vector2.DistanceSquared(es, from);
             if (d >= best) continue;
-            if (!force && !push && V.ThreatAt(es, 24f, includeAir: false) > strength * 0.8f) continue;
+            if (!force && !push && V.ThreatAt(es, 24f) > strength * 0.8f) continue;
             if (!_b.CanReachNear(MotionLayer.Land, 0.6f, from, es, 2f)) continue;
             best = d;
             pos = es;
@@ -419,7 +419,7 @@ public sealed class AiMilitary
             }
 
             // Retreat when beaten (Normal/Hard).
-            float local = V.ThreatAt(centroid, 24f, includeAir: false);
+            float local = V.ThreatAt(centroid, 24f);
             if (Cfg.RetreatFraction > 0 && strength < g.InitialStrength * Cfg.RetreatFraction && local > strength)
             {
                 g.State = AiGroupState.Retreat;
@@ -558,26 +558,7 @@ public sealed class AiMilitary
         return best;
     }
 
-    private float AirDefenseNear(Vector2 p)
-    {
-        int cols = V.ThreatCols, rows = V.ThreatRows;
-        int x0 = Math.Clamp((int)((p.X - 30f) / AiView.ThreatCell), 0, cols - 1), x1 = Math.Clamp((int)((p.X + 30f) / AiView.ThreatCell), 0, cols - 1);
-        int z0 = Math.Clamp((int)((p.Y - 30f) / AiView.ThreatCell), 0, rows - 1), z1 = Math.Clamp((int)((p.Y + 30f) / AiView.ThreatCell), 0, rows - 1);
-        float t = 0;
-        for (int z = z0; z <= z1; z++)
-        for (int x = x0; x <= x1; x++) t += V.AirThreat[z * cols + x];
-        // Mobile AA counts too.
-        var u = W.Units;
-        foreach (int e in V.EnemyMobile)
-        {
-            if (!_b.Perception.IsIdentified(e)) continue;
-            var bp = W.BpOf(e);
-            if (bp.Movement.Layer == MotionLayer.Air || bp.Weapons.Length == 0) continue;
-            if ((bp.Weapons[0].TargetMask & LayerMask.Air) == 0) continue;
-            if (Vector2.DistanceSquared(u.Pos[e], p) < 35f * 35f) t += bp.Economy.BuildCostMass;
-        }
-        return t;
-    }
+    private float AirDefenseNear(Vector2 p) => V.AirThreatAt(p, 30f);
 
     // ------------------------------------------------------------------ scouts
 

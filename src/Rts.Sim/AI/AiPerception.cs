@@ -52,7 +52,8 @@ public sealed class AiView
     public int EnemyAirCount;
     public bool EnemyHasAirFactory;
 
-    /// <summary>Coarse threat map: known enemy armed strength per ThreatCell x ThreatCell cell (land/structures, air).</summary>
+    /// <summary>Coarse threat maps per ThreatCell x ThreatCell cell: <see cref="Threat"/> = known enemy firepower against
+    /// surface units (tanks, point defense, bombers...), <see cref="AirThreat"/> = enemy anti-air (AA, interceptors).</summary>
     public const float ThreatCell = 16f;
     /// <summary>Threat below this (e.g. a lone scout) is ignored by builders.</summary>
     public const float ThreatThreshold = 25f;
@@ -73,30 +74,37 @@ public sealed class AiView
         Array.Clear(AirThreat);
     }
 
-    public void AddThreat(Vector2 p, float v, bool air)
+    /// <summary>Adds a unit's firepower to the maps according to the layers its weapons can hit.</summary>
+    public void AddThreat(Vector2 p, float v, LayerMask targets)
     {
         int cx = Math.Clamp((int)(p.X / ThreatCell), 0, ThreatCols - 1);
         int cz = Math.Clamp((int)(p.Y / ThreatCell), 0, ThreatRows - 1);
-        (air ? AirThreat : Threat)[cz * ThreatCols + cx] += v;
+        if ((targets & (LayerMask.Land | LayerMask.Water | LayerMask.Sub)) != 0) Threat[cz * ThreatCols + cx] += v;
+        if ((targets & LayerMask.Air) != 0) AirThreat[cz * ThreatCols + cx] += v;
     }
 
-    /// <summary>Sum of enemy threat (land + air) in the cells overlapping the square of half-size r around p,
-    /// ignoring trivial threats (below <see cref="ThreatThreshold"/>: returns 0).</summary>
-    public float ThreatAt(Vector2 p, float r, bool includeAir = true)
+    private static float Sum(float[] map, int cols, int rows, Vector2 p, float r)
     {
-        int x0 = Math.Clamp((int)((p.X - r) / ThreatCell), 0, ThreatCols - 1);
-        int x1 = Math.Clamp((int)((p.X + r) / ThreatCell), 0, ThreatCols - 1);
-        int z0 = Math.Clamp((int)((p.Y - r) / ThreatCell), 0, ThreatRows - 1);
-        int z1 = Math.Clamp((int)((p.Y + r) / ThreatCell), 0, ThreatRows - 1);
+        int x0 = Math.Clamp((int)((p.X - r) / ThreatCell), 0, cols - 1);
+        int x1 = Math.Clamp((int)((p.X + r) / ThreatCell), 0, cols - 1);
+        int z0 = Math.Clamp((int)((p.Y - r) / ThreatCell), 0, rows - 1);
+        int z1 = Math.Clamp((int)((p.Y + r) / ThreatCell), 0, rows - 1);
         float t = 0;
         for (int z = z0; z <= z1; z++)
-        for (int x = x0; x <= x1; x++)
-        {
-            t += Threat[z * ThreatCols + x];
-            if (includeAir) t += AirThreat[z * ThreatCols + x];
-        }
+        for (int x = x0; x <= x1; x++) t += map[z * cols + x];
+        return t;
+    }
+
+    /// <summary>Enemy firepower against surface units in the cells overlapping the square of half-size r around p;
+    /// trivial threats (below <see cref="ThreatThreshold"/>, e.g. a lone scout) count as 0.</summary>
+    public float ThreatAt(Vector2 p, float r)
+    {
+        float t = Sum(Threat, ThreatCols, ThreatRows, p, r);
         return t < ThreatThreshold ? 0 : t;
     }
+
+    /// <summary>Enemy anti-air around p (for bomber targeting).</summary>
+    public float AirThreatAt(Vector2 p, float r) => Sum(AirThreat, ThreatCols, ThreatRows, p, r);
 
     public void Clear(int bpCount)
     {
@@ -156,6 +164,14 @@ public sealed class AiPerception
         return m * MathF.Max(0.2f, w.Units.Health[i] / bp.MaxHealth);
     }
 
+    /// <summary>Union of the layers a unit's weapons can hit.</summary>
+    public static LayerMask TargetsOf(UnitBlueprint bp)
+    {
+        var m = LayerMask.None;
+        foreach (var wb in bp.Weapons) m |= wb.TargetMask;
+        return m;
+    }
+
     /// <summary>One deterministic pass over the alive units: classifies own units and the known enemies.</summary>
     public void Scan(AiView v)
     {
@@ -202,29 +218,21 @@ public sealed class AiPerception
                 v.EnemyStructures.Add(i);
                 Remember(i, bp, a);
                 if (complete && bp.Weapons.Length > 0 && IsIdentified(i))
-                {
-                    bool antiAir = (bp.Weapons[0].TargetMask & LayerMask.Air) != 0;
-                    v.AddThreat(u.Pos[i], bp.Economy.BuildCostMass * 1.5f, antiAir);
-                }
-                if (IsIdentified(i) && bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Air)) v.EnemyHasAirFactory = true;
+                    v.AddThreat(u.Pos[i], bp.Economy.BuildCostMass * 1.5f, TargetsOf(bp));
                 continue;
             }
             if (!complete) continue;
             v.EnemyMobile.Add(i);
-            if (!IsIdentified(i)) { v.EnemyLandStrength += 50; v.AddThreat(u.Pos[i], 50, false); continue; }
+            if (!IsIdentified(i)) { v.EnemyLandStrength += 50; v.AddThreat(u.Pos[i], 50, LayerMask.Land); continue; }
             if (bp.Has(UnitCategory.Commander)) EnemyCommanderPos[a] = u.Pos[i];
+            float st = Strength(_w, i, bp);
             if (bp.Movement.Layer == MotionLayer.Air)
             {
                 v.EnemyAirCount++;
                 v.EnemyAirStrength += MathF.Max(30, bp.Economy.BuildCostMass);
-                if (bp.Weapons.Length > 0) v.AddThreat(u.Pos[i], bp.Economy.BuildCostMass, true);
             }
-            else
-            {
-                float st = Strength(_w, i, bp);
-                v.EnemyLandStrength += st;
-                v.AddThreat(u.Pos[i], st, false);
-            }
+            else v.EnemyLandStrength += st;
+            if (st > 0) v.AddThreat(u.Pos[i], st, TargetsOf(bp));
         }
         Forget();
     }
