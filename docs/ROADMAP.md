@@ -33,7 +33,9 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
       - [ ] later: kills in snapshot, structure rotation in sim, drag-to-place lines, custom font
 
 ## Phase 2 — A playable skirmish
-- [ ] Fog of war + radar (IntelSystem, per-army visibility grids, client fog overlay)
+- [x] Fog of war + radar (merged 2026-10-11): per-team bitset grids (vision/radar/sonar/omni/explored), parallel
+      deterministic, ghosts of last-seen structures, fog-filtered snapshots, radar blips, client fog shader + minimap, F7/--nofog
+      - [ ] later: fog wrecks/deposits, drop Attack orders on targets lost in fog, intel cost < 1 ms on 1024
 - [ ] Skirmish AI (build order, economy scaling, attack waves, defense) — `src/Rts.Sim/AI`
 - [ ] Better map generator (rivers/lakes, cliffs, ramps, naval maps, more players)
 - [ ] Main menu / game setup screen, victory/defeat screens
