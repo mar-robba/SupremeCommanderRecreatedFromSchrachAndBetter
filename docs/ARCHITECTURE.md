@@ -93,5 +93,14 @@ interpolates prev/cur by time
   `FrameView` (per-frame matrices, frustum culling), `PerfOverlay` (frame time, F8).
   Unit model vertex colors: rgb = albedo, alpha = material tag (255 metal, 0 team color, 128 glow).
   Debug: `--gallery` (all shapes), `--fxtest`/F9 (fake battle effects), F10 (explosion), `--stress N`.
-- `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes.
+  `PropRenderer` (wrecks from `SimSnapshot.Props`: the unit's model with a burnt-metal shader, sunk/tilted, embers +
+  smoke when fresh, sinking while reclaimed; gray dots in the strategic view). Effects/wreck animations run in game
+  time (`EffectsRenderer.GameDt`: frozen while paused, faster at 2x).
+- `Audio/`: everything synthesized at startup (no asset files). `Synth` (DSP layers) + `SoundBank` (recipes, variants,
+  gains/voice limits) → raylib Sounds with alias voice pools (`AudioEngine`); `AmbientSynth` renders wind, generative
+  music and reclaim/build hums into a real-time AudioStream; `GameAudio` maps snapshot `EffectEvent`s (incl.
+  `WeaponIndex`) to positional one-shots (listener = camera focus, zoom ducking, pan, per-frame merging) and raises
+  alerts (under attack, stall, unit ready). `UiSounds` = click/confirm/error requests. `--nosound`; no device = silent.
+- `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
+  `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.

@@ -77,10 +77,14 @@ public sealed class GameAudio : IDisposable
     private double _lastAlert = -100, _lastCmdAlert = -100, _lastMassWarn = -100, _lastEnergyWarn = -100, _lastReady = -100;
     private int _massLowTicks, _energyLowTicks;
     private float _combatRate, _startFade;
+    private double _synthMs;
     private readonly List<(string text, Color color, double until)> _toasts = new();
 
     /// <summary>True when the audio device is open (sounds may still be loading for a moment).</summary>
     public bool Active => _engine.Ready;
+
+    /// <summary>One-shots started since startup (stats / tests).</summary>
+    public int PlayedCount { get; private set; }
 
     public GameAudio(GameContext ctx, AudioSettings settings, bool automated = false)
     {
@@ -99,7 +103,13 @@ public sealed class GameAudio : IDisposable
         }
         if (!settings.Enabled || (automated && !settings.ForceOn)) return;
         if (!_engine.Init()) return;
-        _bank = Task.Run(SoundBank.GenerateAll);
+        _bank = Task.Run(() =>
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var all = SoundBank.GenerateAll();
+            _synthMs = sw.Elapsed.TotalMilliseconds;
+            return all;
+        });
         _engine.OpenStream();
     }
 
@@ -123,7 +133,11 @@ public sealed class GameAudio : IDisposable
         if (!_engine.Ready) return;
         if (_bank is { IsCompleted: true } task)
         {
-            if (task.IsCompletedSuccessfully) _engine.LoadBank(task.Result);
+            if (task.IsCompletedSuccessfully)
+            {
+                _engine.LoadBank(task.Result);
+                Console.WriteLine($"Audio: {task.Result.Sum(v => v.Length)} sounds synthesized in {_synthMs:F0} ms");
+            }
             else Console.Error.WriteLine("Sound synthesis failed: " + task.Exception?.GetBaseException().Message);
             _bank = null;
         }
@@ -159,7 +173,7 @@ public sealed class GameAudio : IDisposable
 
     private void HandleKeys(int selectedCount, bool inputBlocked)
     {
-        if (inputBlocked || !Raylib.IsKeyPressed(KeyboardKey.M)) return;
+        if (!_engine.Ready || inputBlocked || !Raylib.IsKeyPressed(KeyboardKey.M)) return;
         bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         if (ctrl && shift)
@@ -399,7 +413,7 @@ public sealed class GameAudio : IDisposable
             if (_reqPlayed[id] >= (info.Ui ? 1 : 2) || played >= 12) continue;
             float boost = _reqPlayed[id] == 0 ? MathF.Min(1.5f, 1f + 0.1f * (_reqTotal[id] - 1)) : 1f;
             float vol = r.Vol * boost * info.Gain * (info.Ui ? 1f : Settings.Sfx);
-            if (_engine.Play(r.Id, vol, r.Pan, r.Pitch)) { _reqPlayed[id]++; played++; }
+            if (_engine.Play(r.Id, vol, r.Pan, r.Pitch)) { _reqPlayed[id]++; played++; PlayedCount++; }
         }
         _reqs.Clear();
     }
@@ -437,6 +451,7 @@ public sealed class GameAudio : IDisposable
     public void Dispose()
     {
         try { _bank?.Wait(2000); } catch { /* synthesis errors are irrelevant at shutdown */ }
+        if (_engine.Ready) Console.WriteLine($"Audio: {PlayedCount} one-shots played");
         _engine.Dispose();
     }
 }

@@ -50,7 +50,7 @@ public sealed class UnitPanel
         // Veterancy stars on the icon.
         int vet = VeterancyLevel(bp, v.Kills);
         for (int i = 0; i < vet; i++)
-            DrawStar(new Vector2(iconR.X + Ui.P(7) + i * Ui.P(10), iconR.Y + icon - Ui.P(7)), Ui.P(5), new Color(255, 215, 80, 255));
+            DrawStar(new Vector2(iconR.X + Ui.P(7) + i * Ui.P(10), iconR.Y + Ui.P(7)), Ui.P(5), new Color(255, 215, 80, 255));
 
         float tx = iconR.X + icon + Ui.P(8);
         float tw = r.X + r.Width - pad - tx;
@@ -97,7 +97,7 @@ public sealed class UnitPanel
         // Key stats (two compact columns).
         var stats = KeyStats(bp);
         if (bp.Weapons.Length > 0 || v.Kills > 0)
-            stats.Insert(0, ("Kills", vet > 0 ? $"{v.Kills}  " + new string('*', vet) : v.Kills.ToString(), vet > 0 ? new Color(255, 215, 80, 255) : Ui.TextColor));
+            stats.Insert(0, ("Kills", vet > 0 ? $"{v.Kills} (vet {vet})" : v.Kills.ToString(), vet > 0 ? new Color(255, 215, 80, 255) : Ui.TextColor));
         float colW = bw * 0.5f;
         for (int i = 0; i < stats.Count; i++)
         {

@@ -52,7 +52,13 @@ public static class ContextOrders
             var pos = new Vector2(t.Pos.X, t.Pos.Z);
             if (builders)
             {
-                if ((t.Flags & UnitFlags.UnderConstruction) != 0) return new ContextAction(ContextKind.Finish, h, pos);
+                if ((t.Flags & UnitFlags.UnderConstruction) != 0)
+                {
+                    // A mobile unit being built sits inside its factory: assist the factory instead.
+                    if (tbp.IsMobile && FactoryAt(ctx, snap, t) is UnitView f)
+                        return new ContextAction(ContextKind.Assist, new UnitHandle(f.Index, f.Gen), new Vector2(f.Pos.X, f.Pos.Z));
+                    return new ContextAction(ContextKind.Finish, h, pos);
+                }
                 if (own && tbp.Has(UnitCategory.Factory)) return new ContextAction(ContextKind.Assist, h, pos);
                 if (t.HealthFrac < 0.995f) return new ContextAction(ContextKind.Repair, h, pos);
                 if (own && tbp.Economy.BuildRate > 0) return new ContextAction(ContextKind.Assist, h, pos);
@@ -117,6 +123,20 @@ public static class ContextOrders
                 && (v.Flags & UnitFlags.UnderConstruction) == 0)
                 return true;
         return false;
+    }
+
+    /// <summary>The allied factory whose footprint contains unit u (a unit being produced), if any.</summary>
+    private static UnitView? FactoryAt(GameContext ctx, SimSnapshot snap, in UnitView u)
+    {
+        for (int k = 0; k < snap.UnitCount; k++)
+        {
+            ref var f = ref snap.Units[k];
+            var fbp = ctx.Db[f.Bp];
+            if (!fbp.Has(UnitCategory.Factory) || ctx.IsEnemy(f.Army)) continue;
+            float half = MathF.Max(fbp.FootprintX, fbp.FootprintZ) * 0.5f;
+            if (MathF.Abs(f.Pos.X - u.Pos.X) <= half && MathF.Abs(f.Pos.Z - u.Pos.Z) <= half) return f;
+        }
+        return null;
     }
 
     /// <summary>Index in snap.Props of the wreck under the mouse (closest in screen space), or null.</summary>
