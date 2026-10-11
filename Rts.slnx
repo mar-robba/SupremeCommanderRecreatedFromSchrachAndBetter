@@ -4,6 +4,7 @@
     <Project Path="src/Rts.Sim/Rts.Sim.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Rts.Client.Tests/Rts.Client.Tests.csproj" />
     <Project Path="tests/Rts.Sim.Tests/Rts.Sim.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
