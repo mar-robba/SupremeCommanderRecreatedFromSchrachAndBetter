@@ -106,6 +106,24 @@ public sealed class SimSnapshot
     public ArmyView[] Armies = [];
     public readonly List<EffectEvent> Effects = new();
 
+    // ---- Fog of war (intel module): see SimRunner.ViewArmy and Intel/IntelSnapshotWriter.cs ----
+    /// <summary>Army whose intel filtered this snapshot; -1 = no fog (everything visible, Fog empty). With a view
+    /// army, Units only holds units it can see, Projectiles/Effects only what is in its vision (plus allied shots).</summary>
+    public int ViewArmy = -1;
+    /// <summary>Per fog cell (row-major FogCols x FogRows, cell = FogCellSize world units): 0 unexplored,
+    /// 128 explored but not in vision, 255 in vision.</summary>
+    public byte[] Fog = [];
+    public int FogCols, FogRows;
+    public float FogCellSize;
+    /// <summary>Changes whenever the sim recomputed intel (re-upload the fog texture).</summary>
+    public int FogVersion;
+    /// <summary>Radar/sonar contacts (enemy units detected but not visible), [0..BlipCount).</summary>
+    public BlipView[] Blips = new BlipView[64];
+    public int BlipCount;
+    /// <summary>Last-seen enemy structures not currently visible ("ghosts"), [0..GhostCount).</summary>
+    public GhostView[] Ghosts = new GhostView[64];
+    public int GhostCount;
+
     public bool TryGetUnit(int slot, int gen, out UnitView view)
     {
         if ((uint)slot < (uint)SlotToView.Length)

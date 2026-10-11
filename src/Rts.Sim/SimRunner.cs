@@ -23,6 +23,8 @@ public sealed class SimRunner : IDisposable
     /// <summary>Game speed multiplier (SupCom: -10..+10 mapped to 0.25x..4x).</summary>
     public volatile float Speed = 1f;
     public volatile bool Paused;
+    /// <summary>Fog of war: snapshots only contain what this army knows (-1 = everything visible / observer).</summary>
+    public volatile int ViewArmy = -1;
     /// <summary>Set if the sim thread crashed; the client should display it.</summary>
     public Exception? Fault { get; private set; }
     public double LastTickMs => _sim.LastTickMs;
@@ -114,7 +116,7 @@ public sealed class SimRunner : IDisposable
         _sim.Step(_tickCommands);
 
         if (!_pool.TryTake(out var snap)) snap = new SimSnapshot();
-        _sim.WriteSnapshot(snap);
+        _sim.WriteSnapshot(snap, ViewArmy);
         snap.PublishedAt = Stopwatch.GetTimestamp();
         var old = Interlocked.Exchange(ref _latest, snap);
         if (old != null) _pool.Add(old);

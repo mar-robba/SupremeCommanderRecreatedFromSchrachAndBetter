@@ -8,9 +8,13 @@ namespace Rts.Sim.Snapshot;
 /// <summary>Copies the world into a snapshot (on the sim thread, between ticks).</summary>
 public static class SnapshotWriter
 {
-    public static void Write(SimWorld w, SimSnapshot s)
+    public static void Write(SimWorld w, SimSnapshot s) => Write(w, s, -1);
+
+    /// <summary>viewArmy &gt;= 0: fog of war, the snapshot only contains what that army knows (IntelSnapshotWriter).</summary>
+    public static void Write(SimWorld w, SimSnapshot s, int viewArmy)
     {
         var u = w.Units;
+        var view = IntelSnapshotWriter.Begin(w, s, viewArmy);
         s.Tick = w.Tick;
         s.WinningTeam = w.WinningTeam;
         if (s.SlotToView.Length != u.Capacity) s.SlotToView = new int[u.Capacity];
@@ -24,6 +28,7 @@ public static class SnapshotWriter
         {
             int i = u.AliveList[k];
             if (!u.IsActive(i)) continue;
+            if (view != null && view[i] != IntelSnapshotWriter.Visible) continue;
             var bp = w.BpOf(i);
             ref var v = ref s.Units[s.UnitCount];
             v.Index = i;
@@ -42,7 +47,7 @@ public static class SnapshotWriter
             if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
 
             // Orders.
-            var orders = u.Orders[i].AsSpan();
+            var orders = view != null && w.IsEnemy(viewArmy, u.Army[i]) ? default : u.Orders[i].AsSpan();
             v.OrderStart = s.OrderCount;
             v.OrderCount = Math.Min(orders.Length, 32);
             Ensure(ref s.Orders, s.OrderCount + v.OrderCount);
@@ -61,7 +66,7 @@ public static class SnapshotWriter
             }
 
             // Factory queue.
-            var q = u.Factory[i].Queue;
+            var q = view != null && w.IsEnemy(viewArmy, u.Army[i]) ? null : u.Factory[i].Queue;
             v.QueueStart = s.FactoryQueueCount;
             v.QueueCount = q?.Count ?? 0;
             if (q != null && q.Count > 0)
@@ -81,6 +86,7 @@ public static class SnapshotWriter
         {
             int i = p.AliveList[k];
             if (!p.Alive[i]) continue;
+            if (view != null && !IntelSnapshotWriter.ProjectileVisible(w, viewArmy, p.Army[i], p.Pos[i])) continue;
             s.Projectiles[s.ProjectileCount++] = new ProjectileView
             {
                 Id = p.Id[i], Pos = p.Pos[i], Vel = p.Vel[i], Army = p.Army[i], SourceBp = p.SourceBp[i], WeaponIndex = p.WeaponIndex[i],
@@ -115,7 +121,8 @@ public static class SnapshotWriter
         }
 
         s.Effects.Clear();
-        s.Effects.AddRange(w.Events.Effects);
+        if (view != null) IntelSnapshotWriter.AddVisibleEffects(w, s, viewArmy);
+        else s.Effects.AddRange(w.Events.Effects);
         w.Events.Effects.Clear();
     }
 
