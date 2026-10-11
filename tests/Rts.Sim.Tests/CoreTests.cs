@@ -16,7 +16,8 @@ public class CoreTests
         Assert.True(cmd.Has(UnitCategory.Commander));
         Assert.NotEmpty(cmd.BuildIndices);
         foreach (var bp in db.All)
-            foreach (var w in bp.Weapons) Assert.NotEqual(LayerMask.None, w.TargetMask);
+            foreach (var w in bp.Weapons)
+                if (w.ProjectileVisual != "antitorpedo") Assert.NotEqual(LayerMask.None, w.TargetMask); // torpedo defense targets torpedoes only
     }
 
     [Fact]

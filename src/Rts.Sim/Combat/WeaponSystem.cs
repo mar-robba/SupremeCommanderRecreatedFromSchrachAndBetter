@@ -84,6 +84,7 @@ public static class WeaponSystem
             var wbp = bp.Weapons[wi];
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
+            if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
 
             // What are we shooting at?
             int tj = -1;
@@ -142,6 +143,10 @@ public static class WeaponSystem
                     launch = Vector3.Zero;
                     flight = 0;
                     break;
+                case WeaponKind.Torpedo:
+                    aim = Ballistics.LeadStraight(muzzle, tc, tv, tom, wbp.MuzzleVelocity, out flight);
+                    launch = Rts.Sim.Naval.Torpedoes.LaunchVelocity(muzzle, aim, wbp.MuzzleVelocity, ws.TurretHeading);
+                    break;
                 default:
                     aim = Ballistics.LeadStraight(muzzle, tc, tv, tom, wbp.MuzzleVelocity, out flight);
                     launch = SafeDir(aim - muzzle, ws.TurretHeading) * wbp.MuzzleVelocity;
@@ -197,6 +202,11 @@ public static class WeaponSystem
                     case WeaponKind.Homing:
                         flags |= ProjectileFlags.Homing;
                         life = flight * 2f + 1.5f;
+                        break;
+                    case WeaponKind.Torpedo:
+                        flags |= ProjectileFlags.Torpedo;
+                        vel = Rts.Sim.Naval.Torpedoes.LaunchVelocity(muzzle, a, wbp.MuzzleVelocity, ws.TurretHeading);
+                        life = Rts.Sim.Naval.Torpedoes.Lifetime(wbp, muzzle.Y - w.Terrain.WaterLevel);
                         break;
                     default:
                         life = MathF.Max(flight * 1.5f, wbp.Range * 1.25f / MathF.Max(1f, wbp.MuzzleVelocity)) + 0.3f;

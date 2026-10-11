@@ -1,0 +1,78 @@
+{
+  "Id": "uef_t2_destroyer",
+  "Name": "Valiant Destroyer",
+  "Description": "T2 destroyer: twin gauss cannons, torpedoes, anti-torpedo flares. Hunts submarines.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "DirectFire",
+    "AntiNaval",
+    "Tech2"
+  ],
+  "MaxHealth": 7200,
+  "Radius": 1.5,
+  "Economy": {
+    "BuildCostMass": 2000,
+    "BuildCostEnergy": 15000,
+    "BuildTime": 6000
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 4.3,
+    "Acceleration": 2,
+    "TurnRate": 45
+  },
+  "Intel": {
+    "VisionRadius": 36,
+    "RadarRadius": 90,
+    "SonarRadius": 70
+  },
+  "Weapons": [
+    {
+      "Name": "Gauss Cannon",
+      "Range": 45,
+      "Damage": 100,
+      "RateOfFire": 0.6,
+      "ProjectilesPerShot": 2,
+      "MuzzleVelocity": 32,
+      "Spread": 0.6,
+      "TurretTurnRate": 70,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    },
+    {
+      "Name": "Torpedo Launcher",
+      "Range": 38,
+      "Damage": 200,
+      "RateOfFire": 0.3,
+      "MuzzleVelocity": 10,
+      "TurretTurnRate": 720,
+      "FiringTolerance": 60,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "torpedo"
+    },
+    {
+      "Name": "Anti-Torpedo Flares",
+      "Range": 10,
+      "RateOfFire": 0.5,
+      "Damage": 0,
+      "TargetLayers": [],
+      "ProjectileVisual": "antitorpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "destroyer",
+    "Size": [
+      2.8,
+      2.6,
+      9.0
+    ],
+    "Icon": "naval"
+  }
+}

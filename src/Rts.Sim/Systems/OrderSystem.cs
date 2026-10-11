@@ -157,7 +157,8 @@ public static class OrderSystem
     public static float MinWeaponRange(UnitBlueprint bp)
     {
         float r = float.MaxValue;
-        foreach (var wbp in bp.Weapons) r = MathF.Min(r, wbp.Range);
+        foreach (var wbp in bp.Weapons)
+            if (wbp.TargetMask != LayerMask.None) r = MathF.Min(r, wbp.Range); // skip torpedo defense
         return r == float.MaxValue ? 0 : r;
     }
 

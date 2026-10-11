@@ -1,0 +1,54 @@
+{
+  "Id": "uef_t1_sub",
+  "Name": "Tigershark Attack Submarine",
+  "Description": "T1 submarine: torpedoes against ships and subs. Submerged: only sonar can find it.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "AntiNaval",
+    "Tech1"
+  ],
+  "MaxHealth": 1000,
+  "Radius": 0.9,
+  "Economy": {
+    "BuildCostMass": 300,
+    "BuildCostEnergy": 2500,
+    "BuildTime": 1100
+  },
+  "Movement": {
+    "Layer": "Sub",
+    "MaxSpeed": 4.2,
+    "Acceleration": 2,
+    "TurnRate": 70
+  },
+  "Intel": {
+    "VisionRadius": 20,
+    "SonarRadius": 45
+  },
+  "Weapons": [
+    {
+      "Name": "Torpedo Launcher",
+      "Range": 30,
+      "Damage": 150,
+      "RateOfFire": 0.25,
+      "MuzzleVelocity": 9,
+      "TurretTurnRate": 720,
+      "FiringTolerance": 45,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "torpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "sub",
+    "Size": [
+      1.4,
+      1.1,
+      5.0
+    ],
+    "Icon": "naval"
+  }
+}

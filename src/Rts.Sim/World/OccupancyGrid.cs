@@ -67,13 +67,11 @@ public sealed class OccupancyGrid
     public bool CanPlace(UnitBlueprint bp, Vector2 pos, Terrain terrain)
     {
         var (x0, z0, x1, z1) = Footprint(bp, pos);
-        bool naval = bp.HasAny(UnitCategory.Naval);
         for (int z = z0; z <= z1; z++)
         for (int x = x0; x <= x1; x++)
         {
             if (IsBlocked(x, z)) return false;
-            var p = terrain.PassAt(x, z);
-            if (naval ? (p & PassFlags.WaterSurface) == 0 : (p & PassFlags.Land) == 0) return false;
+            if (!Naval.NavalRules.CellBuildable(terrain, bp, x, z)) return false; // land, or deep enough water
         }
         if (bp.Economy.RequiresMassDeposit || bp.Economy.RequiresHydroDeposit)
         {
