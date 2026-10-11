@@ -27,6 +27,8 @@ public sealed class EffectsRenderer : IDisposable
 
     public bool FakeBattle;
     public int ParticleCount => _ps.Count;
+    /// <summary>The particle pool (other renderers may emit into it, e.g. smoking wrecks).</summary>
+    public ParticleSystem Particles => _ps;
     public int ProjectileCount { get; private set; }
 
     private struct FakeProjectile
@@ -45,6 +47,9 @@ public sealed class EffectsRenderer : IDisposable
         _proj = new QuadBatch(Shaders.Particle.Shader);
         FakeBattle = fakeBattle;
     }
+
+    /// <summary>Frame time scaled by the game speed (0 while paused) for game-time animations.</summary>
+    public static float GameDt(GameContext ctx, float dt) => ctx.Runner.Paused ? 0f : dt * ctx.Runner.Speed;
 
     private Vector4 ArmyTint(int army, float boost = 1.3f)
     {
@@ -87,9 +92,11 @@ public sealed class EffectsRenderer : IDisposable
         }
     }
 
-    /// <summary>Updates and draws projectiles + effects. Call inside BeginMode3D after opaque geometry/water.</summary>
+    /// <summary>Updates and draws projectiles + effects. Call inside BeginMode3D after opaque geometry/water.
+    /// dt is the real frame time; particles advance in game time (frozen while paused, faster at 2x).</summary>
     public void Draw(float dt, SimSnapshot cur, SimSnapshot? prev, float alpha, List<EffectEvent> newEffects)
     {
+        dt = GameDt(_ctx, dt);
         _frame++;
         var fv = FrameView.Capture();
         _ps.Lod = Math.Clamp(110f / MathF.Max(1f, Atmosphere.CameraDistance), 0.3f, 1f) * (_ps.Count > ParticleSystem.Capacity * 0.7f ? 0.4f : 1f);

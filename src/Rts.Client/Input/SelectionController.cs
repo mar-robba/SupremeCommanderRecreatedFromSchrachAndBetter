@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Sim;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
@@ -34,6 +35,9 @@ public sealed class SelectionController
     /// <summary>Set by the HUD while a modal dialog is open: world input and hotkeys are ignored.</summary>
     public bool InputBlocked;
 
+    /// <summary>What a right-click would do at the cursor (context orders, shown as a cursor hint).</summary>
+    public ContextAction HoverAction = ContextAction.None;
+
     public SelectionController(GameContext ctx)
     {
         _ctx = ctx;
@@ -60,6 +64,8 @@ public sealed class SelectionController
         if (InputBlocked) { _dragStart = null; return; }
 
         HandleHotkeys(ctrl, shift);
+        HoverAction = !mouseOverUi && Mode == CommandMode.Normal && !Placement.Active && Selected.Count > 0 && !IsDragging
+            ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition()) : ContextAction.None;
 
         if (Placement.Active)
         {
@@ -183,6 +189,7 @@ public sealed class SelectionController
         };
         _ctx.Feedback.AddClickMarker(new Vector3(p.X, _ctx.Terrain.GetSurfaceHeight(p), p.Y), order.Type);
         _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, Selected.ToArray(), order, queue));
+        UiSounds.Confirm();
     }
 
     // ------------------------------------------------------------------ picking
@@ -280,6 +287,8 @@ public sealed class SelectionController
     {
         if (Selected.Count == 0) return false;
         var mouse = Raylib.GetMousePosition();
+        // Engineers / commander: reclaim wrecks, repair, finish or assist (see ContextOrders).
+        if (mode == CommandMode.Normal && ContextOrders.TryIssue(_ctx, this, mouse, queue)) return true;
         var units = Selected.ToArray();
         var target = PickUnit(mouse);
         bool targetIsSelected = target is UnitView sv && Selected.Contains(new UnitHandle(sv.Index, sv.Gen));
@@ -289,7 +298,10 @@ public sealed class SelectionController
         else if (mode is CommandMode.Normal or CommandMode.Guard && target is UnitView av && av.Army == _ctx.LocalArmy && !targetIsSelected)
             order = Order.GuardUnit(new UnitHandle(av.Index, av.Gen));
         else if (mode == CommandMode.Guard)
+        {
+            UiSounds.Error();
             return false; // Guard/assist needs a friendly unit under the cursor.
+        }
         else
         {
             if (_ctx.PickGround(mouse) is not Vector3 g) return false;
@@ -303,6 +315,7 @@ public sealed class SelectionController
             _ctx.Feedback.AddClickMarker(g, order.Type);
         }
         _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, units, order, queue));
+        UiSounds.Confirm();
         return true;
     }
 }

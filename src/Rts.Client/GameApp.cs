@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Rendering;
 using Rts.Client.UI;
@@ -37,6 +38,9 @@ public sealed class ClientOptions
     /// <summary>Debug: render one model of every unit shape near the player start.</summary>
     public bool Gallery;
     public bool NoVsync;
+    /// <summary>Audio options: --nosound, --sound (keep audio in screenshot runs), --volume F, --sfx-volume F,
+    /// --music-volume F, --nomusic (see Audio/GameAudio.cs).</summary>
+    public AudioSettings Audio = new();
 
     public static ClientOptions Parse(string[] args)
     {
@@ -73,7 +77,9 @@ public sealed class ClientOptions
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
-                default: throw new ArgumentException("unknown argument " + a);
+                default:
+                    if (AudioSettings.ParseArg(a, Next, o.Audio)) break;
+                    throw new ArgumentException("unknown argument " + a);
             }
         }
         return o;
@@ -116,6 +122,8 @@ public static class GameApp
         var selection = new SelectionController(ctx);
         var hud = new Hud(ctx, selection);
         hud.ApplyStartupOptions(opt);
+        using var props = new PropRenderer(ctx, fx.Particles);
+        using var audio = new GameAudio(ctx, opt.Audio, automated: opt.ScreenshotPath != null);
 
         var start = terrain.StartPositions[0];
         if (opt.CameraXZD is Vector3 cxz) camera.LookAt(cxz.X, cxz.Y, cxz.Z);
@@ -132,6 +140,7 @@ public static class GameApp
             bool overUi = hud.MouseOverUi();
             camera.Update(dt, overUi, ctx.PickGround);
             selection.Update(overUi);
+            audio.Update(dt, interp, selection.Selected.Count, selection.InputBlocked);
             DebugKeys(ctx);
 
             var cur = interp.Current;
@@ -146,12 +155,14 @@ public static class GameApp
             terrainR.Draw(camera.Camera);
             terrainR.DrawDeposits();
             if (camera.Distance < IconRenderer.HideMeshDistance) unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
+            props.Draw(cur, dt);
             DrawSelection3D(ctx, selection, cur, prev, alpha);
             ctx.Feedback.Draw();
             terrainR.DrawWater();
             fx.Draw(dt, cur, prev, alpha, interp.NewEffects);
             Raylib.EndMode3D();
 
+            props.DrawStrategic(cur);
             IconRenderer.Draw(ctx, cur, prev, alpha, selectedSet);
             DrawHealthBars(ctx, selectedSet, cur, prev, alpha);
             if (selection.IsDragging)
@@ -161,6 +172,8 @@ public static class GameApp
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             hud.Draw();
+            CursorHint.Draw(ctx, selection, overUi);
+            audio.DrawOverlay();
             perf.Draw(unitR, fx);
             Raylib.EndDrawing();
 

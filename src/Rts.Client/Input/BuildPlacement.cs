@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Map;
@@ -104,9 +105,10 @@ public sealed class BuildPlacement
         if (Raylib.IsMouseButtonPressed(MouseButton.Right)) { Cancel(); return; }
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && HasPos)
         {
-            if (Error != PlacementError.None) { _rejectFlashUntil = Raylib.GetTime() + 0.35; return; }
+            if (Error != PlacementError.None) { _rejectFlashUntil = Raylib.GetTime() + 0.35; UiSounds.Error(); return; }
             _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, builders, Order.BuildAt(BpIndex, Pos, Heading), shift));
             _ctx.Feedback.AddClickMarker(new Vector3(Pos.X, _ctx.Terrain.GetSurfaceHeight(Pos), Pos.Y), OrderType.Build);
+            UiSounds.Confirm();
             if (shift) _placedWithShift = true;
             else Cancel();
         }
