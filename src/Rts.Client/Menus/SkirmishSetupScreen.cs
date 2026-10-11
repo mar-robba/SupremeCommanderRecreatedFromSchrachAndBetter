@@ -31,7 +31,7 @@ public sealed class SkirmishSetupScreen : IScreen
     {
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         _preview.Request(_cfg.MapSettings());
         _preview.Update();
 
@@ -193,7 +193,7 @@ public sealed class SkirmishSetupScreen : IScreen
     private void DrawBottom(float x0, float y, float right)
     {
         float bh = Ui.P(42);
-        if (MenuUi.BigButton(Ui.R(x0, y, Ui.P(150), bh), "Back") || (Raylib.IsKeyPressed(KeyboardKey.Escape) && !MenuUi.FieldFocused))
+        if (MenuUi.BigButton(Ui.R(x0, y, Ui.P(150), bh), "Back") || (MenuUi.Key(KeyboardKey.Escape) && !MenuUi.FieldFocused))
         {
             _app.ToMainMenu();
             return;
@@ -205,7 +205,7 @@ public sealed class SkirmishSetupScreen : IScreen
         else if (MapPresets.NeedsNaval(_cfg.Preset))
             Ui.TextRight("Bases are on separate islands", start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.TextDim);
         bool go = MenuUi.BigButton(start, "Start Game", problem == null, true, 16)
-                  || (problem == null && !MenuUi.FieldFocused && (Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter)))
+                  || (problem == null && !MenuUi.FieldFocused && (MenuUi.Key(KeyboardKey.Enter) || MenuUi.Key(KeyboardKey.KpEnter)))
                   || (_app.Options.AutoStart && problem == null && _preview.Terrain != null);
         if (go)
         {

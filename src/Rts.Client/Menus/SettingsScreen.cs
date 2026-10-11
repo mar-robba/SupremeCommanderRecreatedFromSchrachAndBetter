@@ -15,7 +15,7 @@ public sealed class SettingsScreen : IScreen
     public void Frame(float dt)
     {
         _app.Backdrop.Draw(dt, 0.75f);
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         float x = Ui.P(80), y = Ui.Sh * 0.12f;
         MenuUi.ScreenTitle("Settings", "Changes apply immediately and are saved", x, y);
 
@@ -57,7 +57,7 @@ public sealed class SettingsScreen : IScreen
         }
         if (_s.Fullscreen) Ui.Text("Window resolution is used when fullscreen is off.", cx, ry + rowH + Ui.P(6), Ui.F(10.5f), Ui.TextFaint);
 
-        if (MenuUi.BigButton(Ui.R(x, panel.Y + panel.Height + Ui.P(20), Ui.P(160), Ui.P(40)), "Back") || Raylib.IsKeyPressed(KeyboardKey.Escape))
+        if (MenuUi.BigButton(Ui.R(x, panel.Y + panel.Height + Ui.P(20), Ui.P(160), Ui.P(40)), "Back") || MenuUi.Key(KeyboardKey.Escape))
             _app.ToMainMenu();
         Ui.DrawTooltip();
     }

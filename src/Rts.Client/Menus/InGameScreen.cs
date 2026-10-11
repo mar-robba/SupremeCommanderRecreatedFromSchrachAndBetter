@@ -53,7 +53,7 @@ public sealed class InGameScreen : IScreen
                 else CheckOutcome();
                 break;
             case State.Paused:
-                if (Raylib.IsKeyPressed(KeyboardKey.Escape)) Resume();
+                if (MenuUi.Key(KeyboardKey.Escape)) Resume();
                 break;
             case State.Ending:
                 _endTimer += dt;
@@ -101,7 +101,7 @@ public sealed class InGameScreen : IScreen
 
     private void DrawPause()
     {
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         MenuUi.Dim(140);
         float w = Ui.P(320), bh = Ui.P(42), gap = Ui.P(10);
         float h = Ui.P(64) + 4 * (bh + gap) + Ui.P(10);
@@ -125,7 +125,7 @@ public sealed class InGameScreen : IScreen
 
     private void DrawEndingBanner()
     {
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         float k = Math.Clamp(_endTimer / 0.8f, 0f, 1f);
         MenuUi.Dim((byte)(90 * k));
         string t = _endWon ? "VICTORY" : "DEFEAT";
@@ -146,7 +146,7 @@ public sealed class InGameScreen : IScreen
 
     private void DrawStats()
     {
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         var action = _end!.Draw();
         switch (action)
         {

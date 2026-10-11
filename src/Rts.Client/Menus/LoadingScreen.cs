@@ -35,7 +35,7 @@ public sealed class LoadingScreen : IScreen
     {
         _time += dt;
         Raylib.ClearBackground(new Color(10, 14, 20, 255));
-        Ui.BeginDraw();
+        MenuUi.BeginFrame();
         int sw = Ui.Sw, sh = Ui.Sh;
         Raylib.DrawRectangleGradientV(0, 0, sw, sh, new Color(18, 26, 36, 255), new Color(6, 9, 13, 255));
 

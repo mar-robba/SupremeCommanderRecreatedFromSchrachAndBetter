@@ -130,6 +130,7 @@ public static class GameApp
     public static void Run(ClientOptions opt)
     {
         AppSettings.Persist = opt.ScreenshotPath == null;
+        MenuUi.Automated = opt.ScreenshotPath != null;
         var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
 

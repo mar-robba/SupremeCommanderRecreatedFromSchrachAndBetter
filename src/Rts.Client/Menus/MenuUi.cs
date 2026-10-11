@@ -16,6 +16,19 @@ public static class MenuUi
     private static int _activeSlider = -1;
     private static int _focusedField = -1;
 
+    /// <summary>Automated screenshot runs: menus ignore real keyboard/mouse input (stray desktop input).</summary>
+    public static bool Automated;
+
+    /// <summary>Start of a menu/overlay frame: resets the UI toolkit; swallows clicks in automated runs.</summary>
+    public static void BeginFrame()
+    {
+        Ui.BeginDraw();
+        if (Automated) Ui.ConsumeClicks();
+    }
+
+    /// <summary>Key shortcut for menus (always false in automated runs).</summary>
+    public static bool Key(KeyboardKey k) => !Automated && Raylib.IsKeyPressed(k);
+
     public static bool BigButton(Rectangle r, string label, bool enabled = true, bool primary = false, float size = 15)
     {
         var st = Ui.Button(r, enabled, false, primary ? PrimaryTint : null);

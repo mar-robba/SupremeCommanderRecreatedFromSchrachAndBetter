@@ -89,7 +89,7 @@ public sealed class GameSession : IDisposable
     /// </summary>
     public bool HandleEscapeForPause()
     {
-        if (!Raylib.IsKeyPressed(KeyboardKey.Escape)) return false;
+        if (!MenuUi.Key(KeyboardKey.Escape)) return false;
         var s = _selection;
         if (s.Mode != SelectionController.CommandMode.Normal || s.Placement.Active || s.PendingSelfDestruct != null) return false;
         if (s.Selected.Count > 0)
