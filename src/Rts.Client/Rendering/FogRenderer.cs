@@ -122,27 +122,57 @@ public sealed class FogRenderer : IDisposable
     public static Vector3 BlipPos(in BlipView b, float alpha) =>
         b.Pos - new Vector3(b.Vel.X, 0, b.Vel.Y) * (TickSeconds * (1f - alpha));
 
-    /// <summary>Radar contacts: army-colored pulsing rings with a dot (no type information), constant screen size.</summary>
+    private Texture2D _blipTex;
+
+    /// <summary>64x64 blip sprite: white ring + center dot on a soft dark halo (tinted with the army color).</summary>
+    private Texture2D BlipTexture()
+    {
+        if (_blipTex.Id != 0) return _blipTex;
+        const int n = 64;
+        var px = new Color[n * n];
+        for (int y = 0; y < n; y++)
+        for (int x = 0; x < n; x++)
+        {
+            float d = MathF.Sqrt((x - 31.5f) * (x - 31.5f) + (y - 31.5f) * (y - 31.5f));
+            float ring = Math.Clamp(1f - MathF.Abs(d - 21f) / 3.2f, 0, 1);
+            float dot = Math.Clamp(7.5f - d, 0, 1);
+            float w = MathF.Max(ring, dot);
+            float halo = Math.Clamp((30f - d) / 6f, 0, 1) * 0.45f;
+            float a = w + halo * (1 - w);
+            byte c = (byte)(a > 0 ? 255 * w / a : 0);
+            px[y * n + x] = new Color(c, c, c, (byte)(255 * a));
+        }
+        var img = Raylib.GenImageColor(n, n, Color.Blank);
+        _blipTex = Raylib.LoadTextureFromImage(img);
+        Raylib.UnloadImage(img);
+        Raylib.UpdateTexture(_blipTex, px);
+        Raylib.SetTextureFilter(_blipTex, TextureFilter.Bilinear);
+        return _blipTex;
+    }
+
+    private void DrawBlipSprite(Vector2 s, float size, Color col)
+    {
+        var tex = BlipTexture();
+        Raylib.DrawTexturePro(tex, new Rectangle(0, 0, tex.Width, tex.Height), new Rectangle(s.X - size * 0.5f, s.Y - size * 0.5f, size, size), Vector2.Zero, 0, col);
+    }
+
+    /// <summary>Radar contacts: army-colored pulsing rings with a dot (no type information), constant screen size.
+    /// One batched textured quad per blip (thousands are cheap).</summary>
     public void DrawBlips(SimSnapshot cur, float alpha)
     {
         if (cur.BlipCount == 0) return;
-        var cam = _ctx.Camera.Camera;
+        var fv = FrameView.Current;
         float t = (float)Raylib.GetTime();
-        int sw = Raylib.GetScreenWidth(), sh = Raylib.GetScreenHeight();
         for (int k = 0; k < cur.BlipCount; k++)
         {
             ref var b = ref cur.Blips[k];
-            var p = BlipPos(b, alpha);
-            if (Vector3.Dot(p - cam.Position, cam.Target - cam.Position) <= 0) continue;
-            var s = Raylib.GetWorldToScreen(p + new Vector3(0, 0.6f, 0), cam);
-            if (s.X < -20 || s.Y < -20 || s.X > sw + 20 || s.Y > sh + 20) continue;
+            if (!fv.WorldToScreen(BlipPos(b, alpha) + new Vector3(0, 0.6f, 0), out var s)) continue;
+            if (s.X < -20 || s.Y < -20 || s.X > fv.ScreenW + 20 || s.Y > fv.ScreenH + 20) continue;
             var col = (uint)b.Army < (uint)_ctx.ArmyColors.Length ? _ctx.ArmyColors[b.Army] : Color.Red;
+            col = ColorUtil.Lerp(col, Color.White, 0.2f);
             float pulse = 0.5f + 0.5f * MathF.Sin(t * 4f + b.Id * 1.7f);
-            float r = 7f + pulse * 1.5f;
-            Raylib.DrawCircleV(s, r + 2.5f, new Color(0, 0, 0, 90));
-            Raylib.DrawRing(s, r - 1.6f, r, 0, 360, 24, ColorUtil.WithAlpha(col, 235));
-            Raylib.DrawCircleV(s, 2.6f, ColorUtil.WithAlpha(ColorUtil.Lerp(col, Color.White, 0.45f), 255));
-            Raylib.DrawRing(s, r + 2.5f + pulse * 4f, r + 3.5f + pulse * 4f, 0, 360, 24, ColorUtil.WithAlpha(col, (byte)(110 * (1 - pulse))));
+            DrawBlipSprite(s, 20f + pulse * 3f, ColorUtil.WithAlpha(col, 240));
+            DrawBlipSprite(s, 28f + pulse * 12f, ColorUtil.WithAlpha(col, (byte)(90 * (1 - pulse))));
         }
     }
 
@@ -208,7 +238,7 @@ public sealed class FogRenderer : IDisposable
             ref var b = ref snap.Blips[i];
             var p = new Vector2(m.X + b.Pos.X / t.Width * m.Width, m.Y + b.Pos.Z / t.Height * m.Height);
             var col = (uint)b.Army < (uint)_ctx.ArmyColors.Length ? _ctx.ArmyColors[b.Army] : Color.Red;
-            Raylib.DrawCircleLinesV(p, dot * 0.9f + 1f, col);
+            DrawBlipSprite(p, dot * 2.6f + 4f, col);
         }
     }
 
@@ -240,6 +270,7 @@ public sealed class FogRenderer : IDisposable
     public void Dispose()
     {
         Unload();
+        if (_blipTex.Id != 0) Raylib.UnloadTexture(_blipTex);
         if (_minimapShader != null) Raylib.UnloadShader(_minimapShader.Shader);
         if (Current == this) Current = null;
     }
