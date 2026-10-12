@@ -56,7 +56,11 @@ public static class ShieldSystem
             if (sb == null) continue;
             ref var sh = ref s.Shield[i];
             bool active = (u.Flags[i] & (UnitFlags.UnderConstruction | UnitFlags.Paused | UnitFlags.Dead)) == 0;
-            bool powered = active && (bp.Economy.MaintenanceEnergy <= 0 || u.Econ[i].Efficiency >= MinPowerEfficiency);
+            // An up shield pays its upkeep and reads its own efficiency; a collapsed one pays nothing (its
+            // Econ.Efficiency is a meaningless 1), so its recharge reads the army's energy health instead.
+            bool powered = active && (bp.Economy.MaintenanceEnergy <= 0
+                || (sh.Up ? u.Econ[i].Efficiency >= MinPowerEfficiency
+                          : ArmyCanPower(w, u.Army[i], bp.Economy.MaintenanceEnergy * (1f - u.Econ[i].AdjEnergyUse))));
             if (sh.Up)
             {
                 if (!powered) Collapse(w, i, sb, ref sh);
@@ -83,6 +87,19 @@ public static class ShieldSystem
                 });
         }
         s.Index.Build();
+    }
+
+    /// <summary>
+    /// Recharge condition of a collapsed shield with upkeep: its army is not stalling on energy
+    /// (<see cref="Army"/> EnergyEfficiency ≥ <see cref="MinPowerEfficiency"/>) and the stored energy plus this tick's
+    /// net income would still cover one tick of the shield's own upkeep (else it would come up and collapse at once,
+    /// e.g. an army with no power at all has no demand and so an efficiency of 1).
+    /// </summary>
+    public static bool ArmyCanPower(SimWorld w, int army, float upkeep)
+    {
+        var eco = w.Armies[army].Eco;
+        if (eco.EnergyEfficiency < MinPowerEfficiency) return false;
+        return eco.Energy + (eco.EnergyIncome - eco.EnergyDemand - upkeep) * SimWorld.Dt >= 0;
     }
 
     private static void Collapse(SimWorld w, int i, ShieldBlueprint sb, ref ShieldState sh)
