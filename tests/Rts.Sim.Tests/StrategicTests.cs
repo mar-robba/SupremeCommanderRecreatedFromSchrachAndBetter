@@ -464,4 +464,28 @@ public class StrategicTests
 
         Assert.Equal(RunWith(1), RunWith(8));
     }
+
+    [Fact]
+    public void StrategicApiLaunchNukeWithoutSilo()
+    {
+        var sim = BigFlat();
+        var target = new Vector2(180, 180);
+        var victim = CombatWorld.Spawn(sim, "uef_t1_tank", 1, target.X, target.Y);
+        sim.Step();
+        Assert.Equal(-1, StrategicApi.LaunchNuke(sim.World, 99, target));
+        Assert.Equal(-1, StrategicApi.LaunchNuke(sim.World, 0, new Vector2(20, 20), target, "uef_t1_tank"));
+        int p = StrategicApi.LaunchNuke(sim.World, 0, new Vector2(20, 20), target);
+        Assert.True(p >= 0);
+        var s = StrategicState.Of(sim.World);
+        Assert.Equal(1, s.LaunchSerial);
+        bool detonated = false;
+        for (int t = 0; t < 900 && !detonated; t++)
+        {
+            sim.Step();
+            detonated = sim.World.Events.Effects.Any(e => e.Kind == EffectKind.NukeDetonation);
+        }
+        Assert.True(detonated);
+        sim.Step();
+        Assert.False(CombatWorld.Alive(sim, victim));
+    }
 }

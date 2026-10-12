@@ -46,16 +46,27 @@ public static class MissileSystem
         var bp = w.BpOf(unit);
         var sb = bp.Silo!;
         var wb = bp.Weapons[sb.WeaponIndex];
-        var terrain = w.Terrain;
         var from = u.Pos[unit];
         if (wb.Spread > 0)
         {
             var rng = w.RandomFor(unit, 0x5170);
             float r = wb.Spread * MathF.Sqrt(rng.NextFloat());
             float a = rng.NextFloat() * DMath.TwoPi;
-            target = terrain.Clamp(target + new Vector2(MathF.Cos(a), MathF.Sin(a)) * r);
+            target = w.Terrain.Clamp(target + new Vector2(MathF.Cos(a), MathF.Sin(a)) * r);
         }
-        var start = new Vector3(from.X, u.Elevation[unit] + bp.Visual.Size.Y * 0.9f + 0.5f, from.Y);
+        return Spawn(s, w, u.Army[unit], u.HandleOf(unit), bp, from, u.Elevation[unit] + bp.Visual.Size.Y * 0.9f + 0.5f, target);
+    }
+
+    /// <summary>
+    /// Spawns the silo blueprint's missile for <paramref name="army"/> from a ground point (no launcher unit needed:
+    /// <paramref name="source"/> may be <see cref="UnitHandle.None"/>). Sequential. Returns the projectile slot or -1.
+    /// </summary>
+    internal static int Spawn(StrategicState s, SimWorld w, int army, UnitHandle source, UnitBlueprint bp, Vector2 from, float startY, Vector2 target)
+    {
+        var sb = bp.Silo!;
+        var wb = bp.Weapons[sb.WeaponIndex];
+        var terrain = w.Terrain;
+        var start = new Vector3(from.X, startY, from.Y);
         var end = new Vector3(target.X, terrain.GetSurfaceHeight(target), target.Y);
         float dist = Vector2.Distance(from, target);
 
@@ -70,7 +81,7 @@ public static class MissileSystem
         float duration = (dist + 2f * (apex - MathF.Min(start.Y, end.Y))) / speed;
 
         var P = w.Projectiles;
-        int p = P.Spawn(start, new Vector3(0, speed, 0), u.Army[unit], u.HandleOf(unit), bp.Index, sb.WeaponIndex,
+        int p = P.Spawn(start, new Vector3(0, speed, 0), army, source, bp.Index, sb.WeaponIndex,
             UnitHandle.None, end, wb.Damage, wb.DamageRadius, duration + 5f, 0f);
         if (p < 0) return -1;
         Register(s, P, p, strategic ? MissileRole.Strategic : MissileRole.Tactical);
@@ -78,11 +89,11 @@ public static class MissileSystem
         s.Duration[p] = MathF.Max(1f, duration);
         s.Elapsed[p] = 0;
         s.Apex[p] = apex;
-        CombatFx.Add(w, EffectKind.MissileLaunch, start, strategic ? 3f : 1.2f, u.Army[unit], bp.Index, sb.WeaponIndex);
+        CombatFx.Add(w, EffectKind.MissileLaunch, start, strategic ? 3f : 1.2f, army, bp.Index, sb.WeaponIndex);
         if (strategic)
         {
             s.LaunchSerial++;
-            s.Launches.Add(new LaunchRecord { Serial = s.LaunchSerial, Tick = w.Tick, Army = u.Army[unit], Kind = sb.Kind, From = from, Target = target });
+            s.Launches.Add(new LaunchRecord { Serial = s.LaunchSerial, Tick = w.Tick, Army = army, Kind = sb.Kind, From = from, Target = target });
             if (s.Launches.Count > StrategicState.MaxLaunchRecords) s.Launches.RemoveAt(0);
         }
         return p;
