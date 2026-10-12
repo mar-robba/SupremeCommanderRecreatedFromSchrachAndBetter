@@ -22,6 +22,9 @@ Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn 
 - (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
 - (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
 - (d) `agent-a1c38e069748a3b2b` AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
+- (e) `agent-a1b89b5d8e6a88a18` Sandbox mode (owner request 2026-10-12): `--sandbox` + menu entry, cheat commands
+  (spawn N of any blueprint, infinite resources, instant build, reveal, AI toggle, kill/heal/owner, nuke at point),
+  side panel + text console. After (b) merges, switch the sandbox nuke to the real strategic missile.
 Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
