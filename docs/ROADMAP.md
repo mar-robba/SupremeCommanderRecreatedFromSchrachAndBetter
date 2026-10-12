@@ -17,11 +17,17 @@ Shared contracts (on main before wave 3 started):
 - New enum members (OrderType, CommandType, UnitCategory, snapshot fields) are appended at the END; shared files
   edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
 
-Wave 3 agents:
-- (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
-- (b) Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
-- (c) Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
-- (d) AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
+Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn a fresh agent in the same dir to resume):
+(2026-10-12: agents a–d were replaced by fresh agents in the same worktrees because their context got too big;
+handoff notes, which may not survive a reboot: `/tmp/claude-1000/-run-media-marco-Volume-D-RTS/c7c89635-6975-439b-9335-21c395ab4db0/scratchpad/handoff-{a,b,c,d}.md`.
+If the notes are gone, read `git log main..HEAD` in the worktree.)
+- ✅ MERGED 2026-10-12 (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
+- (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
+- (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
+- (d) `agent-a1c38e069748a3b2b` AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
+- (e) `agent-a1b89b5d8e6a88a18` Sandbox mode (owner request 2026-10-12): `--sandbox` + menu entry, cheat commands
+  (spawn N of any blueprint, infinite resources, instant build, reveal, AI toggle, kill/heal/owner, nuke at point),
+  side panel + text console. After (b) merges, switch the sandbox nuke to the real strategic missile.
 Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
@@ -76,7 +82,12 @@ Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transpor
       - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
 ## Phase 3 — SupCom depth
-- [ ] T2 and T3 tech: upgrades of factories/mexes, T2/T3 units for land, air, naval
+- [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
+      radar→omni; own build power + engineer assist, factory queue pauses, mex keeps producing, cancel refunds, same
+      handle), 30 UEF T2/T3 blueprints (engineers, factories, mex, pgen, mass fab, PD, flak, SAM, omni, Pillar,
+      Riptide, Brimstone MML, Sky Boxer, Titan, Percival, Demolisher, gunship, Janus, Wasp, Ambassador, spy plane),
+      T2/T3 models, upgrade tile/U hotkey/progress bars/hologram, build-menu tier pills, `--tech-demo`
+      - [ ] later: T2/T3 naval (agent c), AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
 - [ ] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke
 - [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
 - [ ] Transports/ferry, air staging, engineer assist chains

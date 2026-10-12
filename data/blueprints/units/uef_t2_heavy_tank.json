@@ -1,0 +1,52 @@
+{
+  "Id": "uef_t2_heavy_tank",
+  "Name": "Pillar",
+  "Description": "T2 heavy tank: twin gauss cannons, heavy armor.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 1550,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 198,
+    "BuildCostEnergy": 990,
+    "BuildTime": 990
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.6,
+    "Acceleration": 2.5,
+    "TurnRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Weapons": [
+    {
+      "Name": "Twin Gauss Cannon",
+      "Range": 22,
+      "Damage": 30,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 32,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectilesPerShot": 2,
+      "TurretTurnRate": 120
+    }
+  ],
+  "Visual": {
+    "Shape": "heavy_tank",
+    "Size": [
+      1.4,
+      0.95,
+      1.9
+    ],
+    "Icon": "land_direct"
+  }
+}

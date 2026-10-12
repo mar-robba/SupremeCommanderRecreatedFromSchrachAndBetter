@@ -1,0 +1,52 @@
+{
+  "Id": "uef_t2_mobile_flak",
+  "Name": "Sky Boxer",
+  "Description": "T2 mobile flak: area anti-air.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 700,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 120,
+    "BuildCostEnergy": 700,
+    "BuildTime": 700
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.8,
+    "Acceleration": 3,
+    "TurnRate": 110
+  },
+  "Intel": {
+    "VisionRadius": 26
+  },
+  "Weapons": [
+    {
+      "Name": "Flak Cannon",
+      "Range": 36,
+      "Damage": 22,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "DamageRadius": 2.5,
+      "ProjectileVisual": "flak",
+      "TurretTurnRate": 180
+    }
+  ],
+  "Visual": {
+    "Shape": "flak",
+    "Size": [
+      1.2,
+      0.9,
+      1.6
+    ],
+    "Icon": "land_aa"
+  }
+}

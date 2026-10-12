@@ -1,0 +1,56 @@
+{
+  "Id": "uef_t3_mobile_artillery",
+  "Name": "Demolisher",
+  "Description": "T3 mobile heavy artillery: very long range area bombardment.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "IndirectFire",
+    "Artillery",
+    "Tech3"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 1.0,
+  "Economy": {
+    "BuildCostMass": 700,
+    "BuildCostEnergy": 9000,
+    "BuildTime": 3600
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.0,
+    "Acceleration": 2,
+    "TurnRate": 80
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Artillery",
+      "Range": 80,
+      "Damage": 700,
+      "RateOfFire": 0.125,
+      "MuzzleVelocity": 32,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 4,
+      "Spread": 3,
+      "MinRange": 10,
+      "TurretTurnRate": 40
+    }
+  ],
+  "Visual": {
+    "Shape": "heavy_artillery",
+    "Size": [
+      1.6,
+      1.1,
+      2.4
+    ],
+    "Icon": "land_artillery"
+  }
+}

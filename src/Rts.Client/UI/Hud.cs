@@ -24,9 +24,11 @@ public sealed class Hud : IDisposable
     private readonly OrdersPanel _orders;
     private readonly BuildMenu _build;
     private readonly FactoryPanel _factory;
+    private readonly UpgradePanel _upgrade;
     private UiStartup? _startup;
+    private TechDemo? _techDemo;
 
-    private enum BuildKind { None, Engineer, Factory }
+    private enum BuildKind { None, Engineer, Factory, Upgrade }
     private BuildKind _buildKind;
     private Rectangle _top, _mini, _infoR, _ordersR, _buildR, _dialogR, _helpR;
     private bool _showSelectionPanels;
@@ -41,6 +43,7 @@ public sealed class Hud : IDisposable
         _orders = new OrdersPanel(ctx, sel);
         _build = new BuildMenu(ctx, sel);
         _factory = new FactoryPanel(ctx, sel);
+        _upgrade = new UpgradePanel(ctx, sel);
     }
 
     public Rectangle TopBarRect => _top;
@@ -52,6 +55,7 @@ public sealed class Hud : IDisposable
     public void ApplyStartupOptions(ClientOptions o)
     {
         if (o.Select != null || o.UiDemo || o.UiPlace != null || o.MousePos != null) _startup = new UiStartup(_ctx, _sel, o);
+        if (o.TechDemo) _techDemo = new TechDemo(_ctx, _sel, o);
     }
 
     /// <summary>True if the mouse is over a HUD panel (camera/selection should ignore it).</summary>
@@ -76,6 +80,7 @@ public sealed class Hud : IDisposable
         _preFrame = _frame;
         Ui.BeginFrame();
         _startup?.Update();
+        _techDemo?.Update();
         _sel.InputBlocked = _sel.PendingSelfDestruct != null;
     }
 
@@ -101,6 +106,7 @@ public sealed class Hud : IDisposable
         {
             if (_build.Refresh(snap)) { _buildKind = BuildKind.Engineer; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _build.DesiredWidth())), H); }
             else if (_factory.Refresh(snap)) { _buildKind = BuildKind.Factory; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _factory.DesiredWidth())), H); }
+            else if (_upgrade.Refresh(snap)) { _buildKind = BuildKind.Upgrade; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _upgrade.DesiredWidth())), H); }
         }
     }
 
@@ -123,6 +129,7 @@ public sealed class Hud : IDisposable
             _dialogFrames = 0;
             if (_buildKind == BuildKind.Engineer) _build.HandleHotkeys();
             else if (_buildKind == BuildKind.Factory && !_sel.Placement.Active) _factory.HandleHotkeys(snap);
+            if (!_sel.Placement.Active) UpgradeUi.HandleHotkey(_ctx, _sel.Selected, snap);
         }
 
         DrawTopBar(snap);
@@ -134,6 +141,7 @@ public sealed class Hud : IDisposable
         }
         if (_buildKind == BuildKind.Engineer) _build.Draw(_buildR, snap);
         else if (_buildKind == BuildKind.Factory) _factory.Draw(_buildR, snap);
+        else if (_buildKind == BuildKind.Upgrade) _upgrade.Draw(_buildR, snap);
 
         DrawModeHints();
         DrawEndOfGame(snap);
@@ -183,6 +191,7 @@ public sealed class Hud : IDisposable
             new("S stop · M move · A attack-move · P patrol · G guard/assist · Ctrl+K self-destruct", d, 11.5f),
             new("Build menu: Z X C V B N select · Tab / Shift+Tab category · R rotate · Esc / right click cancel", d, 11.5f),
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
+            new("T / Shift+T: tech tier filter (build menu, factory) · U: upgrade selected structures (factory, mex, radar) · right-click the upgrade tile: cancel", d, 11.5f),
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
             new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
             new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),

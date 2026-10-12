@@ -3,6 +3,7 @@
   "Name": "T1 Air Factory",
   "Description": "Builds T1 aircraft.",
   "Tech": 1,
+  "UpgradesTo": "uef_t2_air_factory",
   "Categories": [
     "Structure",
     "Air",

@@ -121,6 +121,8 @@ public sealed unsafe class UnitRenderer : IDisposable
             var col = (uint)v.Army < (uint)teamCols.Length ? teamCols[v.Army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
             bool building = (v.Flags & UnitFlags.UnderConstruction) != 0;
             AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
+            // In-place upgrade: the target model grows around the structure as a construction hologram.
+            if (v.UpgradeBp >= 0) AddUnit(Model(v.UpgradeBp), v.Index, pos, heading, turret, turn, col, true, MathF.Max(0.02f, v.UpgradeFrac), time);
         }
 
         // Fog of war: last-seen enemy structures ("ghosts"), greyed team color; the fog dims them further.

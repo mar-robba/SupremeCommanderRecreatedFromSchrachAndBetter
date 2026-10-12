@@ -1,0 +1,52 @@
+{
+  "Id": "uef_t3_heavy_bot",
+  "Name": "Percival",
+  "Description": "T3 heavy armored bot: huge health and a heavy cannon.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 6500,
+  "Radius": 1.1,
+  "Economy": {
+    "BuildCostMass": 1280,
+    "BuildCostEnergy": 12800,
+    "BuildTime": 5000
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.0,
+    "Acceleration": 1.5,
+    "TurnRate": 70
+  },
+  "Intel": {
+    "VisionRadius": 28
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Gauss Cannon",
+      "Range": 30,
+      "Damage": 450,
+      "RateOfFire": 0.4,
+      "MuzzleVelocity": 35,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "DamageRadius": 1.0,
+      "TurretTurnRate": 70
+    }
+  ],
+  "Visual": {
+    "Shape": "heavy_bot",
+    "Size": [
+      2.2,
+      2.8,
+      2.0
+    ],
+    "Icon": "land_direct"
+  }
+}

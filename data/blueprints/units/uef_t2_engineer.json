@@ -1,0 +1,58 @@
+{
+  "Id": "uef_t2_engineer",
+  "Name": "T2 Engineer",
+  "Description": "Builds T1 and T2 structures; faster and tougher than the T1 engineer.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "Tech2"
+  ],
+  "MaxHealth": 400,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 130,
+    "BuildCostEnergy": 650,
+    "BuildTime": 650,
+    "BuildRate": 12.5
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 2.0,
+    "Acceleration": 2,
+    "TurnRate": 110
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Visual": {
+    "Shape": "engineer2",
+    "Size": [
+      1.0,
+      0.8,
+      1.25
+    ],
+    "Icon": "land_engineer"
+  },
+  "Builds": [
+    "uef_t1_land_factory",
+    "uef_t1_air_factory",
+    "uef_t1_mass_extractor",
+    "uef_t1_power_generator",
+    "uef_t1_hydrocarbon",
+    "uef_t1_mass_storage",
+    "uef_t1_energy_storage",
+    "uef_t1_point_defense",
+    "uef_t1_aa_turret",
+    "uef_t1_radar",
+    "uef_t2_land_factory",
+    "uef_t2_air_factory",
+    "uef_t2_mass_extractor",
+    "uef_t2_power_generator",
+    "uef_t2_mass_fabricator",
+    "uef_t2_point_defense",
+    "uef_t2_aa_flak",
+    "uef_t2_radar"
+  ]
+}
