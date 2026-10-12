@@ -125,6 +125,37 @@ interpolates prev/cur by time
   ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
   `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
 
+## Shields & strategic weapons (`Rts.Sim/Strategic`)
+- `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
+  silo stockpiles + Launch orders (`SiloSystem`) → shields + `ShieldIndex` (`ShieldSystem`) → missile defenses
+  (`MissileSystem`). Per-unit state lives in `StrategicState.Of(world)`; blueprint data in `UnitBlueprint.Strategic.cs`
+  (`Shield`, `Silo`, `MissileDefense`). Zero cost when no strategic unit exists.
+- **Shields** (ellipsoid domes; T2/T3 generators, `uef_t2_mobile_shield` follows its unit): HP, RegenRate after
+  RegenDelay, RechargeTime after collapsing. Energy upkeep via the flow economy; `Econ.Efficiency` < 0.95 (stall)
+  collapses them. `ShieldIndex` (32-unit grid, army mask per cell) is read in the parallel projectile phase: a
+  projectile segment entering an enemy dome from OUTSIDE is absorbed at the surface and damages the shield; shots
+  fired from inside pass out; area blasts outside a dome don't hurt units inside; beams are blocked on the
+  muzzle→target line. Nukes ignore domes and knock every shield in their outer ring down.
+- **Silos** (TML, nuke, anti-nuke): stockpile built pay-first like construction (MissileCost × dt/BuildTime per tick,
+  scaled by efficiency, up to MaxStorage). `OrderType.Launch` (`Order.LaunchAt(pos)`) at the queue front fires one
+  missile when stocked (TML: only within [MinRange, Range], else dropped); with an empty stockpile it waits.
+  Silo/defense weapons are `WeaponKind.Manual`: never auto-fire. `SiloSystem.SetStock` for scenes/tests.
+- **Missiles** are ordinary projectiles registered in `StrategicState`: TML = scripted cruise path above the highest
+  terrain, shield-stoppable; nuke = high arc anywhere, two-ring blast (`OuterDamage/OuterRadius`) applied in
+  DamageSystem. TMD / anti-nuke fire homing interceptors at the nearest unchased enemy missile in Radius (rate
+  limited; anti-nuke spends a stockpiled missile per shot).
+- **Snapshot** (`Snapshot/StrategicViews.cs`): `Shields` (HP fraction, up, recharge fraction, last hit tick), `Silos` (kind, stock, progress),
+  `Launches` + `LaunchSerial` (nuke launches, GLOBAL: not fog-filtered, drive the "STRATEGIC LAUNCH DETECTED"
+  banner/klaxon); `NukeDetonation` effects are also global. Enemy missiles otherwise follow projectile fog rules.
+- **Public entry point**: `StrategicApi.LaunchNuke(SimWorld w, int army, Vector2 from, Vector2 target,
+  string siloBp = DefaultNukeSilo)` and `LaunchNuke(w, army, target)` (from the commander, else map center) launch
+  a nuke without a silo (warning, interceptable, same blast). Sequential sim code only (e.g. a sandbox command handler).
+- **Client**: `Rendering/ShieldRenderer.cs` (fresnel + hex dome shader, hit ripples, fade on collapse, fog-aware,
+  shield HP bars), `Rendering/EffectsRenderer.Strategic.cs` (missile/nuke trails, interceptors, nuke flash +
+  shockwave + mushroom + scorch, `DrawOverlay2D` screen flash), `Input/StrategicOrders.cs` (Launch mode: L hotkey /
+  Launch button, picks one in-range launcher with most stock), `UI/StrategicHud.cs` (banner, target markers, range
+  and blast rings, silo/shield bars), audio `GameAudio.Strategic.cs`. Visual test bed: `--scene strategic[:shields|:tml|:nuke]`.
+
 ## Map generator (`Rts.Sim/Map`)
 - `MapGenerator.Generate(MapGenSettings)` → immutable `Terrain`. Presets (`MapPreset`): Plains, Lakes, Highlands
   (terraces, cliffs, natural + carved ramps), Canyon (valley network in mesas), Archipelago (islands, needs naval).
