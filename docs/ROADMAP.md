@@ -2,33 +2,38 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-11 — read this first in a new session)
-Maps + menus are merged (main 1f1087f+). **Wave 3 is running: 4 agents in worktrees** (branches
-`worktree-agent-*`; check `git worktree list`). When an agent finishes, the orchestrator merges its branch into main,
-runs both test projects plus screenshots, then removes the worktree and branch. Merge order: (a) first, then (b), (c), (d).
+## ▶ NEXT STEPS (updated 2026-10-12 afternoon — read this first in a new session)
+main has: maps + menus, and wave 3a (T2/T3 tech + in-place upgrades, `--tech-demo`). Tests: 155 sim + 69 client.
 
-Shared contracts (on main before wave 3 started):
-- `BuiltBy: [builder ids]` in a blueprint adds it to those builders' build lists (unknown ids ignored), so agents add
-  units WITHOUT editing other builders' files. `UpgradesTo: "<id>"` declares an in-place upgrade
-  (`UpgradesToIndex` / `UpgradesFromIndex`); agent (a) implements the upgrade mechanism.
-- Reserved ids: `uef_t2_engineer`, `uef_t3_engineer` (owned by a), `uef_t2_land_factory`, `uef_t3_land_factory`,
-  `uef_t2_air_factory`, `uef_t3_air_factory`, `uef_t2_mass_extractor`, `uef_t3_mass_extractor` (a);
-  `uef_t1_naval_factory`, `uef_t2_naval_factory`, `uef_t3_naval_factory` (c).
-- New enum members (OrderType, CommandType, UnitCategory, snapshot fields) are appended at the END; shared files
-  edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
+**Running (or finished, waiting to be merged): 4 agents in worktrees** under `.claude/worktrees/`.
+Check each with `git -C <dir> log --oneline -3` and `git -C <dir> status --short`.
+| area | worktree dir / branch `worktree-agent-<id>` | latest agent id (2026-10-12) |
+|---|---|---|
+| (b) strategic: shields, TML/TMD, nuke/anti-nuke, T2/T3 artillery, `--scene strategic` | `agent-ae5eb2c4f3916597c` | a9fccb82ae6e7beb1 |
+| (c) naval: naval factories T1–T3, ships/subs, sonar, torpedoes, playable Archipelago, `--scene naval` | `agent-a22a2b0fcf5a1b603` | a128c58db97bd1e5a |
+| (d) AI: RespectIntel, scouting/radar, finish games on Highlands/Canyon, Hard > Normal, FFA | `agent-a1c38e069748a3b2b` | acebc58040f7127e1 |
+| (e) sandbox (owner request): `--sandbox`, `--exec`, menu button, F9 panel, F10 console, cheats | `agent-a1b89b5d8e6a88a18` | a112d86e1a631c547 |
+Handoff notes (done / TODO): `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/handoff-{b,c,d,e}.md`.
+These are durable copies; the live ones are in the session scratchpad. If an agent is unfinished in a new session,
+spawn a FRESH agent in the same worktree dir (absolute path, no isolation) with: the area scope (table above + Phase 3
+lines below), its handoff note, the 300k-context rule, and permission to use sub-agents.
 
-Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn a fresh agent in the same dir to resume):
-(2026-10-12: agents a–d were replaced by fresh agents in the same worktrees because their context got too big;
-handoff notes, which may not survive a reboot: `/tmp/claude-1000/-run-media-marco-Volume-D-RTS/c7c89635-6975-439b-9335-21c395ab4db0/scratchpad/handoff-{a,b,c,d}.md`.
-If the notes are gone, read `git log main..HEAD` in the worktree.)
-- ✅ MERGED 2026-10-12 (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
-- (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
-- (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
-- (d) `agent-a1c38e069748a3b2b` AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
-- (e) `agent-a1b89b5d8e6a88a18` Sandbox mode (owner request 2026-10-12): `--sandbox` + menu entry, cheat commands
-  (spawn N of any blueprint, infinite resources, instant build, reveal, AI toggle, kill/heal/owner, nuke at point),
-  side panel + text console. After (b) merges, switch the sandbox nuke to the real strategic missile.
-Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
+**Merge procedure** (orchestrator, in the main checkout; merge order b → c → e → d):
+1. `git merge --no-ff worktree-agent-<id>`; conflicts are expected in shared files: resolve additively.
+2. `dotnet build Rts.slnx`, then both test projects green.
+3. One screenshot of the feature's scene. Then `git worktree remove` + `git branch -d`, and update this section.
+After (b) and (e) are both merged:
+- switch `SandboxSystem.Nuke` to (b)'s public nuke-launch entry point;
+- unify the two nuke effects (`EffectKind.Nuke` exists on both branches).
+This can be a small agent task.
+
+Shared contracts (still valid): `BuiltBy` (a blueprint adds itself to builders' lists; unknown ids are ignored) and
+`UpgradesTo` (in-place upgrade). Enums are append-only. Edits to shared files stay minimal and additive. New models go
+in new partial files, with only a `case` line in UnitModels.cs.
+
+Then:
+- **Wave 4**: the AI uses T2/T3 upgrades, naval, shields, TML and nukes; balance pass.
+- **Phase 3/4**: experimentals, transports, 2nd faction, save/replays, multiplayer.
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
