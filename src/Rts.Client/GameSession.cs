@@ -33,6 +33,7 @@ public sealed class GameSession : IDisposable
     private readonly EffectsRenderer _fx;
     private readonly FogRenderer _fog;
     private readonly PropRenderer _props;
+    private readonly ShieldRenderer _shields;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly SelectionController _selection;
@@ -83,6 +84,7 @@ public sealed class GameSession : IDisposable
         _hud = new Hud(Ctx, _selection);
         _hud.ApplyStartupOptions(opt);
         _props = new PropRenderer(Ctx, _fx.Particles);
+        _shields = new ShieldRenderer(Ctx);
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
 
@@ -149,12 +151,14 @@ public sealed class GameSession : IDisposable
         ctx.Feedback.Draw();
         _terrainR.DrawWater();
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
+        _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
         _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
+        _shields.DrawBars(cur, prev, alpha, _selectedSet);
         if (interactive)
         {
             if (_selection.IsDragging)
@@ -198,6 +202,7 @@ public sealed class GameSession : IDisposable
         _audio.Dispose();
         _hud.Dispose();
         _props.Dispose();
+        _shields.Dispose();
         _fx.Dispose();
         _fog.Dispose();
         _unitR.Dispose();
