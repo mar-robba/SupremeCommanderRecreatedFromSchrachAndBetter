@@ -17,11 +17,14 @@ public sealed class SkirmishSetupScreen : IScreen
     private readonly GameConfig _cfg;
     private readonly MapPreview _preview = new();
     private string _seedText;
+    private readonly bool _sandbox;
 
-    public SkirmishSetupScreen(AppHost app)
+    /// <param name="sandbox">Sandbox entry: own config (<see cref="AppHost.SandboxConfig"/>), "Enemy AI" switch.</param>
+    public SkirmishSetupScreen(AppHost app, bool sandbox = false)
     {
         _app = app;
-        _cfg = app.SetupConfig;
+        _sandbox = sandbox;
+        _cfg = sandbox ? app.SandboxConfig : app.SetupConfig;
         _seedText = _cfg.Seed.ToString();
     }
 
@@ -36,7 +39,8 @@ public sealed class SkirmishSetupScreen : IScreen
         _preview.Update();
 
         float x0 = Ui.P(48), y0 = Ui.P(30);
-        MenuUi.ScreenTitle("Skirmish", "Players, teams and map", x0, y0);
+        if (_sandbox) MenuUi.ScreenTitle("Sandbox", "Test freely: spawn any unit, cheats, nukes, no victory", x0, y0);
+        else MenuUi.ScreenTitle("Skirmish", "Players, teams and map", x0, y0);
 
         float top = y0 + Ui.P(84);
         float bottomBar = Ui.Sh - Ui.P(62);
@@ -204,7 +208,14 @@ public sealed class SkirmishSetupScreen : IScreen
             Ui.TextRight(problem, start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.Warn, true);
         else if (MapPresets.NeedsNaval(_cfg.Preset))
             Ui.TextRight("Bases are on separate islands", start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.TextDim);
-        bool go = MenuUi.BigButton(start, "Start Game", problem == null, true, 16)
+        if (_sandbox)
+        {
+            // Enemy AI switch (off: the other armies just sit there; the in-game sandbox panel can turn it on later).
+            float lx = x0 + Ui.P(170);
+            MenuUi.Label("Enemy AI", lx, y, bh);
+            _cfg.SandboxAi = MenuUi.Toggle(Ui.R(lx + Ui.P(84), y + Ui.P(5), Ui.P(64), bh - Ui.P(10)), _cfg.SandboxAi);
+        }
+        bool go = MenuUi.BigButton(start, _sandbox ? "Start Sandbox" : "Start Game", problem == null, true, 16)
                   || (problem == null && !MenuUi.FieldFocused && (MenuUi.Key(KeyboardKey.Enter) || MenuUi.Key(KeyboardKey.KpEnter)))
                   || (_app.Options.AutoStart && problem == null && _preview.Terrain != null);
         if (go)

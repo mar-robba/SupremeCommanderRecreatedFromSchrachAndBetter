@@ -94,8 +94,8 @@ public sealed class PlacementGrid
             if (e != PlacementError.None && (worst == PlacementError.None || e < worst)) worst = e;
         }
         if (worst != PlacementError.None) return worst;
-        if (bp.Economy.RequiresMassDeposit && !NearDeposit(pos, DepositType.Mass)) return PlacementError.NeedsMassDeposit;
-        if (bp.Economy.RequiresHydroDeposit && !NearDeposit(pos, DepositType.Hydrocarbon)) return PlacementError.NeedsHydroDeposit;
+        if (bp.Economy.RequiresMassDeposit && !IgnoreDeposits && !NearDeposit(pos, DepositType.Mass)) return PlacementError.NeedsMassDeposit;
+        if (bp.Economy.RequiresHydroDeposit && !IgnoreDeposits && !NearDeposit(pos, DepositType.Hydrocarbon)) return PlacementError.NeedsHydroDeposit;
         return PlacementError.None;
     }
 
@@ -119,6 +119,9 @@ public sealed class PlacementGrid
         }
         return best;
     }
+
+    /// <summary>Sandbox "build anywhere" for the local army: extractors don't need a deposit (set by SandboxController).</summary>
+    public static bool IgnoreDeposits;
 
     public static string Describe(PlacementError e) => e switch
     {

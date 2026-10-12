@@ -28,6 +28,21 @@ public sealed class AppHost : IDisposable
     public bool QuitRequested;
     /// <summary>The skirmish setup being edited (kept between visits of the setup screen).</summary>
     public GameConfig SetupConfig;
+    private GameConfig? _sandboxConfig;
+
+    /// <summary>Setup of the Sandbox entry (same map/slots as the skirmish setup at first, enemy AI off).</summary>
+    public GameConfig SandboxConfig
+    {
+        get
+        {
+            if (_sandboxConfig == null)
+            {
+                _sandboxConfig = SetupConfig.Clone();
+                _sandboxConfig.Sandbox = true;
+            }
+            return _sandboxConfig;
+        }
+    }
 
     public AppHost(BlueprintDb db, ClientOptions options, AudioSystem audio)
     {
@@ -62,7 +77,7 @@ public sealed class AppHost : IDisposable
         FxTest = Options.FxTest, Gallery = Options.Gallery, ScreenshotPath = Options.ScreenshotPath,
         Frames = Options.Frames, PauseMenu = Options.PauseMenu, EndScreen = Options.EndScreen,
         FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,
-        Audio = Options.Audio, VolumeGiven = Options.VolumeGiven, NoFog = Options.NoFog,
+        Audio = Options.Audio, VolumeGiven = Options.VolumeGiven, NoFog = Options.NoFog, Exec = Options.Exec,
     };
 
     public void StartGame(GameConfig cfg, ClientOptions opt) => Go(new LoadingScreen(this, cfg.Clone(), opt));
