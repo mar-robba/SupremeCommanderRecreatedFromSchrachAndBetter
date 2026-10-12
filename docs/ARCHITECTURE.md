@@ -201,7 +201,8 @@ interpolates prev/cur by time
   `SandboxCommand`s on (`Orders/SandboxCommands.cs`; ignored in a normal game): batched spawns (250 units/tick, square
   spiral, structures on free footprints), per-army toggles (infinite resources, instant build, build anywhere),
   AI on/off + difficulty at runtime, victory on/off (off = `WinningTeam` stays -1), unit actions (kill, delete, heal,
-  damage, change owner, finish), clear area, nuke (`EffectKind.Nuke`, always visible through fog). Like every command
+  damage, change owner, finish), clear area, nuke (`EffectKind.Nuke`, always visible through fog; props/wrecks in the
+  inner ring are vaporized the next tick). Like every command
   they are applied at the start of a tick: deterministic and replay-safe. `SimSnapshot.Sandbox` = immutable `SandboxStatus`.
 - Client: `SandboxController` (owned by `GameSession`, null outside sandbox) = side panel (`SandboxPanel`, F9: army
   selector, cheats, AI, speed, selection actions, nuke/clear tools, spawn list of every blueprint grouped by
@@ -213,3 +214,8 @@ interpolates prev/cur by time
   `PlacementGrid.IgnoreDeposits` mirrors the local army's build-anywhere. `InGameScreen` skips the end of game unless
   victory is on. Entry points: main menu "Sandbox" (skirmish setup with an "Enemy AI" switch, default off), `--sandbox`,
   `--exec "cmd; cmd"` (implies `--sandbox`; `wait <frames>` for screenshots).
+- Nuke visuals: `Rendering/NukeFx.cs` (self-contained, owned by `EffectsRenderer`: `Spawn` on `EffectKind.Nuke`,
+  `Update`/`Build` in the particle pass, `DrawOverlay` = 2D screen flash right after `EndMode3D`): flash, draped
+  shockwave/dust rings, fireball, mushroom cloud (private sorted smoke-puff pool), sparks/debris, scorch decal (90 s).
+  Sound: `GameAudio` deep boom (low-pitched large explosion + collapse, heard map-wide). Real strategic nukes should
+  reuse the same event/kind so both share this effect.

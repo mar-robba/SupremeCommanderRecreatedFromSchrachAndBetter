@@ -84,8 +84,9 @@ Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transpor
 - [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
       blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
       instant build, build anywhere, reveal map), AI on/off + difficulty per army, victory on/off (default: never ends),
-      speed/pause, selection kill/delete/heal/damage/give/finish, clear area, nuke (flash, shockwave, mushroom, sound);
-      console (F10 / `) with fuzzy unit names, history, Tab completion, help overlay. Sim: `SandboxSystem` + 15 tests.
+      speed/pause, selection kill/delete/heal/damage/give/finish, clear area, nuke (`NukeFx`: flash, shockwave, fireball,
+      mushroom cloud, scorch, deep boom; wrecks vaporized); console (F10 / `) with fuzzy unit names, history, Tab
+      completion, help overlay. Sim: `SandboxSystem` + 16 tests; client parser tests (`SandboxConsoleTests`).
       - [ ] later: select enemy units for the actions (box-select only picks own units), unify the sandbox nuke with
             agent (b)'s real nukes, save/load sandbox setups
 
