@@ -45,8 +45,10 @@ public enum EffectKind : byte
     MissileLaunch,
     /// <summary>A missile was shot down by an interceptor at Pos (BlueprintIndex/WeaponIndex = the destroyed missile's weapon).</summary>
     MissileIntercepted,
-    /// <summary>Strategic (nuclear) detonation at Pos; Size = outer blast radius.</summary>
-    NukeDetonation,
+    /// <summary>Strategic (nuclear) detonation at Pos (ground), Size = outer blast radius. Raised by the strategic
+    /// missile (MissileSystem.Detonate, also for sandbox nukes) and by the sandbox instant blast; always visible
+    /// through fog. One client visual (NukeFx) and one sound.</summary>
+    Nuke,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

@@ -8,5 +8,7 @@ using Rts.Client;
 //                   [--screenshot out.png --frames 120] [--camera x,z,distance]
 //                   [--stress N] [--fxtest] [--gallery] [--novsync] [--debugwater H] [--nofog]
 //                   [--nosound] [--sound] [--volume F] [--sfx-volume F] [--music-volume F] [--nomusic]
+//                   [--sandbox] (sandbox game: spawn panel F9, console F10/`) [--exec "spawn tank 100 enemy; wait 30; nuke 128,128"]
+//                   (--exec runs sandbox console commands at the start and implies --sandbox; with --setup --sandbox: sandbox setup)
 // Audio is off in --screenshot runs unless --sound is given. Audio and --nofog flags don't force a direct game.
 GameApp.Run(ClientOptions.Parse(args));

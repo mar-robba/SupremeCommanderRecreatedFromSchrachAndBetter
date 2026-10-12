@@ -327,7 +327,7 @@ public class StrategicTests
             sim.Step();
             var P = sim.World.Projectiles;
             for (int k = 0; k < P.AliveCount; k++) maxY = MathF.Max(maxY, P.Pos[P.AliveList[k]].Y);
-            detonated = sim.World.Events.Effects.Any(e => e.Kind == EffectKind.NukeDetonation);
+            detonated = sim.World.Events.Effects.Any(e => e.Kind == EffectKind.Nuke);
             sim.World.Events.Effects.Clear();
         }
         Assert.True(detonated);
@@ -362,7 +362,7 @@ public class StrategicTests
         {
             sim.Step();
             intercepted += Count(sim, EffectKind.MissileIntercepted);
-            detonations += Count(sim, EffectKind.NukeDetonation);
+            detonations += Count(sim, EffectKind.Nuke);
             sim.World.Events.Effects.Clear();
         }
         var s = StrategicState.Of(sim.World);
@@ -482,7 +482,7 @@ public class StrategicTests
         for (int t = 0; t < 900 && !detonated; t++)
         {
             sim.Step();
-            detonated = sim.World.Events.Effects.Any(e => e.Kind == EffectKind.NukeDetonation);
+            detonated = sim.World.Events.Effects.Any(e => e.Kind == EffectKind.Nuke);
         }
         Assert.True(detonated);
         sim.Step();
@@ -503,7 +503,7 @@ public class StrategicTests
         {
             sim.Step();
             Rts.Sim.Snapshot.SnapshotWriter.Write(sim.World, snap, 0); // army 0 has no units: everything is fogged
-            seen = snap.Effects.Any(e => e.Kind == EffectKind.NukeDetonation);
+            seen = snap.Effects.Any(e => e.Kind == EffectKind.Nuke);
             Assert.True(snap.LaunchSerial == 1);
         }
         Assert.True(seen, "nuclear detonations are global");

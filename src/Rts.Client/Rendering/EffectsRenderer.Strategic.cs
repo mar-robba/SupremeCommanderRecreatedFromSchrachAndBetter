@@ -6,13 +6,11 @@ namespace Rts.Client.Rendering;
 
 /// <summary>
 /// Strategic weapon visuals: tactical/strategic missiles and their interceptors (projectiles), shield
-/// hit/down/up bursts, missile launch and mid-air interception, and the nuclear detonation (flash, shockwaves,
-/// fireball, mushroom cloud, base surge, long-lived scorch) plus its full-screen flash overlay.
+/// hit/down/up bursts, missile launch and mid-air interception. The nuclear detonation (<c>EffectKind.Nuke</c>, real
+/// missiles and sandbox instant blasts alike) is drawn by <see cref="NukeFx"/>.
 /// </summary>
 public sealed partial class EffectsRenderer
 {
-    private const float NukeFlashDuration = 1.1f;
-    private float _nukeFlashT = NukeFlashDuration, _nukeFlashI;
 
     private static Vector4 Col(float r, float g, float b, float a = 1) => new(r, g, b, a);
 
@@ -82,9 +80,6 @@ public sealed partial class EffectsRenderer
     {
         switch (e.Kind)
         {
-            case EffectKind.NukeDetonation:
-                NukeDetonation(e.Pos, e.Size); // always (long-lived cloud and scorch, may scroll into view)
-                return true;
             case EffectKind.ShieldHit or EffectKind.ShieldDown or EffectKind.ShieldUp
                 or EffectKind.MissileLaunch or EffectKind.MissileIntercepted:
                 break;
@@ -240,207 +235,5 @@ public sealed partial class EffectsRenderer
         if (s >= 2f)
             for (int i = 0; i < Num(8); i++)
                 _ps.Smoke(pos + _ps.RandDir() * s, s * 1.1f, 4f, Col(0.3f, 0.29f, 0.28f, 0.5f), default, 2.6f);
-    }
-
-    // ------------------------------------------------------------------ nuke
-
-    private void NukeDetonation(Vector3 pos, float radius)
-    {
-        float R = Math.Clamp(radius, 6f, 120f);
-        float lod = MathF.Max(0.6f, _ps.Lod);
-        int N(float n) => Math.Max(1, (int)MathF.Round(n * lod));
-        var upV = Vector3.UnitY;
-        float gy = _ps.GroundAt(pos);
-        var g = new Vector3(pos.X, gy, pos.Z);
-        float H = R * 1.3f;   // mushroom cap altitude above the ground
-        float fb = R * 0.22f; // initial fireball height
-        const float D = 0.33f; // drag of the rising cloud: settles over ~8-10 s
-        var fbPos = g + upV * fb;
-
-        StartNukeFlash(fbPos, R);
-
-        // 1. Blinding flash (alpha > 1 = plateau before the fade) and the glow of the rising fireball.
-        {
-            ref var p = ref _ps.Emit();
-            p.Pos = fbPos; p.Life = 0.75f; p.Size0 = R * 2.5f; p.Size1 = R * 9f;
-            p.C0 = Col(1f, 1f, 1f, 3f); p.C1 = Col(1f, 0.85f, 0.6f, 0); p.Shape = PShape.Glow; p.Blend = PBlend.Additive;
-            ref var q = ref _ps.Emit();
-            q.Pos = fbPos; q.Vel = upV * ((H - fb) * D); q.Drag = D; q.Life = 4.5f; q.Size0 = R * 2.2f; q.Size1 = R * 1.4f;
-            q.C0 = Col(1f, 0.7f, 0.35f, 1.3f); q.C1 = Col(0.8f, 0.25f, 0.08f, 0); q.Shape = PShape.Glow; q.Blend = PBlend.Additive;
-        }
-
-        // 2. Shockwaves: spherical air shock (camera-facing ring) + fast and slow ground rings (to ~1.3 R).
-        {
-            ref var a = ref _ps.Emit();
-            a.Pos = fbPos; a.Life = 0.7f; a.Size0 = R * 0.6f; a.Size1 = R * 4.2f;
-            a.C0 = Col(1f, 0.95f, 0.85f, 0.55f); a.C1 = a.C0 with { W = 0 }; a.Shape = PShape.Ring; a.Blend = PBlend.Additive;
-            var ringPos = g + upV * (R * 0.04f);
-            ref var r1 = ref _ps.Emit();
-            r1.Pos = ringPos; r1.Life = 1.2f; r1.Size0 = R * 0.3f; r1.Size1 = R * 3.2f;
-            r1.C0 = Col(1f, 0.92f, 0.75f, 1f); r1.C1 = Col(1f, 0.7f, 0.4f, 0); r1.Shape = PShape.Ring; r1.Mode = PMode.Flat; r1.Blend = PBlend.Additive;
-            ref var r2 = ref _ps.Emit();
-            r2.Pos = ringPos; r2.Life = 2.6f; r2.Size0 = R * 0.5f; r2.Size1 = R * 3.9f;
-            r2.C0 = Col(0.85f, 0.7f, 0.5f, 0.45f); r2.C1 = r2.C0 with { W = 0 }; r2.Shape = PShape.Ring; r2.Mode = PMode.Flat; r2.Blend = PBlend.Additive;
-        }
-
-        // 3. Fire: an initial hemispherical burst, then hot blobs rising with the cloud and burning out.
-        for (int i = 0; i < N(28); i++)
-        {
-            ref var p = ref _ps.Emit();
-            p.Pos = g + upV * (R * 0.1f) + _ps.RandDir() * (R * 0.15f);
-            p.Vel = _ps.RandUpDir(0.05f) * (R * _ps.Range(1.5f, 2.5f)); p.Drag = 2.5f;
-            p.Life = _ps.Range(1f, 1.8f); p.Size0 = R * 0.25f; p.Size1 = R * 0.5f; p.RotVel = _ps.Range(-1f, 1f);
-            p.C0 = Col(1f, 0.8f, 0.45f, 1.3f); p.C1 = Col(0.6f, 0.15f, 0.03f, 0); p.Shape = PShape.Fire; p.Blend = PBlend.Additive;
-        }
-        for (int i = 0; i < N(36); i++)
-        {
-            var start = fbPos + _ps.RandDir() * (R * 0.18f);
-            var fin = g + RandHoriz() * (R * 0.5f * MathF.Sqrt(_ps.Rand())) + upV * (H * _ps.Range(0.85f, 1.1f));
-            ref var p = ref _ps.Emit();
-            p.Pos = start; p.Vel = (fin - start) * D; p.Drag = D;
-            p.Life = _ps.Range(2.5f, 4.5f); p.Size0 = R * _ps.Range(0.3f, 0.45f); p.Size1 = R * 0.6f; p.RotVel = _ps.Range(-0.6f, 0.6f);
-            p.C0 = Col(1f, 0.72f, 0.38f, 1.4f); p.C1 = Col(0.55f, 0.12f, 0.03f, 0); p.Shape = PShape.Fire; p.Blend = PBlend.Additive;
-        }
-
-        // 4. Mushroom cap: dense smoke rising with the fireball and spreading into a torus-weighted head.
-        for (int i = 0; i < N(120); i++)
-        {
-            float rf = R * (0.12f + 0.62f * MathF.Sqrt(_ps.Rand()));
-            float hf = H * (1f + _ps.Range(-0.12f, 0.16f)) - rf / R * H * 0.12f; // rim rolls slightly lower
-            var start = fbPos + _ps.RandDir() * (R * 0.15f);
-            var fin = g + RandHoriz() * rf + upV * hf;
-            ref var p = ref _ps.Emit();
-            p.Pos = start; p.Vel = (fin - start) * D; p.Drag = D; p.Age = -_ps.Range(0f, 0.35f);
-            p.Life = _ps.Range(9f, 12f); p.Size0 = R * _ps.Range(0.22f, 0.32f); p.Size1 = R * _ps.Range(0.5f, 0.65f);
-            p.RotVel = _ps.Range(-0.25f, 0.25f);
-            float sh = _ps.Range(0.85f, 1.1f);
-            p.C0 = Col(0.46f * sh, 0.34f * sh, 0.26f * sh, 2.2f); p.C1 = Col(0.5f, 0.48f, 0.47f, 0);
-            p.Shape = PShape.Smoke; p.Blend = PBlend.Alpha;
-            // Some cap puffs shed slowly falling embers once the head has formed.
-            if (i % 3 == 0)
-            {
-                float delay = _ps.Range(2f, 5f);
-                ref var e = ref _ps.Emit();
-                e.Pos = start + (fin - start) * (1f - MathF.Exp(-D * delay)); e.Age = -delay;
-                e.Vel = new Vector3(_ps.Range(-1f, 1f), -_ps.Range(0.5f, 2f), _ps.Range(-1f, 1f)); e.Gravity = 0.6f; e.Drag = 0.5f;
-                e.Life = _ps.Range(2f, 4f); e.Size0 = _ps.Range(0.5f, 0.9f); e.Size1 = 0.1f;
-                e.C0 = Col(1f, 0.6f, 0.25f, 1f); e.C1 = Col(0.8f, 0.25f, 0.05f, 0); e.Shape = PShape.Glow; e.Blend = PBlend.Additive;
-            }
-        }
-
-        // 5. Stem: puffs leave the ground over ~2.5 s and settle at increasing heights under the cap.
-        for (int i = 0; i < N(60); i++)
-        {
-            var hd = RandHoriz();
-            var start = g + upV * (R * 0.05f) + hd * (R * 0.1f * _ps.Rand());
-            var fin = g + hd * (R * _ps.Range(0f, 0.09f)) + upV * (H * _ps.Range(0.08f, 0.88f));
-            ref var p = ref _ps.Emit();
-            p.Pos = start; p.Vel = (fin - start) * D; p.Drag = D; p.Age = -_ps.Range(0.1f, 2.5f);
-            p.Life = _ps.Range(8f, 11f); p.Size0 = R * 0.2f; p.Size1 = R * 0.38f; p.RotVel = _ps.Range(-0.3f, 0.3f);
-            p.C0 = Col(0.4f, 0.33f, 0.28f, 2f); p.C1 = Col(0.48f, 0.46f, 0.45f, 0);
-            p.Shape = PShape.Smoke; p.Blend = PBlend.Alpha;
-        }
-        for (int i = 0; i < N(14); i++)
-        {
-            var start = g + upV * (R * 0.05f) + RandHoriz() * (R * 0.08f * _ps.Rand());
-            var fin = g + upV * (H * _ps.Range(0.1f, 0.5f));
-            ref var p = ref _ps.Emit();
-            p.Pos = start; p.Vel = (fin - start) * D; p.Drag = D; p.Age = -_ps.Range(0f, 0.8f);
-            p.Life = _ps.Range(1.5f, 3f); p.Size0 = R * 0.18f; p.Size1 = R * 0.3f;
-            p.C0 = Col(1f, 0.6f, 0.25f, 1f); p.C1 = Col(0.5f, 0.1f, 0.02f, 0); p.Shape = PShape.Fire; p.Blend = PBlend.Additive;
-        }
-
-        // 6. Base surge: a dust ring rolling outwards along the ground, plus lingering dust around the base.
-        int ns = N(56);
-        for (int i = 0; i < ns; i++)
-        {
-            float a = (i + _ps.Range(-0.4f, 0.4f)) / ns * MathF.Tau;
-            var hd = new Vector3(MathF.Cos(a), 0, MathF.Sin(a));
-            var far = g + hd * (R * _ps.Range(0.95f, 1.3f));
-            var start = g + hd * (R * 0.12f) + upV * (R * 0.06f);
-            var fin = new Vector3(far.X, MathF.Max(_ps.GroundAt(far), gy - R * 0.3f) + R * 0.08f, far.Z);
-            const float Ds = 1.1f;
-            ref var p = ref _ps.Emit();
-            p.Pos = start; p.Vel = (fin - start) * Ds; p.Drag = Ds;
-            p.Life = _ps.Range(5f, 7.5f); p.Size0 = R * 0.14f; p.Size1 = R * _ps.Range(0.4f, 0.55f); p.RotVel = _ps.Range(-0.4f, 0.4f);
-            p.C0 = Col(0.52f, 0.44f, 0.34f, 1.5f); p.C1 = Col(0.55f, 0.5f, 0.45f, 0);
-            p.Shape = PShape.Smoke; p.Blend = PBlend.Alpha;
-        }
-        for (int i = 0; i < N(24); i++)
-        {
-            var at = g + RandHoriz() * (R * _ps.Range(0.1f, 0.6f));
-            ref var p = ref _ps.Emit();
-            p.Pos = new Vector3(at.X, _ps.GroundAt(at) + R * 0.05f, at.Z);
-            p.Vel = new Vector3(_ps.Range(-0.5f, 0.5f), _ps.Range(0.5f, 1.5f), _ps.Range(-0.5f, 0.5f)); p.Drag = 0.3f;
-            p.Age = -_ps.Range(0.3f, 1.5f); p.Life = _ps.Range(6f, 9f); p.Size0 = R * 0.2f; p.Size1 = R * 0.45f;
-            p.RotVel = _ps.Range(-0.3f, 0.3f);
-            p.C0 = Col(0.45f, 0.4f, 0.34f, 1.2f); p.C1 = Col(0.5f, 0.48f, 0.45f, 0);
-            p.Shape = PShape.Smoke; p.Blend = PBlend.Alpha;
-        }
-
-        // 7. Molten ground glow.
-        {
-            ref var p = ref _ps.Emit();
-            p.Pos = g + upV * (R * 0.03f); p.Life = 7f; p.Size0 = R * 1f; p.Size1 = R * 1.7f;
-            p.C0 = Col(1f, 0.45f, 0.12f, 1.2f); p.C1 = Col(0.6f, 0.1f, 0.02f, 0);
-            p.Shape = PShape.Glow; p.Mode = PMode.Flat; p.Blend = PBlend.Additive;
-        }
-
-        // 8. Debris and embers.
-        _ps.Debris(g + upV * (R * 0.05f), N(40), R * 0.75f, 0.35f + R * 0.012f);
-        _ps.Sparks(g + upV * (R * 0.15f), N(90), R * 1.1f, Col(1f, 0.6f, 0.25f), 2.4f, 0.35f, 6f);
-
-        // 9. Scorch: tiled decals so it follows the terrain (radius ~0.8 R), dark for about a minute then fading.
-        NukeScorch(g, R * 0.8f, 0f, 1, 1.6f);
-        for (int i = 0; i < 7; i++) NukeScorch(g, R * 0.55f, R * 0.3f, i / 7f, 1.4f);
-        for (int i = 0; i < 14; i++) NukeScorch(g, R * 0.45f, R * 0.6f, i / 14f, 1.2f);
-    }
-
-    private void NukeScorch(Vector3 center, float size, float dist, float frac, float alpha)
-    {
-        float a = (frac + _ps.Range(-0.02f, 0.02f)) * MathF.Tau;
-        var at = center + new Vector3(MathF.Cos(a), 0, MathF.Sin(a)) * (dist * _ps.Range(0.9f, 1.1f));
-        ref var p = ref _ps.Emit();
-        p.Pos = new Vector3(at.X, _ps.GroundAt(at) + 0.07f, at.Z);
-        p.Life = _ps.Range(140f, 170f); p.Size0 = size * _ps.Range(0.9f, 1.1f); p.Size1 = p.Size0;
-        p.C0 = Col(0.06f, 0.05f, 0.04f, alpha); p.C1 = Col(0.06f, 0.05f, 0.04f, 0);
-        p.Shape = PShape.Scorch; p.Mode = PMode.Flat; p.Blend = PBlend.Decal;
-    }
-
-    // ------------------------------------------------------------------ screen flash
-
-    private float NukeFlashAlpha()
-    {
-        float t = _nukeFlashT / NukeFlashDuration;
-        if (_nukeFlashI <= 0f || t >= 1f) return 0f;
-        float f = t < 0.08f ? 1f : (1f - (t - 0.08f) / 0.92f) * (1f - (t - 0.08f) / 0.92f);
-        return _nukeFlashI * 0.92f * f;
-    }
-
-    /// <summary>Starts the full-screen flash if the blast is on screen (stronger when close) or near the camera.</summary>
-    private void StartNukeFlash(Vector3 fireball, float R)
-    {
-        var fv = FrameView.Current;
-        float d = Vector3.Distance(fv.CamPos, fireball);
-        float intensity;
-        if (fv.SphereVisible(fireball, R * 0.8f)) intensity = Math.Clamp(1.35f - d / (R * 14f), 0.4f, 1f);
-        else if (d < Atmosphere.CameraDistance * 1.5f + R * 3f) intensity = 0.3f;
-        else return;
-        if (intensity * 0.92f <= NukeFlashAlpha()) return;
-        _nukeFlashI = intensity;
-        _nukeFlashT = 0f;
-    }
-
-    /// <summary>Full-screen white/orange flash fading over ~1 s after an on-screen (or nearby) nuclear
-    /// detonation. Call once per frame after EndMode3D (2D pass); uses real frame time.</summary>
-    public void DrawOverlay2D()
-    {
-        if (_nukeFlashI <= 0f) return;
-        _nukeFlashT += Raylib.GetFrameTime();
-        float a = NukeFlashAlpha();
-        if (a <= 0.004f) { _nukeFlashI = 0f; return; }
-        float k = Math.Clamp(_nukeFlashT / NukeFlashDuration * 1.6f, 0f, 1f); // white -> orange
-        var c = new Color((byte)255, (byte)(255 - 80 * k), (byte)(255 - 170 * k), (byte)(a * 255));
-        Raylib.DrawRectangle(0, 0, Raylib.GetScreenWidth(), Raylib.GetScreenHeight(), c);
     }
 }

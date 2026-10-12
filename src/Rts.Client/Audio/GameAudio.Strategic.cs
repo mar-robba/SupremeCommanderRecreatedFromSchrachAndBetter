@@ -50,7 +50,7 @@ public sealed partial class GameAudio
                 bool nuke = e.Size >= StrategicSize;
                 return At(SoundId.Intercept, e.Pos, nuke ? 1.4f : 1f, nuke ? 0.75f : 1f, minGain: nuke ? 0.15f : 0f) ? 1 : 0;
             }
-            case EffectKind.NukeDetonation:
+            case EffectKind.Nuke:
                 PlayNuke(e.Pos, e.Size);
                 return 1;
         }

@@ -103,7 +103,7 @@ internal static class IntelSnapshotWriter
     {
         foreach (var e in w.Events.Effects)
             // Nuclear detonations are seen (and heard) by everyone, like the launch warning.
-            if (e.Kind == EffectKind.NukeDetonation || w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
+            if (e.Kind == EffectKind.Nuke || w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
     }
 
     private static void Ensure<T>(ref T[] arr, int size)

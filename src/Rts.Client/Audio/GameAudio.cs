@@ -235,8 +235,8 @@ public sealed partial class GameAudio : IDisposable
                 At(SoundId.ReclaimDone, e.Pos, 1f);
                 return 0;
             case EffectKind.ShieldHit or EffectKind.ShieldDown or EffectKind.ShieldUp or EffectKind.MissileLaunch
-                or EffectKind.MissileIntercepted or EffectKind.NukeDetonation:
-                return HandleStrategicEffect(e);
+                or EffectKind.MissileIntercepted or EffectKind.Nuke:
+                return HandleStrategicEffect(e); // GameAudio.Strategic.cs (nuke: one map-wide NukeExplosion)
         }
         return 0;
     }

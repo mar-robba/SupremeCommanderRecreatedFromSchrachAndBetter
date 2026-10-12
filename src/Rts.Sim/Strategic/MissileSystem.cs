@@ -351,7 +351,7 @@ public static class MissileSystem
             Source = P.Source[p], Army = P.Army[p],
         });
         var ground = new Vector3(pos.X, w.Terrain.GetSurfaceHeight(new Vector2(pos.X, pos.Z)), pos.Z);
-        CombatFx.Add(w, EffectKind.NukeDetonation, ground, MathF.Max(P.DamageRadius[p], sb?.OuterRadius ?? 0), P.Army[p], bp.Index, P.WeaponIndex[p]);
+        CombatFx.Add(w, EffectKind.Nuke, ground, MathF.Max(P.DamageRadius[p], sb?.OuterRadius ?? 0), P.Army[p], bp.Index, P.WeaponIndex[p]);
     }
 
     /// <summary>

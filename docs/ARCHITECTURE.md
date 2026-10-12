@@ -226,3 +226,27 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+
+## Sandbox mode (`Rts.Sim/Systems/SandboxSystem`, `Rts.Client/Sandbox`)
+- Sim: `SandboxSystem.Enable(world)` (called by `GameSession.CreateSimulation` when `GameConfig.Sandbox`) turns the
+  `SandboxCommand`s on (`Orders/SandboxCommands.cs`; ignored in a normal game): batched spawns (250 units/tick, square
+  spiral, structures on free footprints), per-army toggles (infinite resources, instant build, build anywhere),
+  AI on/off + difficulty at runtime, victory on/off (off = `WinningTeam` stays -1), unit actions (kill, delete, heal,
+  damage, change owner, finish), clear area, nuke (`EffectKind.Nuke`, always visible through fog; props/wrecks in the
+  inner ring are vaporized the next tick). Like every command
+  they are applied at the start of a tick: deterministic and replay-safe. `SimSnapshot.Sandbox` = immutable `SandboxStatus`.
+- Client: `SandboxController` (owned by `GameSession`, null outside sandbox) = side panel (`SandboxPanel`, F9: army
+  selector, cheats, AI, speed, selection actions, nuke/clear tools, spawn list of every blueprint grouped by
+  category/tech with search) + console (`SandboxConsole`, F10 or the key left of 1) + map tools + `--exec` script.
+  Panel and console both produce `ConsoleAction`s (`ConsoleActions.cs`) run by `SandboxController.Execute`.
+  `SandboxConsoleParser` / `BlueprintMatcher` are pure (no raylib) and unit-tested in `Rts.Client.Tests`.
+  While a sandbox text field has focus: `SelectionController.InputBlocked`, camera input off, debug/fog/build hotkeys
+  skipped; F9/F10 effect debug keys are disabled in sandbox (`EffectsRenderer.DebugKeysEnabled`).
+  `PlacementGrid.IgnoreDeposits` mirrors the local army's build-anywhere. `InGameScreen` skips the end of game unless
+  victory is on. Entry points: main menu "Sandbox" (skirmish setup with an "Enemy AI" switch, default off), `--sandbox`,
+  `--exec "cmd; cmd"` (implies `--sandbox`; `wait <frames>` for screenshots).
+- Nuke visuals: `Rendering/NukeFx.cs` (self-contained, owned by `EffectsRenderer`: `Spawn` on `EffectKind.Nuke`,
+  `Update`/`Build` in the particle pass, `DrawOverlay` = 2D screen flash right after `EndMode3D`): flash, draped
+  shockwave/dust rings, fireball, mushroom cloud (private sorted smoke-puff pool), sparks/debris, scorch decal (90 s).
+  Sound: `GameAudio` deep boom (low-pitched large explosion + collapse, heard map-wide). Real strategic nukes should
+  reuse the same event/kind so both share this effect.
