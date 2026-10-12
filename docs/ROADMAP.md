@@ -2,29 +2,39 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-12 afternoon — read this first in a new session)
-main has: maps + menus, wave 3a (T2/T3 tech + in-place upgrades, `--tech-demo`) and 3e (sandbox: `--sandbox`, F9/F10). Tests: 171 sim + 118 client.
+## ▶ NEXT STEPS (updated 2026-10-12 evening — read this first in a new session)
+main has all of wave 3 except the AI:
+- maps + menus;
+- (a) T2/T3 tech + upgrades (`--tech-demo`);
+- (b) strategic: shields/TML/TMD/nukes/artillery, `--scene strategic[:shields|:tml|:nuke]`;
+- (c) naval, `--scene naval`;
+- (e) sandbox: `--sandbox`, `--exec`, F9 panel, F10 console. The sandbox `nuke` fires a real missile; `nuke instant` is the old blast.
+Tests: 229 sim + 158 client.
 
-**Running (or finished, waiting to be merged): 4 agents in worktrees** under `.claude/worktrees/`.
-Check each with `git -C <dir> log --oneline -3` and `git -C <dir> status --short`.
-| area | worktree dir / branch `worktree-agent-<id>` | latest agent id (2026-10-12) |
-|---|---|---|
-| (b) strategic: shields, TML/TMD, nuke/anti-nuke, T2/T3 artillery, `--scene strategic` — DONE; a merge agent is merging main into it + making the sandbox nuke a real missile (report-b-merge.md) | `agent-ae5eb2c4f3916597c` | abd291900f26dd154 |
-| (c) naval: naval factories T1–T3, ships/subs, sonar, torpedoes, playable Archipelago, `--scene naval` | `agent-a22a2b0fcf5a1b603` | a128c58db97bd1e5a |
-| (d) AI: RespectIntel, scouting/radar, finish games on Highlands/Canyon, Hard > Normal, FFA | `agent-a1c38e069748a3b2b` | acebc58040f7127e1 |
-Handoff notes (done / TODO): `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/handoff-{b,c,d,e}.md`.
-These are durable copies; the live ones are in the session scratchpad. If an agent is unfinished in a new session,
-spawn a FRESH agent in the same worktree dir (absolute path, no isolation) with: the area scope (table above + Phase 3
-lines below), its handoff note, the 300k-context rule, and permission to use sub-agents.
+**Pending:**
+1. **(d) AI**: worktree `.claude/worktrees/agent-a1c38e069748a3b2b`, branch `worktree-agent-a1c38e069748a3b2b`.
+   **Stopped by the owner on 2026-10-12: ask the owner before restarting it.**
+   - Last state: WIP commit d05dca3, NOT fully tested. It has already merged main up to the sandbox, but not strategic/naval.
+   - Handoff: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/handoff-d.md`.
+   - Remaining work: final tests, `git merge main`, bench matrix (every 1v1 should end within 30 min; Hard should beat
+     Normal in 3 of 4), docs.
+2. Remove the naval worktree `.claude/worktrees/agent-a22a2b0fcf5a1b603` (already merged; it was left in case a sub-agent
+   of the naval agent was still running): `git worktree remove ... && git branch -d worktree-agent-a22a2b0fcf5a1b603`.
+3. Known follow-ups:
+   - `--scene strategic` needs `--camera` to frame the action;
+   - collapsed shields still pay upkeep;
+   - bombers fly over shield domes;
+   - ships can overlap;
+   - box-select picks only own units (sandbox);
+   - the AI uses no T2/T3/naval/strategic yet.
 
-**Merge procedure** (orchestrator, in the main checkout; e is merged; order now b → c → d):
-1. `git merge --no-ff worktree-agent-<id>`; conflicts are expected in shared files: resolve additively.
-2. `dotnet build Rts.slnx`, then both test projects green.
-3. One screenshot of the feature's scene. Then `git worktree remove` + `git branch -d`, and update this section.
-After (b) and (e) are both merged:
-- switch `SandboxSystem.Nuke` to (b)'s public nuke-launch entry point;
-- unify the two nuke effects (`EffectKind.Nuke` exists on both branches).
-This can be a small agent task.
+Agent workflow: see the memory file agent-context-handoff. In short: 300k context cap; fresh agent + handoff note; agents may use sub-agents.
+Orchestrator tools (`agent_ctx.py`, `watch_agents.sh`) and handoff/report files are in
+`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/`.
+
+**Next waves:**
+- **Wave 4**: the AI uses T2/T3 upgrades, navy and strategic weapons; balance pass. Then the polish items above.
+- **Phase 3/4**: experimentals, transports, 2nd faction, save/replays, multiplayer.
 
 Shared contracts (still valid): `BuiltBy` (a blueprint adds itself to builders' lists; unknown ids are ignored) and
 `UpgradesTo` (in-place upgrade). Enums are append-only. Edits to shared files stay minimal and additive. New models go
