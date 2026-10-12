@@ -53,6 +53,8 @@ public sealed class ClientOptions
     public bool UiDemo;
     /// <summary>--tech-demo: T2/T3 structures/units and an upgrading factory + mex (UI/TechDemo.cs).</summary>
     public bool TechDemo;
+    /// <summary>--scene naval: scripted naval battle scene (NavalScene.cs).</summary>
+    public string? Scene;
     public string? UiPlace;
     public Vector2? MousePos;
     /// <summary>Extra mixed units per army spawned in the demo (performance testing).</summary>
@@ -115,6 +117,7 @@ public sealed class ClientOptions
                 case "--select": o.Select = Next().ToLowerInvariant(); break;
                 case "--ui-demo": o.UiDemo = true; break;
                 case "--tech-demo": o.TechDemo = true; break;
+                case "--scene": o.Scene = Next().ToLowerInvariant(); break;
                 case "--ui-place": o.UiPlace = Next(); break;
                 case "--mouse":
                     var mp = Next().Split(',').Select(float.Parse).ToArray();
@@ -136,6 +139,7 @@ public sealed class ClientOptions
             }
         }
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
+        if (o.Scene != null) NavalScene.ApplyDefaults(o);
         return o;
     }
 }

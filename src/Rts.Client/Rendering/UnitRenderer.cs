@@ -14,7 +14,7 @@ namespace Rts.Client.Rendering;
 /// Units under construction are drawn as a rising hologram. Also renders the unit shadow map.
 /// Meshes dither-fade out when zooming to the strategic view (icons fade in, see <see cref="IconRenderer"/>).
 /// </summary>
-public sealed unsafe class UnitRenderer : IDisposable
+public sealed unsafe partial class UnitRenderer : IDisposable
 {
     private readonly BlueprintDb _db;
     private readonly Terrain? _terrain;
@@ -85,6 +85,7 @@ public sealed unsafe class UnitRenderer : IDisposable
         float fade = MeshFade(Atmosphere.CameraDistance);
         DrawnUnits = 0;
         DrawCalls = 0;
+        _submerged.Clear();
         if (fade <= 0.001f) return;
         float time = Atmosphere.Time;
 
@@ -120,6 +121,7 @@ public sealed unsafe class UnitRenderer : IDisposable
             DrawnUnits++;
             var col = (uint)v.Army < (uint)teamCols.Length ? teamCols[v.Army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
             bool building = (v.Flags & UnitFlags.UnderConstruction) != 0;
+            if (!building && IsSubmerged(model, pos)) { _submerged.Add((model, v.Index, pos, heading, turret, col)); continue; } // UnitRenderer.Submerged.cs
             AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
             // In-place upgrade: the target model grows around the structure as a construction hologram.
             if (v.UpgradeBp >= 0) AddUnit(Model(v.UpgradeBp), v.Index, pos, heading, turret, turn, col, true, MathF.Max(0.02f, v.UpgradeFrac), time);
@@ -265,6 +267,9 @@ public sealed unsafe class UnitRenderer : IDisposable
                 ("defense", new(1.6f, 1.6f, 1.6f), 0), ("defense", new(1.6f, 1.4f, 1.6f), UnitCategory.AntiAir), ("radar", new(1.4f, 3, 1.4f), 0),
                 ("wall", new(1, 1, 1), 0), ("frigate", new(2.2f, 2.2f, 7), 0), ("destroyer", new(3, 2.6f, 10), 0), ("cruiser", new(3.4f, 3, 12), 0),
                 ("sub", new(1.6f, 1.2f, 6), 0), ("experimental", new(9, 7, 10), 0), ("box", new(1, 1, 1), 0),
+                ("battleship", new(5, 4.2f, 18), 0), ("sonar", new(1.4f, 2.2f, 1.4f), UnitCategory.Sonar), ("sonar", new(1.7f, 3, 1.7f), UnitCategory.Sonar | UnitCategory.Tech2),
+                ("torpedo_launcher", new(1.6f, 1, 1.6f), UnitCategory.AntiNaval), ("torpedo_bomber", new(1.9f, 0.6f, 2.2f), UnitCategory.Air | UnitCategory.AntiNaval),
+                ("naval_factory", new(10, 3.4f, 10), UnitCategory.Naval | UnitCategory.Tech3),
             };
             var origin = _terrain.StartPositions[0] + new Vector2(22, -10);
             Console.WriteLine($"Gallery origin: {origin}");
