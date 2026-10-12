@@ -13,6 +13,7 @@ public static class DamageSystem
     public static void Run(SimWorld w)
     {
         var u = w.Units;
+        Strategic.MissileSystem.ApplyDetonations(w); // nuke blasts (ignore shields)
         foreach (var a in w.Events.AreaDamage)
         {
             _tmp.Clear();
@@ -24,6 +25,7 @@ public static class DamageSystem
                 float r = a.Radius + w.BpOf(j).Radius;
                 float d = Vector2.Distance(u.Pos[j], a.Center);
                 if (d > r) continue;
+                if (Strategic.ShieldSystem.ProtectsFromArea(w, a.SourceArmy, a.Center, j)) continue; // blast outside an enemy dome
                 // Linear falloff to 50% at the edge.
                 float f = 1f - 0.5f * (d / MathF.Max(r, 0.01f));
                 Apply(w, j, a.Amount * f, a.Source);

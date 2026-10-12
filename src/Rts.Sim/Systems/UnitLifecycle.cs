@@ -16,6 +16,7 @@ public static class UnitLifecycle
         ConstructionSystem.InitUnit(w, i, bp);
         FactorySystem.InitUnit(w, i, bp);
         EconomySystem.InitUnit(w, i, bp);
+        Strategic.StrategicSystem.InitUnit(w, i, bp);
     }
 
     public static void OnDeath(SimWorld w, int i, UnitBlueprint bp)

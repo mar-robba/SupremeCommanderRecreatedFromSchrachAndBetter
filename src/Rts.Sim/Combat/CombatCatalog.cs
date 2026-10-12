@@ -17,6 +17,8 @@ public enum WeaponKind : byte
     Bomb,
     /// <summary>Instant hit (MuzzleVelocity 0, not ballistic): beams/lasers.</summary>
     Beam,
+    /// <summary>Silo missile / missile-defense interceptor: never fires automatically (Rts.Sim/Strategic drives it).</summary>
+    Manual,
 }
 
 /// <summary>Precomputed per-weapon combat data (immutable, thread-safe).</summary>
@@ -97,6 +99,7 @@ public sealed class CombatCatalog
                     : wb.Ballistic ? WeaponKind.Ballistic
                     : string.Equals(wb.ProjectileVisual, "missile", StringComparison.OrdinalIgnoreCase) ? WeaponKind.Homing
                     : WeaponKind.Direct;
+                if (Strategic.StrategicSystem.IsManualWeapon(bp, k)) kind = WeaponKind.Manual;
                 float acquire = wb.Range;
                 if (kind == WeaponKind.Bomb)
                 {
