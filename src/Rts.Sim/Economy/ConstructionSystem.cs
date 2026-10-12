@@ -225,7 +225,7 @@ public static class ConstructionSystem
                 Finish(w, i, q);
                 return;
             }
-            if (!w.Occupancy.CanPlace(sbp, site, w.Terrain)) { Finish(w, i, q); return; }
+            if (!w.Occupancy.CanPlace(sbp, site, w.Terrain) && !SandboxSystem.BuildAnywhereAllows(w, army, sbp, site)) { Finish(w, i, q); return; }
         }
 
         var a = w.Armies[army];

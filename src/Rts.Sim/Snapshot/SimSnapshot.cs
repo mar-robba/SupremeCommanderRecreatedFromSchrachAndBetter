@@ -126,6 +126,9 @@ public sealed class SimSnapshot
     public GhostView[] Ghosts = new GhostView[64];
     public int GhostCount;
 
+    /// <summary>Sandbox mode settings (cheat toggles, AI per army); null outside sandbox. Immutable, see SandboxSystem.</summary>
+    public Systems.SandboxStatus? Sandbox;
+
     public bool TryGetUnit(int slot, int gen, out UnitView view)
     {
         if ((uint)slot < (uint)SlotToView.Length)

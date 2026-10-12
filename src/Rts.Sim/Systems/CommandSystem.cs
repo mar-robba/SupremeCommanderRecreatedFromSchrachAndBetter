@@ -13,6 +13,7 @@ public static class CommandSystem
     {
         foreach (var c in commands)
         {
+            if (c is SandboxCommand sb) { SandboxSystem.Apply(w, sb); continue; } // ignored outside sandbox
             if ((uint)c.Army >= (uint)w.Armies.Length || w.Armies[c.Army].Defeated) continue;
             switch (c)
             {
