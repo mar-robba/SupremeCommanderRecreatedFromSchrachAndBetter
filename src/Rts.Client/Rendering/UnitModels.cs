@@ -25,7 +25,7 @@ public sealed class UnitModel
 /// (so round parts stay round). UEF-like palette: grey-blue metal, dark trim, team-color panels, glowing lights.
 /// Model space: forward +Z, up +Y, origin at ground level (y = 0) in the footprint center.
 /// </summary>
-public static class UnitModels
+public static partial class UnitModels
 {
     private static readonly Color Hull = Mat.M(116, 122, 131);
     private static readonly Color HullLight = Mat.M(146, 152, 160);
@@ -132,6 +132,11 @@ public static class UnitModels
                 break;
             }
             case "sub": Sub(b, w, h, l); break;
+            case "shield_gen": t = ShieldGenerator(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.9f; break;
+            case "mobile_shield": t = MobileShield(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 1.6f; break;
+            case "missile_silo": MissileSilo(b, w, h, l, bp.Silo?.Kind == SiloKind.Strategic); break;
+            case "missile_defense": t = MissileDefenseModel(b, pivots, w, h, l, bp.Silo != null); break;
+            case "artillery_structure": t = ArtilleryStructure(b, pivots, w, h, l); break;
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));
