@@ -293,6 +293,38 @@ public class UpgradeTests
         }
     }
 
+    /// <summary>Sandbox contract: every T2/T3 blueprint spawns fully built through the debug spawn command and survives
+    /// a few ticks of the full sim (modules, weapons, intel, economy initialised).</summary>
+    [Fact]
+    public void EveryTechBlueprintSpawnsCompleteThroughDebugSpawn()
+    {
+        var db = TestUtil.Db;
+        int checkedCount = 0;
+        for (int b = 0; b < db.Count; b++)
+        {
+            var bp = db[b];
+            if (bp.Tech < 2) continue;
+            var sim = TestUtil.NewSkirmish(42);
+            var w = sim.World;
+            var pos = bp.Economy.RequiresMassDeposit
+                ? NearestDeposit(w, CommanderPos(w), DepositType.Mass)
+                : bp.IsStructure ? FindSite(w, bp.Id, CommanderPos(w), 12) : CommanderPos(w) + new Vector2(8, 8);
+            sim.Step([new DebugSpawnCommand(0, b, pos, 1)]);
+            for (int t = 0; t < 20; t++) { Rich(w); sim.Step(); }
+            int found = -1;
+            for (int k = 0; k < w.Units.AliveCount; k++)
+            {
+                int i = w.Units.AliveList[k];
+                if (w.Units.Bp[i] == b && w.Units.Army[i] == 0) { found = i; break; }
+            }
+            Assert.True(found >= 0, $"{bp.Id} did not spawn");
+            Assert.True((w.Units.Flags[found] & UnitFlags.UnderConstruction) == 0, $"{bp.Id} spawned unfinished");
+            Assert.Equal(bp.MaxHealth, w.Units.Health[found], 1);
+            checkedCount++;
+        }
+        Assert.True(checkedCount >= 30, $"only {checkedCount} T2/T3 blueprints");
+    }
+
     [Fact]
     public void UpgradesAreDeterministicAcrossThreadCounts()
     {
