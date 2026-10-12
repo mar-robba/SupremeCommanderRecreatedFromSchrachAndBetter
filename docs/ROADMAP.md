@@ -18,6 +18,9 @@ Shared contracts (on main before wave 3 started):
   edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
 
 Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn a fresh agent in the same dir to resume):
+(2026-10-12: agents a–d were replaced by fresh agents in the same worktrees because their context got too big;
+handoff notes, which may not survive a reboot: `/tmp/claude-1000/-run-media-marco-Volume-D-RTS/c7c89635-6975-439b-9335-21c395ab4db0/scratchpad/handoff-{a,b,c,d}.md`.
+If the notes are gone, read `git log main..HEAD` in the worktree.)
 - (a) `agent-a53c9ba881c1db15f` T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
 - (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
 - (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
