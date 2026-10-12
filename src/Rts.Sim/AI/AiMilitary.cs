@@ -39,11 +39,6 @@ public sealed class AiGroup
     public bool Regroup;
     public int RegroupTick;
     public int EngageTick;
-    /// <summary>Army: the current attack is a sortie/recall (defending our side); afterwards it gathers again
-    /// for its real objective instead of rolling on piecemeal.</summary>
-    public bool Sortie;
-    public Vector2 SavedTarget;
-    public UnitHandle SavedTargetUnit = UnitHandle.None;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
@@ -510,13 +505,6 @@ public sealed class AiMilitary
     {
         bool resume = g.Regroup;
         g.Regroup = false;
-        bool sortie = why.StartsWith("sortie") || why.StartsWith("recall");
-        if (sortie && !g.Sortie && g.Kind == AiGroupKind.Army)
-        {
-            g.SavedTarget = g.State == AiGroupState.Assemble ? g.Target : default;
-            g.SavedTargetUnit = g.State == AiGroupState.Assemble ? g.TargetUnit : UnitHandle.None;
-        }
-        g.Sortie = sortie && g.Kind == AiGroupKind.Army;
         g.State = AiGroupState.Attack;
         g.StateTick = W.Tick;
         g.OrderTick = W.Tick;
@@ -656,19 +644,6 @@ public sealed class AiMilitary
         if (!targetGone && !stuck) return;
 
         if (g.Kind == AiGroupKind.Clear) { Release(g, goHome: true); return; }
-        if (g.Sortie)
-        {
-            // Threat dealt with: gather again for the real objective.
-            if (_b.Tracing) _b.Trace($"sortie over g{g.Id} n={n} at ({g.Centroid.X:F0},{g.Centroid.Y:F0})");
-            g.Sortie = false;
-            g.State = AiGroupState.Assemble;
-            g.StateTick = W.Tick;
-            g.Target = g.SavedTarget;
-            g.TargetUnit = g.SavedTargetUnit;
-            g.Staging = default;
-            g.NextObjectiveTick = W.Tick;
-            return;
-        }
         if (stuck) _badTargets.Add((g.Target, W.Tick + 1500)); // can't get there: pick something else for a while
         bool found = g.Kind == AiGroupKind.Raid
             ? ChooseRaidTarget(g.Centroid, g.Strength, out var tpos, out var th)
