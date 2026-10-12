@@ -18,6 +18,9 @@ public enum UnitFlags : ushort
     Paused = 1 << 5,
     /// <summary>Visible to enemies via radar only (set by intel; informational).</summary>
     RadarOnly = 1 << 6,
+    /// <summary>Submarines (MotionLayer.Sub): currently surfaced (Water layer: visible like a ship, hit by surface
+    /// weapons). Cleared = submerged (the default). Toggled by <see cref="Orders.SetSubmergedCommand"/>.</summary>
+    Surfaced = 1 << 7,
 }
 
 /// <summary>Movement module state (owned by MovementSystem / PathSystem).</summary>
@@ -103,6 +106,11 @@ public struct BuilderState
     public float ReservedWork;
     /// <summary>Tick in which <see cref="ReservedWork"/> was accumulated (stale values are ignored).</summary>
     public int ReservedTick;
+    /// <summary>As a TARGET: 0..1 progress of an enemy capture (Economy/CaptureSystem); reset when nobody captured
+    /// it for a while (see <see cref="CaptureTick"/>).</summary>
+    public float CaptureProgress;
+    /// <summary>As a TARGET: last tick capture work was applied to this unit.</summary>
+    public int CaptureTick;
 }
 
 /// <summary>Factory production state (owned by FactorySystem).</summary>
@@ -137,4 +145,10 @@ public struct EconState
     /// <summary>Resources gained by reclaiming this tick (per second); credited as income by EconomySystem next tick.</summary>
     public float ReclaimMass;
     public float ReclaimEnergy;
+    /// <summary>Adjacency bonuses (Economy/AdjacencySystem, recomputed when structures are built/die/change owner):
+    /// fractional mass/energy production bonus (+0.25 = +25%) and energy-use reduction (0.25 = -25% on every energy
+    /// request and upkeep of this unit).</summary>
+    public float AdjMassProd;
+    public float AdjEnergyProd;
+    public float AdjEnergyUse;
 }

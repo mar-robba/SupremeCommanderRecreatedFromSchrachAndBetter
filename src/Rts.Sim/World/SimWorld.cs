@@ -100,7 +100,7 @@ public sealed class SimWorld
         Units.Health[index] = 0;
         PendingDeaths.Add(index);
         var bp = BpOf(index);
-        if (Units.IsActive(killer)) Units.Kills[killer.Index]++;
+        if (Units.IsActive(killer)) Combat.Veterancy.AddKill(this, killer.Index); // kills + veterancy level-up heal
         Events.Effects.Add(new EffectEvent
         {
             Kind = EffectKind.UnitDeath,
