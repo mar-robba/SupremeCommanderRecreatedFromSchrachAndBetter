@@ -38,6 +38,7 @@ public sealed class GameConfig
     // Debug / CLI options carried over restarts.
     public bool Demo;
     public int Stress;
+    public string? Scene;
 
     public GameConfig()
     {
@@ -47,7 +48,7 @@ public sealed class GameConfig
 
     public GameConfig Clone()
     {
-        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress };
+        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Scene = Scene };
         for (int i = 0; i < MaxSlots; i++) copy.Slots[i] = Slots[i].Clone();
         return copy;
     }
@@ -99,7 +100,7 @@ public sealed class GameConfig
     /// <summary>Config of a game started directly from the command line (army 0 human, the others AI, FFA).</summary>
     public static GameConfig FromOptions(ClientOptions o)
     {
-        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress };
+        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Scene = o.Scene };
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;

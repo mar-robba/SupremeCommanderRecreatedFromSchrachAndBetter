@@ -16,7 +16,7 @@ public sealed class OrdersPanel
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
 
-    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct }
+    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch }
 
     public OrdersPanel(GameContext ctx, SelectionController sel)
     {
@@ -32,7 +32,7 @@ public sealed class OrdersPanel
         Ui.Panel(r);
         float y = Ui.PanelTitle(r, "Orders");
 
-        bool anyMobile = false, anyFactory = false, anyEngineer = false;
+        bool anyMobile = false, anyFactory = false, anyEngineer = false, anyLauncher = StrategicOrders.AnyLauncher(_ctx, _sel);
         foreach (var h in _sel.Selected)
         {
             if (!snap.TryGetUnit(h.Index, h.Generation, out var v)) continue;
@@ -49,7 +49,7 @@ public sealed class OrdersPanel
         var buttons = new (Btn id, string label, string key, bool enabled, bool active)[]
         {
             (Btn.Stop, "Stop", "S", true, false),
-            (Btn.Move, "Move", "M", canMove, _sel.Mode == Mode.Move),
+            anyLauncher && !canMove ? (Btn.Launch, "Launch", "L", true, _sel.Mode == Mode.Launch) : (Btn.Move, "Move", "M", canMove, _sel.Mode == Mode.Move),
             (Btn.AttackMove, "Attack", "A", canMove, _sel.Mode == Mode.AttackMove),
             (Btn.Patrol, "Patrol", "P", canMove, _sel.Mode == Mode.Patrol),
             (Btn.Guard, anyEngineer || anyFactory ? "Assist" : "Guard", "G", canMove, _sel.Mode == Mode.Guard),
@@ -80,6 +80,7 @@ public sealed class OrdersPanel
             case Btn.AttackMove: _sel.SetMode(Mode.AttackMove); break;
             case Btn.Patrol: _sel.SetMode(Mode.Patrol); break;
             case Btn.Guard: _sel.SetMode(Mode.Guard); break;
+            case Btn.Launch: _sel.SetMode(Mode.Launch); break;
             case Btn.SelfDestruct: _sel.PendingSelfDestruct ??= _sel.Selected.ToArray(); break;
         }
     }
@@ -99,6 +100,7 @@ public sealed class OrdersPanel
         Btn.Patrol => "Patrol between the current position and the clicked point. Shift adds patrol points.",
         Btn.Guard => "Click a friendly unit: combat units guard it, engineers and factories assist its construction.",
         Btn.SelfDestruct => "Destroys the selected units (asks for confirmation).",
+        Btn.Launch => "Click a ground target: one selected launcher with the target in range fires a missile (it waits if its stockpile is empty).",
         _ => "",
     };
 
@@ -111,6 +113,7 @@ public sealed class OrdersPanel
         float t = MathF.Max(2f, s * 0.2f);
         switch (id)
         {
+            case Btn.Launch: StrategicHud.DrawLaunchGlyph(c, s, t, enabled, col); break;
             case Btn.Stop:
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.8f, s * 0.8f), new Vector2(s * 1.6f, s * 1.6f), enabled ? new Color(230, 80, 70, 255) : col);
                 break;

@@ -88,6 +88,7 @@ public sealed class UnitPanel
             y += barH + Ui.P(5);
         }
 
+        if (!underConstruction) y = StrategicHud.DrawUnitPanelBars(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
         int fs = Ui.F(11.5f);
         string order = CurrentOrderText(snap, v, bp);
         Ui.Text("Order:", r.X + pad, y, fs, Ui.TextFaint, true);
@@ -146,6 +147,7 @@ public sealed class UnitPanel
             OrderType.Repair => "Repairing",
             OrderType.Reclaim => "Reclaiming",
             OrderType.Capture => "Capturing",
+            OrderType.Launch => "Launching",
             _ => "Idle",
         };
         if (v.OrderCount > 1) text += $" (+{v.OrderCount - 1} queued)";
