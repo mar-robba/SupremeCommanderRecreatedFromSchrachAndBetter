@@ -135,6 +135,25 @@ interpolates prev/cur by time
   validated on flat main-component land in every rotated copy), final flood-fill verification.
 - Guarantee (tests in `MapGeneratorTests`): on every preset except Archipelago all starts are connected over
   `Terrain.CanTraverse(Land)`; deposits are buildable; start areas are flat; deterministic per seed; 1024 < 0.5 s.
+- Archipelago instead gets sea lanes (`MapBuilder.Archipelago.cs`): `EnsureSeaLanes` labels the deep water eroded to
+  battleship clearance (r=3) and digs symmetric channels (coarse Dijkstra; only the cheapest one per round, so few
+  land bridges are cut) or inlets until every start has the same big sea within reach; `ShapeBeaches` cuts a
+  slope-limited "harbor beach" from each start plateau to its sea (the plateau core is kept) so builders can walk
+  to the coast. Tests in `NavalTests` (island size, naval site near each start, battleship-sized sea lane).
+
+## Naval (`Rts.Sim/Naval`)
+- Water structures (Structure + `MinWaterDepth` > 0: naval factories T1–T3, sonar, torpedo launcher):
+  `NavalRules.CellBuildable` (every footprint cell needs that much water) is used by `OccupancyGrid.CanPlace` and
+  by the client ghost (`PlacementGrid`, `PlacementError.NeedsDeepWater`); `NavalRules.FindSite` = nearest valid
+  site (AI/tests/scenes). They sit at the water surface. Builders on land walk as close as they can (an unreachable
+  goal shrinks the arrive radius by the gap, `MovementSystem`), then build within range.
+- Torpedoes (`Naval/Torpedoes.cs`): weapons with `ProjectileVisual` "torpedo" (`WeaponKind.Torpedo`,
+  `ProjectileFlags.Torpedo`) drop into the water, run at `RunDepth`, home on the target, hit by a 2D swept circle
+  on the Water/Sub layers and die when the sea floor gets close (shore/shallows). Torpedo defense ("antitorpedo",
+  `WeaponKind.AntiTorpedo`, never targets units): `Torpedoes.Intercept` (sequential, before projectiles move)
+  destroys one torpedo in range per weapon cooldown.
+- Subs (`MotionLayer.Sub`, layer `LayerMask.Sub`) are visible only with sonar/omni coverage (`IntelService`), and
+  only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
 
 ## Skirmish AI (`Rts.Sim/AI`)
 - Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for

@@ -131,6 +131,33 @@ public class NavalTests
     }
 
     [Fact]
+    public void T3NavalFactoryReleasesABattleshipThatReachesTheEnemyCoast()
+    {
+        var sim = NavalWorld.Archipelago(seed: 7);
+        var w = sim.World;
+        var t = w.Terrain;
+        var site = NavalWorld.NavalSite(w, t.StartPositions[0], "uef_t3_naval_factory");
+        var fac = w.SpawnUnit(Bp("uef_t3_naval_factory"), 0, site, DMath.HeadingOf(t.StartPositions[1] - site));
+        var far = NavalWorld.NavalSite(w, t.StartPositions[1]);
+        sim.Step([new FactoryEnqueueCommand(0, [fac], Bp("uef_t3_battleship"), 1)]);
+        int ship = -1;
+        for (int k = 0; k < 4000 && ship < 0; k++)
+        {
+            var e = w.Armies[0].Eco;
+            e.Mass = e.MassMax;
+            e.Energy = e.EnergyMax;
+            sim.Step();
+            var list = EconomyTestUtil.UnitsOf(w, 0, "uef_t3_battleship");
+            if (list.Count == 1 && w.Units.IsComplete(list[0]) && w.Units.Factory[fac.Index].Current.IsNone) ship = list[0];
+        }
+        Assert.True(ship >= 0, "battleship not built");
+        var h = w.Units.HandleOf(ship);
+        sim.Step([new IssueOrderCommand(0, [h], Order.MoveTo(far), false)]);
+        for (int k = 0; k < 3000 && Vector2.Distance(w.Units.Pos[ship], far) > 6f; k++) sim.Step();
+        Assert.True(Vector2.Distance(w.Units.Pos[ship], far) <= 6f, $"battleship at {w.Units.Pos[ship]}, wanted {far} (factory {site})");
+    }
+
+    [Fact]
     public void TorpedoesHitShipsAndSubs()
     {
         // Sub vs frigate: the frigate can't shoot back at a submerged sub.

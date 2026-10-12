@@ -12,7 +12,8 @@ namespace Rts.Sim.Naval;
 /// <list type="bullet">
 /// <item><b>Weapons</b>: <c>"ProjectileVisual": "torpedo"</c> (MuzzleVelocity &gt; 0) makes a
 ///   <see cref="WeaponKind.Torpedo"/>; give it <c>"TargetLayers": ["Water", "Sub"]</c>. Subs, ships, torpedo
-///   launchers and torpedo bombers use it. <c>"ProjectileVisual": "antitorpedo"</c> with no target layers is a
+///   launchers and torpedo bombers use it. <c>"ProjectileVisual": "antitorpedo"</c> (TargetLayers = the torpedo layers
+///   it stops; it never targets units) is a
 ///   <see cref="WeaponKind.AntiTorpedo"/> (destroyers): Range + RateOfFire = interceptions per second.</item>
 /// <item><b>Motion</b> (<see cref="Step"/>, called from the parallel ProjectileSystem step for projectiles with
 ///   <see cref="ProjectileFlags.Torpedo"/>): above the water (launched from a deck, dropped by a plane) the torpedo
