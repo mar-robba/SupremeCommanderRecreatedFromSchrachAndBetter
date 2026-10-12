@@ -358,6 +358,13 @@ public sealed class AiMilitary
                 have += StrengthOf(i);
             }
             if (_tmp3.Count > 0) _armyDefendTick = W.Tick;
+            // The base is losing and the army is away: bring it home (unless it is finishing the enemy off).
+            if (_tmp3.Count == 0 && _baseArmedThreat >= 300f && strength * 1.3f < threat && W.Tick - _recallTick > 300
+                && army.Strength > threat * 0.5f && !FinishingEnemy(army))
+            {
+                _recallTick = W.Tick;
+                StartAttack(army, _b.FindStandable(target, MotionLayer.Land), UnitHandle.None, $"recall threat={threat:F0}", countWave: false);
+            }
         }
         if (_tmp.Count == 0 && _tmp3.Count == 0) return;
         // Expansions: only fight when we clearly win (the base is what matters).
@@ -378,6 +385,21 @@ public sealed class AiMilitary
         _b.Cmd.Order(_tmp2, Order.AttackMoveTo(_b.FindStandable(target, MotionLayer.Land)));
         _defendPos = target;
         _defendTick = W.Tick;
+    }
+
+    private int _recallTick = -10000;
+
+    /// <summary>The army is in an enemy base in the late game, or next to an exposed enemy commander: don't recall it.</summary>
+    private bool FinishingEnemy(AiGroup g)
+    {
+        if (g.State != AiGroupState.Attack) return false;
+        var p = _b.Perception;
+        for (int a = 0; a < p.EnemyCommanderPos.Length; a++)
+            if (p.EnemyCommanderPos[a] is Vector2 cp && p.CommanderAge(a) < 100 && Vector2.Distance(cp, g.Anchor) < 45f) return true;
+        if (!LateGame) return false;
+        foreach (var es in _b.EnemyStarts)
+            if (Vector2.Distance(es, g.Anchor) < 55f) return true;
+        return false;
     }
 
     // ------------------------------------------------------------------ the army
@@ -713,7 +735,13 @@ public sealed class AiMilitary
             float score = value - d * 0.25f;
             float defense = V.ThreatAt(ks.Pos, 24f);
             if (defense > strength * 0.8f && !push) score -= 40f + defense / 50f;
-            if (push)
+            if (!push)
+            {
+                // Before the push the enemy base (commander, fresh units, defenses) is a bad trade: take the map.
+                foreach (var es in _b.EnemyStarts)
+                    if (Vector2.DistanceSquared(es, ks.Pos) < 50f * 50f) { score -= 30f; break; }
+            }
+            else
             {
                 foreach (var es in _b.EnemyStarts)
                     if (Vector2.DistanceSquared(es, ks.Pos) < 45f * 45f) { score += 60f; break; }
