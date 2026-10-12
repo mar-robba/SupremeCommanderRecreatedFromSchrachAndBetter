@@ -71,6 +71,10 @@ public sealed class ClientOptions
     public bool VolumeGiven;
     /// <summary>Disable the fog of war (reveal all; also toggled with F7).</summary>
     public bool NoFog;
+    /// <summary>--sandbox: start (or set up) a sandbox game (Rts.Client/Sandbox).</summary>
+    public bool Sandbox;
+    /// <summary>--exec "cmd; cmd": sandbox console script run at the start of the game (implies --sandbox).</summary>
+    public string? Exec;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -128,6 +132,8 @@ public sealed class ClientOptions
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
                 case "--nofog": o.NoFog = true; break;
+                case "--sandbox": o.Sandbox = true; break;
+                case "--exec": o.Exec = Next(); o.Sandbox = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
@@ -184,7 +190,7 @@ public static class GameApp
         app.Current = opt.StartScreen switch
         {
             StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt, audio), opt),
-            StartScreen.Setup => new SkirmishSetupScreen(app),
+            StartScreen.Setup => new SkirmishSetupScreen(app, opt.Sandbox),
             StartScreen.Settings => new SettingsScreen(app),
             _ => new MainMenuScreen(app),
         };

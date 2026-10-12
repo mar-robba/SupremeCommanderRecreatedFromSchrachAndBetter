@@ -127,7 +127,8 @@ public sealed class Hud : IDisposable
         else
         {
             _dialogFrames = 0;
-            if (_buildKind == BuildKind.Engineer) _build.HandleHotkeys();
+            if (_sel.InputBlocked) { } // sandbox console typing / map tool: no build hotkeys
+            else if (_buildKind == BuildKind.Engineer) _build.HandleHotkeys();
             else if (_buildKind == BuildKind.Factory && !_sel.Placement.Active) _factory.HandleHotkeys(snap);
             if (!_sel.Placement.Active) UpgradeUi.HandleHotkey(_ctx, _sel.Selected, snap);
         }
