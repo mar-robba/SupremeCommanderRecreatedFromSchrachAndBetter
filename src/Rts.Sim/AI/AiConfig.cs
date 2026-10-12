@@ -63,7 +63,7 @@ public sealed class AiConfig
     public int WaveGrowth = 3;
     public int MaxWave = 40;
     /// <summary>Army size at which it attacks whatever the estimated enemy strength.</summary>
-    public int MaxArmy = 70;
+    public int MaxArmy = 110;
     /// <summary>The army attacks when its strength is this multiple of the estimated enemy strength at the objective.</summary>
     public float AttackMargin = 1.3f;
     /// <summary>The army gathers this far from its objective (outside the known defenses) before attacking (0 = no staging).</summary>
@@ -115,7 +115,7 @@ public sealed class AiConfig
             PowerMargin = 0.8f, MexChain = 2, MaxMassStorage = 2, MaxEnergyStorage = 1,
             BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 4, QueueDepth = 2, SpendRatio = 1.1f,
             LandScouts = 2, AirScouts = 1, ScoutRebuildTime = 60, MaxRadars = 3, RadarTime = 150,
-            FirstAttackTime = 200, FirstWave = 8, WaveGrowth = 3, MaxWave = 45, MaxArmy = 70,
+            FirstAttackTime = 200, FirstWave = 8, WaveGrowth = 3, MaxWave = 45, MaxArmy = 130,
             AttackMargin = 1.25f, StageDistance = 45f, AssembleTimeout = 120,
             RetreatFraction = 0.35f, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
             PushTime = 840, LateGameTime = 1140, BomberGroup = 5, Reinforce = true,

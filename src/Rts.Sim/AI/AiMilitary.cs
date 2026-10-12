@@ -38,6 +38,12 @@ public sealed class AiGroup
     /// <summary>Army: gathering again mid-attack because it got strung out (no strength check, short wait).</summary>
     public bool Regroup;
     public int RegroupTick;
+    public int EngageTick;
+    /// <summary>Army: the current attack is a sortie/recall (defending our side); afterwards it gathers again
+    /// for its real objective instead of rolling on piecemeal.</summary>
+    public bool Sortie;
+    public Vector2 SavedTarget;
+    public UnitHandle SavedTargetUnit = UnitHandle.None;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
@@ -439,7 +445,7 @@ public sealed class AiMilitary
                         bool moved = Vector2.Distance(tpos, g.Target) > 8f;
                         g.Target = tpos;
                         g.TargetUnit = th;
-                        if (moved || g.Staging == default) SetStaging(g, StagingFor(tpos, g.Anchor));
+                        if (moved || g.Staging == default) SetStaging(g, StagingFor(tpos, g.Anchor, g.Strength));
                     }
                     else if (g.Staging == default) SetStaging(g, _b.Rally);
                 }
@@ -459,6 +465,7 @@ public sealed class AiMilitary
                     else if (u.Orders[i].IsEmpty) _tmp.Add(i);
                 }
                 if (_tmp.Count > 0) _b.Cmd.Order(_tmp, Order.AttackMoveTo(g.Staging));
+                Engage(g, 30f, g.Staging);
                 float elapsed = (W.Tick - g.StateTick) * SimWorld.Dt;
                 if (W.Tick - _armyDefendTick < 60) break; // part of the army is defending the base
                 if (g.Regroup)
@@ -470,7 +477,10 @@ public sealed class AiMilitary
                 bool ready = gathered >= n * 3 / 4 || (elapsed > 45f && gathered >= n / 2);
                 float required = RequiredStrength(g.Target);
                 float timeout = LateGame ? Cfg.AssembleTimeout * 0.5f : Cfg.AssembleTimeout;
-                bool strong = g.Strength >= required || n >= Cfg.MaxArmy || (elapsed > timeout && g.Strength >= MinAttackStrength() * 0.75f);
+                // Enough strength; or big/waited long and not hopeless (late game: go anyway once big).
+                bool strong = g.Strength >= required
+                              || (n >= Cfg.MaxArmy && (LateGame || g.Strength >= required * 0.7f))
+                              || (elapsed > timeout && g.Strength >= MinAttackStrength() * 0.75f && g.Strength >= required * 0.7f);
                 if (ready && strong && g.Target != default) StartAttack(g, g.Target, g.TargetUnit, $"req={required:F0} gathered={gathered}/{n} waited={elapsed:F0}s");
                 break;
             }
@@ -500,6 +510,13 @@ public sealed class AiMilitary
     {
         bool resume = g.Regroup;
         g.Regroup = false;
+        bool sortie = why.StartsWith("sortie") || why.StartsWith("recall");
+        if (sortie && !g.Sortie && g.Kind == AiGroupKind.Army)
+        {
+            g.SavedTarget = g.State == AiGroupState.Assemble ? g.Target : default;
+            g.SavedTargetUnit = g.State == AiGroupState.Assemble ? g.TargetUnit : UnitHandle.None;
+        }
+        g.Sortie = sortie && g.Kind == AiGroupKind.Army;
         g.State = AiGroupState.Attack;
         g.StateTick = W.Tick;
         g.OrderTick = W.Tick;
@@ -517,20 +534,22 @@ public sealed class AiMilitary
 
     /// <summary>Gathering point for an attack on target: StageDistance short of it along the walking route from
     /// 'from' (so the army arrives together even after long detours), outside known threat; straight-line fallback.</summary>
-    private Vector2 StagingFor(Vector2 target, Vector2 from)
+    private Vector2 StagingFor(Vector2 target, Vector2 from, float strength)
     {
         if (Cfg.StageDistance <= 0) return target;
+        float maxThreat = MathF.Max(300f, strength * 0.4f);
         if (_b.SolveRoute(MotionLayer.Land, 0.6f, from, target, out float len))
         {
-            for (int k = 0; k < 5; k++)
+            // Walk back along the route until the point is outside the known defenses (up to ~3x StageDistance).
+            for (int k = 0; k < 8; k++)
             {
-                float d = Cfg.StageDistance + 15f * k;
+                float d = Cfg.StageDistance + 12f * k;
                 if (d >= len - 5f) return from;
                 var p = _b.FindStandable(_b.RoutePointBack(d), MotionLayer.Land);
-                if (V.ThreatAt(p, 16f) > 300f) continue;
+                if (V.ThreatAt(p, 16f) > maxThreat) continue;
                 return p;
             }
-            return from;
+            return _b.FindStandable(_b.RoutePointBack(MathF.Min(len * 0.5f, Cfg.StageDistance * 3f)), MotionLayer.Land);
         }
         var dir = from - target;
         float dist = dir.Length();
@@ -541,7 +560,7 @@ public sealed class AiMilitary
             float d = Cfg.StageDistance + 15f * k;
             if (d >= dist - 5f) return from;
             var p = _b.FindStandable(target + dir * d, MotionLayer.Land);
-            if (V.ThreatAt(p, 16f) > 300f) continue;
+            if (V.ThreatAt(p, 16f) > maxThreat) continue;
             if (!_b.CanReachNear(MotionLayer.Land, 0.6f, from, p, 1f)) continue;
             return p;
         }
@@ -590,7 +609,7 @@ public sealed class AiMilitary
 
         // Strung out along the route (long ramps, stragglers) while nobody is fighting: the front waits for the rest.
         if (g.Kind == AiGroupKind.Army && n >= 6 && g.Spread * 3 > n && W.Tick - g.RegroupTick > 600 && W.Tick - g.OrderTick > 100
-            && local <= 0 && !LateGame)
+            && local <= 0)
         {
             var front = g.Anchor;
             float bestFront = float.MaxValue;
@@ -611,8 +630,10 @@ public sealed class AiMilitary
             }
         }
 
+        Engage(g, 45f, g.Target);
+
         bool targetGone = !g.TargetUnit.IsNone ? !TargetStillKnown(g.TargetUnit)
-            : g.Idle >= Math.Max(1, n * 3 / 4) && W.Tick - g.OrderTick > 50;
+            : g.Idle >= Math.Max(1, n / 2) && W.Tick - g.OrderTick > 50;
         // Stuck: no progress over 10 s windows while nothing is shooting at us.
         bool stuck = false;
         if (W.Tick - g.OrderTick > 300 && W.Tick - g.CheckTick >= 100)
@@ -635,6 +656,19 @@ public sealed class AiMilitary
         if (!targetGone && !stuck) return;
 
         if (g.Kind == AiGroupKind.Clear) { Release(g, goHome: true); return; }
+        if (g.Sortie)
+        {
+            // Threat dealt with: gather again for the real objective.
+            if (_b.Tracing) _b.Trace($"sortie over g{g.Id} n={n} at ({g.Centroid.X:F0},{g.Centroid.Y:F0})");
+            g.Sortie = false;
+            g.State = AiGroupState.Assemble;
+            g.StateTick = W.Tick;
+            g.Target = g.SavedTarget;
+            g.TargetUnit = g.SavedTargetUnit;
+            g.Staging = default;
+            g.NextObjectiveTick = W.Tick;
+            return;
+        }
         if (stuck) _badTargets.Add((g.Target, W.Tick + 1500)); // can't get there: pick something else for a while
         bool found = g.Kind == AiGroupKind.Raid
             ? ChooseRaidTarget(g.Centroid, g.Strength, out var tpos, out var th)
@@ -670,7 +704,46 @@ public sealed class AiMilitary
         g.Target = tpos;
         g.TargetUnit = th;
         g.NextObjectiveTick = W.Tick + 100;
-        SetStaging(g, StagingFor(tpos, g.Centroid));
+        SetStaging(g, StagingFor(tpos, g.Anchor, g.Strength));
+    }
+
+    /// <summary>Idle members while known enemies are close (outranged by artillery, attack-move finished short of
+    /// them): attack-move at the nearest one, then back to 'then'.</summary>
+    private void Engage(AiGroup g, float radius, Vector2 then)
+    {
+        if (g.Idle == 0 || W.Tick - g.EngageTick < 30) return;
+        if (!NearestKnownEnemy(g.Anchor, radius, out var ep)) return;
+        var u = W.Units;
+        _tmp.Clear();
+        foreach (int i in g.Members) if (u.Orders[i].IsEmpty) _tmp.Add(i);
+        if (_tmp.Count == 0) return;
+        g.EngageTick = W.Tick;
+        _b.Cmd.Order(_tmp, Order.AttackMoveTo(ep));
+        if (then != default) _b.Cmd.Order(_tmp, Order.AttackMoveTo(then), queue: true);
+    }
+
+    /// <summary>Nearest known (seen or on radar) enemy land unit or structure within radius of p.</summary>
+    private bool NearestKnownEnemy(Vector2 p, float radius, out Vector2 pos)
+    {
+        var u = W.Units;
+        pos = default;
+        float best = radius * radius;
+        foreach (int e in V.EnemyMobile)
+        {
+            var layer = W.BpOf(e).Movement.Layer;
+            if (layer is MotionLayer.Air or MotionLayer.Water or MotionLayer.Sub) continue;
+            float d = Vector2.DistanceSquared(u.Pos[e], p);
+            if (d < best) { best = d; pos = u.Pos[e]; }
+        }
+        foreach (int e in V.EnemyStructures)
+        {
+            if (W.BpOf(e).HasAny(UnitCategory.Naval)) continue;
+            float d = Vector2.DistanceSquared(u.Pos[e], p);
+            if (d < best) { best = d; pos = u.Pos[e]; }
+        }
+        if (pos == default) return false;
+        pos = _b.FindStandable(pos, MotionLayer.Land);
+        return true;
     }
 
     /// <summary>Hard: when an enemy commander is in sight close to the army and the army can take it, the direct-
@@ -880,13 +953,37 @@ public sealed class AiMilitary
         }
     }
 
-    /// <summary>A reinforcement batch walks to the army (its staging point or where its bulk is) and merges on arrival.</summary>
+    /// <summary>Where reinforcements walk: the staging point while the army gathers; while it attacks, the staging
+    /// point (on the army's route, behind it) when it lies on the way, then the objective. Fixed points, so batches
+    /// don't zig-zag after a moving army.</summary>
+    private void SendReinforcements(AiGroup army, List<int> units)
+    {
+        if (army.State == AiGroupState.Assemble && army.Staging != default)
+        {
+            _b.Cmd.Order(units, Order.AttackMoveTo(army.Staging));
+            return;
+        }
+        var target = army.Target != default ? army.Target : army.Anchor;
+        bool viaStaging = army.Staging != default
+                          && Vector2.Distance(army.Staging, target) < Vector2.Distance(_b.Rally, target) - 10f;
+        if (viaStaging)
+        {
+            _b.Cmd.Order(units, Order.AttackMoveTo(army.Staging));
+            _b.Cmd.Order(units, Order.AttackMoveTo(target), queue: true);
+        }
+        else _b.Cmd.Order(units, Order.AttackMoveTo(target));
+    }
+
+    private static Vector2 ReinforceGoal(AiGroup army) =>
+        army.State == AiGroupState.Assemble && army.Staging != default ? army.Staging : army.Target;
+
+    /// <summary>A reinforcement batch walks to the army and merges when it reaches it (or arrives and idles).</summary>
     private void UpdateReinforcements(AiGroup g)
     {
         var army = Army;
         if (army == null || army.State == AiGroupState.Retreat) { Release(g, goHome: true); return; }
-        var meet = army.State == AiGroupState.Assemble && army.Staging != default ? army.Staging : army.Anchor;
-        if (Vector2.Distance(g.Anchor, army.Anchor) < 35f || Vector2.Distance(g.Anchor, meet) < 20f)
+        bool arrived = g.Idle * 2 >= g.Members.Count && W.Tick - g.OrderTick > 30;
+        if (Vector2.Distance(g.Anchor, army.Anchor) < 35f || arrived)
         {
             foreach (int i in g.Members)
             {
@@ -895,15 +992,16 @@ public sealed class AiMilitary
             }
             army.Strength += g.Strength;
             if (army.State == AiGroupState.Attack) army.InitialStrength += g.Strength;
-            _b.Cmd.Order(g.Members, Order.AttackMoveTo(army.State == AiGroupState.Attack ? army.Target : meet));
+            if (arrived) SendReinforcements(army, g.Members);
             Groups.Remove(g);
             return;
         }
-        if (W.Tick - g.OrderTick >= 50 && (Vector2.Distance(meet, g.Target) > 15f || g.Idle * 2 >= g.Members.Count))
+        var goal = ReinforceGoal(army);
+        if (W.Tick - g.OrderTick >= 50 && Vector2.Distance(goal, g.Target) > 15f)
         {
-            g.Target = meet;
+            g.Target = goal;
             g.OrderTick = W.Tick;
-            _b.Cmd.Order(g.Members, Order.AttackMoveTo(meet));
+            SendReinforcements(army, g.Members);
         }
     }
 
@@ -967,25 +1065,29 @@ public sealed class AiMilitary
         if (_tmp.Count == 0) return;
         if (army.State == AiGroupState.Retreat) return;
         if (army.State == AiGroupState.Attack && !Cfg.Reinforce) return;
-        var dest = army.State == AiGroupState.Assemble ? army.Staging : army.Anchor;
-        if (dest == default) dest = army.Anchor;
-        if (army.State == AiGroupState.Assemble && Vector2.Distance(dest, _b.Rally) < 40f)
+        if (army.State == AiGroupState.Assemble && Vector2.Distance(army.Anchor, _b.Rally) < 40f)
         {
             // The army is at home: join right away.
             foreach (int i in _tmp) Join(army, i);
-            _b.Cmd.Order(_tmp, Order.AttackMoveTo(dest));
+            SendReinforcements(army, _tmp);
             _poolSinceTick = -1;
             return;
         }
         int batch = army.State == AiGroupState.Attack ? 6 : 4;
         bool waitedEnough = W.Tick - _poolSinceTick > (army.State == AiGroupState.Attack ? 350 : 250);
         if (_tmp.Count < batch && !waitedEnough) return;
-        int reinforcing = 0;
-        foreach (var rg in Groups) if (rg.Kind == AiGroupKind.Reinforce) reinforcing++;
-        if (reinforcing >= 2) return;
-        var rgrp = NewGroup(AiGroupKind.Reinforce, _tmp, AiGroupState.Attack);
-        rgrp.Target = dest;
-        _b.Cmd.Order(rgrp.Members, Order.AttackMoveTo(dest));
+        // A batch that has only just left takes the newcomers along; otherwise a new batch leaves.
+        AiGroup? rgrp = null;
+        foreach (var rg in Groups)
+            if (rg.Kind == AiGroupKind.Reinforce && Vector2.Distance(rg.Anchor, _b.Rally) < 30f) { rgrp = rg; break; }
+        if (rgrp != null) foreach (int i in _tmp) Join(rgrp, i);
+        else
+        {
+            rgrp = NewGroup(AiGroupKind.Reinforce, _tmp, AiGroupState.Attack);
+            rgrp.Target = ReinforceGoal(army);
+            rgrp.OrderTick = W.Tick;
+        }
+        SendReinforcements(army, _tmp);
         _poolSinceTick = -1;
     }
 
