@@ -24,6 +24,8 @@ public sealed class AiConfig
     public int MaxEngineers = 10;
     public int EarlyEngineers = 4;
     public int MaxLandFactories = 6;
+    /// <summary>Land factory cap while mass piles up in storage and the income can feed them (~4.5 mass/s each).</summary>
+    public int MaxLandFactoriesFloat = 14;
     public int MaxAirFactories = 1;
     /// <summary>Game time (s) from which an air factory may be built (earlier if the enemy has air).</summary>
     public float AirFactoryTime = 360;
@@ -95,7 +97,7 @@ public sealed class AiConfig
         {
             Difficulty = d,
             EconInterval = 10, MilitaryInterval = 25, IdlePickupChance = 0.5f,
-            MaxEngineers = 5, EarlyEngineers = 2, MaxLandFactories = 2, MaxAirFactories = 1, AirFactoryTime = 720,
+            MaxEngineers = 5, EarlyEngineers = 2, MaxLandFactories = 2, MaxLandFactoriesFloat = 3, MaxAirFactories = 1, AirFactoryTime = 720,
             PowerMargin = 0.7f, MexChain = 0, MaxMassStorage = 1, MaxEnergyStorage = 1,
             BasePointDefense = 1, BaseAntiAir = 1, ExpansionPointDefense = 0, QueueDepth = 1,
             LandScouts = 1, AirScouts = 0, ScoutRebuildTime = 240, MaxRadars = 1, RadarTime = 480,
@@ -109,7 +111,7 @@ public sealed class AiConfig
             // Hard = faster reactions, longer mex chains, steadier pressure, raids, snipes and micro - no bonuses.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
-            MaxEngineers = 12, EarlyEngineers = 4, MaxLandFactories = 7, MaxAirFactories = 1, AirFactoryTime = 330,
+            MaxEngineers = 12, EarlyEngineers = 4, MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
             PowerMargin = 0.8f, MexChain = 2, MaxMassStorage = 2, MaxEnergyStorage = 1,
             BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 4, QueueDepth = 2, SpendRatio = 1.1f,
             LandScouts = 2, AirScouts = 1, ScoutRebuildTime = 60, MaxRadars = 3, RadarTime = 150,

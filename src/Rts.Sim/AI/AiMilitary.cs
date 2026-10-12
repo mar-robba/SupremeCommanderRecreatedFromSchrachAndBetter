@@ -564,7 +564,7 @@ public sealed class AiMilitary
             return;
         }
 
-        if (Cfg.CommanderSnipe) TrySnipe(g);
+        if (Cfg.CommanderSnipe || LateGame) TrySnipe(g);
 
         // Strung out along the route (long ramps, stragglers) while nobody is fighting: the front waits for the rest.
         if (g.Kind == AiGroupKind.Army && n >= 6 && g.Spread * 3 > n && W.Tick - g.RegroupTick > 600 && W.Tick - g.OrderTick > 100
@@ -628,8 +628,10 @@ public sealed class AiMilitary
         }
         if (_b.Tracing) _b.Trace($"next g{g.Id} {(targetGone ? "gone" : "stuck")} at ({g.Centroid.X:F0},{g.Centroid.Y:F0}) -> ({tpos.X:F0},{tpos.Y:F0})");
         float dist = Vector2.Distance(g.Centroid, tpos);
-        bool keepGoing = g.Kind != AiGroupKind.Army || dist < 70f || LateGame || Cfg.StageDistance <= 0
-                         || g.Strength >= RequiredStrength(tpos) * 1.1f;
+        // Close by, or clearly stronger and not too far: go on. Otherwise stage again near the next objective (also in
+        // the late game: a long march straight into the enemy base strings the army out and loses it).
+        bool keepGoing = g.Kind != AiGroupKind.Army || dist < 70f || Cfg.StageDistance <= 0
+                         || (dist < 140f && g.Strength >= RequiredStrength(tpos) * (LateGame ? 0.8f : 1.1f));
         if (keepGoing)
         {
             g.Target = tpos;

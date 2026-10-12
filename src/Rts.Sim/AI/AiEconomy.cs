@@ -153,7 +153,8 @@ public sealed class AiEconomy
     {
         if (_b.BpLandFactory < 0) return false;
         int n = TotalWithReserved(_b.BpLandFactory);
-        if (n >= Cfg.MaxLandFactories + (Floating ? 3 : 0)) return false;
+        int cap = Floating ? Math.Min(Cfg.MaxLandFactoriesFloat, Math.Max(Cfg.MaxLandFactories + 3, (int)(MassIncome / 4.5f) + 1)) : Cfg.MaxLandFactories;
+        if (n >= cap) return false;
         if (n == 0) return true;
         if (InProgress(_b.BpLandFactory) > 0 || EnergyStall || EnergyRatio < 0.25f) return false;
         if (n < Cfg.MaxLandFactories && MassIncome >= 4.5f * n + 1f) return true;
