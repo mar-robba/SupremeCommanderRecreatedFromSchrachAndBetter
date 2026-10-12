@@ -73,6 +73,98 @@ internal sealed partial class MapBuilder
         }
     }
 
+    /// <summary>Max rise per unit of shaped slopes (a cell diagonal stays under <see cref="Terrain.DefaultMaxSlope"/>).</summary>
+    private const float BeachSlope = 0.42f;
+    /// <summary>Depth below the water level down to which beaches are shaped (amphibious units walk there).</summary>
+    private const float BeachFloor = 2.5f;
+
+    /// <summary>
+    /// Beaches: the island relief rises steeply out of the sea (cliffs all around), so amphibious builders could not
+    /// walk to the water to build naval structures. Replace the terrain by its lower slope-limited envelope
+    /// E(v) = min over u of (max(h(u), W - BeachFloor) + BeachSlope·dist(u, v)) wherever that is lower: slopes
+    /// steeper than <see cref="BeachSlope"/> are cut back (only ever lowers), so every coast becomes a walkable beach
+    /// that reaches ship depth a few units offshore. Exact 8-neighbour chamfer envelope in two raster passes.
+    /// </summary>
+    private void ShapeBeaches()
+    {
+        int s = _stride, n = _n;
+        var e = new float[_h.Length];
+        float floor = _w - BeachFloor;
+        for (int v = 0; v < e.Length; v++) e[v] = MathF.Max(_h[v], floor);
+        float a = BeachSlope, d = BeachSlope * 1.4142135f;
+        for (int z = 0; z <= n; z++)
+        for (int x = 0; x <= n; x++)
+        {
+            int v = z * s + x;
+            float m = e[v];
+            if (x > 0) m = MathF.Min(m, e[v - 1] + a);
+            if (z > 0)
+            {
+                m = MathF.Min(m, e[v - s] + a);
+                if (x > 0) m = MathF.Min(m, e[v - s - 1] + d);
+                if (x < n) m = MathF.Min(m, e[v - s + 1] + d);
+            }
+            e[v] = m;
+        }
+        for (int z = n; z >= 0; z--)
+        for (int x = n; x >= 0; x--)
+        {
+            int v = z * s + x;
+            float m = e[v];
+            if (x < n) m = MathF.Min(m, e[v + 1] + a);
+            if (z < n)
+            {
+                m = MathF.Min(m, e[v + s] + a);
+                if (x < n) m = MathF.Min(m, e[v + s + 1] + d);
+                if (x > 0) m = MathF.Min(m, e[v + s - 1] + d);
+            }
+            e[v] = m;
+        }
+        // Only inside a wide "harbor" corridor from each start plateau to its nearest sea (all N rotated copies):
+        // elsewhere islands keep their relief and flat tops (a global envelope would cut them into cones and leave
+        // no room for deposits).
+        int cells = n * n;
+        var sea = new byte[cells];
+        var ok = new byte[cells];
+        var labels = new int[cells];
+        var sizes = new List<int>();
+        ComputeSea(sea);
+        MapConnectivity.Erode(sea, n, SeaClearance, ok);
+        MapConnectivity.Label(ok, n, labels, sizes);
+        var (comp, _, harbor) = NearestSea(labels, sizes, Math.Max(400, cells / 100), _starts[0]);
+        if (comp < 0) return;
+        var dir = harbor - _starts[0];
+        if (dir.LengthSquared() < 1f) return;
+        dir = Vector2.Normalize(dir);
+        float k = MathF.Sqrt(_sc);
+        var a0 = _starts[0] + dir * (_flatR * 0.5f);
+        var b0 = harbor + dir * (8f * k);
+        var segA = new Vector2[_sym.N];
+        var segB = new Vector2[_sym.N];
+        for (int r = 0; r < _sym.N; r++) { segA[r] = _sym.Rotate(a0, r); segB[r] = _sym.Rotate(b0, r); }
+        float inner = 20f * k, outer = inner + 14f * k;
+        Parallel.For(0, n + 1, z =>
+        {
+            for (int x = 0; x <= n; x++)
+            {
+                int v = z * s + x;
+                if (e[v] >= _h[v]) continue;
+                var p = new Vector2(x, z);
+                float dmin = float.MaxValue;
+                for (int r = 0; r < segA.Length; r++) dmin = MathF.Min(dmin, DistToSegment(p, segA[r], segB[r]));
+                float wgt = 1f - MapMath.SmoothStep(inner, outer, dmin);
+                if (wgt > 0) _h[v] -= (_h[v] - e[v]) * wgt;
+            }
+        });
+    }
+
+    private static float DistToSegment(Vector2 p, Vector2 a, Vector2 b)
+    {
+        var ab = b - a;
+        float t = Math.Clamp(Vector2.Dot(p - a, ab) / MathF.Max(1e-6f, ab.LengthSquared()), 0f, 1f);
+        return Vector2.Distance(p, a + ab * t);
+    }
+
     /// <summary>1 where ships can sail (deepest-corner rule of <see cref="PassFlags.DeepWater"/>, small margin).</summary>
     private void ComputeSea(byte[] sea)
     {

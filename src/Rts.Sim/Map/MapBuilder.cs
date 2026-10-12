@@ -88,7 +88,7 @@ internal sealed partial class MapBuilder
         if (_preset != MapPreset.Archipelago) ApplyLakes();
         FlattenStarts();
         if (LandPreset) EnsureConnectivity(connectBig: true);
-        else EnsureSeaLanes(); // Archipelago: naval lanes between the start islands (MapBuilder.Archipelago.cs)
+        else { EnsureSeaLanes(); ShapeBeaches(); } // Archipelago: sea lanes + walkable coasts (MapBuilder.Archipelago.cs)
 
         var deposits = PlaceDeposits();
         FlattenPads(deposits);
