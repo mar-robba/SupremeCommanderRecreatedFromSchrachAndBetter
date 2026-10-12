@@ -38,6 +38,8 @@ public sealed class SandboxState
     public readonly List<SpawnJob> SpawnJobs = new();
     /// <summary>Nuke effects of recent ticks, re-added to fog-filtered snapshots so a nuke is always seen.</summary>
     public readonly List<(int Tick, EffectEvent Fx)> RecentNukes = new();
+    /// <summary>Nuke inner rings whose wrecks/props are vaporized at the start of the next tick (after the deaths).</summary>
+    public readonly List<(int Tick, Vector2 Center, float Radius)> PendingVaporize = new();
     public SandboxStatus Status { get; private set; } = null!;
     private int _version;
 

@@ -163,6 +163,7 @@ public sealed class GameSession : IDisposable
         _terrainR.DrawWater();
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
+        _fx.DrawOverlay();
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);

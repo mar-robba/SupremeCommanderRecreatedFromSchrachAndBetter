@@ -58,7 +58,7 @@ public sealed class SandboxController : IDisposable
         ParseCtx = new ConsoleContext { Db = ctx.Db, LocalArmy = ctx.LocalArmy, ArmyCount = ctx.ArmyColors.Length };
         Panel = new SandboxPanel(this);
         // F9 / F10 belong to the sandbox here (outside sandbox they are effect debug keys).
-        /*TMPNUKE*/ //EffectsRenderer.DebugKeysEnabled = false;
+        EffectsRenderer.DebugKeysEnabled = false;
         if (opt.Exec != null)
             foreach (var line in SandboxConsoleParser.SplitScript(opt.Exec)) _script.Enqueue(line);
         ConsoleUi.Print("Sandbox mode. Type help for the commands, F9 toggles the panel.", SandboxConsole.Kind.Info);
@@ -72,7 +72,7 @@ public sealed class SandboxController : IDisposable
 
     public void Dispose()
     {
-        /*TMPNUKE*/ //EffectsRenderer.DebugKeysEnabled = true;
+        EffectsRenderer.DebugKeysEnabled = true;
         PlacementGrid.IgnoreDeposits = false;
         UnlockCamera();
     }

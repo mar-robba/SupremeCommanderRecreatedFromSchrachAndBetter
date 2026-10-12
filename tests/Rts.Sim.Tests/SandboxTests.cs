@@ -182,6 +182,26 @@ public class SandboxTests
     }
 
     [Fact]
+    public void NukeVaporizesWrecksInsideTheInnerRing()
+    {
+        var sim = NewSandbox();
+        var w = sim.World;
+        var c = Center(w);
+        var tank = Bp("uef_t1_tank");
+        for (int i = 0; i < 6; i++) w.SpawnUnit(tank, 1, c + new Vector2(i * 3 - 8, 4), 0);
+        int farWreck = w.Props.Spawn(c + new Vector2(0, 70), 0, tank, 1f, 10f, 0f);
+        sim.Step();
+        sim.Step([new SandboxNukeCommand(0, c)]);
+        int wrecks = 0;
+        foreach (int i in w.Props.AliveList) if (Vector2.Distance(w.Props.Pos[i], c) <= SandboxSystem.NukeInnerRadius) wrecks++;
+        Assert.True(wrecks > 0, "the blast should first leave wrecks");
+        for (int t = 0; t < 3; t++) sim.Step();
+        foreach (int i in w.Props.AliveList)
+            Assert.True(Vector2.Distance(w.Props.Pos[i], c) > SandboxSystem.NukeInnerRadius, $"prop {i} left inside the crater");
+        Assert.True(w.Props.Alive[farWreck], "props outside the inner ring stay");
+    }
+
+    [Fact]
     public void NukeKillsInsideTheInnerRingAndDamagesTheOuterRing()
     {
         var sim = NewSandbox();

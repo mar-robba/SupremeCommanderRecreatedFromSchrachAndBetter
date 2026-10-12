@@ -203,6 +203,24 @@ public static class SandboxSystem
         };
         w.Events.Effects.Add(fx);
         StateOf(w)?.RecentNukes.Add((w.Tick, fx));
+        StateOf(w)?.PendingVaporize.Add((w.Tick, target, innerRadius));
+    }
+
+    /// <summary>Removes every prop (wrecks included) inside the inner ring of last tick's nukes: like SupCom, a nuke
+    /// leaves a clean crater. Runs one tick later so the wrecks of the units the blast killed are gone too.</summary>
+    private static void VaporizeProps(SimWorld w, SandboxState s)
+    {
+        var props = w.Props;
+        for (int k = s.PendingVaporize.Count - 1; k >= 0; k--)
+        {
+            var (tick, center, radius) = s.PendingVaporize[k];
+            if (tick >= w.Tick) continue;
+            s.PendingVaporize.RemoveAt(k);
+            var hit = new List<int>(); // rare (once per nuke): no shared scratch list
+            foreach (int i in props.AliveList)
+                if (Vector2.Distance(props.Pos[i], center) <= radius + props.Radius[i]) hit.Add(i);
+            foreach (int i in hit) props.Free(i);
+        }
     }
 
     // ------------------------------------------------------------------ per tick
@@ -217,6 +235,7 @@ public static class SandboxSystem
         var s = StateOf(w);
         if (s == null) return;
         if (s.RecentNukes.Count > 0) s.RecentNukes.RemoveAll(n => n.Tick < w.Tick);
+        if (s.PendingVaporize.Count > 0) VaporizeProps(w, s);
         if (s.SpawnJobs.Count > 0) RunSpawnJobs(w, s);
         if (s.AnyInfiniteResources)
             for (int a = 0; a < w.Armies.Length; a++)
