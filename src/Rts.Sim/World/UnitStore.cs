@@ -128,12 +128,13 @@ public sealed class UnitStore
         _free.Push(i);
     }
 
-    /// <summary>Rebuilds AliveList (ascending index order = deterministic iteration order).</summary>
+    /// <summary>Rebuilds AliveList (ascending index order = deterministic iteration order). Carried units (inside a
+    /// transport/carrier) are alive but left out: they are off the map.</summary>
     public void RebuildAliveList()
     {
         int n = 0;
         for (int i = 0; i < Capacity; i++)
-            if (Alive[i] && (Flags[i] & UnitFlags.Dead) == 0) AliveList[n++] = i;
+            if (Alive[i] && (Flags[i] & (UnitFlags.Dead | UnitFlags.Carried)) == 0) AliveList[n++] = i;
         AliveCount = n;
     }
 }
