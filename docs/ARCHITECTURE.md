@@ -154,6 +154,11 @@ interpolates prev/cur by time
   destroys one torpedo in range per weapon cooldown.
 - Subs (`MotionLayer.Sub`, layer `LayerMask.Sub`) are visible only with sonar/omni coverage (`IntelService`), and
   only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
+- Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
+  bubble trail, splash/hit/interception bursts, ship wakes scaled by speed and hull), `UnitRenderer.Submerged.cs`
+  (submerged units drawn after the water, see-through and blue-tinted), `PropRenderer.Naval.cs` (wrecks on deep
+  water sink and fade), sonar ring in `BuildPlacement`. `--scene naval` (`NavalScene.cs`): scripted Archipelago
+  fleet battle + naval factory (`--select uef_t1_naval_factory`) for screenshots and tests.
 
 ## Skirmish AI (`Rts.Sim/AI`)
 - Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for
