@@ -26,6 +26,9 @@ public struct UnitView
     public bool FactoryRepeat;
     /// <summary>Units destroyed by this unit (veterancy kills, UnitStore.Kills).</summary>
     public int Kills;
+    /// <summary>In-place structure upgrade in progress: target blueprint (-1 = not upgrading) and its 0..1 progress.</summary>
+    public int UpgradeBp;
+    public float UpgradeFrac;
 }
 
 public struct OrderView

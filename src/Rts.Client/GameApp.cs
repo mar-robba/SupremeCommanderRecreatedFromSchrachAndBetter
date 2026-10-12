@@ -53,6 +53,8 @@ public sealed class ClientOptions
     /// --ui-place &lt;blueprintId&gt;, --mouse x,y.</summary>
     public string? Select;
     public bool UiDemo;
+    /// <summary>--tech-demo: T2/T3 structures/units and an upgrading factory + mex (UI/TechDemo.cs).</summary>
+    public bool TechDemo;
     public string? UiPlace;
     public Vector2? MousePos;
     /// <summary>Extra mixed units per army spawned in the demo (performance testing).</summary>
@@ -115,6 +117,7 @@ public sealed class ClientOptions
                     break;
                 case "--select": o.Select = Next().ToLowerInvariant(); break;
                 case "--ui-demo": o.UiDemo = true; break;
+                case "--tech-demo": o.TechDemo = true; break;
                 case "--ui-place": o.UiPlace = Next(); break;
                 case "--mouse":
                     var mp = Next().Split(',').Select(float.Parse).ToArray();

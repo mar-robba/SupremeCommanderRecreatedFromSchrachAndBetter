@@ -69,6 +69,7 @@ public static class ConstructionSystem
     {
         ApplyPendingWork(w);
         ExecuteOrders(w);
+        UpgradeSystem.Run(w); // upgrading non-factory structures (mexes, radars) request their own upgrade work
     }
 
     // ------------------------------------------------------------------ apply
@@ -89,7 +90,7 @@ public static class ConstructionSystem
             b.PendingWork = 0;
             if (!u.IsActive(i) || !u.IsActive(b.Target)) { b.AppliedRate = 0; continue; }
             float eff = u.Econ[i].Efficiency;
-            b.AppliedRate = w.BpOf(i).Economy.BuildRate * eff;
+            b.AppliedRate = (b.Mode == BuilderMode.Upgrade ? UpgradeSystem.BuildPower(w, i, b.Target.Index) : w.BpOf(i).Economy.BuildRate) * eff;
             float delta = work * eff;
             if (delta <= 0) continue;
             int t = b.Target.Index;
@@ -97,6 +98,10 @@ public static class ConstructionSystem
             if (b.Mode == BuilderMode.Repair)
             {
                 if (u.IsComplete(t)) u.Health[t] = MathF.Min(tbp.MaxHealth, u.Health[t] + delta * tbp.MaxHealth);
+            }
+            else if (b.Mode == BuilderMode.Upgrade)
+            {
+                UpgradeSystem.AddProgress(w, t, delta);
             }
             else if (!u.IsComplete(t))
             {
@@ -254,6 +259,8 @@ public static class ConstructionSystem
         int t = target.Index;
         var tbp = w.BpOf(t);
         var mode = u.IsComplete(t) ? BuilderMode.Repair : BuilderMode.Build; // repairing a site finishes it
+        // At full health, "repairing" an upgrading structure assists its upgrade.
+        if (mode == BuilderMode.Repair && u.Health[t] >= tbp.MaxHealth && u.Upgrade[t].Active) mode = BuilderMode.Upgrade;
         if (mode == BuilderMode.Repair && u.Health[t] >= tbp.MaxHealth) { Finish(w, i, q); return; }
         if (!MoveIntoRange(w, i, BuildRange(bp, tbp), u.Pos[t])) { Idle(w, i); return; }
         Work(w, i, target, mode);
@@ -339,14 +346,19 @@ public static class ConstructionSystem
         {
             work = g; mode = BuilderMode.Build;
         }
+        else if (u.Upgrade[t].Active)
+        {
+            work = g; mode = BuilderMode.Upgrade; // assist an in-place upgrade (factory production is paused meanwhile)
+        }
         else if (tbp.Has(UnitCategory.Factory) && u.IsActive(u.Factory[t].Current) && !u.IsComplete(u.Factory[t].Current.Index))
         {
             work = u.Factory[t].Current; mode = BuilderMode.Assist; // the unit is inside the factory: range to the factory
         }
-        else if (tb.Mode is BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair && u.IsActive(tb.Target) && tb.Target.Index != i)
+        else if (tb.Mode is BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair or BuilderMode.Upgrade && u.IsActive(tb.Target) && tb.Target.Index != i)
         {
             int bt = tb.Target.Index;
-            if (!u.IsComplete(bt)) { work = tb.Target; mode = BuilderMode.Assist; anchor = bt; }
+            if (tb.Mode == BuilderMode.Upgrade) { if (u.Upgrade[bt].Active) { work = tb.Target; mode = BuilderMode.Upgrade; anchor = bt; } }
+            else if (!u.IsComplete(bt)) { work = tb.Target; mode = BuilderMode.Assist; anchor = bt; }
             else if (tb.Mode == BuilderMode.Repair && u.Health[bt] < w.BpOf(bt).MaxHealth) { work = tb.Target; mode = BuilderMode.Repair; anchor = bt; }
         }
         if (work.IsNone && u.IsComplete(t) && u.Health[t] < tbp.MaxHealth)
@@ -374,6 +386,7 @@ public static class ConstructionSystem
         b.PendingWork = 0;
         u.Flags[i] |= UnitFlags.Building;
         int t = target.Index;
+        if (mode == BuilderMode.Upgrade) { UpgradeSystem.RequestWork(w, i, t, ref b); return; }
         var tbp = w.BpOf(t);
         float step = w.BpOf(i).Economy.BuildRate / tbp.Economy.BuildTime * SimWorld.Dt;
         ref var tb = ref u.Builder[t];

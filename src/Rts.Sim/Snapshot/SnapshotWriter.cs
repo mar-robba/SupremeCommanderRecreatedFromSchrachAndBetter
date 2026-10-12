@@ -46,6 +46,12 @@ public static class SnapshotWriter
             v.WorkProgress = -1;
             var building = u.Factory[i].Current.IsNone ? u.Builder[i].Target : u.Factory[i].Current;
             if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
+            ref readonly var up = ref u.Upgrade[i];
+            v.UpgradeBp = up.Active ? up.TargetBp : -1;
+            v.UpgradeFrac = up.Active ? up.Fraction : 0;
+            if (up.Active) v.WorkProgress = up.Fraction; // an upgrading structure works on its upgrade
+            else if (u.Builder[i].Mode == BuilderMode.Upgrade && u.IsActive(building) && u.Upgrade[building.Index].Active)
+                v.WorkProgress = u.Upgrade[building.Index].Fraction; // engineer assisting an upgrade
 
             // Orders.
             var orders = view != null && w.IsEnemy(viewArmy, u.Army[i]) ? default : u.Orders[i].AsSpan();

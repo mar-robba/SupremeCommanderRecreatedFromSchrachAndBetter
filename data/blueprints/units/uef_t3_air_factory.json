@@ -1,0 +1,44 @@
+{
+  "Id": "uef_t3_air_factory",
+  "Name": "T3 Air Factory",
+  "Description": "Builds T1, T2 and T3 aircraft. Upgrade of the T2 air factory.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Air",
+    "Factory",
+    "Tech3"
+  ],
+  "MaxHealth": 7000,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 3000,
+    "BuildCostEnergy": 26000,
+    "BuildTime": 4400,
+    "BuildRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Visual": {
+    "Shape": "factory3",
+    "Size": [
+      6,
+      2.8,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "uef_t1_air_scout",
+    "uef_t1_interceptor",
+    "uef_t1_bomber",
+    "uef_t2_gunship",
+    "uef_t2_fighter_bomber",
+    "uef_t3_air_superiority",
+    "uef_t3_strategic_bomber",
+    "uef_t3_spy_plane"
+  ]
+}

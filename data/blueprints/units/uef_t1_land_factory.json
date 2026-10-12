@@ -3,6 +3,7 @@
   "Name": "T1 Land Factory",
   "Description": "Builds T1 land units.",
   "Tech": 1,
+  "UpgradesTo": "uef_t2_land_factory",
   "Categories": [
     "Structure",
     "Land",
