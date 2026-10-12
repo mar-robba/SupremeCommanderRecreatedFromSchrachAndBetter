@@ -61,7 +61,7 @@ public enum UnitCategory : ulong
 /// Blueprints are immutable after loading and may be read from any thread.
 /// Units: distances in world units (1 unit ~ 1 SupCom "ogrid"), time in seconds, rates per second.
 /// </summary>
-public sealed class UnitBlueprint
+public sealed partial class UnitBlueprint
 {
     /// <summary>Unique string id, e.g. "uef_t1_tank". Also the file name.</summary>
     public string Id = "";

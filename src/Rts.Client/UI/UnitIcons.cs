@@ -48,6 +48,14 @@ public static class UnitIcons
     }
 
     /// <summary>Short label printed on icons (e.g. MEX, PGEN, TANK).</summary>
+    private static string StrategicLabel(UnitBlueprint bp) => bp.Silo?.Kind switch
+    {
+        SiloKind.Tactical => "TML",
+        SiloKind.Strategic => "NUKE",
+        SiloKind.AntiNuke => "A-NUKE",
+        _ => "TMD",
+    };
+
     public static string ShortLabel(UnitBlueprint bp)
     {
         if (bp.Has(UnitCategory.Commander)) return "ACU";
@@ -61,6 +69,7 @@ public static class UnitIcons
             return bp.Has(UnitCategory.Air) ? "AIR FAC" : bp.Has(UnitCategory.Naval) ? "NAV FAC" : "LAND FAC";
         if (bp.IsStructure)
         {
+            if (bp.Silo != null || bp.MissileDefense != null) return StrategicLabel(bp);
             if (bp.Has(UnitCategory.Shield)) return "SHIELD";
             if (bp.Has(UnitCategory.Wall)) return "WALL";
             if (bp.Has(UnitCategory.AntiAir)) return "AA";
@@ -72,6 +81,7 @@ public static class UnitIcons
         }
         else
         {
+            if (bp.Shield != null) return "M-SHLD";
             if (bp.Has(UnitCategory.Engineer)) return "ENG";
             if (bp.Has(UnitCategory.Air))
             {

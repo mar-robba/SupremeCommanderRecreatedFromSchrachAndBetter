@@ -97,8 +97,13 @@ public sealed class NukeFx
     {
         float s = Math.Clamp(size > 0 ? size : 40f, 8f, 200f);
         _blasts.Add(new Blast { Pos = pos, S = s, Seed = _ps.Rand() });
-        // Screen flash: full when the blast is in view, dimmer (the sky lights up) when off-screen.
-        float vis = FrameView.Current.SphereVisible(pos + new Vector3(0, s * 0.5f, 0), s * 1.5f) ? 1f : 0.45f;
+        // Screen flash: full when the blast is in view and close (weaker when zoomed far out), dim when it is
+        // off-screen but near the camera (the sky lights up), none for a blast far away on the other side of the map.
+        var fv = FrameView.Current;
+        var fireball = pos + new Vector3(0, s * 0.5f, 0);
+        float camDist = Vector3.Distance(fv.CamPos, fireball);
+        float vis = fv.SphereVisible(fireball, s * 1.5f) ? Math.Clamp(1.35f - camDist / (s * 14f), 0.45f, 1f)
+            : camDist < Atmosphere.CameraDistance * 1.5f + s * 3f ? 0.35f : 0f;
         _flash = MathF.Max(_flash, vis);
 
         // Initial fireball: hot blobs expanding from the ground and rising with the cap.

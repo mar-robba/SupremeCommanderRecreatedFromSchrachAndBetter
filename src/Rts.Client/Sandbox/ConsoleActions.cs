@@ -22,8 +22,9 @@ public abstract record ConsoleAction;
 /// <summary>Spawn Count units of a blueprint for Army. At null = at the next map click. Site = construction sites.</summary>
 public sealed record SpawnAction(int Blueprint, int Count, int Army, Vector2? At, bool Site) : ConsoleAction;
 
-/// <summary>Nuke at a point; null = the next click picks the target.</summary>
-public sealed record NukeAction(Vector2? At) : ConsoleAction;
+/// <summary>Nuke at a point; null = the next click picks the target. Default: a real strategic missile launched by the
+/// local army; Instant: the blast right away, without a missile.</summary>
+public sealed record NukeAction(Vector2? At, bool Instant = false) : ConsoleAction;
 
 /// <summary>Cheat switch for Army (-1 = all armies). On null = flip.</summary>
 public sealed record ToggleAction(SandboxToggle Toggle, int Army, bool? On) : ConsoleAction;

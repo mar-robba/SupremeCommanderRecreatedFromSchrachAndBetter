@@ -82,6 +82,7 @@ public static class WeaponSystem
             ref var ws = ref u.Weapons[i * UnitStore.MaxWeapons + wi];
             ref readonly var winfo = ref info.Weapons[wi];
             var wbp = bp.Weapons[wi];
+            if (winfo.Kind == WeaponKind.Manual) continue; // silo / missile defense (Strategic module)
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
 
@@ -319,6 +320,8 @@ public static class WeaponSystem
             var u = w.Units;
             var mask = w.Blueprints[shot.Bp].Weapons[shot.Weapon].TargetMask;
             var hitPos = u.IsActive(shot.Target) ? CombatState.Of(w).Center(u, shot.Target.Index) : shot.TargetPos;
+            // Enemy shield domes between the muzzle and the target absorb the beam (Strategic module).
+            if (Strategic.ShieldSystem.TryBlockInstant(w, shot.Army, shot.Pos, hitPos, shot.Damage, shot.Bp, shot.Weapon)) return;
             if (shot.DamageRadius > 0)
             {
                 w.Events.AreaDamage.Add(new AreaDamageEvent

@@ -6,13 +6,14 @@ using Rts.Sim.Data;
 using Rts.Sim.Map;
 using Rts.Sim.Orders;
 using Rts.Sim.Snapshot;
+using Rts.Sim.Strategic;
 using Rts.Sim.World;
 
 namespace Rts.Sim.Systems;
 
 /// <summary>
 /// Sandbox mode: cheats for testing the game by hand (spawn anything, infinite resources, instant build, build
-/// anywhere, AI on/off, kill/heal/give units, clear an area, nuke). A world is a sandbox only if
+/// anywhere, AI on/off, kill/heal/give units, clear an area, nuke: a real strategic missile or an instant blast). A world is a sandbox only if
 /// <see cref="Enable"/> was called when it was created; otherwise every <see cref="SandboxCommand"/> is ignored.
 /// <para>Everything runs in sequential phases of the tick and only through commands, so it is deterministic and
 /// replay-safe: <see cref="Apply"/> (from CommandSystem), <see cref="BeginTick"/> (after the commands: batched
@@ -28,7 +29,8 @@ public static class SandboxSystem
     /// <summary>Stored amount set before the economy runs for armies with infinite resources (clamped to storage).</summary>
     private const float InfiniteStore = 1e9f;
 
-    // SupCom strategic missile: inner ring 30 / 70 000 damage, outer ring 40 / 500.
+    // Instant blast (nuke instant) defaults, SupCom-like: inner ring 30 / 70 000 damage, outer ring 40 / 500.
+    // The missile nuke uses the strategic silo blueprint's rings (StrategicApi.NukeRings).
     public const float NukeInnerRadius = 30f, NukeOuterRadius = 40f, NukeInnerDamage = 70000f, NukeOuterDamage = 500f;
 
     private static readonly ConditionalWeakTable<SimWorld, SandboxState> _states = new();
@@ -63,11 +65,12 @@ public static class SandboxSystem
             case SandboxSetVictoryCommand v: s.Victory = v.On; break;
             case SandboxUnitActionCommand ua: UnitAction(w, ua); break;
             case SandboxClearAreaCommand ca: ClearArea(w, ca.Center, ca.Radius, ca.OnlyArmy, ca.IncludeCommanders); break;
-            case SandboxNukeCommand n:
-                Nuke(w, c.Army, n.Target,
+            case SandboxNukeCommand { Instant: true } n:
+                NukeInstant(w, c.Army, n.Target,
                     n.InnerRadius > 0 ? n.InnerRadius : NukeInnerRadius, n.OuterRadius > 0 ? n.OuterRadius : NukeOuterRadius,
                     n.InnerDamage > 0 ? n.InnerDamage : NukeInnerDamage, n.OuterDamage > 0 ? n.OuterDamage : NukeOuterDamage);
                 break;
+            case SandboxNukeCommand n: Nuke(w, c.Army, n.Target); break;
         }
         s.Publish(w);
     }
@@ -174,68 +177,82 @@ public static class SandboxSystem
     // ------------------------------------------------------------------ nuke
 
     /// <summary>
-    /// Strategic nuke detonation at target: two rings of area damage through the normal damage pipeline (inner ring
-    /// kills everything, outer ring damages) plus a <see cref="EffectKind.Nuke"/> effect (flash, shockwave, mushroom
-    /// cloud, sound on the client).
-    /// <para>TODO(strategic missiles): once the real nuke launcher/strategic missile is merged, launch that missile at
-    /// <paramref name="target"/> from here instead (e.g. spawn the projectile above the target or from the army's
-    /// silo) so the sandbox nuke uses exactly the same flight, anti-nuke interception and detonation code. This is
-    /// the only place to change: every sandbox nuke (panel, console, --exec) goes through this method.</para>
+    /// Sandbox nuke: launches a REAL strategic missile (<see cref="StrategicApi.LaunchNuke(SimWorld,int,Vector2,Vector2,string)"/>)
+    /// at <paramref name="target"/> from <see cref="NukeLaunchSite"/>. Same flight, global "strategic launch" warning,
+    /// enemy anti-nuke interception and detonation (rings, shields knocked down, crater) as a silo launch; the missile
+    /// is free (a silo's stockpile is not used). Every sandbox missile nuke (panel, console, --exec) goes through here.
+    /// Returns the missile's projectile slot, or -1 (projectile pool full).
     /// </summary>
-    public static void Nuke(SimWorld w, int army, Vector2 target, float innerRadius, float outerRadius, float innerDamage, float outerDamage)
+    public static int Nuke(SimWorld w, int army, Vector2 target)
     {
+        if ((uint)army >= (uint)w.Armies.Length) return -1;
         target = w.Terrain.Clamp(target);
-        w.Events.AreaDamage.Add(new AreaDamageEvent
-        {
-            Center = target, Radius = innerRadius, Amount = innerDamage, Source = UnitHandle.None, SourceArmy = army, Layers = LayerMask.None,
-        });
-        w.Events.AreaDamage.Add(new AreaDamageEvent
-        {
-            Center = target, Radius = outerRadius, Amount = outerDamage, Source = UnitHandle.None, SourceArmy = army, Layers = LayerMask.None,
-        });
-        var fx = new EffectEvent
-        {
-            Kind = EffectKind.Nuke,
-            Pos = DMath.To3(target, w.Terrain.GetSurfaceHeight(target)),
-            Size = outerRadius,
-            Army = army,
-            BlueprintIndex = -1,
-        };
-        w.Events.Effects.Add(fx);
-        StateOf(w)?.RecentNukes.Add((w.Tick, fx));
-        StateOf(w)?.PendingVaporize.Add((w.Tick, target, innerRadius));
+        var (from, silo) = NukeLaunchSite(w, army, target);
+        return StrategicApi.LaunchNuke(w, army, from, target, silo);
     }
 
-    /// <summary>Removes every prop (wrecks included) inside the inner ring of last tick's nukes: like SupCom, a nuke
-    /// leaves a clean crater. Runs one tick later so the wrecks of the units the blast killed are gone too.</summary>
-    private static void VaporizeProps(SimWorld w, SandboxState s)
+    /// <summary>
+    /// Where a sandbox nuke of <paramref name="army"/> takes off, and whose missile it is: the army's complete strategic
+    /// silo nearest to the target (in range), else its commander, else the map edge nearest to its start position (or to
+    /// the target on maps without one). Deterministic (spawn order breaks distance ties).
+    /// </summary>
+    public static (Vector2 From, string SiloBlueprint) NukeLaunchSite(SimWorld w, int army, Vector2 target)
     {
-        var props = w.Props;
-        for (int k = s.PendingVaporize.Count - 1; k >= 0; k--)
+        var u = w.Units;
+        int best = -1;
+        float bestD = float.MaxValue;
+        foreach (var h in StrategicState.Of(w).Units)
         {
-            var (tick, center, radius) = s.PendingVaporize[k];
-            if (tick >= w.Tick) continue;
-            s.PendingVaporize.RemoveAt(k);
-            var hit = new List<int>(); // rare (once per nuke): no shared scratch list
-            foreach (int i in props.AliveList)
-                if (Vector2.Distance(props.Pos[i], center) <= radius + props.Radius[i]) hit.Add(i);
-            foreach (int i in hit) props.Free(i);
+            if (!u.IsActive(h)) continue;
+            int i = h.Index;
+            if (u.Army[i] != army || !u.IsComplete(i)) continue;
+            var bp = w.BpOf(i);
+            if (bp.Silo is not { Kind: SiloKind.Strategic } || !SiloSystem.InRange(bp, u.Pos[i], target)) continue;
+            float d = Vector2.DistanceSquared(u.Pos[i], target);
+            if (d < bestD) { bestD = d; best = i; }
         }
+        if (best >= 0) return (u.Pos[best], w.BpOf(best).Id);
+        var cmd = (uint)army < (uint)w.Armies.Length ? w.Armies[army].Commander : UnitHandle.None;
+        if (u.IsActive(cmd)) return (u.Pos[cmd.Index], StrategicApi.DefaultNukeSilo);
+        var starts = w.Terrain.StartPositions;
+        return (MapEdgePoint(w, (uint)army < (uint)starts.Length ? starts[army] : target), StrategicApi.DefaultNukeSilo);
     }
+
+    /// <summary>The point of the map border (1 unit inside) nearest to p.</summary>
+    public static Vector2 MapEdgePoint(SimWorld w, Vector2 p)
+    {
+        float W = w.Terrain.Width, H = w.Terrain.Height;
+        p = Vector2.Clamp(p, Vector2.Zero, new Vector2(W, H));
+        float left = p.X, right = W - p.X, top = p.Y, bottom = H - p.Y;
+        float m = MathF.Min(MathF.Min(left, right), MathF.Min(top, bottom));
+        if (m == left) p.X = 1f;
+        else if (m == right) p.X = W - 1f;
+        else if (m == top) p.Y = 1f;
+        else p.Y = H - 1f;
+        return w.Terrain.Clamp(p);
+    }
+
+    /// <summary>
+    /// Instant nuke (<c>nuke instant</c>, for quick tests): the strategic detonation at target right now, without the
+    /// missile (no flight, no launch warning, cannot be intercepted) — <see cref="StrategicApi.Detonate"/>: inner ring
+    /// innerDamage + outerDamage, outer ring outerDamage, shields knocked down, wrecks in the inner ring vaporized,
+    /// the one <see cref="EffectKind.Nuke"/> effect.
+    /// </summary>
+    public static void NukeInstant(SimWorld w, int army, Vector2 target, float innerRadius, float outerRadius, float innerDamage, float outerDamage) =>
+        StrategicApi.Detonate(w, army, target, innerRadius, innerDamage, outerRadius, outerDamage);
 
     // ------------------------------------------------------------------ per tick
 
     /// <summary>
     /// Start of the tick, right after the commands (SEQUENTIAL): batched spawns, infinite resources (storage topped up
     /// before the economy runs, so efficiency is always 1 and storage shows full), instant build (sites and factory
-    /// items a builder worked on last tick are finished, free of charge; repairs finish too).
+    /// items a builder worked on last tick are finished, free of charge; repairs finish too; missile silos add a free
+    /// missile per tick up to their storage, see <see cref="SiloSystem.InstantStockpile"/>).
     /// </summary>
     public static void BeginTick(SimWorld w)
     {
         var s = StateOf(w);
         if (s == null) return;
-        if (s.RecentNukes.Count > 0) s.RecentNukes.RemoveAll(n => n.Tick < w.Tick);
-        if (s.PendingVaporize.Count > 0) VaporizeProps(w, s);
         if (s.SpawnJobs.Count > 0) RunSpawnJobs(w, s);
         if (s.AnyInfiniteResources)
             for (int a = 0; a < w.Armies.Length; a++)
@@ -244,7 +261,11 @@ public static class SandboxSystem
                 w.Armies[a].Eco.Mass = InfiniteStore;
                 w.Armies[a].Eco.Energy = InfiniteStore;
             }
-        if (s.AnyInstantBuild) InstantBuild(w, s);
+        if (s.AnyInstantBuild)
+        {
+            InstantBuild(w, s);
+            SiloSystem.InstantStockpile(w, s.InstantBuild);
+        }
         if (s.StatusStale(w)) s.Publish(w);
     }
 
@@ -274,17 +295,14 @@ public static class SandboxSystem
         w.Units.Health[t] = w.BpOf(t).MaxHealth;
     }
 
-    /// <summary>Snapshot hook (sim thread, after SnapshotWriter): sandbox status, no victory unless enabled, and
-    /// nukes are always visible (re-added if the fog filtered them out).</summary>
+    /// <summary>Snapshot hook (sim thread, after SnapshotWriter): sandbox status and no victory unless enabled. (Nuke
+    /// effects are always visible: IntelSnapshotWriter lets EffectKind.Nuke through the fog.)</summary>
     public static void WriteSnapshot(SimWorld w, SimSnapshot snap)
     {
         var s = StateOf(w);
         if (s == null) { snap.Sandbox = null; return; }
         snap.Sandbox = s.Status;
         if (!s.Victory) snap.WinningTeam = -1;
-        if (snap.ViewArmy >= 0)
-            foreach (var (tick, fx) in s.RecentNukes)
-                if (tick == w.Tick && !snap.Effects.Exists(e => e.Kind == EffectKind.Nuke && e.Pos == fx.Pos)) snap.Effects.Add(fx);
     }
 
     // ------------------------------------------------------------------ spawning

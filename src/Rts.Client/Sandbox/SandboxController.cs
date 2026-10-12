@@ -5,6 +5,7 @@ using Rts.Client.Rendering;
 using Rts.Client.UI;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
+using Rts.Sim.Strategic;
 using Rts.Sim.Systems;
 
 namespace Rts.Client.Sandbox;
@@ -41,6 +42,10 @@ public sealed class SandboxController : IDisposable
     private int _toolBp, _toolCount, _toolArmy;
     private bool _toolSite;
     private float _toolRadius;
+    /// <summary>Armed nuke tool fires the instant blast instead of a missile.</summary>
+    private bool _toolInstant;
+    /// <summary>Blast rings of the real strategic missile (from the silo blueprint), for the nuke tool preview.</summary>
+    private (float Inner, float Outer)? _missileRings;
 
     private readonly Queue<string> _script = new();
     private int _wait;
@@ -222,8 +227,8 @@ public sealed class SandboxController : IDisposable
                 else ArmSpawn(s.Blueprint, s.Count, s.Army, s.Site);
                 break;
             case NukeAction n:
-                if (n.At is Vector2 nt) Nuke(nt);
-                else ArmTool(SandboxTool.Nuke, "Click on the map to pick the nuke target (right click / Esc cancels)");
+                if (n.At is Vector2 nt) Nuke(nt, n.Instant);
+                else ArmNuke(n.Instant);
                 break;
             case ToggleAction t:
             {
@@ -320,11 +325,25 @@ public sealed class SandboxController : IDisposable
         Ok($"Spawning {count} × {Ctx.Db[bp].Name}{(site ? " (construction site)" : "")} for {ArmyLabel(army)} at {at.X:0},{at.Y:0}");
     }
 
-    public void Nuke(Vector2 at)
+    /// <summary>Sandbox nuke: a real strategic missile launched by the local army (from its nearest nuke silo, else its
+    /// commander, else the map edge; enemy anti-nukes can intercept it), or the instant blast (no missile).</summary>
+    public void Nuke(Vector2 at, bool instant = false)
     {
-        Ctx.Runner.Enqueue(new SandboxNukeCommand(Ctx.LocalArmy, at));
-        Ok($"Nuke at {at.X:0},{at.Y:0}");
+        Ctx.Runner.Enqueue(new SandboxNukeCommand(Ctx.LocalArmy, at, instant));
+        Ok(instant ? $"Instant nuke at {at.X:0},{at.Y:0}" : $"Strategic missile launched at {at.X:0},{at.Y:0}");
     }
+
+    /// <summary>Arms the nuke tool (missile, or instant blast).</summary>
+    public void ArmNuke(bool instant)
+    {
+        _toolInstant = instant;
+        ArmTool(SandboxTool.Nuke, instant
+            ? "Click on the map: instant nuke blast, no missile (right click / Esc cancels)"
+            : "Click on the map to pick the strategic missile's target (right click / Esc cancels)");
+    }
+
+    /// <summary>Is the armed nuke tool the instant blast?</summary>
+    public bool NukeToolInstant => Tool == SandboxTool.Nuke && _toolInstant;
 
     public void Clear(Vector2 at, float radius)
     {
@@ -366,7 +385,7 @@ public sealed class SandboxController : IDisposable
         {
             case SandboxTool.Spawn: Spawn(_toolBp, _toolCount, _toolArmy, p, _toolSite); break;
             case SandboxTool.Nuke:
-                Nuke(p);
+                Nuke(p, _toolInstant);
                 if (!Ui.Shift) Tool = SandboxTool.None; // Shift: keep nuking
                 break;
             case SandboxTool.Clear:
@@ -470,10 +489,15 @@ public sealed class SandboxController : IDisposable
                 break;
             }
             case SandboxTool.Nuke:
-                GroundCircle(p, SandboxSystem.NukeInnerRadius, new Color(255, 70, 40, 230));
-                GroundCircle(p, SandboxSystem.NukeOuterRadius, new Color(255, 170, 60, 200));
+            {
+                _missileRings ??= StrategicApi.NukeRings(Ctx.Db);
+                var (inner, outer) = _toolInstant || _missileRings.Value.Outer <= 0
+                    ? (SandboxSystem.NukeInnerRadius, SandboxSystem.NukeOuterRadius) : _missileRings.Value;
+                GroundCircle(p, inner, new Color(255, 70, 40, 230));
+                GroundCircle(p, outer, new Color(255, 170, 60, 200));
                 GroundCircle(p, 3f + MathF.Abs(MathF.Sin(t * 4f)) * 3f, new Color(255, 60, 40, 255));
                 break;
+            }
             case SandboxTool.Clear:
                 GroundCircle(p, _toolRadius, new Color(120, 220, 255, 220));
                 GroundCircle(p, _toolRadius * 0.96f, new Color(120, 220, 255, 90));
@@ -503,7 +527,8 @@ public sealed class SandboxController : IDisposable
         string s = Tool switch
         {
             SandboxTool.Spawn => $"Spawn {_toolCount} × {Ctx.Db[_toolBp].Name}{(_toolSite ? " (site)" : "")} → {ArmyLabel(_toolArmy)}",
-            SandboxTool.Nuke => "NUKE: click the target (Shift: keep nuking)",
+            SandboxTool.Nuke => _toolInstant ? "INSTANT NUKE: click the target (Shift: keep nuking)"
+                : "NUKE MISSILE: click the target (Shift: several)",
             _ => $"CLEAR radius {_toolRadius:0}: click the area",
         };
         var m = Ui.Mouse;

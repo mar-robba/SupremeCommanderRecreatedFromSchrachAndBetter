@@ -2,6 +2,7 @@ using System.Numerics;
 using Rts.Sim.Combat;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
+using Rts.Sim.Strategic;
 using Rts.Sim.World;
 
 namespace Rts.Sim.Systems;
@@ -21,6 +22,9 @@ namespace Rts.Sim.Systems;
 /// - Missiles steer (limited turn rate) toward the predicted intercept point of their target.
 /// - DamageRadius &gt; 0 → AreaDamageEvent (layers = weapon TargetMask), else DamageEvent to the unit hit
 ///   (ground hits damage the nearest enemy whose sphere contains the impact point, if any).
+/// - Shields (Strategic module): a segment entering an up enemy shield dome from outside before any other impact
+///   is absorbed there (damage to the shield, no area damage). If the shield already collapsed earlier in the same
+///   tick the projectile flies on. Strategic missiles/interceptors are stepped by Strategic/MissileSystem.
 /// </summary>
 public static class ProjectileSystem
 {
@@ -37,6 +41,7 @@ public static class ProjectileSystem
         var s = CombatState.Of(w);
         s.Prepare(w);
         var P = w.Projectiles;
+        var strat = StrategicState.Of(w);
         int n = P.AliveCount;
         s.Impacts.Reset(Par.ChunkCount(n, Chunk));
         Par.For(n, Chunk, (c, start, end) =>
@@ -45,7 +50,9 @@ public static class ProjectileSystem
             for (int k = start; k < end; k++)
             {
                 int p = P.AliveList[k];
-                if (P.Alive[p]) Step(w, s, p, impacts);
+                if (!P.Alive[p]) continue;
+                if (strat.IsMissile(P, p)) MissileSystem.Step(w, strat, p, impacts);
+                else Step(w, s, strat, p, impacts);
             }
         });
 
@@ -54,15 +61,16 @@ public static class ProjectileSystem
             var impacts = s.Impacts[c];
             for (int k = 0; k < impacts.Count; k++)
             {
-                Apply(w, impacts[k]);
-                P.Free(impacts[k].Projectile);
+                int p = impacts[k].Projectile;
+                if (!P.Alive[p]) continue; // destroyed earlier this tick (intercepted missile)
+                if (Apply(w, impacts[k])) P.Free(p);
             }
             impacts.Clear();
         }
         P.RebuildAliveList();
     }
 
-    private static void Step(SimWorld w, CombatState s, int p, List<ProjectileImpact> impacts)
+    private static void Step(SimWorld w, CombatState s, StrategicState strat, int p, List<ProjectileImpact> impacts)
     {
         var P = w.Projectiles;
         var u = w.Units;
@@ -100,6 +108,15 @@ public static class ProjectileSystem
             groundT = h0 <= 0 ? 0 : h0 / (h0 - h1);
         }
 
+        // Enemy shield dome entered from outside on this segment (Strategic module): absorbs the projectile unless
+        // something else happens first. shieldT = 2 when none.
+        int shieldEntry = ShieldSystem.FirstEntry(strat, P.Army[p], pos0, pos1, out float shieldT);
+        if (shieldEntry >= 0 && shieldT <= groundT)
+        {
+            groundT = 2f; // the ground beyond the dome is never reached
+        }
+        else if (shieldEntry >= 0) { shieldEntry = -1; shieldT = 2f; }
+
         // Flak fuse: burst at the closest approach to the air target if it is inside the blast, or when passing the
         // aim point (timed fuse set to the predicted intercept); if both happen this tick, the burst nearer the target.
         if ((flags & ProjectileFlags.ProximityFuse) != 0)
@@ -128,7 +145,7 @@ public static class ProjectileSystem
                 float d2 = Vector3.DistanceSquared(pa, c);
                 if (!burst || d2 < best) { burst = true; at = pa; }
             }
-            if (burst)
+            if (burst && (shieldEntry < 0 || Ballistics.ClosestParam(pos0, pos1, at) <= shieldT))
             {
                 impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Burst, Unit = -1, Pos = at });
                 return;
@@ -156,9 +173,14 @@ public static class ProjectileSystem
             float t = Ballistics.SegmentSphere(pos0, pos1, s.Center(u, tj), s.Catalog.Units[u.Bp[tj]].HitRadius);
             if (t >= 0) { hit = tj; hitT = t; }
         }
-        if (hit >= 0 && hitT <= groundT)
+        if (hit >= 0 && hitT <= groundT && hitT <= shieldT)
         {
             impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Unit, Unit = hit, Pos = Vector3.Lerp(pos0, pos1, hitT) });
+            return;
+        }
+        if (shieldEntry >= 0)
+        {
+            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = strat.Index.Entries[shieldEntry].Unit, Pos = Vector3.Lerp(pos0, pos1, shieldT) });
             return;
         }
 
@@ -189,12 +211,19 @@ public static class ProjectileSystem
         return (uint)wi < (uint)weapons.Length ? weapons[wi].TargetMask : LayerMask.All;
     }
 
-    /// <summary>Sequential: damage + effects for one finished projectile.</summary>
-    private static void Apply(SimWorld w, in ProjectileImpact imp)
+    /// <summary>Sequential: damage + effects for one finished projectile. Returns false if the projectile flies on
+    /// (it hit a shield that collapsed earlier this tick).</summary>
+    private static bool Apply(SimWorld w, in ProjectileImpact imp)
     {
-        if (imp.Kind == ImpactKind.Expire) return;
         var P = w.Projectiles;
         int p = imp.Projectile;
+        switch (imp.Kind)
+        {
+            case ImpactKind.Expire: return true;
+            case ImpactKind.Shield: return ShieldSystem.Damage(w, imp.Unit, P.Damage[p], imp.Pos, P.SourceBp[p], P.WeaponIndex[p]);
+            case ImpactKind.Intercept: MissileSystem.ApplyIntercept(w, p, imp.Pos); return true;
+            case ImpactKind.Detonation: MissileSystem.Detonate(w, p, imp.Pos); return true;
+        }
         float radius = P.DamageRadius[p];
         int army = P.Army[p];
         int bp = P.SourceBp[p];
@@ -210,7 +239,7 @@ public static class ProjectileSystem
                 Layers = WeaponMask(w, p),
             });
             CombatFx.Add(w, EffectKind.Explosion, imp.Pos, radius, army, bp, P.WeaponIndex[p]);
-            return;
+            return true;
         }
         if (imp.Unit >= 0 && w.Units.IsActive(imp.Unit))
         {
@@ -223,6 +252,7 @@ public static class ProjectileSystem
             });
         }
         CombatFx.Add(w, EffectKind.Impact, imp.Pos, 0.5f, army, bp, P.WeaponIndex[p]);
+        return true;
     }
 
     private static int NearestEnemyAt(SimWorld w, CombatState s, int army, LayerMask mask, Vector3 pos)

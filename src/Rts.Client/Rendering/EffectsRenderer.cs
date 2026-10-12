@@ -13,7 +13,7 @@ namespace Rts.Client.Rendering;
 /// --fxtest), F10 spawns a big explosion under the cursor, Shift+F10 a nuke (gated by <see cref="DebugKeysEnabled"/>).
 /// Nuke detonations: <see cref="NukeFx"/> (+ <see cref="DrawOverlay"/> for the screen flash).
 /// </summary>
-public sealed class EffectsRenderer : IDisposable
+public sealed partial class EffectsRenderer : IDisposable
 {
     private const float TickSeconds = 1f / SimWorld.TicksPerSecond;
     private readonly GameContext _ctx;
@@ -72,7 +72,8 @@ public sealed class EffectsRenderer : IDisposable
     /// <summary>Spawns the particle recipe for a sim effect event.</summary>
     public void Spawn(in EffectEvent e)
     {
-        if (e.Kind == EffectKind.Nuke) { _nuke.Spawn(e.Pos, e.Size); return; } // always, even off-screen
+        if (e.Kind == EffectKind.Nuke) { _nuke.Spawn(e.Pos, e.Size); return; } // always, even off-screen (NukeFx)
+        if (SpawnStrategic(in e)) return; // EffectsRenderer.Strategic.cs
         float size = MathF.Max(0.3f, e.Size);
         var fv = FrameView.Current;
         if (!fv.SphereVisible(e.Pos, size * 6 + 4)) { if (e.Kind != EffectKind.UnitDeath) return; }
@@ -185,6 +186,9 @@ public sealed class EffectsRenderer : IDisposable
             case "bomb":
                 _proj.Streak(pos, dir, 0.5f * zs, 0.22f * zs, cam, new Color(255, 120, 60, 160), PShape.Streak, 0);
                 _proj.Billboard(pos, 0.3f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 80, 40, 255), PShape.Glow, 0);
+                break;
+            case "tactical" or "nuke" or "interceptor" or "antinuke":
+                DrawStrategicProjectile(id, pos, dir, visual, fv, zs); // EffectsRenderer.Strategic.cs
                 break;
             default: // shell (ballistic shells get a faint trail)
             {

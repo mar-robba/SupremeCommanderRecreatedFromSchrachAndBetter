@@ -1,0 +1,64 @@
+{
+  "Id": "uef_t3_strategic_missile_defense",
+  "Name": "T3 Strategic Missile Defense",
+  "Description": "Anti-nuke: builds interceptor missiles (up to 5) and destroys enemy nukes passing within 90.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "Strategic",
+    "Tech3"
+  ],
+  "MaxHealth": 4000,
+  "Radius": 1.5,
+  "FootprintX": 3,
+  "FootprintZ": 3,
+  "Economy": {
+    "BuildCostMass": 2800,
+    "BuildCostEnergy": 60000,
+    "BuildTime": 9000
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Anti-Nuke Interceptor",
+      "Range": 90,
+      "Damage": 0,
+      "RateOfFire": 0.5,
+      "MuzzleVelocity": 90,
+      "TargetLayers": ["Air"],
+      "ProjectileVisual": "antinuke",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    }
+  ],
+  "Silo": {
+    "Kind": "AntiNuke",
+    "WeaponIndex": 0,
+    "MaxStorage": 5,
+    "MissileCostMass": 1500,
+    "MissileCostEnergy": 30000,
+    "MissileBuildTime": 60
+  },
+  "MissileDefense": {
+    "Intercepts": "Strategic",
+    "Radius": 90,
+    "RateOfFire": 0.5,
+    "WeaponIndex": 0,
+    "UsesStockpile": true
+  },
+  "Visual": {
+    "Shape": "missile_defense",
+    "Size": [
+      2.8,
+      1.8,
+      2.8
+    ],
+    "Icon": "defense"
+  },
+  "BuiltBy": [
+    "uef_t3_engineer"
+  ]
+}

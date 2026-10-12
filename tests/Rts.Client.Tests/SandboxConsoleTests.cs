@@ -186,6 +186,36 @@ public class SandboxConsoleTests
         Assert.Equal(new Vector2(100, 200), Ok<NukeAction>("nuke 100,200").At);
         Assert.Equal(new Vector2(100, 200), Ok<NukeAction>("nuke 100 200").At);
         Assert.StartsWith("nuke:", Err("nuke here"));
+        Assert.False(Ok<NukeAction>("nuke 100,200").Instant); // default: the real strategic missile
+    }
+
+    [Fact]
+    public void NukeInstantIsTheBlastWithoutMissile()
+    {
+        var a = Ok<NukeAction>("nuke instant 100,200");
+        Assert.True(a.Instant);
+        Assert.Equal(new Vector2(100, 200), a.At);
+        Assert.True(Ok<NukeAction>("nuke 100,200 instant").Instant);
+        Assert.True(Ok<NukeAction>("NUKE Now at 5,6").Instant);
+        var click = Ok<NukeAction>("nuke instant");
+        Assert.True(click.Instant);
+        Assert.Null(click.At);
+        Assert.StartsWith("nuke:", Err("nuke instant here"));
+    }
+
+    [Fact]
+    public void SpawnListGroupsTheStrategicBlueprints()
+    {
+        foreach (var id in new[] { "uef_t2_shield_generator", "uef_t3_heavy_shield_generator", "uef_t2_mobile_shield",
+                     "uef_t2_tactical_missile_launcher", "uef_t2_tactical_missile_defense", "uef_t3_strategic_missile_launcher",
+                     "uef_t3_strategic_missile_defense", "uef_t2_artillery_installation", "uef_t3_heavy_artillery" })
+        {
+            Assert.True(RealDb.TryGet(id, out var bp), id);
+            Assert.Equal("Strategic & shields", SandboxPanel.GroupOf(bp).name);
+        }
+        Assert.Equal("Land T1", SandboxPanel.GroupOf(RealDb["uef_t1_tank"]).name);
+        Assert.Equal("Land T1", SandboxPanel.GroupOf(RealDb["uef_t1_artillery"]).name); // mobile artillery stays with land
+        Assert.Equal("uef_t3_strategic_missile_launcher", BlueprintMatcher.Find(RealDb, "strategic missile launcher")!.Id);
     }
 
     [Fact]

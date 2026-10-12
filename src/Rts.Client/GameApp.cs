@@ -27,6 +27,8 @@ public sealed class ClientOptions
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
+    /// <summary>--scene NAME: scripted visual test scene (e.g. "strategic[:shields|:tml|:nuke]", see StrategicScene).</summary>
+    public string? Scene;
     public int Width = 1600;
     public int Height = 900;
     /// <summary>
@@ -105,6 +107,7 @@ public sealed class ClientOptions
                 case "--flow-test": o.FlowTest = o.AutoStart = true; break;
                 case "--endscreen": o.EndScreen = true; break;
                 case "--demo": o.Demo = true; break;
+                case "--scene": o.Scene = Next(); break;
                 case "--size":
                     var wh = Next().Split('x');
                     o.Width = int.Parse(wh[0]); o.Height = int.Parse(wh[1]);

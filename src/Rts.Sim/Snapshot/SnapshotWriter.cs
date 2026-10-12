@@ -129,6 +129,7 @@ public static class SnapshotWriter
             };
         }
 
+        Strategic.StrategicSnapshotWriter.Write(w, s, viewArmy);
         s.Effects.Clear();
         if (view != null) IntelSnapshotWriter.AddVisibleEffects(w, s, viewArmy);
         else s.Effects.AddRange(w.Events.Effects);

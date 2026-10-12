@@ -19,7 +19,7 @@ public static unsafe class IconAtlas
     [
         "land_direct", "land_artillery", "land_aa", "land_engineer", "commander", "air_fighter", "air_bomber",
         "air_gunship", "air_transport", "naval", "factory", "eco_mass", "eco_energy", "defense", "intel", "shield",
-        "experimental", "unknown",
+        "experimental", "unknown", "strategic", "artillery",
     ];
 
     private static readonly Dictionary<string, int> KindIndex = Kinds.Select((k, i) => (k, i)).ToDictionary(x => x.k, x => x.i);
@@ -114,6 +114,7 @@ public static unsafe class IconAtlas
             case "unknown":
                 return Circle(p, 5.5f);
             case "land_artillery":
+            case "artillery":
                 return MathF.Min(MathF.Abs(Circle(p, 7f)) - 2.2f, Circle(p, 2.2f));
             case "land_aa":
             case "air_fighter":
@@ -137,6 +138,9 @@ public static unsafe class IconAtlas
                 return MathF.Min(MathF.Abs(Circle(p, 9f)) - 1.6f, MathF.Min(MathF.Abs(Circle(p, 4.5f)) - 1.6f, Circle(p, 1.6f)));
             case "shield":
                 return MathF.Max(MathF.Abs(Circle(p - new Vector2(0, 4), 9f)) - 2f, p.Y - 4);
+            case "strategic": // missile: body, warhead chevron, fins
+                return MathF.Min(MathF.Min(Segment(p, new(0, 9), new(0, -5), w), MathF.Min(Segment(p, new(-5, -3), new(0, -10), w), Segment(p, new(0, -10), new(5, -3), w))),
+                    MathF.Min(Segment(p, new(-5, 9), new(0, 4), 2f), Segment(p, new(5, 9), new(0, 4), 2f)));
             case "experimental":
                 return MathF.Min(Segment(p, new(-9, -9), new(9, 9), 3.2f), Segment(p, new(-9, 9), new(9, -9), 3.2f));
             default:

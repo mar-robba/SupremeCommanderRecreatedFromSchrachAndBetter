@@ -40,7 +40,7 @@ public static class SandboxConsoleParser
     [
         new("spawn", ["s", "sp"], "spawn <unit> [count] [army] [at x,z] [site]", "spawn units",
             ["site", "at", "me", "enemy"], ParseSpawn),
-        new("nuke", [], "nuke [x,z]", "nuclear strike (no position = next click)", ["at"], ParseNuke),
+        new("nuke", [], "nuke [instant] [x,z]", "nuke missile (instant: blast, no missile)", ["instant", "at"], ParseNuke),
         new("money", ["infinite", "res"], "money [army|all] [on|off]", "infinite resources",
             ToggleWords, (c, a, x) => ParseToggle(c, a, x, SandboxToggle.InfiniteResources)),
         new("instabuild", ["instant"], "instabuild [army|all] [on|off]", "instant construction",
@@ -176,13 +176,19 @@ public static class SandboxConsoleParser
         return ParseResult.Ok(new SpawnAction(bp.Index, cnt, army, at, site));
     }
 
+    /// <summary>Words that turn <c>nuke</c> into the instant blast (no missile).</summary>
+    private static readonly string[] InstantWords = ["instant", "now", "blast", "-i"];
+
     private static ParseResult ParseNuke(Cmd c, List<string> a, ConsoleContext ctx)
     {
-        if (a.Count == 0) return ParseResult.Ok(new NukeAction(null));
+        bool instant = false;
+        if (a.Count > 0 && Array.IndexOf(InstantWords, a[0]) >= 0) { instant = true; a = a.GetRange(1, a.Count - 1); }
+        else if (a.Count > 0 && Array.IndexOf(InstantWords, a[^1]) >= 0) { instant = true; a = a.GetRange(0, a.Count - 1); }
+        if (a.Count == 0) return ParseResult.Ok(new NukeAction(null, instant));
         int i = a[0] == "at" ? 1 : 0;
-        if (!TryPos(a, ref i, true, out var p)) return Fail("nuke: expected x,z (or nothing to click a target)");
+        if (!TryPos(a, ref i, true, out var p)) return Fail("nuke: expected [instant] x,z (or nothing to click a target)");
         if (i < a.Count) return Unexpected(c, a[i]);
-        return ParseResult.Ok(new NukeAction(p));
+        return ParseResult.Ok(new NukeAction(p, instant));
     }
 
     private static ParseResult ParseToggle(Cmd c, List<string> a, ConsoleContext ctx, SandboxToggle toggle)
