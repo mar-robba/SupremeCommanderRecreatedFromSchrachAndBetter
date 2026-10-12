@@ -66,6 +66,7 @@ public static class UnitIcons
             if (bp.Has(UnitCategory.AntiAir)) return "AA";
             if (bp.HasAny(UnitCategory.Artillery | UnitCategory.IndirectFire)) return "ARTY";
             if (bp.Has(UnitCategory.Defense)) return "PD";
+            if (bp.Intel.OmniRadius > 0) return "OMNI";
             if (bp.Has(UnitCategory.Radar)) return "RADAR";
             if (bp.Has(UnitCategory.Sonar)) return "SONAR";
         }
@@ -217,7 +218,8 @@ public static class UnitIcons
     {
         var lines = new List<TipLine>
         {
-            new(bp.Name + (hotkey != null ? $"   [{hotkey}]" : ""), Ui.TextColor, 14, true),
+            new(bp.Name + (bp.Has(UnitCategory.Commander) ? "" : bp.Has(UnitCategory.Experimental) ? "  · EXP" : $"  · T{bp.Tech}")
+                + (hotkey != null ? $"   [{hotkey}]" : ""), Ui.TextColor, 14, true),
             new("Mass ", Ui.TextDim, 12.5f, true, [
                 (Ui.Num(bp.Economy.BuildCostMass), Ui.MassColor),
                 ("    Energy ", Ui.TextDim),
