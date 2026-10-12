@@ -32,7 +32,8 @@ public static class StrategicScene
         for (int a = 0; a < 2; a++)
         {
             var sp = w.Terrain.StartPositions[a % w.Terrain.StartPositions.Length];
-            for (int k = 0; k < 16; k++) Spawn("uef_t1_power_generator", a, sp + new Vector2(-12 + (k % 8) * 3f, 10 + (k / 8) * 3f));
+            // Silos building missiles draw a lot of energy (a nuke: 1000 E/s): 80 T1 generators.
+            for (int k = 0; k < 80; k++) Spawn("uef_t1_power_generator", a, sp + new Vector2(-15 + (k % 10) * 3f, 10 + (k / 10) * 3f));
             Spawn("uef_t1_energy_storage", a, sp + new Vector2(14, 10));
             w.Armies[a].Eco.Energy = 4000;
             w.Armies[a].Eco.Mass = 2000;

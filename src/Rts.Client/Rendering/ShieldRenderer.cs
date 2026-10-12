@@ -15,7 +15,7 @@ namespace Rts.Client.Rendering;
 public sealed class ShieldRenderer : IDisposable
 {
     private const int MaxHits = 6;
-    private const float RippleLife = 0.9f;
+    private const float RippleLife = 1.1f;
 
     private sealed class Fx
     {
@@ -266,9 +266,9 @@ public sealed class ShieldRenderer : IDisposable
                 if (h.w < 0.0) continue;
                 float d = distance(vWorld, h.xyz);
                 float front = h.w * 16.0;
-                float ring = exp(-pow((d - front) / 1.4, 2.0)) * max(0.0, 1.0 - h.w / 0.9);
-                float core = exp(-d * d / 5.0) * max(0.0, 1.0 - h.w / 0.3);
-                ripple += ring + 1.6 * core;
+                float ring = exp(-pow((d - front) / 1.8, 2.0)) * max(0.0, 1.0 - h.w / 1.1);
+                float core = exp(-d * d / 9.0) * max(0.0, 1.0 - h.w / 0.45);
+                ripple += 1.3 * ring + 2.0 * core;
             }
             float weak = 1.0 - clamp(hp, 0.0, 1.0);
             float flicker = weak * weak * (0.5 + 0.5 * sin(time * 23.0 + vWorld.x));

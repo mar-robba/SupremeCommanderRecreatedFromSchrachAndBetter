@@ -488,4 +488,24 @@ public class StrategicTests
         sim.Step();
         Assert.False(CombatWorld.Alive(sim, victim));
     }
+
+    [Fact]
+    public void NukeDetonationIsVisibleThroughFog()
+    {
+        var sim = BigFlat();
+        Assert.True(sim.World.Intel.Enabled);
+        CombatWorld.Spawn(sim, "uef_t1_tank", 1, 200, 200);
+        sim.Step();
+        Assert.True(StrategicApi.LaunchNuke(sim.World, 1, new Vector2(220, 220), new Vector2(200, 30)) >= 0);
+        var snap = new Rts.Sim.Snapshot.SimSnapshot();
+        bool seen = false;
+        for (int t = 0; t < 900 && !seen; t++)
+        {
+            sim.Step();
+            Rts.Sim.Snapshot.SnapshotWriter.Write(sim.World, snap, 0); // army 0 has no units: everything is fogged
+            seen = snap.Effects.Any(e => e.Kind == EffectKind.NukeDetonation);
+            Assert.True(snap.LaunchSerial == 1);
+        }
+        Assert.True(seen, "nuclear detonations are global");
+    }
 }
