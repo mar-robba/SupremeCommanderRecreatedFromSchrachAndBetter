@@ -16,6 +16,8 @@ public sealed class BuildMenu
 {
     public static readonly KeyboardKey[] SlotKeys = [KeyboardKey.Z, KeyboardKey.X, KeyboardKey.C, KeyboardKey.V, KeyboardKey.B, KeyboardKey.N];
     public static readonly string[] SlotNames = ["Z", "X", "C", "V", "B", "N"];
+    /// <summary>Cycles the tech tier filter (T1/T2/T3) in the build menu and factory panel.</summary>
+    public const KeyboardKey TierKey = KeyboardKey.T;
     private static readonly BuildTab[] MainTabs = [BuildTab.Economy, BuildTab.Factory, BuildTab.Defense, BuildTab.Intel];
 
     private readonly GameContext _ctx;
