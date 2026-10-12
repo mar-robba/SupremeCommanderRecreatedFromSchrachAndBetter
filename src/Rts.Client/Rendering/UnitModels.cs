@@ -132,6 +132,9 @@ public static partial class UnitModels
                 break;
             }
             case "sub": Sub(b, w, h, l); break;
+            case "naval_factory": case "battleship": case "sonar": case "torpedo_launcher": case "torpedo_bomber":
+                t = NavalShape(bp, b, w, h, l, hasWeapon, pivots, ref mode, ref spin); // naval shapes: UnitModels.Naval.cs
+                break;
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));
