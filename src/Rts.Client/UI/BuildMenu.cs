@@ -10,12 +10,15 @@ namespace Rts.Client.UI;
 /// <summary>
 /// Engineer / commander construction menu: the union of the selected builders' buildable structures, grouped in
 /// tabs (Economy, Factory, Defense, Intel). Click or hotkey (Z X C V B N) starts placement; Tab / Shift+Tab
-/// switches tab. Tooltips show cost, build time and description.
+/// switches tab. T2/T3 builders get tier pills (T1/T2/T3, T / Shift+T cycles, default = highest tier) that filter
+/// the items so the hotkeys stay on six slots. Tooltips show cost, build time and description.
 /// </summary>
 public sealed class BuildMenu
 {
     public static readonly KeyboardKey[] SlotKeys = [KeyboardKey.Z, KeyboardKey.X, KeyboardKey.C, KeyboardKey.V, KeyboardKey.B, KeyboardKey.N];
     public static readonly string[] SlotNames = ["Z", "X", "C", "V", "B", "N"];
+    /// <summary>Cycles the tech tier filter (T1/T2/T3) in the build menu and factory panel.</summary>
+    public const KeyboardKey TierKey = KeyboardKey.T;
     private static readonly BuildTab[] MainTabs = [BuildTab.Economy, BuildTab.Factory, BuildTab.Defense, BuildTab.Intel];
 
     private readonly GameContext _ctx;
@@ -25,6 +28,10 @@ public sealed class BuildMenu
     // Per-frame computed options.
     private readonly Dictionary<BuildTab, List<int>> _byTab = new();
     private readonly List<UnitHandle> _builders = new();
+    /// <summary>All buildable structures (every tier), the tiers present (ascending) and the selected tier.</summary>
+    private readonly List<int> _all = new();
+    private readonly List<int> _tiers = new();
+    private int _tier, _lastMaxTier;
 
     public BuildMenu(GameContext ctx, SelectionController sel)
     {
@@ -38,6 +45,8 @@ public sealed class BuildMenu
     {
         foreach (var l in _byTab.Values) l.Clear();
         _builders.Clear();
+        _all.Clear();
+        _tiers.Clear();
         foreach (var h in _sel.Selected)
         {
             if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
@@ -47,12 +56,22 @@ public sealed class BuildMenu
             foreach (int b in bp.BuildIndices)
             {
                 var ob = _ctx.Db[b];
-                if (!ob.IsStructure) continue;
-                var list = _byTab[UnitIcons.TabOf(ob)];
-                if (!list.Contains(b)) list.Add(b);
+                if (!ob.IsStructure || _all.Contains(b)) continue;
+                _all.Add(b);
+                if (!_tiers.Contains(ob.Tech)) _tiers.Add(ob.Tech);
             }
         }
         if (_builders.Count == 0) return false;
+        _tiers.Sort();
+        // Default to the highest tier whenever the selection's top tier changes (e.g. a T2 engineer gets selected).
+        int maxTier = _tiers.Count > 0 ? _tiers[^1] : 0;
+        if (maxTier != _lastMaxTier || !_tiers.Contains(_tier)) { _tier = maxTier; _lastMaxTier = maxTier; }
+        foreach (int b in _all)
+        {
+            var ob = _ctx.Db[b];
+            if (_tiers.Count > 1 && ob.Tech != _tier) continue;
+            _byTab[UnitIcons.TabOf(ob)].Add(b);
+        }
         if (_byTab[_tab].Count == 0)
             foreach (var t in Tabs()) if (_byTab[t].Count > 0) { _tab = t; break; }
         return Tabs().Any(t => _byTab[t].Count > 0);
@@ -69,11 +88,20 @@ public sealed class BuildMenu
     private float Pad => Ui.P(8);
 
     private float TabWidth(BuildTab t) => Ui.Measure($"{UnitIcons.TabName(t)} {_byTab[t].Count}", Ui.F(11.5f), true) + Ui.P(18);
+    private float PillWidth => Ui.P(30);
+    private float PillsWidth => _tiers.Count > 1 ? _tiers.Count * (PillWidth + Ui.P(3)) + Ui.P(10) : 0;
+
+    private void CycleTier(int dir)
+    {
+        if (_tiers.Count <= 1) return;
+        int i = Math.Max(0, _tiers.IndexOf(_tier));
+        _tier = _tiers[(i + dir + _tiers.Count) % _tiers.Count];
+    }
 
     /// <summary>Width the panel wants (content-sized, clamped by the caller).</summary>
     public float DesiredWidth()
     {
-        float tabs = Tabs().Sum(TabWidth) + Gap * 4;
+        float tabs = Tabs().Sum(TabWidth) + Gap * 4 + PillsWidth;
         int maxItems = Tabs().Max(t => _byTab[t].Count);
         float items = Math.Max(5, maxItems) * (ButtonSize + Gap) - Gap;
         return MathF.Max(tabs, items) + 2 * Pad;
@@ -91,6 +119,7 @@ public sealed class BuildMenu
             }
         }
         if (Ui.Ctrl || Ui.Alt) return;
+        if (Raylib.IsKeyPressed(TierKey)) CycleTier(Ui.Shift ? -1 : 1);
         var items = _byTab[_tab];
         for (int k = 0; k < SlotKeys.Length && k < items.Count; k++)
             if (Raylib.IsKeyPressed(SlotKeys[k])) Choose(items[k]);
@@ -127,7 +156,24 @@ public sealed class BuildMenu
         }
         float hintX = x + Ui.P(4);
         string hint = "Tab: category";
-        if (hintX + Ui.Measure(hint, Ui.F(10)) < r.X + r.Width - Pad)
+        if (_tiers.Count > 1)
+        {
+            // Tier pills, right-aligned.
+            float px = r.X + r.Width - Pad - _tiers.Count * (PillWidth + Ui.P(3)) + Ui.P(3);
+            if (px < hintX) px = hintX;
+            foreach (int t in _tiers)
+            {
+                var pr = new Rectangle(MathF.Round(px), MathF.Round(y), PillWidth, th);
+                bool on = t == _tier;
+                var ps = Ui.Button(pr, true, on, on ? new Color(70, 96, 60, 255) : null);
+                Ui.TextCentered($"T{t}", pr, Ui.F(11.5f), on ? Color.White : Ui.TextDim, true);
+                if (ps.Left) _tier = t;
+                if (ps.Hover) Ui.Tooltip(pr, $"Tech {t} structures", "T / Shift+T: next / previous tier");
+                px += PillWidth + Ui.P(3);
+            }
+            hint = "";
+        }
+        if (hint.Length > 0 && hintX + Ui.Measure(hint, Ui.F(10)) < r.X + r.Width - Pad)
             Ui.Text(hint, r.X + r.Width - Pad - Ui.Measure(hint, Ui.F(10)), y + (th - Ui.F(10)) * 0.5f, Ui.F(10), Ui.TextFaint);
 
         // Item grid.

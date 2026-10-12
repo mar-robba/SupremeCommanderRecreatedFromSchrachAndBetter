@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t2_mobile_missile",
+  "Name": "Brimstone",
+  "Description": "T2 mobile missile launcher: long-range homing missiles against structures.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "IndirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 500,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 180,
+    "BuildCostEnergy": 1100,
+    "BuildTime": 1000
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.6,
+    "Acceleration": 2.5,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Weapons": [
+    {
+      "Name": "Tactical Missile",
+      "Range": 60,
+      "Damage": 220,
+      "RateOfFire": 0.15,
+      "MuzzleVelocity": 14,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "MinRange": 8,
+      "DamageRadius": 1.5,
+      "ProjectileVisual": "missile",
+      "FiringTolerance": 60,
+      "TurretTurnRate": 90
+    }
+  ],
+  "Visual": {
+    "Shape": "missile_launcher",
+    "Size": [
+      1.2,
+      0.9,
+      1.7
+    ],
+    "Icon": "land_artillery"
+  }
+}

@@ -82,7 +82,12 @@ Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transpor
       - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
 ## Phase 3 — SupCom depth
-- [ ] T2 and T3 tech: upgrades of factories/mexes, T2/T3 units for land, air, naval
+- [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
+      radar→omni; own build power + engineer assist, factory queue pauses, mex keeps producing, cancel refunds, same
+      handle), 30 UEF T2/T3 blueprints (engineers, factories, mex, pgen, mass fab, PD, flak, SAM, omni, Pillar,
+      Riptide, Brimstone MML, Sky Boxer, Titan, Percival, Demolisher, gunship, Janus, Wasp, Ambassador, spy plane),
+      T2/T3 models, upgrade tile/U hotkey/progress bars/hologram, build-menu tier pills, `--tech-demo`
+      - [ ] later: T2/T3 naval (agent c), AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
 - [ ] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke
 - [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
 - [ ] Transports/ferry, air staging, engineer assist chains

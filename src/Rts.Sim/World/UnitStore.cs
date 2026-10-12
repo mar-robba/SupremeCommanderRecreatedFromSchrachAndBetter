@@ -40,6 +40,8 @@ public sealed class UnitStore
     public readonly BuilderState[] Builder;
     public readonly FactoryState[] Factory;
     public readonly EconState[] Econ;
+    /// <summary>In-place structure upgrade progress (owned by UpgradeSystem).</summary>
+    public readonly UpgradeState[] Upgrade;
 
     /// <summary>Scratch buffer for double-buffered position writes in parallel systems.</summary>
     public readonly Vector2[] ScratchPos;
@@ -71,6 +73,7 @@ public sealed class UnitStore
         Builder = new BuilderState[capacity];
         Factory = new FactoryState[capacity];
         Econ = new EconState[capacity];
+        Upgrade = new UpgradeState[capacity];
         ScratchPos = new Vector2[capacity];
         AliveList = new int[capacity];
         _free = new Stack<int>(capacity);
@@ -112,6 +115,7 @@ public sealed class UnitStore
         q?.Clear();
         Factory[i] = new FactoryState { Queue = q, Current = UnitHandle.None };
         Econ[i] = default;
+        Upgrade[i] = default;
         return i;
     }
 

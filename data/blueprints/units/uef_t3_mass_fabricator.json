@@ -1,0 +1,35 @@
+{
+  "Id": "uef_t3_mass_fabricator",
+  "Name": "T3 Mass Fabricator",
+  "Description": "Converts 3500 energy/s into 12 mass/s.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "MassFabricator",
+    "Tech3"
+  ],
+  "MaxHealth": 5000,
+  "Radius": 2.0,
+  "FootprintX": 4,
+  "FootprintZ": 4,
+  "Economy": {
+    "BuildCostMass": 3000,
+    "BuildCostEnergy": 65000,
+    "BuildTime": 4500,
+    "ProductionMass": 12,
+    "MaintenanceEnergy": 3500
+  },
+  "Intel": {
+    "VisionRadius": 10
+  },
+  "Visual": {
+    "Shape": "massfab",
+    "Size": [
+      3.7,
+      3.0,
+      3.7
+    ],
+    "Icon": "eco_mass"
+  }
+}
