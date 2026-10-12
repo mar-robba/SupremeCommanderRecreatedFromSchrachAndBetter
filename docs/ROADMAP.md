@@ -3,22 +3,21 @@
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
 ## ▶ NEXT STEPS (updated 2026-10-12 afternoon — read this first in a new session)
-main has: maps + menus, and wave 3a (T2/T3 tech + in-place upgrades, `--tech-demo`). Tests: 155 sim + 69 client.
+main has: maps + menus, wave 3a (T2/T3 tech + in-place upgrades, `--tech-demo`) and 3e (sandbox: `--sandbox`, F9/F10). Tests: 171 sim + 118 client.
 
 **Running (or finished, waiting to be merged): 4 agents in worktrees** under `.claude/worktrees/`.
 Check each with `git -C <dir> log --oneline -3` and `git -C <dir> status --short`.
 | area | worktree dir / branch `worktree-agent-<id>` | latest agent id (2026-10-12) |
 |---|---|---|
-| (b) strategic: shields, TML/TMD, nuke/anti-nuke, T2/T3 artillery, `--scene strategic` | `agent-ae5eb2c4f3916597c` | a9fccb82ae6e7beb1 |
+| (b) strategic: shields, TML/TMD, nuke/anti-nuke, T2/T3 artillery, `--scene strategic` — DONE; a merge agent is merging main into it + making the sandbox nuke a real missile (report-b-merge.md) | `agent-ae5eb2c4f3916597c` | abd291900f26dd154 |
 | (c) naval: naval factories T1–T3, ships/subs, sonar, torpedoes, playable Archipelago, `--scene naval` | `agent-a22a2b0fcf5a1b603` | a128c58db97bd1e5a |
 | (d) AI: RespectIntel, scouting/radar, finish games on Highlands/Canyon, Hard > Normal, FFA | `agent-a1c38e069748a3b2b` | acebc58040f7127e1 |
-| (e) sandbox (owner request): `--sandbox`, `--exec`, menu button, F9 panel, F10 console, cheats | `agent-a1b89b5d8e6a88a18` | a112d86e1a631c547 |
 Handoff notes (done / TODO): `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/handoff-{b,c,d,e}.md`.
 These are durable copies; the live ones are in the session scratchpad. If an agent is unfinished in a new session,
 spawn a FRESH agent in the same worktree dir (absolute path, no isolation) with: the area scope (table above + Phase 3
 lines below), its handoff note, the 300k-context rule, and permission to use sub-agents.
 
-**Merge procedure** (orchestrator, in the main checkout; merge order b → c → e → d):
+**Merge procedure** (orchestrator, in the main checkout; e is merged; order now b → c → d):
 1. `git merge --no-ff worktree-agent-<id>`; conflicts are expected in shared files: resolve additively.
 2. `dotnet build Rts.slnx`, then both test projects green.
 3. One screenshot of the feature's scene. Then `git worktree remove` + `git branch -d`, and update this section.
