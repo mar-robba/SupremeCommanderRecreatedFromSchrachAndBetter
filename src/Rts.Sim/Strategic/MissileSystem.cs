@@ -339,19 +339,53 @@ public static class MissileSystem
     /// <summary>A strategic missile reached the ground: queue the blast for DamageSystem.</summary>
     internal static void Detonate(SimWorld w, int p, Vector3 pos)
     {
-        var s = StrategicState.Of(w);
         var P = w.Projectiles;
         var bp = w.Blueprints[P.SourceBp[p]];
         var sb = bp.Silo;
+        QueueDetonation(w, P.Army[p], P.Source[p], new Vector2(pos.X, pos.Z),
+            P.DamageRadius[p], P.Damage[p], MathF.Max(P.DamageRadius[p], sb?.OuterRadius ?? 0), sb?.OuterDamage ?? 0,
+            bp.Index, P.WeaponIndex[p]);
+    }
+
+    /// <summary>
+    /// Queues a strategic blast at <paramref name="center"/> (applied by <see cref="ApplyDetonations"/> at the start of
+    /// this tick's DamageSystem) and raises the <see cref="EffectKind.Nuke"/> effect (Size = outer radius). Used by
+    /// missile impacts and by <see cref="StrategicApi.Detonate"/> (sandbox instant nuke). Sequential.
+    /// </summary>
+    internal static void QueueDetonation(SimWorld w, int army, UnitHandle source, Vector2 center,
+        float innerRadius, float innerDamage, float outerRadius, float outerDamage, int blueprint = -1, int weapon = 0)
+    {
+        var s = StrategicState.Of(w);
+        outerRadius = MathF.Max(innerRadius, outerRadius);
         s.Detonations.Add(new PendingDetonation
         {
-            Center = new Vector2(pos.X, pos.Z),
-            InnerRadius = P.DamageRadius[p], InnerDamage = P.Damage[p],
-            OuterRadius = MathF.Max(P.DamageRadius[p], sb?.OuterRadius ?? 0), OuterDamage = sb?.OuterDamage ?? 0,
-            Source = P.Source[p], Army = P.Army[p],
+            Center = center,
+            InnerRadius = innerRadius, InnerDamage = innerDamage,
+            OuterRadius = outerRadius, OuterDamage = outerDamage,
+            Source = source, Army = army,
         });
-        var ground = new Vector3(pos.X, w.Terrain.GetSurfaceHeight(new Vector2(pos.X, pos.Z)), pos.Z);
-        CombatFx.Add(w, EffectKind.Nuke, ground, MathF.Max(P.DamageRadius[p], sb?.OuterRadius ?? 0), P.Army[p], bp.Index, P.WeaponIndex[p]);
+        var ground = new Vector3(center.X, w.Terrain.GetSurfaceHeight(center), center.Y);
+        CombatFx.Add(w, EffectKind.Nuke, ground, outerRadius, army, blueprint, weapon);
+    }
+
+    /// <summary>
+    /// Removes every prop (wrecks included) inside the inner ring of the blasts applied last tick: like SupCom, a nuke
+    /// leaves a clean crater. Runs one tick later (StrategicSystem.Run) so the wrecks of the units the blast killed are
+    /// gone too. Sequential.
+    /// </summary>
+    internal static void VaporizeCraters(StrategicState s, SimWorld w)
+    {
+        var props = w.Props;
+        for (int k = s.Craters.Count - 1; k >= 0; k--)
+        {
+            var (tick, center, radius) = s.Craters[k];
+            if (tick >= w.Tick) continue;
+            s.Craters.RemoveAt(k);
+            _tmp.Clear();
+            foreach (int i in props.AliveList)
+                if (Vector2.Distance(props.Pos[i], center) <= radius + props.Radius[i]) _tmp.Add(i);
+            foreach (int i in _tmp) props.Free(i);
+        }
     }
 
     /// <summary>
@@ -385,6 +419,7 @@ public static class MissileSystem
                 if (dist <= d.OuterRadius + r) dmg += d.OuterDamage;
                 if (dmg > 0) DamageSystem.Apply(w, j, dmg, d.Source);
             }
+            s.Craters.Add((w.Tick, d.Center, d.InnerRadius));
         }
         s.Detonations.Clear();
     }

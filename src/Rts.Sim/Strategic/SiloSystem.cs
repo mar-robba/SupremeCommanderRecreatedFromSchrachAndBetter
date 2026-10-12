@@ -92,6 +92,33 @@ public static class SiloSystem
         }
     }
 
+    /// <summary>
+    /// Sandbox instant build: every complete, unpaused silo of the armies with <paramref name="instant"/>[army] set
+    /// finishes the missile it is building at once, free (one per tick, so a silo is full after MaxStorage ticks). The
+    /// pending work is dropped and this tick's requests are cleared, so the economy charges nothing. Sequential, before
+    /// EconomySystem (SandboxSystem.BeginTick).
+    /// </summary>
+    public static void InstantStockpile(SimWorld w, bool[] instant)
+    {
+        var s = StrategicState.Of(w);
+        var u = w.Units;
+        foreach (var h in s.Units)
+        {
+            if (!u.IsActive(h)) continue;
+            int i = h.Index;
+            if ((uint)u.Army[i] >= (uint)instant.Length || !instant[u.Army[i]]) continue;
+            var sb = w.BpOf(i).Silo;
+            if (sb == null || !u.IsComplete(i) || (u.Flags[i] & UnitFlags.Paused) != 0) continue;
+            ref var st = ref s.Silo[i];
+            if (st.Stock >= sb.MaxStorage) continue;
+            st.Stock++;
+            st.Progress = 0;
+            st.PendingWork = 0;
+            u.Econ[i].MassRequest = 0;
+            u.Econ[i].EnergyRequest = 0;
+        }
+    }
+
     /// <summary>Debug/tests/scenes: sets the stockpile directly (clamped to MaxStorage). Sequential.</summary>
     public static void SetStock(SimWorld w, int unit, int stock)
     {

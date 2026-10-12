@@ -64,7 +64,9 @@ public sealed record SandboxUnitActionCommand(int Army, UnitHandle[] Units, Sand
 public sealed record SandboxClearAreaCommand(int Army, Vector2 Center, float Radius, int OnlyArmy = -1, bool IncludeCommanders = false)
     : SandboxCommand(Army);
 
-/// <summary>Strategic nuke detonation at Target (see <see cref="Systems.SandboxSystem.Nuke"/>). Zero radii/damage =
-/// defaults (SupCom-like: inner 30 / 70 000, outer 40 / 500).</summary>
-public sealed record SandboxNukeCommand(int Army, Vector2 Target, float InnerRadius = 0, float OuterRadius = 0, float InnerDamage = 0, float OuterDamage = 0)
+/// <summary>Sandbox nuke at Target. Default: a real strategic missile launched by the army (see
+/// <see cref="Systems.SandboxSystem.Nuke"/>: flight, launch warning, anti-nukes can intercept it). Instant: the blast
+/// right now without a missile (<see cref="Systems.SandboxSystem.NukeInstant"/>); its zero radii/damage = defaults
+/// (SupCom-like: inner 30 / 70 000, outer 40 / 500). The radii/damage fields only apply to the instant blast.</summary>
+public sealed record SandboxNukeCommand(int Army, Vector2 Target, bool Instant = false, float InnerRadius = 0, float OuterRadius = 0, float InnerDamage = 0, float OuterDamage = 0)
     : SandboxCommand(Army);

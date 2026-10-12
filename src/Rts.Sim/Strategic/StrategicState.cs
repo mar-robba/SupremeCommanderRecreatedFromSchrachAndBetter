@@ -97,6 +97,8 @@ public sealed class StrategicState
     public readonly ulong[] EnemyMask;
 
     internal readonly List<PendingDetonation> Detonations = new();
+    /// <summary>Inner rings of applied blasts (tick applied, center, radius): props inside are removed next tick.</summary>
+    internal readonly List<(int Tick, Vector2 Center, float Radius)> Craters = new();
     /// <summary>Recent strategic launches (newest last, at most <see cref="MaxLaunchRecords"/>).</summary>
     public readonly List<LaunchRecord> Launches = new();
     public const int MaxLaunchRecords = 16;

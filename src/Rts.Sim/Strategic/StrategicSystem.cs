@@ -7,7 +7,8 @@ namespace Rts.Sim.Strategic;
 /// Strategic &amp; defensive structures: shields (<see cref="ShieldSystem"/>), missile silos (<see cref="SiloSystem"/>),
 /// strategic missiles and missile defense (<see cref="MissileSystem"/>). State lives in <see cref="StrategicState"/>.
 /// Pipeline step (sequential, after MovementSystem and before TargetingSystem):
-/// prune/aim interceptors → silo stockpiles + launch orders → shields (state + index) → missile defenses.
+/// nuke craters (wrecks vaporized) → prune/aim interceptors → silo stockpiles + launch orders → shields (state + index)
+/// → missile defenses.
 /// Hooks elsewhere: ProjectileSystem (shield interception, missile flight/impacts), WeaponSystem (beams vs shields,
 /// silo/defense weapons never auto-fire: <c>WeaponKind.Manual</c>), DamageSystem (nuke blasts, area damage vs domes),
 /// CommandSystem (Launch orders for silos), UnitLifecycle (InitUnit), snapshot (StrategicSnapshotWriter).
@@ -31,6 +32,7 @@ public static class StrategicSystem
     public static void Run(SimWorld w)
     {
         var s = StrategicState.Of(w);
+        if (s.Craters.Count > 0) MissileSystem.VaporizeCraters(s, w);
         if (s.Units.Count == 0 && s.Missiles.Count == 0 && s.Index.Count == 0) return;
         // Prune dead units (keeps spawn order).
         int n = 0;

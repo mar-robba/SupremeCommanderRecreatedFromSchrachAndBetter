@@ -43,4 +43,24 @@ public static class StrategicApi
         var from = w.Units.IsActive(cmd) ? w.Units.Pos[cmd.Index] : new Vector2(w.Terrain.Width * 0.5f, w.Terrain.Height * 0.5f);
         return LaunchNuke(w, army, from, target);
     }
+
+    /// <summary>
+    /// A strategic blast at <paramref name="center"/> without any missile (no flight, cannot be intercepted): exactly
+    /// the detonation of a nuke — inner ring InnerDamage + OuterDamage, outer ring OuterDamage, ignores and knocks down
+    /// shields, spares subs, vaporizes the wrecks in the inner ring next tick, one <see cref="EffectKind.Nuke"/> effect.
+    /// Damage is applied by this tick's DamageSystem. Used by the sandbox instant nuke.
+    /// </summary>
+    public static void Detonate(SimWorld w, int army, Vector2 center, float innerRadius, float innerDamage, float outerRadius, float outerDamage)
+    {
+        if ((uint)army >= (uint)w.Armies.Length) return;
+        MissileSystem.QueueDetonation(w, army, UnitHandle.None, w.Terrain.Clamp(center), innerRadius, innerDamage, outerRadius, outerDamage);
+    }
+
+    /// <summary>Blast rings of a strategic silo blueprint's missile (0, 0 if it is not a strategic silo).</summary>
+    public static (float Inner, float Outer) NukeRings(Data.BlueprintDb db, string siloBlueprint = DefaultNukeSilo)
+    {
+        if (!db.TryGet(siloBlueprint, out var bp) || bp.Silo is not { Kind: Data.SiloKind.Strategic } sb) return (0, 0);
+        float inner = bp.Weapons[sb.WeaponIndex].DamageRadius;
+        return (inner, MathF.Max(inner, sb.OuterRadius));
+    }
 }

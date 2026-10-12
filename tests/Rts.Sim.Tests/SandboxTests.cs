@@ -191,7 +191,7 @@ public class SandboxTests
         for (int i = 0; i < 6; i++) w.SpawnUnit(tank, 1, c + new Vector2(i * 3 - 8, 4), 0);
         int farWreck = w.Props.Spawn(c + new Vector2(0, 70), 0, tank, 1f, 10f, 0f);
         sim.Step();
-        sim.Step([new SandboxNukeCommand(0, c)]);
+        sim.Step([new SandboxNukeCommand(0, c, Instant: true)]);
         int wrecks = 0;
         foreach (int i in w.Props.AliveList) if (Vector2.Distance(w.Props.Pos[i], c) <= SandboxSystem.NukeInnerRadius) wrecks++;
         Assert.True(wrecks > 0, "the blast should first leave wrecks");
@@ -212,10 +212,10 @@ public class SandboxTests
         var inner1 = w.SpawnUnit(tank, 1, c, 0);
         var inner2 = w.SpawnUnit(tank, 1, c + dir * 25, 0);
         var storageInner = w.SpawnUnit(Bp("uef_t1_mass_storage"), 1, c - dir * 20, 0);
-        var outer = w.SpawnUnit(tank, 1, c + new Vector2(0, 36), 0);
+        var outer = w.SpawnUnit(Bp("uef_t1_point_defense"), 1, c + new Vector2(0, 36), 0);
         var far = w.SpawnUnit(tank, 1, c - new Vector2(0, 60), 0);
         sim.Step();
-        sim.Step([new SandboxNukeCommand(0, c)]);
+        sim.Step([new SandboxNukeCommand(0, c, Instant: true)]);
         var snap = new SimSnapshot();
         sim.WriteSnapshot(snap);
         var u = w.Units;
@@ -223,8 +223,8 @@ public class SandboxTests
         Assert.False(u.IsActive(inner2));
         Assert.False(u.IsActive(storageInner));
         Assert.True(u.IsActive(outer), "outer ring unit should survive");
-        float hp = u.Health[outer.Index];
-        Assert.True(hp < 300f && hp > 0f, $"outer ring hp {hp}");
+        float hp = u.Health[outer.Index], pdMax = w.Blueprints[Bp("uef_t1_point_defense")].MaxHealth;
+        Assert.Equal(pdMax - SandboxSystem.NukeOuterDamage, hp, 1f); // outer ring only
         Assert.Equal(300f, u.Health[far.Index]);
         Assert.Contains(snap.Effects, e => e.Kind == EffectKind.Nuke && e.Size == SandboxSystem.NukeOuterRadius);
         Assert.Contains(snap.Effects, e => e.Kind == EffectKind.UnitDeath);
@@ -237,7 +237,7 @@ public class SandboxTests
         var w = sim.World;
         var enemyBase = w.Units.Pos[w.Armies[1].Commander.Index];
         sim.Step();
-        sim.Step([new SandboxNukeCommand(0, enemyBase)]);
+        sim.Step([new SandboxNukeCommand(0, enemyBase, Instant: true)]);
         var snap = new SimSnapshot();
         sim.WriteSnapshot(snap, 0);
         Assert.True(snap.ViewArmy == 0);
@@ -332,7 +332,7 @@ public class SandboxTests
         var w = sim.World;
         sim.Step();
         // Nuke our own commander: we are defeated, but sandbox commands still work.
-        sim.Step([new SandboxNukeCommand(0, CommanderPos(w, 0))]);
+        sim.Step([new SandboxNukeCommand(0, CommanderPos(w, 0), Instant: true)]);
         Assert.True(w.Armies[0].Defeated);
         var snap = new SimSnapshot();
         sim.WriteSnapshot(snap);

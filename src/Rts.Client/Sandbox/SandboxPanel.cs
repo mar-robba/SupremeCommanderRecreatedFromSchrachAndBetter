@@ -38,16 +38,23 @@ public sealed class SandboxPanel
             .ToList();
     }
 
-    /// <summary>List group of a blueprint: commanders, then land / air / naval / structures per tech level.</summary>
+    /// <summary>List group of a blueprint: commanders, then land / air / naval per tech level, strategic (shields,
+    /// silos, missile defense, artillery installations), structures per tech level.</summary>
     public static (int order, string name) GroupOf(UnitBlueprint b)
     {
         string tech = b.Tech >= 4 ? "Experimental" : $"T{b.Tech}";
         if (b.Has(UnitCategory.Commander)) return (0, "Commanders");
+        if (IsStrategic(b)) return (390, "Strategic & shields");
         if (b.IsStructure) return (400 + b.Tech, $"Structures {tech}");
         if (b.Has(UnitCategory.Air)) return (200 + b.Tech, $"Air {tech}");
         if (b.Has(UnitCategory.Naval)) return (300 + b.Tech, $"Naval {tech}");
         return (100 + b.Tech, $"Land {tech}");
     }
+
+    /// <summary>Shields (static and mobile), missile silos (TML, nuke, anti-nuke), missile defenses and artillery
+    /// installations: listed together so the strategic toys are easy to find.</summary>
+    public static bool IsStrategic(UnitBlueprint b) =>
+        b.Shield != null || b.Silo != null || b.MissileDefense != null || (b.IsStructure && b.Has(UnitCategory.Artillery));
 
     public bool SearchFocused => Visible && _search.Focused;
     public void UnfocusSearch() => _search.Focused = false;
@@ -235,18 +242,26 @@ public sealed class SandboxPanel
 
         // Map tools.
         Label("TOOLS");
-        if (Btn(Cell(cx, y, cw, rowH, 0, 3, gap), "NUKE", _c.Tool == SandboxTool.Nuke, tint: new Color(120, 40, 30, 255), text: new Color(255, 210, 150, 255),
-                tip: "Strategic nuke: click the target on the map (Shift+click: several)"))
+        bool nukeOn = _c.Tool == SandboxTool.Nuke && !_c.NukeToolInstant, blastOn = _c.NukeToolInstant;
+        if (Btn(Cell(cx, y, cw, rowH, 0, 4, gap), "NUKE", nukeOn, tint: new Color(120, 40, 30, 255), text: new Color(255, 210, 150, 255),
+                tip: "Strategic missile: click the target on the map (Shift+click: several). Launched from your nuke silo, " +
+                     "else your commander, else the map edge; launch warning, enemy anti-nukes can shoot it down"))
         {
-            if (_c.Tool == SandboxTool.Nuke) _c.CancelTool();
+            if (nukeOn) _c.CancelTool();
             else _c.Execute(new NukeAction(null));
         }
-        if (Btn(Cell(cx, y, cw, rowH, 1, 3, gap), "Clear", _c.Tool == SandboxTool.Clear, tip: "Remove every unit in a circle: click the area (commanders are spared)"))
+        if (Btn(Cell(cx, y, cw, rowH, 1, 4, gap), "Blast", blastOn, tint: new Color(90, 40, 30, 255), text: new Color(255, 190, 140, 255),
+                tip: "Instant nuke: the blast right where you click, no missile (Shift+click: several)"))
+        {
+            if (blastOn) _c.CancelTool();
+            else _c.Execute(new NukeAction(null, Instant: true));
+        }
+        if (Btn(Cell(cx, y, cw, rowH, 2, 4, gap), "Clear", _c.Tool == SandboxTool.Clear, tip: "Remove every unit in a circle: click the area (commanders are spared)"))
         {
             if (_c.Tool == SandboxTool.Clear) _c.CancelTool();
             else _c.Execute(new ClearAction(_c.ClearRadius, null));
         }
-        var rr = Cell(cx, y, cw, rowH, 2, 3, gap);
+        var rr = Cell(cx, y, cw, rowH, 3, 4, gap);
         if (Btn(rr, $"R {_c.ClearRadius:0}", tip: "Clear radius (click: next size)"))
         {
             int ri = Array.IndexOf(Radii, _c.ClearRadius);
