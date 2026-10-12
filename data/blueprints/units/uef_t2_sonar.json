@@ -1,0 +1,37 @@
+{
+  "Id": "uef_t2_sonar",
+  "Name": "T2 Sonar",
+  "Description": "Twice the range of the T1 sonar. Upgrade of the T1 sonar.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Intel",
+    "Sonar",
+    "Tech2"
+  ],
+  "MaxHealth": 600,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "MinWaterDepth": 0.3,
+  "Economy": {
+    "BuildCostMass": 180,
+    "BuildCostEnergy": 2200,
+    "BuildTime": 400,
+    "MaintenanceEnergy": 20
+  },
+  "Intel": {
+    "VisionRadius": 25,
+    "SonarRadius": 230
+  },
+  "Visual": {
+    "Shape": "sonar",
+    "Size": [
+      1.7,
+      3.0,
+      1.7
+    ],
+    "Icon": "intel"
+  }
+}

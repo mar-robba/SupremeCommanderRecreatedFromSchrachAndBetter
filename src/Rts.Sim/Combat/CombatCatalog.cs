@@ -19,6 +19,12 @@ public enum WeaponKind : byte
     Beam,
     /// <summary>Silo missile / missile-defense interceptor: never fires automatically (Rts.Sim/Strategic drives it).</summary>
     Manual,
+    /// <summary>Torpedo (ProjectileVisual "torpedo"): runs under the water surface toward a Water/Sub target, dies
+    /// on shore; dropped torpedoes fall into the water first (Naval/Torpedoes.cs).</summary>
+    Torpedo,
+    /// <summary>Torpedo defense (ProjectileVisual "antitorpedo", no target layers): never targets units; intercepts
+    /// enemy torpedoes within Range at RateOfFire (Naval/Torpedoes.cs).</summary>
+    AntiTorpedo,
 }
 
 /// <summary>Precomputed per-weapon combat data (immutable, thread-safe).</summary>
@@ -94,7 +100,8 @@ public sealed class CombatCatalog
             for (int k = 0; k < nw; k++)
             {
                 var wb = bp.Weapons[k];
-                var kind = wb.MuzzleVelocity <= 0
+                var kind = Naval.Torpedoes.KindOf(wb) is WeaponKind nk ? nk
+                    : wb.MuzzleVelocity <= 0
                     ? (wb.Ballistic ? WeaponKind.Bomb : WeaponKind.Beam)
                     : wb.Ballistic ? WeaponKind.Ballistic
                     : string.Equals(wb.ProjectileVisual, "missile", StringComparison.OrdinalIgnoreCase) ? WeaponKind.Homing

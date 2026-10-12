@@ -1,0 +1,82 @@
+{
+  "Id": "uef_t2_cruiser",
+  "Name": "Governor Cruiser",
+  "Description": "T2 cruiser: long-range cruise missiles, strong anti-air missiles, wide radar.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "DirectFire",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 4200,
+  "Radius": 1.6,
+  "Economy": {
+    "BuildCostMass": 1800,
+    "BuildCostEnergy": 12000,
+    "BuildTime": 5000
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 4.5,
+    "Acceleration": 2,
+    "TurnRate": 45
+  },
+  "Intel": {
+    "VisionRadius": 40,
+    "RadarRadius": 150,
+    "SonarRadius": 50
+  },
+  "Weapons": [
+    {
+      "Name": "Cruise Missile Launcher",
+      "Range": 70,
+      "Damage": 140,
+      "RateOfFire": 0.3,
+      "MuzzleVelocity": 14,
+      "TurretTurnRate": 120,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "SAM Launcher",
+      "Range": 48,
+      "Damage": 45,
+      "DamageRadius": 1.2,
+      "RateOfFire": 1.2,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 240,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Gauss Cannon",
+      "Range": 30,
+      "Damage": 30,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 120,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "cruiser",
+    "Size": [
+      3.0,
+      3.0,
+      10.0
+    ],
+    "Icon": "naval"
+  }
+}

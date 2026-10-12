@@ -137,6 +137,9 @@ public static partial class UnitModels
             case "missile_silo": MissileSilo(b, w, h, l, bp.Silo?.Kind == SiloKind.Strategic); break;
             case "missile_defense": t = MissileDefenseModel(b, pivots, w, h, l, bp.Silo != null); break;
             case "artillery_structure": t = ArtilleryStructure(b, pivots, w, h, l); break;
+            case "naval_factory": case "battleship": case "sonar": case "torpedo_launcher": case "torpedo_bomber":
+                t = NavalShape(bp, b, w, h, l, hasWeapon, pivots, ref mode, ref spin); // naval shapes: UnitModels.Naval.cs
+                break;
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));

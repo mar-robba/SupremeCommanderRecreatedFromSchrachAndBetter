@@ -83,6 +83,9 @@ public sealed partial class UnitBlueprint
     /// <summary>Structure footprint in grid cells (blocks pathing). Ignored for mobile units.</summary>
     public int FootprintX = 1;
     public int FootprintZ = 1;
+    /// <summary>Water structures (Structure + Naval): minimum water depth over every footprint cell (0 = any water
+    /// surface). Naval factories use Terrain.MinShipDepth so ships can leave them. See Naval/NavalRules.</summary>
+    public float MinWaterDepth;
 
     public EconomyBlueprint Economy = new();
     public MovementBlueprint Movement = new();

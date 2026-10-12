@@ -8,7 +8,7 @@ using Rts.Sim.World;
 namespace Rts.Client.Input;
 
 /// <summary>Why a structure cannot be placed (None = OK).</summary>
-public enum PlacementError { None, OutOfMap, Blocked, Planned, Terrain, NeedsMassDeposit, NeedsHydroDeposit }
+public enum PlacementError { None, OutOfMap, Blocked, Planned, Terrain, NeedsMassDeposit, NeedsHydroDeposit, NeedsDeepWater }
 
 /// <summary>
 /// CLIENT-SIDE mirror of the sim's placement rules (<see cref="OccupancyGrid.CanPlace"/>), rebuilt from the
@@ -76,9 +76,8 @@ public sealed class PlacementGrid
         byte c = _cells[z * _t.Width + x];
         if (c == Structure) return PlacementError.Blocked;
         if (c == Planned) return PlacementError.Planned;
-        var p = _t.PassAt(x, z);
-        bool naval = bp.HasAny(UnitCategory.Naval);
-        if (naval ? (p & PassFlags.WaterSurface) == 0 : (p & PassFlags.Land) == 0) return PlacementError.Terrain;
+        if (!Rts.Sim.Naval.NavalRules.CellBuildable(_t, bp, x, z))
+            return bp.HasAny(UnitCategory.Naval) ? PlacementError.NeedsDeepWater : PlacementError.Terrain;
         return PlacementError.None;
     }
 
@@ -131,6 +130,7 @@ public sealed class PlacementGrid
         PlacementError.Terrain => "Unbuildable terrain (slope or water)",
         PlacementError.NeedsMassDeposit => "Must be placed on a mass deposit",
         PlacementError.NeedsHydroDeposit => "Must be placed on a hydrocarbon deposit",
+        PlacementError.NeedsDeepWater => "Must be placed on water deep enough",
         _ => "",
     };
 }

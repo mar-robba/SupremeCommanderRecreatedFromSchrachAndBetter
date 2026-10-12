@@ -27,7 +27,7 @@ public sealed class ClientOptions
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
-    /// <summary>--scene NAME: scripted visual test scene (e.g. "strategic[:shields|:tml|:nuke]", see StrategicScene).</summary>
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene) or "naval" (NavalScene).</summary>
     public string? Scene;
     public int Width = 1600;
     public int Height = 900;
@@ -107,7 +107,6 @@ public sealed class ClientOptions
                 case "--flow-test": o.FlowTest = o.AutoStart = true; break;
                 case "--endscreen": o.EndScreen = true; break;
                 case "--demo": o.Demo = true; break;
-                case "--scene": o.Scene = Next(); break;
                 case "--size":
                     var wh = Next().Split('x');
                     o.Width = int.Parse(wh[0]); o.Height = int.Parse(wh[1]);
@@ -122,6 +121,7 @@ public sealed class ClientOptions
                 case "--select": o.Select = Next().ToLowerInvariant(); break;
                 case "--ui-demo": o.UiDemo = true; break;
                 case "--tech-demo": o.TechDemo = true; break;
+                case "--scene": o.Scene = Next().ToLowerInvariant(); break;
                 case "--ui-place": o.UiPlace = Next(); break;
                 case "--mouse":
                     var mp = Next().Split(',').Select(float.Parse).ToArray();
@@ -145,6 +145,7 @@ public sealed class ClientOptions
             }
         }
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
+        if (o.Scene == NavalScene.Name) NavalScene.ApplyDefaults(o);
         return o;
     }
 }

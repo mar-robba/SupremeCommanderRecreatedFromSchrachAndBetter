@@ -49,6 +49,7 @@ public sealed class GameSession : IDisposable
     /// <summary>Builds the simulation for a config (pure sim work, safe on a background thread).</summary>
     public static Simulation CreateSimulation(BlueprintDb db, GameConfig cfg, out int localArmy)
     {
+        if (cfg.Scene != null) NavalScene.Configure(cfg);
         var settings = cfg.ToSkirmish(out localArmy);
         // AI slots: Army.IsAI + Army.AiDifficulty → driven by the in-sim skirmish AI (Rts.Sim/AI).
         // Sandbox: the other armies are passive unless "Enemy AI" is on (the sandbox panel/console can switch it later).
@@ -61,6 +62,7 @@ public sealed class GameSession : IDisposable
             FogRenderer.SpawnDemoRadars(sim);
         }
         if (cfg.Scene?.StartsWith("strategic") == true) StrategicScene.Setup(sim, cfg.Scene);
+        else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
         return sim;
     }
 
@@ -102,6 +104,7 @@ public sealed class GameSession : IDisposable
 
         var start = terrain.StartPositions[localArmy % terrain.StartPositions.Length];
         if (opt.CameraXZD is Vector3 cxz) _camera.LookAt(cxz.X, cxz.Y, cxz.Z);
+        else if (cfg.SceneCamera is Vector3 sc) _camera.LookAt(sc.X, sc.Y, sc.Z);
         else _camera.LookAt(start.X, start.Y, 70);
 
         Runner.Start();
@@ -167,6 +170,7 @@ public sealed class GameSession : IDisposable
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
         _terrainR.DrawWater();
+        if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.DrawSubmerged(); // subs seen through the water
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();

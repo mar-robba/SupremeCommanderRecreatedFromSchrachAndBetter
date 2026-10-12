@@ -77,6 +77,7 @@ public sealed partial class EffectsRenderer : IDisposable
         float size = MathF.Max(0.3f, e.Size);
         var fv = FrameView.Current;
         if (!fv.SphereVisible(e.Pos, size * 6 + 4)) { if (e.Kind != EffectKind.UnitDeath) return; }
+        if (SpawnNaval(e, size)) return; // torpedoes, torpedo defense, ships/subs dying on water (EffectsRenderer.Naval.cs)
         switch (e.Kind)
         {
             case EffectKind.MuzzleFlash:
@@ -114,6 +115,7 @@ public sealed partial class EffectsRenderer : IDisposable
         _ps.Update(dt);
         _nuke.Update(dt);
         _proj.Begin();
+        BeginNaval(dt);
         ProjectileCount = 0;
 
         // Real projectiles from the snapshot.
@@ -135,6 +137,7 @@ public sealed partial class EffectsRenderer : IDisposable
         _ps.Alpha.Begin();
         _ps.Decals.Begin();
         _ps.Build(fv);
+        NavalFrame(dt, cur, prev, alpha, fv); // wakes + underwater particles (EffectsRenderer.Naval.cs)
         _nuke.Build(fv);
 
         var sp = Shaders.Particle;
@@ -144,10 +147,12 @@ public sealed partial class EffectsRenderer : IDisposable
         Rlgl.DisableDepthMask();
         Raylib.BeginBlendMode(BlendMode.Alpha);
         _ps.Decals.Draw();
+        _uwAlpha?.Draw();
         _ps.Alpha.Draw();
         Raylib.EndBlendMode();
         Raylib.BeginBlendMode(BlendMode.Additive);
         _ps.Additive.Draw();
+        _uwAdd?.Draw();
         _proj.Draw();
         Raylib.EndBlendMode();
         Rlgl.EnableDepthMask();
@@ -183,6 +188,7 @@ public sealed partial class EffectsRenderer : IDisposable
             case "flak":
                 _proj.Billboard(pos, 0.45f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 170, 80, 255), PShape.Glow, 0);
                 break;
+            case "torpedo": DrawTorpedo(id, pos, dir, fv); break;
             case "bomb":
                 _proj.Streak(pos, dir, 0.5f * zs, 0.22f * zs, cam, new Color(255, 120, 60, 160), PShape.Streak, 0);
                 _proj.Billboard(pos, 0.3f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 80, 40, 255), PShape.Glow, 0);
@@ -324,5 +330,7 @@ public sealed partial class EffectsRenderer : IDisposable
     {
         _ps.Dispose();
         _proj.Dispose();
+        _uwAlpha?.Dispose();
+        _uwAdd?.Dispose();
     }
 }

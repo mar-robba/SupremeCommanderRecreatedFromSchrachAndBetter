@@ -104,7 +104,7 @@ Then:
       handle), 30 UEF T2/T3 blueprints (engineers, factories, mex, pgen, mass fab, PD, flak, SAM, omni, Pillar,
       Riptide, Brimstone MML, Sky Boxer, Titan, Percival, Demolisher, gunship, Janus, Wasp, Ambassador, spy plane),
       T2/T3 models, upgrade tile/U hotkey/progress bars/hologram, build-menu tier pills, `--tech-demo`
-      - [ ] later: T2/T3 naval (agent c), AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
+      - [ ] later: AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
 - [x] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke (wave 3, agent b, 2026-10-12):
       `Rts.Sim/Strategic` (shield domes absorb outside shots/splash, collapse + recharge, drop on energy stall; silo
       stockpiles + `OrderType.Launch`; TML cruise missiles, TMD; nuke high arc + two-ring blast that knocks shields
@@ -113,6 +113,14 @@ Then:
       nuke explosion (`NukeFx`, shared with the sandbox) + flash + sound, launch mode (L), global launch warning,
       `--scene strategic`
       - [ ] later: collapsed shields still pay upkeep; AI builds/uses shields, TML, nukes (wave 4); bombers fly over domes
+- [x] Naval (wave 3, agent c, 2026-10-12): naval factories T1→T2→T3 (in-place upgrades), frigate, attack sub,
+      destroyer (guns + torpedoes + torpedo defense), cruiser (AA + missiles), battleship, T2 torpedo bomber, T1/T2
+      sonar, torpedo launcher; water placement (`NavalRules`, client ghost), torpedoes (run under water, home, die on
+      shore), rate-limited torpedo defense, subs only seen by sonar/omni and only hit by torpedoes; Archipelago sea
+      lanes + harbor beaches (playable: coast reachable, battleship lanes between starts); client: ship models, wakes,
+      torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
+      - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
+            avoidance in narrow channels
 - [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
 - [ ] Transports/ferry, air staging, engineer assist chains
 - [ ] Second faction (Cybran-like) with distinct visuals and units

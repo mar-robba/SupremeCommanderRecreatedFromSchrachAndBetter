@@ -42,6 +42,7 @@ public static class ProjectileSystem
         s.Prepare(w);
         var P = w.Projectiles;
         var strat = StrategicState.Of(w);
+        Naval.Torpedoes.Intercept(w, s); // sequential: torpedo defense shoots down torpedoes before they move
         int n = P.AliveCount;
         s.Impacts.Reset(Par.ChunkCount(n, Chunk));
         Par.For(n, Chunk, (c, start, end) =>
@@ -73,6 +74,7 @@ public static class ProjectileSystem
     private static void Step(SimWorld w, CombatState s, StrategicState strat, int p, List<ProjectileImpact> impacts)
     {
         var P = w.Projectiles;
+        if ((P.Flags[p] & ProjectileFlags.Torpedo) != 0) { Naval.Torpedoes.Step(w, s, p, impacts); return; }
         var u = w.Units;
         var terrain = w.Terrain;
         const float dt = SimWorld.Dt;

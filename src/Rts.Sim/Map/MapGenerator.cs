@@ -39,7 +39,7 @@ public static class MapPresets
         MapPreset.Lakes => "Hills and many lakes; armies funnel through land bridges and fords.",
         MapPreset.Highlands => "Terraced plateaus ringed by cliffs. Ramps are the only way up.",
         MapPreset.Canyon => "Impassable mesas cut by valleys: narrow chokepoints between bases.",
-        MapPreset.Archipelago => "Islands in open sea. Bases are not connected by land: needs naval units (not available yet).",
+        MapPreset.Archipelago => "Islands in open sea, linked by deep sea lanes. Bases are not connected by land: build a navy (naval factory on the coast) or aircraft.",
         _ => "",
     };
 
