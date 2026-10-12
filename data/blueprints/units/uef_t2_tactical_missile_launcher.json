@@ -1,0 +1,63 @@
+{
+  "Id": "uef_t2_tactical_missile_launcher",
+  "Name": "T2 Tactical Missile Launcher",
+  "Description": "Builds tactical cruise missiles (up to 4) and launches them at a ground target within 256. Missiles can be shot down by TMD.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Strategic",
+    "Tech2"
+  ],
+  "MaxHealth": 1500,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 400,
+    "BuildCostEnergy": 4500,
+    "BuildTime": 2000
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Weapons": [
+    {
+      "Name": "Tactical Cruise Missile",
+      "Range": 256,
+      "MinRange": 15,
+      "Damage": 2000,
+      "DamageRadius": 2.5,
+      "Spread": 1.5,
+      "RateOfFire": 0.1,
+      "MuzzleVelocity": 24,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "tactical",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    }
+  ],
+  "Silo": {
+    "Kind": "Tactical",
+    "WeaponIndex": 0,
+    "MaxStorage": 4,
+    "MissileCostMass": 60,
+    "MissileCostEnergy": 900,
+    "MissileBuildTime": 15
+  },
+  "Visual": {
+    "Shape": "missile_silo",
+    "Size": [
+      1.8,
+      1.4,
+      1.8
+    ],
+    "Icon": "strategic"
+  },
+  "BuiltBy": [
+    "uef_t2_engineer",
+    "uef_t3_engineer"
+  ]
+}

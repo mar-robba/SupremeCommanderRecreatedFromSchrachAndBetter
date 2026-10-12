@@ -1,0 +1,57 @@
+{
+  "Id": "uef_t2_artillery_installation",
+  "Name": "T2 Artillery Installation",
+  "Description": "Long-range stationary artillery (range 128). Inaccurate, big area damage. Needs intel on its targets.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "IndirectFire",
+    "Artillery",
+    "Tech2"
+  ],
+  "MaxHealth": 3200,
+  "Radius": 1.4,
+  "FootprintX": 3,
+  "FootprintZ": 3,
+  "Economy": {
+    "BuildCostMass": 900,
+    "BuildCostEnergy": 9000,
+    "BuildTime": 3600
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Artillery Shell",
+      "Range": 128,
+      "MinRange": 18,
+      "Damage": 400,
+      "DamageRadius": 2.5,
+      "RateOfFire": 0.2,
+      "MuzzleVelocity": 40,
+      "Spread": 5,
+      "Ballistic": true,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 30,
+      "FiringTolerance": 2
+    }
+  ],
+  "Visual": {
+    "Shape": "artillery_structure",
+    "Size": [
+      2.4,
+      2.2,
+      2.4
+    ],
+    "Icon": "artillery"
+  },
+  "BuiltBy": [
+    "uef_t2_engineer",
+    "uef_t3_engineer"
+  ]
+}

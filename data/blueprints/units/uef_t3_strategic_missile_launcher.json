@@ -1,0 +1,63 @@
+{
+  "Id": "uef_t3_strategic_missile_launcher",
+  "Name": "T3 Strategic Missile Launcher",
+  "Description": "Nuclear missile silo. Each missile takes 3 minutes and a huge amount of energy; it can strike anywhere on the map. Only anti-nukes stop it.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Strategic",
+    "Tech3"
+  ],
+  "MaxHealth": 6000,
+  "Radius": 2.0,
+  "FootprintX": 4,
+  "FootprintZ": 4,
+  "Economy": {
+    "BuildCostMass": 5000,
+    "BuildCostEnergy": 80000,
+    "BuildTime": 18000
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Weapons": [
+    {
+      "Name": "Strategic Nuclear Missile",
+      "Range": 5000,
+      "Damage": 40000,
+      "DamageRadius": 22,
+      "RateOfFire": 0.01,
+      "MuzzleVelocity": 38,
+      "TargetLayers": [
+        "Land",
+        "Water",
+        "Air"
+      ],
+      "ProjectileVisual": "nuke",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    }
+  ],
+  "Silo": {
+    "Kind": "Strategic",
+    "WeaponIndex": 0,
+    "MaxStorage": 2,
+    "MissileCostMass": 6000,
+    "MissileCostEnergy": 180000,
+    "MissileBuildTime": 180,
+    "OuterDamage": 3000,
+    "OuterRadius": 38
+  },
+  "Visual": {
+    "Shape": "missile_silo",
+    "Size": [
+      3.6,
+      1.6,
+      3.6
+    ],
+    "Icon": "strategic"
+  },
+  "BuiltBy": [
+    "uef_t3_engineer"
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "Id": "uef_t3_heavy_shield_generator",
+  "Name": "T3 Heavy Shield Generator",
+  "Description": "Large, very strong shield dome. Needs 300 energy/s.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "Shield",
+    "Tech3"
+  ],
+  "MaxHealth": 3000,
+  "Radius": 1.5,
+  "FootprintX": 3,
+  "FootprintZ": 3,
+  "Economy": {
+    "BuildCostMass": 1300,
+    "BuildCostEnergy": 14000,
+    "BuildTime": 4800,
+    "MaintenanceEnergy": 300
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Shield": {
+    "Radius": 23,
+    "HeightScale": 0.7,
+    "MaxHealth": 12000,
+    "RegenRate": 70,
+    "RegenDelay": 2,
+    "RechargeTime": 35
+  },
+  "Visual": {
+    "Shape": "shield_gen",
+    "Size": [
+      2.8,
+      3.6,
+      2.8
+    ],
+    "Icon": "shield"
+  },
+  "BuiltBy": [
+    "uef_t3_engineer"
+  ]
+}
