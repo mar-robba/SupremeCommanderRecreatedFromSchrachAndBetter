@@ -75,6 +75,14 @@ Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transpor
       kills + veterancy stars in unit panel; effects follow game speed
       - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
+- [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
+      blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
+      instant build, build anywhere, reveal map), AI on/off + difficulty per army, victory on/off (default: never ends),
+      speed/pause, selection kill/delete/heal/damage/give/finish, clear area, nuke (flash, shockwave, mushroom, sound);
+      console (F10 / `) with fuzzy unit names, history, Tab completion, help overlay. Sim: `SandboxSystem` + 15 tests.
+      - [ ] later: select enemy units for the actions (box-select only picks own units), unify the sandbox nuke with
+            agent (b)'s real nukes, save/load sandbox setups
+
 ## Phase 3 — SupCom depth
 - [ ] T2 and T3 tech: upgrades of factories/mexes, T2/T3 units for land, air, naval
 - [ ] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke
