@@ -63,7 +63,10 @@
       "Range": 12,
       "RateOfFire": 0.4,
       "Damage": 0,
-      "TargetLayers": [],
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
       "ProjectileVisual": "antitorpedo"
     }
   ],

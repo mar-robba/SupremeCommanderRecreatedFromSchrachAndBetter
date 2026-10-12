@@ -158,7 +158,7 @@ public static class OrderSystem
     {
         float r = float.MaxValue;
         foreach (var wbp in bp.Weapons)
-            if (wbp.TargetMask != LayerMask.None) r = MathF.Min(r, wbp.Range); // skip torpedo defense
+            if (!Naval.Torpedoes.IsInterceptor(wbp)) r = MathF.Min(r, wbp.Range); // skip torpedo defense
         return r == float.MaxValue ? 0 : r;
     }
 

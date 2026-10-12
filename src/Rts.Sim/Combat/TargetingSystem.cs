@@ -56,7 +56,7 @@ public static class TargetingSystem
             ref readonly var winfo = ref info.Weapons[wi];
             var wbp = bp.Weapons[wi];
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
-            if (wbp.TargetMask == LayerMask.None) continue; // e.g. torpedo defense: never targets units
+            if (winfo.Kind == WeaponKind.AntiTorpedo) { ws.Target = UnitHandle.None; continue; } // torpedo defense: never targets units
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
             // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.

@@ -38,6 +38,10 @@ public static class Torpedoes
     /// <summary>Dive speed from the surface to the running depth (units per second).</summary>
     public const float DiveSpeed = 3f;
 
+    /// <summary>Torpedo defense (TargetLayers = the layers of the torpedoes it stops): never targets units.</summary>
+    public static bool IsInterceptor(WeaponBlueprint wb) =>
+        string.Equals(wb.ProjectileVisual, "antitorpedo", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Torpedo / anti-torpedo weapon kind from the blueprint (null = some other kind).</summary>
     public static WeaponKind? KindOf(WeaponBlueprint wb)
     {

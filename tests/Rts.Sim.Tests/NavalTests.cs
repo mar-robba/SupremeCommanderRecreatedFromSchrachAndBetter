@@ -325,6 +325,40 @@ public class NavalTests
     }
 
     [Fact]
+    public void NavalFactoryUpgradesToT3InPlaceAndTechBuildersHaveNavalEntries()
+    {
+        var db = TestUtil.Db;
+        Assert.Contains(Bp("uef_t2_torpedo_bomber"), db["uef_t2_air_factory"].BuildIndices);
+        Assert.Contains(Bp("uef_t2_torpedo_bomber"), db["uef_t3_air_factory"].BuildIndices);
+        foreach (var eng in new[] { "uef_t2_engineer", "uef_t3_engineer" })
+        foreach (var s in new[] { "uef_t1_naval_factory", "uef_t1_sonar", "uef_t1_torpedo_launcher" })
+            Assert.Contains(Bp(s), db[eng].BuildIndices);
+
+        var sim = NavalWorld.Archipelago(seed: 7);
+        var w = sim.World;
+        var u = w.Units;
+        var site = NavalWorld.NavalSite(w, w.Terrain.StartPositions[0]);
+        var f = w.SpawnUnit(Bp("uef_t1_naval_factory"), 0, site, 0);
+        foreach (var next in new[] { "uef_t2_naval_factory", "uef_t3_naval_factory" })
+        {
+            sim.Step([new UpgradeCommand(0, [f])]);
+            Assert.True(u.Upgrade[f.Index].Active, $"upgrade to {next} not started");
+            for (int k = 0; k < 2000 && u.Bp[f.Index] != Bp(next); k++)
+            {
+                var e = w.Armies[0].Eco;
+                e.Mass = e.MassMax;
+                e.Energy = e.EnergyMax;
+                sim.Step();
+            }
+            Assert.True(u.IsActive(f), "same handle after the upgrade");
+            Assert.Equal(Bp(next), u.Bp[f.Index]);
+        }
+        Assert.True(NavalRules.IsWaterStructure(db["uef_t3_naval_factory"]));
+        Assert.Contains(Bp("uef_t3_battleship"), db["uef_t3_naval_factory"].BuildIndices);
+        Assert.Contains(Bp("uef_t1_frigate"), db["uef_t3_naval_factory"].BuildIndices);
+    }
+
+    [Fact]
     public void NavalCombatIsDeterministicAcrossThreadCounts()
     {
         ulong RunWith(int threads)
