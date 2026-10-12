@@ -80,7 +80,7 @@ public sealed class SkirmishSetupScreen : IScreen
             string num = open ? (++startNo).ToString() : "–";
             Ui.Text(num, x + Ui.P(4), y + (rowH - Ui.F(13)) * 0.5f - 1, Ui.F(13), open ? Ui.TextColor : Ui.TextFaint, true);
 
-            string kind = s.Kind switch { SlotKind.Human => "You (human)", SlotKind.AI => "Computer AI", _ => "Closed" };
+            string kind = s.Kind switch { SlotKind.Human => "You (human)", SlotKind.AI => _sandbox && !_cfg.SandboxAi ? "Army (AI off)" : "Computer AI", _ => "Closed" };
             var kc = s.Kind switch { SlotKind.Human => Ui.Accent, SlotKind.AI => Ui.TextColor, _ => Ui.TextFaint };
             int d = MenuUi.Cycle(Ui.R(cx1, y, wKind, rowH), kind, true, kc);
             if (d != 0) SetKind(i, (SlotKind)(((int)s.Kind + d + 3) % 3));
