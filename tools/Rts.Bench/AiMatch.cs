@@ -112,14 +112,15 @@ public static class AiMatch
                           $"wall {total.Elapsed.TotalSeconds:F1}s ({w.Tick / total.Elapsed.TotalSeconds:F0} ticks/s), hash {sim.StateHash():X16}");
     }
 
-    /// <summary>AI_CFG="Field=value,..." (all AIs), AI_CFG0/AI_CFG1/... (one army): override AiConfig fields for
+    /// <summary>AI_CFG="Field=value,..." (all AIs), AI_CFG0/AI_CFG1/... (one army), AI_CFG_Hard/_Normal/_Easy (one difficulty): override AiConfig fields for
     /// parameter sweeps and head-to-head A/B games (bench only; the sim never reads the environment).</summary>
     private static void ApplyCfgOverrides(SimWorld w, int players)
     {
         for (int a = 0; a < players; a++)
         {
             if (AiSystem.StateOf(w)?.BrainOrNull(a) is not { } br) continue;
-            foreach (var spec in new[] { Environment.GetEnvironmentVariable("AI_CFG"), Environment.GetEnvironmentVariable("AI_CFG" + a) })
+            foreach (var spec in new[] { Environment.GetEnvironmentVariable("AI_CFG"), Environment.GetEnvironmentVariable("AI_CFG" + a),
+                                       Environment.GetEnvironmentVariable("AI_CFG_" + br.Cfg.Difficulty) })
             {
                 if (string.IsNullOrEmpty(spec)) continue;
                 foreach (var kv in spec.Split(',', StringSplitOptions.RemoveEmptyEntries))
