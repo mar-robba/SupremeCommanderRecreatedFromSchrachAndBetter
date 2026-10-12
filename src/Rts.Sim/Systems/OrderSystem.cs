@@ -91,6 +91,22 @@ public static class OrderSystem
                 if (!o.Target.IsNone)
                 {
                     if (!u.IsActive(o.Target)) { q.Pop(); mv.HasGoal = false; return; }
+                    // Target lost in the fog (not seen, not on radar/sonar): go to its last known position (o.Pos,
+                    // State 1 = recorded) and drop the order there if it is still not found (SupCom).
+                    if (o.State == 0 || Combat.CombatState.CanSee(w, u.Army[i], o.Target.Index))
+                    {
+                        o.Pos = u.Pos[o.Target.Index];
+                        o.State = 1;
+                    }
+                    else
+                    {
+                        float near = MathF.Max(3f, bp.Radius * 2f);
+                        bool there = Vector2.DistanceSquared(u.Pos[i], o.Pos) <= near * near
+                                     || mv.Arrived && Vector2.DistanceSquared(mv.Goal, o.Pos) < 0.01f; // unreachable: nearest point
+                        if (there) { q.Pop(); mv.HasGoal = false; return; }
+                        SetGoal(ref mv, o.Pos, near * 0.5f);
+                        return;
+                    }
                     targetPos = u.Pos[o.Target.Index];
                     for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
                         if (CanTargetLayer(w, bp.Weapons[wi], o.Target.Index)) weapons[wi].Target = o.Target;

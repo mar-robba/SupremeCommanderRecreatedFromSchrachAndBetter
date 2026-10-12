@@ -35,6 +35,7 @@ public sealed class Simulation
         w.Grid.Rebuild(w.Units);
 
         IntelSystem.Run(w);
+        AdjacencySystem.Run(w); // adjacency bonuses (recomputed only when structures change)
         EconomySystem.Run(w);
         OrderSystem.Run(w);
         ConstructionSystem.Run(w);
