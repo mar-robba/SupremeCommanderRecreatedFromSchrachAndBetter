@@ -26,6 +26,7 @@ public sealed class Hud : IDisposable
     private readonly FactoryPanel _factory;
     private readonly UpgradePanel _upgrade;
     private UiStartup? _startup;
+    private TechDemo? _techDemo;
 
     private enum BuildKind { None, Engineer, Factory, Upgrade }
     private BuildKind _buildKind;
@@ -54,6 +55,7 @@ public sealed class Hud : IDisposable
     public void ApplyStartupOptions(ClientOptions o)
     {
         if (o.Select != null || o.UiDemo || o.UiPlace != null || o.MousePos != null) _startup = new UiStartup(_ctx, _sel, o);
+        if (o.TechDemo) _techDemo = new TechDemo(_ctx, _sel, o);
     }
 
     /// <summary>True if the mouse is over a HUD panel (camera/selection should ignore it).</summary>
@@ -78,6 +80,7 @@ public sealed class Hud : IDisposable
         _preFrame = _frame;
         Ui.BeginFrame();
         _startup?.Update();
+        _techDemo?.Update();
         _sel.InputBlocked = _sel.PendingSelfDestruct != null;
     }
 
