@@ -9,8 +9,9 @@ namespace Rts.Sim.AI;
 public enum AiGroupState : byte { Assemble, Attack, Retreat }
 
 /// <summary>Army = the main force (one per AI); Raid = small party hitting weakly defended extractors;
-/// Clear = pool units sent to chase enemies off our side's deposits (back to the pool afterwards).</summary>
-public enum AiGroupKind : byte { Army, Raid, Clear }
+/// Clear = pool units sent to chase enemies off our side's deposits (back to the pool afterwards);
+/// Reinforce = a batch of fresh units walking to the army (merged into it on arrival).</summary>
+public enum AiGroupKind : byte { Army, Raid, Clear, Reinforce }
 
 /// <summary>A group of land units the AI moves together.</summary>
 public sealed class AiGroup
@@ -34,9 +35,16 @@ public sealed class AiGroup
     public int StuckThinks;
     public int Reissues;
     public int SnipeTick;
+    /// <summary>Army: gathering again mid-attack because it got strung out (no strength check, short wait).</summary>
+    public bool Regroup;
+    public int RegroupTick;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
+    /// <summary>Position of the member closest to the centroid (standable, unlike the centroid of a spread group).</summary>
+    public Vector2 Anchor;
+    /// <summary>Members farther than 40 from the anchor.</summary>
+    public int Spread;
     public int Idle;
     /// <summary>Clearing jobs go back to the pool when done.</summary>
     public bool ReturnWhenDone => Kind == AiGroupKind.Clear;
@@ -71,6 +79,12 @@ public sealed class AiMilitary
 
     // Threat assessment of this think.
     private float _baseThreat;
+    /// <summary>Base threat from armed units only (no engineers/scouts): what may pull army units home.</summary>
+    private float _baseArmedThreat;
+    private int _armyDefendTick = -10000;
+    /// <summary>Objectives the army could not reach (stuck): skipped by ChooseObjective until the tick.</summary>
+    private readonly List<(Vector2 pos, int until)> _badTargets = new();
+    private readonly List<int> _tmp3 = new();
     private Vector2 _baseThreatPos;
     private float _expThreat;
     private Vector2 _expThreatPos;
@@ -144,7 +158,7 @@ public sealed class AiMilitary
         Array.Clear(_ownCells);
         foreach (int s in V.Structures) _ownCells[V.CellOf(u.Pos[s])] = true;
 
-        _baseThreat = 0; _expThreat = 0;
+        _baseThreat = 0; _expThreat = 0; _baseArmedThreat = 0;
         var baseSum = Vector2.Zero;
         float bestExpDist = float.MaxValue;
         float r2 = Cfg.DefenseRadius * Cfg.DefenseRadius;
@@ -161,6 +175,7 @@ public sealed class AiMilitary
             {
                 _baseThreat += st;
                 baseSum += p * st;
+                if (!bp.HasAny(UnitCategory.Engineer | UnitCategory.Scout)) _baseArmedThreat += st;
                 continue;
             }
             // Near one of our outlying structures?
@@ -235,6 +250,15 @@ public sealed class AiMilitary
                 c += u.Pos[i];
             }
             g.Centroid = c / g.Members.Count;
+            float best = float.MaxValue;
+            foreach (int i in g.Members)
+            {
+                float d = Vector2.DistanceSquared(u.Pos[i], g.Centroid);
+                if (d < best) { best = d; g.Anchor = u.Pos[i]; }
+            }
+            g.Spread = 0;
+            foreach (int i in g.Members)
+                if (Vector2.DistanceSquared(u.Pos[i], g.Anchor) > 40f * 40f) g.Spread++;
         }
     }
 
@@ -243,6 +267,7 @@ public sealed class AiMilitary
         var g = new AiGroup { Id = _nextGroupId++, Kind = kind, State = state, OrderTick = W.Tick, StateTick = W.Tick, CheckTick = W.Tick };
         foreach (int i in units) Join(g, i);
         g.Centroid = Centroid(units);
+        g.Anchor = units.Count > 0 ? W.Units.Pos[units[0]] : g.Centroid;
         g.LastCentroid = g.Centroid;
         foreach (int i in units) g.Strength += StrengthOf(i);
         Groups.Add(g);
@@ -301,20 +326,40 @@ public sealed class AiMilitary
 
         var target = baseAttack ? _baseThreatPos : _expThreatPos;
         float threat = baseAttack ? _baseThreat : _expThreat;
-        // Who responds: the pool and defenders; for base attacks also group members still close to home.
+        // Who responds: the pool and defenders.
         _tmp.Clear();
         float strength = 0;
-        float near2 = (Cfg.DefenseRadius + 45f) * (Cfg.DefenseRadius + 45f);
         foreach (int i in V.LandCombat)
         {
             ref var info = ref _b.Info(i);
-            bool take = info.Role is AiRole.Pool or AiRole.Defend;
-            if (!take && baseAttack && info.Role == AiRole.Attack && Vector2.DistanceSquared(u.Pos[i], _b.BasePos) < near2) take = true;
-            if (!take) continue;
+            if (info.Role is not (AiRole.Pool or AiRole.Defend)) continue;
             _tmp.Add(i);
             strength += StrengthOf(i);
         }
-        if (_tmp.Count == 0) return;
+        // A real attack on the base the pool can't handle: army members still close to home help, nearest first,
+        // without leaving the army (it doesn't dissolve over a few raiders).
+        _tmp3.Clear();
+        var army = Army;
+        if (baseAttack && army != null && _baseArmedThreat >= 150f && strength < threat * 1.5f)
+        {
+            float near2 = (Cfg.DefenseRadius + 45f) * (Cfg.DefenseRadius + 45f);
+            _cands.Clear();
+            foreach (int i in army.Members)
+            {
+                float d2 = Vector2.DistanceSquared(u.Pos[i], target);
+                if (Vector2.DistanceSquared(u.Pos[i], _b.BasePos) < near2) _cands.Add((d2, i));
+            }
+            _cands.Sort((a, b) => a.score != b.score ? a.score.CompareTo(b.score) : a.idx.CompareTo(b.idx));
+            float have = strength;
+            foreach (var (_, i) in _cands)
+            {
+                if (have >= threat * 1.5f) break;
+                _tmp3.Add(i);
+                have += StrengthOf(i);
+            }
+            if (_tmp3.Count > 0) _armyDefendTick = W.Tick;
+        }
+        if (_tmp.Count == 0 && _tmp3.Count == 0) return;
         // Expansions: only fight when we clearly win (the base is what matters).
         if (expAttack && strength < threat * 1.2f) return;
 
@@ -328,6 +373,7 @@ public sealed class AiMilitary
             info.Group = -1;
             if (fresh || reissue || u.Orders[i].IsEmpty) _tmp2.Add(i);
         }
+        if (reissue) _tmp2.AddRange(_tmp3);
         if (_tmp2.Count == 0) return;
         _b.Cmd.Order(_tmp2, Order.AttackMoveTo(_b.FindStandable(target, MotionLayer.Land)));
         _defendPos = target;
@@ -365,19 +411,20 @@ public sealed class AiMilitary
                 if (W.Tick >= g.NextObjectiveTick || (!g.TargetUnit.IsNone && !TargetStillKnown(g.TargetUnit)))
                 {
                     g.NextObjectiveTick = W.Tick + 100;
-                    if (ChooseObjective(g.Centroid, g.Strength, g, out var tpos, out var th))
+                    if (g.Regroup) { /* keep the objective while regrouping */ }
+                    else if (ChooseObjective(g.Anchor, g.Strength, g, out var tpos, out var th))
                     {
                         bool moved = Vector2.Distance(tpos, g.Target) > 8f;
                         g.Target = tpos;
                         g.TargetUnit = th;
-                        if (moved || g.Staging == default) SetStaging(g, StagingFor(tpos, g.Centroid));
+                        if (moved || g.Staging == default) SetStaging(g, StagingFor(tpos, g.Anchor));
                     }
                     else if (g.Staging == default) SetStaging(g, _b.Rally);
                 }
                 // Expansion under attack and the army can take it: sortie.
                 if (_expThreat > 0 && Vector2.Distance(g.Centroid, _expThreatPos) < 90f && g.Strength > _expThreat * 1.3f)
                 {
-                    StartAttack(g, _expThreatPos, UnitHandle.None, "sortie");
+                    StartAttack(g, _expThreatPos, UnitHandle.None, "sortie", countWave: false);
                     break;
                 }
                 // Members that drifted away or idle far from the staging point walk (back) to it.
@@ -391,6 +438,13 @@ public sealed class AiMilitary
                 }
                 if (_tmp.Count > 0) _b.Cmd.Order(_tmp, Order.AttackMoveTo(g.Staging));
                 float elapsed = (W.Tick - g.StateTick) * SimWorld.Dt;
+                if (W.Tick - _armyDefendTick < 60) break; // part of the army is defending the base
+                if (g.Regroup)
+                {
+                    // Resume the attack once the bulk caught up (or after a short wait).
+                    if (gathered >= n * 3 / 4 || elapsed > 35f) StartAttack(g, g.Target, g.TargetUnit, $"regrouped {gathered}/{n}", countWave: false);
+                    break;
+                }
                 bool ready = gathered >= n * 3 / 4 || (elapsed > 45f && gathered >= n / 2);
                 float required = RequiredStrength(g.Target);
                 float timeout = LateGame ? Cfg.AssembleTimeout * 0.5f : Cfg.AssembleTimeout;
@@ -420,8 +474,10 @@ public sealed class AiMilitary
         _b.Cmd.Order(g.Members, Order.AttackMoveTo(staging));
     }
 
-    private void StartAttack(AiGroup g, Vector2 target, UnitHandle th, string why)
+    private void StartAttack(AiGroup g, Vector2 target, UnitHandle th, string why, bool countWave = true)
     {
+        bool resume = g.Regroup;
+        g.Regroup = false;
         g.State = AiGroupState.Attack;
         g.StateTick = W.Tick;
         g.OrderTick = W.Tick;
@@ -430,26 +486,38 @@ public sealed class AiMilitary
         g.Reissues = 0;
         g.Target = target;
         g.TargetUnit = th;
-        g.InitialStrength = g.Strength;
+        if (!resume) g.InitialStrength = g.Strength;
         g.LastCentroid = g.Centroid;
-        WavesLaunched++;
+        if (countWave) WavesLaunched++;
         if (_b.Tracing) _b.Trace($"attack g{g.Id} {g.Kind} n={g.Members.Count} st={g.Strength:F0} from ({g.Centroid.X:F0},{g.Centroid.Y:F0}) -> ({target.X:F0},{target.Y:F0}) {why}");
         _b.Cmd.Order(g.Members, Order.AttackMoveTo(target));
     }
 
-    /// <summary>Gathering point for an attack on target: StageDistance short of it toward 'from', outside known
-    /// threat and reachable; falls back further toward 'from' (or the rally).</summary>
+    /// <summary>Gathering point for an attack on target: StageDistance short of it along the walking route from
+    /// 'from' (so the army arrives together even after long detours), outside known threat; straight-line fallback.</summary>
     private Vector2 StagingFor(Vector2 target, Vector2 from)
     {
         if (Cfg.StageDistance <= 0) return target;
+        if (_b.SolveRoute(MotionLayer.Land, 0.6f, from, target, out float len))
+        {
+            for (int k = 0; k < 5; k++)
+            {
+                float d = Cfg.StageDistance + 15f * k;
+                if (d >= len - 5f) return from;
+                var p = _b.FindStandable(_b.RoutePointBack(d), MotionLayer.Land);
+                if (V.ThreatAt(p, 16f) > 300f) continue;
+                return p;
+            }
+            return from;
+        }
         var dir = from - target;
-        float len = dir.Length();
-        if (len < 1f) return from;
-        dir /= len;
+        float dist = dir.Length();
+        if (dist < 1f) return from;
+        dir /= dist;
         for (int k = 0; k < 5; k++)
         {
             float d = Cfg.StageDistance + 15f * k;
-            if (d >= len - 5f) return from;
+            if (d >= dist - 5f) return from;
             var p = _b.FindStandable(target + dir * d, MotionLayer.Land);
             if (V.ThreatAt(p, 16f) > 300f) continue;
             if (!_b.CanReachNear(MotionLayer.Land, 0.6f, from, p, 1f)) continue;
@@ -483,7 +551,7 @@ public sealed class AiMilitary
             }
         }
 
-        float local = V.ThreatNowAt(g.Centroid, 24f);
+        float local = V.ThreatNowAt(g.Anchor, 24f);
         // Retreat when beaten (not in the late game: then the AI plays to finish).
         float retreatFraction = LateGame ? Cfg.RetreatFraction * 0.4f : Cfg.RetreatFraction;
         if (retreatFraction > 0 && g.Strength < g.InitialStrength * retreatFraction && local > g.Strength * 1.2f)
@@ -497,6 +565,29 @@ public sealed class AiMilitary
         }
 
         if (Cfg.CommanderSnipe) TrySnipe(g);
+
+        // Strung out along the route (long ramps, stragglers) while nobody is fighting: the front waits for the rest.
+        if (g.Kind == AiGroupKind.Army && n >= 6 && g.Spread * 3 > n && W.Tick - g.RegroupTick > 600 && W.Tick - g.OrderTick > 100
+            && local <= 0 && !LateGame)
+        {
+            var front = g.Anchor;
+            float bestFront = float.MaxValue;
+            foreach (int i in g.Members)
+            {
+                float d = Vector2.DistanceSquared(u.Pos[i], g.Target);
+                if (d < bestFront) { bestFront = d; front = u.Pos[i]; }
+            }
+            if (V.ThreatNowAt(front, 30f) <= 0)
+            {
+                if (_b.Tracing) _b.Trace($"regroup g{g.Id} n={n} spread={g.Spread} at ({g.Anchor.X:F0},{g.Anchor.Y:F0})");
+                g.RegroupTick = W.Tick;
+                g.Regroup = true;
+                g.State = AiGroupState.Assemble;
+                g.StateTick = W.Tick;
+                SetStaging(g, _b.FindStandable(g.Anchor, MotionLayer.Land));
+                return;
+            }
+        }
 
         bool targetGone = !g.TargetUnit.IsNone ? !TargetStillKnown(g.TargetUnit)
             : g.Idle >= Math.Max(1, n * 3 / 4) && W.Tick - g.OrderTick > 50;
@@ -522,10 +613,10 @@ public sealed class AiMilitary
         if (!targetGone && !stuck) return;
 
         if (g.Kind == AiGroupKind.Clear) { Release(g, goHome: true); return; }
+        if (stuck) _badTargets.Add((g.Target, W.Tick + 1500)); // can't get there: pick something else for a while
         bool found = g.Kind == AiGroupKind.Raid
             ? ChooseRaidTarget(g.Centroid, g.Strength, out var tpos, out var th)
             : ChooseObjective(g.Centroid, g.Strength, g, out tpos, out th);
-        if (stuck && found && Vector2.Distance(tpos, g.Target) < 4f) found = false; // the same unreachable spot again
         if (!found)
         {
             if (g.Kind == AiGroupKind.Raid) { Release(g, goHome: true); return; }
@@ -603,12 +694,15 @@ public sealed class AiMilitary
         var known = _b.Perception.Structures;
         bool push = _b.GameTime > Cfg.PushTime || LateGame || (g != null && g.Members.Count >= Cfg.MaxWave)
                     || strength > 1.5f * (_b.Perception.EnemyLandEstimate + 600f);
+        for (int k = _badTargets.Count - 1; k >= 0; k--)
+            if (_badTargets[k].until <= W.Tick) _badTargets.RemoveAt(k);
         _cands.Clear();
         for (int k = 0; k < known.Count; k++)
         {
             var ks = known[k];
             var bp = db[ks.Bp];
             if (bp.HasAny(UnitCategory.Naval) || bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub) continue;
+            if (IsBadTarget(ks.Pos)) continue;
             float value = bp.Has(UnitCategory.Factory) ? 35f
                 : bp.Has(UnitCategory.MassExtractor) ? 30f
                 : bp.HasAny(UnitCategory.PowerGenerator | UnitCategory.MassFabricator) ? 20f
@@ -643,7 +737,7 @@ public sealed class AiMilitary
         // Nothing known (or reachable): the enemy commander's last known position if we can take it.
         for (int a = 0; a < _b.Perception.EnemyCommanderPos.Length; a++)
         {
-            if (_b.Perception.EnemyCommanderPos[a] is not Vector2 cp || _b.Perception.CommanderAge(a) > 1800) continue;
+            if (_b.Perception.EnemyCommanderPos[a] is not Vector2 cp || _b.Perception.CommanderAge(a) > 1800 || IsBadTarget(cp)) continue;
             if (!push && V.ThreatAt(cp, 24f) > strength * 0.8f) continue;
             if (!_b.CanReachNear(MotionLayer.Land, 0.6f, from, cp, 2f)) continue;
             pos = cp;
@@ -654,7 +748,7 @@ public sealed class AiMilitary
         bool found = false;
         foreach (var es in _b.EnemyStarts)
         {
-            if (!EnemyAliveNear(es)) continue;
+            if (!EnemyAliveNear(es) || IsBadTarget(es)) continue;
             if (_b.Perception.Staleness(V, es) < 600) continue; // seen recently and nothing there
             float d = Vector2.DistanceSquared(es, from);
             if (d >= best) continue;
@@ -664,6 +758,13 @@ public sealed class AiMilitary
             found = true;
         }
         return found;
+    }
+
+    private bool IsBadTarget(Vector2 p)
+    {
+        foreach (var (bp, _) in _badTargets)
+            if (Vector2.DistanceSquared(bp, p) < 12f * 12f) return true;
+        return false;
     }
 
     /// <summary>Is any not-defeated enemy army starting at this start position (start positions are known)?</summary>
@@ -732,6 +833,7 @@ public sealed class AiMilitary
         {
             var g = Groups[gi];
             if (g.Kind == AiGroupKind.Army) continue;
+            if (g.Kind == AiGroupKind.Reinforce) { UpdateReinforcements(g); continue; }
             if (g.State == AiGroupState.Retreat)
             {
                 if (g.Idle >= g.Members.Count * 3 / 4 || Vector2.Distance(g.Centroid, _b.Rally) < 16f) Release(g, goHome: false);
@@ -745,6 +847,33 @@ public sealed class AiMilitary
                 continue;
             }
             UpdateAttackingGroup(g);
+        }
+    }
+
+    /// <summary>A reinforcement batch walks to the army (its staging point or where its bulk is) and merges on arrival.</summary>
+    private void UpdateReinforcements(AiGroup g)
+    {
+        var army = Army;
+        if (army == null || army.State == AiGroupState.Retreat) { Release(g, goHome: true); return; }
+        var meet = army.State == AiGroupState.Assemble && army.Staging != default ? army.Staging : army.Anchor;
+        if (Vector2.Distance(g.Anchor, army.Anchor) < 35f || Vector2.Distance(g.Anchor, meet) < 20f)
+        {
+            foreach (int i in g.Members)
+            {
+                _b.Info(i).Group = army.Id;
+                army.Members.Add(i);
+            }
+            army.Strength += g.Strength;
+            if (army.State == AiGroupState.Attack) army.InitialStrength += g.Strength;
+            _b.Cmd.Order(g.Members, Order.AttackMoveTo(army.State == AiGroupState.Attack ? army.Target : meet));
+            Groups.Remove(g);
+            return;
+        }
+        if (W.Tick - g.OrderTick >= 50 && (Vector2.Distance(meet, g.Target) > 15f || g.Idle * 2 >= g.Members.Count))
+        {
+            g.Target = meet;
+            g.OrderTick = W.Tick;
+            _b.Cmd.Order(g.Members, Order.AttackMoveTo(meet));
         }
     }
 
@@ -803,16 +932,30 @@ public sealed class AiMilitary
             return;
         }
 
-        // Reinforce the army in batches (always while it assembles, while it attacks if configured).
+        // Reinforce the army in batches (always while it assembles, while it attacks if configured). Batches walk
+        // together as a Reinforce group and merge when they reach the army, so they don't trickle in one by one.
         if (_tmp.Count == 0) return;
-        bool waitedEnough = W.Tick - _poolSinceTick > 250;
-        if (_tmp.Count < 4 && !waitedEnough) return;
         if (army.State == AiGroupState.Retreat) return;
         if (army.State == AiGroupState.Attack && !Cfg.Reinforce) return;
-        var dest = army.State == AiGroupState.Assemble ? army.Staging : army.Target;
-        if (dest == default) dest = army.Centroid;
-        foreach (int i in _tmp) Join(army, i);
-        _b.Cmd.Order(_tmp, Order.AttackMoveTo(dest));
+        var dest = army.State == AiGroupState.Assemble ? army.Staging : army.Anchor;
+        if (dest == default) dest = army.Anchor;
+        if (army.State == AiGroupState.Assemble && Vector2.Distance(dest, _b.Rally) < 40f)
+        {
+            // The army is at home: join right away.
+            foreach (int i in _tmp) Join(army, i);
+            _b.Cmd.Order(_tmp, Order.AttackMoveTo(dest));
+            _poolSinceTick = -1;
+            return;
+        }
+        int batch = army.State == AiGroupState.Attack ? 6 : 4;
+        bool waitedEnough = W.Tick - _poolSinceTick > (army.State == AiGroupState.Attack ? 350 : 250);
+        if (_tmp.Count < batch && !waitedEnough) return;
+        int reinforcing = 0;
+        foreach (var rg in Groups) if (rg.Kind == AiGroupKind.Reinforce) reinforcing++;
+        if (reinforcing >= 2) return;
+        var rgrp = NewGroup(AiGroupKind.Reinforce, _tmp, AiGroupState.Attack);
+        rgrp.Target = dest;
+        _b.Cmd.Order(rgrp.Members, Order.AttackMoveTo(dest));
         _poolSinceTick = -1;
     }
 
