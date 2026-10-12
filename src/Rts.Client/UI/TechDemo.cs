@@ -31,7 +31,7 @@ public sealed class TechDemo
 
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
-    private readonly bool _setCamera;
+    private readonly bool _setCamera, _select;
     private readonly Vector2 _focus;
     private int _frames;
     private bool _done;
@@ -41,6 +41,7 @@ public sealed class TechDemo
         _ctx = ctx;
         _sel = sel;
         _setCamera = o.CameraXZD == null;
+        _select = o.Select == null; // --select overrides the default selection (the upgrading factory)
         var t = ctx.Terrain;
         int army = ctx.LocalArmy;
         var sp = t.StartPositions[army % t.StartPositions.Length];
@@ -103,7 +104,7 @@ public sealed class TechDemo
         _ctx.Runner.Enqueue(new UpgradeCommand(_ctx.LocalArmy, f));
         _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, engineers.ToArray(), Order.GuardUnit(factory), false));
         if (mexes.Count > 0) _ctx.Runner.Enqueue(new UpgradeCommand(_ctx.LocalArmy, mexes.ToArray()));
-        _sel.SelectOnly(f);
+        if (_select) _sel.SelectOnly(f);
         _done = true;
     }
 }

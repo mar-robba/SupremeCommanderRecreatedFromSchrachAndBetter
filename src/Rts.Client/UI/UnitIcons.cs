@@ -218,7 +218,8 @@ public static class UnitIcons
     {
         var lines = new List<TipLine>
         {
-            new(bp.Name + (bp.Has(UnitCategory.Commander) ? "" : bp.Has(UnitCategory.Experimental) ? "  · EXP" : $"  · T{bp.Tech}")
+            new(bp.Name + (bp.Has(UnitCategory.Commander) ? "" : bp.Has(UnitCategory.Experimental) ? "  · EXP"
+                : bp.Name.StartsWith($"T{bp.Tech} ") ? "" : $"  · T{bp.Tech}")
                 + (hotkey != null ? $"   [{hotkey}]" : ""), Ui.TextColor, 14, true),
             new("Mass ", Ui.TextDim, 12.5f, true, [
                 (Ui.Num(bp.Economy.BuildCostMass), Ui.MassColor),
