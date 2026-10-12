@@ -1064,7 +1064,7 @@ public sealed class AiMilitary
         if (_tmp.Count >= Cfg.BomberGroup && ChooseBomberTarget(_b.BasePos, out var tpos, out var th))
         {
             // In sight: attack it; a remembered (ghost) target: fly there on attack-move and bomb what is found.
-            if (u.IsActive(th) && _b.Perception.IsKnown(th.Index)) _b.Cmd.Order(_tmp, Order.AttackUnit(th));
+            if (u.IsActive(th) && _b.Perception.IsIdentified(th.Index)) _b.Cmd.Order(_tmp, Order.AttackUnit(th));
             else _b.Cmd.Order(_tmp, Order.AttackMoveTo(tpos));
             _b.Cmd.Order(_tmp, Order.MoveTo(_b.AirRally), queue: true);
         }
