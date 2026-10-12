@@ -94,7 +94,7 @@ public static class StrategicScene
                 for (int t = 0; t < 400; t++)
                 {
                     sim.Step();
-                    if (NukeAltitude(sim, out float alt, out float vy) && vy < 0 && alt < 55) break;
+                    if (NukeAltitude(sim, out float alt, out float vy) && vy < 0 && alt < 12) break;
                 }
                 break;
             default:

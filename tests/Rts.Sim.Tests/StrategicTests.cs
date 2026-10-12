@@ -527,4 +527,30 @@ public class StrategicTests
         var db = TestUtil.Db;
         Assert.Equal(expected, db[builder].BuildIndices.Contains(db.IndexOf(unit)));
     }
+    /// <summary>In-game build path: engineers of the right tier place and finish the strategic structures
+    /// through the normal BuildAt order (resources topped up every tick).</summary>
+    [Theory]
+    [InlineData("uef_t2_engineer", "uef_t2_tactical_missile_defense")]
+    [InlineData("uef_t3_engineer", "uef_t2_shield_generator")]
+    public void EngineersBuildStrategicStructures(string engineer, string structure)
+    {
+        var sim = TestUtil.NewSkirmish();
+        var w = sim.World;
+        sim.Step();
+        var near = EconomyTestUtil.CommanderPos(w);
+        var site = EconomyTestUtil.FindSite(w, structure, near, 8, 30);
+        var engs = new List<UnitHandle>();
+        for (int k = 0; k < 4; k++) engs.Add(TestUtil.Spawn(sim, engineer, 0, site + new Vector2(-6 + k * 4f, -9)));
+        sim.Step([new IssueOrderCommand(0, engs.ToArray(), Order.BuildAt(EconomyTestUtil.Bp(structure), site), false)]);
+        for (int t = 0; t < 400; t++)
+        {
+            w.Armies[0].Eco.MassMax = w.Armies[0].Eco.EnergyMax = 100000;
+            w.Armies[0].Eco.Mass = w.Armies[0].Eco.Energy = 100000;
+            sim.Step();
+            var built = EconomyTestUtil.UnitsOf(w, 0, structure);
+            if (built.Count == 1 && w.Units.IsComplete(built[0])) return;
+        }
+        var list = EconomyTestUtil.UnitsOf(w, 0, structure);
+        Assert.Fail(list.Count == 0 ? $"{structure} never placed by {engineer}" : $"{structure} not finished");
+    }
 }
