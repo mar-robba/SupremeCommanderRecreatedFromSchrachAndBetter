@@ -1,0 +1,47 @@
+{
+  "Id": "uef_t1_naval_factory",
+  "Name": "T1 Naval Factory",
+  "Description": "Builds T1 ships and submarines. Must be built on deep water.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Factory",
+    "Tech1"
+  ],
+  "MaxHealth": 4000,
+  "Radius": 4.5,
+  "FootprintX": 10,
+  "FootprintZ": 10,
+  "MinWaterDepth": 1.0,
+  "Economy": {
+    "BuildCostMass": 300,
+    "BuildCostEnergy": 1500,
+    "BuildTime": 400,
+    "BuildRate": 20
+  },
+  "Intel": {
+    "VisionRadius": 22,
+    "SonarRadius": 30
+  },
+  "Visual": {
+    "Shape": "naval_factory",
+    "Size": [
+      10,
+      2.6,
+      10
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "uef_t1_frigate",
+    "uef_t1_sub"
+  ],
+  "BuiltBy": [
+    "uef_commander",
+    "uef_t1_engineer",
+    "uef_t2_engineer",
+    "uef_t3_engineer"
+  ],
+  "UpgradesTo": "uef_t2_naval_factory"
+}

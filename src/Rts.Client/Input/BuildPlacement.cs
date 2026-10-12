@@ -261,6 +261,13 @@ public sealed class BuildPlacement
             if (w.Range > 0) Raylib.DrawCircle3D(new Vector3(pos.X, y, pos.Y), w.Range, Vector3.UnitX, 90, col);
         if (bp.Intel.RadarRadius > 0)
             Raylib.DrawCircle3D(new Vector3(pos.X, y, pos.Y), bp.Intel.RadarRadius, Vector3.UnitX, 90, new Color(90, 200, 230, 150));
+        if (bp.Intel.SonarRadius > 0)
+        {
+            // Sonar: deeper blue, drawn twice (slightly apart) so it reads as a different ring from the radar.
+            var sonar = new Color(70, 120, 255, 170);
+            Raylib.DrawCircle3D(new Vector3(pos.X, y, pos.Y), bp.Intel.SonarRadius, Vector3.UnitX, 90, sonar);
+            Raylib.DrawCircle3D(new Vector3(pos.X, y, pos.Y), bp.Intel.SonarRadius - 0.35f, Vector3.UnitX, 90, sonar with { A = 90 });
+        }
     }
 
     public string Hint()

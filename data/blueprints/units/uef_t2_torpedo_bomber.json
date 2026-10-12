@@ -1,0 +1,62 @@
+{
+  "Id": "uef_t2_torpedo_bomber",
+  "Name": "Stingray Torpedo Bomber",
+  "Description": "T2 torpedo bomber: drops torpedoes on ships and submarines; carries a sonar.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Bomber",
+    "AntiNaval",
+    "Tech2"
+  ],
+  "MaxHealth": 900,
+  "Radius": 0.9,
+  "Economy": {
+    "BuildCostMass": 300,
+    "BuildCostEnergy": 6000,
+    "BuildTime": 1500
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 12,
+    "Acceleration": 5,
+    "TurnRate": 80,
+    "Altitude": 16
+  },
+  "Intel": {
+    "VisionRadius": 32,
+    "SonarRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Torpedo Rack",
+      "Range": 22,
+      "Damage": 250,
+      "RateOfFire": 0.2,
+      "ProjectilesPerShot": 2,
+      "Spread": 1.5,
+      "MuzzleVelocity": 9,
+      "TurretTurnRate": 360,
+      "FiringTolerance": 40,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "torpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "torpedo_bomber",
+    "Size": [
+      1.9,
+      0.6,
+      2.2
+    ],
+    "Icon": "air_bomber"
+  },
+  "BuiltBy": [
+    "uef_t2_air_factory",
+    "uef_t3_air_factory"
+  ]
+}

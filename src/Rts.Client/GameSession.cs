@@ -4,9 +4,11 @@ using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Menus;
 using Rts.Client.Rendering;
+using Rts.Client.Sandbox;
 using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Data;
+using Rts.Sim.Systems;
 
 namespace Rts.Client;
 
@@ -33,24 +35,34 @@ public sealed class GameSession : IDisposable
     private readonly EffectsRenderer _fx;
     private readonly FogRenderer _fog;
     private readonly PropRenderer _props;
+    private readonly ShieldRenderer _shields;
+    private readonly StrategicHud _stratHud;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly SelectionController _selection;
     private readonly Hud _hud;
+    /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
+    private readonly SandboxController? _sandbox;
     private readonly HashSet<long> _selectedSet = new();
     private bool _disposed;
 
     /// <summary>Builds the simulation for a config (pure sim work, safe on a background thread).</summary>
     public static Simulation CreateSimulation(BlueprintDb db, GameConfig cfg, out int localArmy)
     {
+        if (cfg.Scene != null) NavalScene.Configure(cfg);
         var settings = cfg.ToSkirmish(out localArmy);
         // AI slots: Army.IsAI + Army.AiDifficulty → driven by the in-sim skirmish AI (Rts.Sim/AI).
+        // Sandbox: the other armies are passive unless "Enemy AI" is on (the sandbox panel/console can switch it later).
+        if (cfg.Sandbox && !cfg.SandboxAi) settings.AiPlayers = new bool[settings.Players];
         var sim = GameSetup.CreateSkirmish(db, settings);
+        if (cfg.Sandbox) SandboxSystem.Enable(sim.World);
         if (cfg.Demo)
         {
             GameApp.SpawnDemo(sim, cfg.Stress);
             FogRenderer.SpawnDemoRadars(sim);
         }
+        if (cfg.Scene?.StartsWith("strategic") == true) StrategicScene.Setup(sim, cfg.Scene);
+        else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
         return sim;
     }
 
@@ -82,12 +94,17 @@ public sealed class GameSession : IDisposable
         _selection = new SelectionController(Ctx);
         _hud = new Hud(Ctx, _selection);
         _hud.ApplyStartupOptions(opt);
+        _stratHud = new StrategicHud(Ctx, _selection);
         _props = new PropRenderer(Ctx, _fx.Particles);
+        _shields = new ShieldRenderer(Ctx);
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
 
+        if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
+
         var start = terrain.StartPositions[localArmy % terrain.StartPositions.Length];
         if (opt.CameraXZD is Vector3 cxz) _camera.LookAt(cxz.X, cxz.Y, cxz.Z);
+        else if (cfg.SceneCamera is Vector3 sc) _camera.LookAt(sc.X, sc.Y, sc.Z);
         else _camera.LookAt(start.X, start.Y, 70);
 
         Runner.Start();
@@ -96,6 +113,8 @@ public sealed class GameSession : IDisposable
     public SelectionController Selection => _selection;
     public SnapshotInterpolator Snapshots => _interp;
     public FogRenderer Fog => _fog;
+    /// <summary>True in sandbox mode (snapshots carry <c>Sandbox</c> status).</summary>
+    public bool IsSandbox => _sandbox != null;
 
     /// <summary>
     /// True if Esc should open the pause menu: no command mode, no placement, no dialog. With units selected Esc
@@ -104,6 +123,7 @@ public sealed class GameSession : IDisposable
     public bool HandleEscapeForPause()
     {
         if (!MenuUi.Key(KeyboardKey.Escape)) return false;
+        if (_sandbox != null && _sandbox.WantsEscape) return false; // closes the console / cancels the sandbox tool
         var s = _selection;
         if (s.Mode != SelectionController.CommandMode.Normal || s.Placement.Active || s.PendingSelfDestruct != null) return false;
         if (s.Selected.Count > 0)
@@ -123,15 +143,16 @@ public sealed class GameSession : IDisposable
         var ctx = Ctx;
         _perf.BeginFrame();
         _interp.Update();
-        _fog.Update(_interp, keys: interactive);
+        _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true);
         bool overUi = interactive && _hud.MouseOverUi();
+        if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
-        if (interactive) GameApp.DebugKeys(ctx);
+        if (interactive && _sandbox?.TextFocused != true) GameApp.DebugKeys(ctx);
 
         var cur = _interp.Current;
         var prev = _interp.Prev;
@@ -147,14 +168,19 @@ public sealed class GameSession : IDisposable
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
         ctx.Feedback.Draw();
+        _stratHud.Draw3D(cur);
         _terrainR.DrawWater();
+        if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.DrawSubmerged(); // subs seen through the water
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
+        _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
+        _fx.DrawOverlay(); // nuke screen flash (NukeFx)
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
         _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
+        _shields.DrawBars(cur, prev, alpha, _selectedSet);
         UpgradeOverlay.Draw(ctx, cur, prev, alpha);
         if (interactive)
         {
@@ -165,8 +191,10 @@ public sealed class GameSession : IDisposable
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             _hud.Draw();
+            _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
         }
+        _stratHud.Draw2D(cur, dt);
         _audio.DrawOverlay();
         _perf.Draw(_unitR, _fx);
     }
@@ -196,9 +224,11 @@ public sealed class GameSession : IDisposable
         if (_disposed) return;
         _disposed = true;
         Runner.Stop();
+        _sandbox?.Dispose();
         _audio.Dispose();
         _hud.Dispose();
         _props.Dispose();
+        _shields.Dispose();
         _fx.Dispose();
         _fog.Dispose();
         _unitR.Dispose();

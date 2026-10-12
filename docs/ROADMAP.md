@@ -2,33 +2,49 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-11 — read this first in a new session)
-Maps + menus are merged (main 1f1087f+). **Wave 3 is running: 4 agents in worktrees** (branches
-`worktree-agent-*`; check `git worktree list`). When an agent finishes, the orchestrator merges its branch into main,
-runs both test projects plus screenshots, then removes the worktree and branch. Merge order: (a) first, then (b), (c), (d).
+## ▶ NEXT STEPS (updated 2026-10-12 night — read this first in a new session)
+main has all of wave 3 except the AI. That covers:
+- maps + menus;
+- T2/T3 + upgrades;
+- strategic (shields/TML/nukes/artillery);
+- naval;
+- sandbox.
+Tests: 229 sim + 158 client.
 
-Shared contracts (on main before wave 3 started):
-- `BuiltBy: [builder ids]` in a blueprint adds it to those builders' build lists (unknown ids ignored), so agents add
-  units WITHOUT editing other builders' files. `UpgradesTo: "<id>"` declares an in-place upgrade
-  (`UpgradesToIndex` / `UpgradesFromIndex`); agent (a) implements the upgrade mechanism.
-- Reserved ids: `uef_t2_engineer`, `uef_t3_engineer` (owned by a), `uef_t2_land_factory`, `uef_t3_land_factory`,
-  `uef_t2_air_factory`, `uef_t3_air_factory`, `uef_t2_mass_extractor`, `uef_t3_mass_extractor` (a);
-  `uef_t1_naval_factory`, `uef_t2_naval_factory`, `uef_t3_naval_factory` (c).
-- New enum members (OrderType, CommandType, UnitCategory, snapshot fields) are appended at the END; shared files
-  edits stay minimal and additive; new models go in new partial files with only a `case` line in UnitModels.cs.
+**Wave 4 running** (5 agents in parallel; ids, worktrees and prompts in
+`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave4.md` and `common.md`):
+- **(d) AI**: the owner asked to resume it. It is a fresh agent in the existing worktree `agent-a1c38e069748a3b2b`:
+  merge main, tuning matrix, docs.
+- **(f) Polish/SupCom details**:
+  - collapsed shields with no upkeep;
+  - bombs absorbed by domes;
+  - ship-to-ship collision and sub dive/surface;
+  - adjacency bonus, veterancy bonuses, pause, capture;
+  - sandbox selects/controls any army;
+  - default cameras for `--scene`.
+- **(g) Experimentals + commanders**: EXP tier, Fatboy, Mavor, crush, death blast, "experimental detected";
+  ACU enhancements (slots); Quantum Gateway + SCU.
+- **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
+- **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
+  desync detection.
 
-Wave 3 agents (worktree dirs under `.claude/worktrees/`; in a new session spawn a fresh agent in the same dir to resume):
-(2026-10-12: agents a–d were replaced by fresh agents in the same worktrees because their context got too big;
-handoff notes, which may not survive a reboot: `/tmp/claude-1000/-run-media-marco-Volume-D-RTS/c7c89635-6975-439b-9335-21c395ab4db0/scratchpad/handoff-{a,b,c,d}.md`.
-If the notes are gone, read `git log main..HEAD` in the worktree.)
-- ✅ MERGED 2026-10-12 (a) T2/T3 tech: in-place upgrades (factories, mex), T2/T3 land/air units, T2/T3 engineers, T2/T3 power, UI for upgrades.
-- (b) `agent-ae5eb2c4f3916597c` Strategic: shields, TML/TMD, nukes/anti-nuke (silo stockpile + launch order), T3 artillery.
-- (c) `agent-a22a2b0fcf5a1b603` Naval: naval factories T1–T3, ships/subs, sonar, torpedoes; makes Archipelago playable.
-- (d) `agent-a1c38e069748a3b2b` AI: RespectIntel=true, scouts/radar, fix Highlands/Canyon stalemates, Hard noticeably stronger, 4-player FFA.
-- (e) `agent-a1b89b5d8e6a88a18` Sandbox mode (owner request 2026-10-12): `--sandbox` + menu entry, cheat commands
-  (spawn N of any blueprint, infinite resources, instant build, reveal, AI toggle, kill/heal/owner, nuke at point),
-  side panel + text console. After (b) merges, switch the sandbox nuke to the real strategic missile.
-Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transports, 2nd faction, save/replays, MP).
+Merge order: when each one finishes, read `report-<x>.md`, merge into main, run the tests, look at a screenshot, then
+remove its worktree and branch. Merge (i) last, or ask it to re-run its round-trip tests after the others' merges.
+
+Known follow-ups not assigned: none from the old list (all were given to f).
+
+**Next waves (owner: "everything must be done"):**
+- **Wave 5**: the AI uses T2/T3 upgrades, navy, strategic weapons, experimentals and transports; balance pass.
+  Also: 2nd faction (Cybran-like: Monkeylord, Soul Ripper, stealth, ...), and scale/perf (1024 maps, 4–8 players,
+  5k+ units at 60 FPS).
+- **Wave 6**: lockstep multiplayer (on top of the replay command log + desync hash), final polish.
+
+Shared contracts (still valid):
+- `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
+- `UpgradesTo`: in-place upgrade.
+- Enums are append-only; edits to shared files stay minimal and additive.
+- New models go in new partial files, with only a `case` line in UnitModels.cs.
+- Sim state must stay serializable for agent (i): plain fields/arrays/lists, no stored delegates, no static mutable state.
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
@@ -81,14 +97,42 @@ Then: wave 4 = AI uses T2/T3/naval/strategic; Phase 3/4 (experimentals, transpor
       kills + veterancy stars in unit panel; effects follow game speed
       - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
+- [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
+      blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
+      instant build, build anywhere, reveal map), AI on/off + difficulty per army, victory on/off (default: never ends),
+      speed/pause, selection kill/delete/heal/damage/give/finish, clear area, nuke (`NukeFx`: flash, shockwave, fireball,
+      mushroom cloud, scorch, deep boom; wrecks vaporized); console (F10 / `) with fuzzy unit names, history, Tab
+      completion, help overlay. Sim: `SandboxSystem` + 16 tests; client parser tests (`SandboxConsoleTests`).
+- [x] Sandbox × strategic (merge, 2026-10-12): `nuke x,z` / panel NUKE launch a REAL strategic missile
+      (`StrategicApi.LaunchNuke`, from the nearest own nuke silo, else the commander, else the map edge: launch
+      warning, anti-nukes intercept it, shields knocked down); `nuke instant x,z` / panel Blast = the detonation at once;
+      instant build fills silo stockpiles; "Strategic & shields" spawn group; one `EffectKind.Nuke` → `NukeFx` + one
+      sound for every nuke; real nukes vaporize wrecks in the crater too. Tests: `SandboxNukeTests`.
+      - [ ] later: select enemy units for the actions (box-select only picks own units), save/load sandbox setups
+
 ## Phase 3 — SupCom depth
 - [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
       radar→omni; own build power + engineer assist, factory queue pauses, mex keeps producing, cancel refunds, same
       handle), 30 UEF T2/T3 blueprints (engineers, factories, mex, pgen, mass fab, PD, flak, SAM, omni, Pillar,
       Riptide, Brimstone MML, Sky Boxer, Titan, Percival, Demolisher, gunship, Janus, Wasp, Ambassador, spy plane),
       T2/T3 models, upgrade tile/U hotkey/progress bars/hologram, build-menu tier pills, `--tech-demo`
-      - [ ] later: T2/T3 naval (agent c), AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
-- [ ] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke
+      - [ ] later: AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
+- [x] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke (wave 3, agent b, 2026-10-12):
+      `Rts.Sim/Strategic` (shield domes absorb outside shots/splash, collapse + recharge, drop on energy stall; silo
+      stockpiles + `OrderType.Launch`; TML cruise missiles, TMD; nuke high arc + two-ring blast that knocks shields
+      down, anti-nuke), 9 UEF blueprints (T2/T3 shield, Parashield mobile shield, TML, TMD, nuke silo, anti-nuke,
+      T2/T3 artillery), `StrategicApi.LaunchNuke` (used by the sandbox nuke), dome shader + ripples, missile trails,
+      nuke explosion (`NukeFx`, shared with the sandbox) + flash + sound, launch mode (L), global launch warning,
+      `--scene strategic`
+      - [ ] later: collapsed shields still pay upkeep; AI builds/uses shields, TML, nukes (wave 4); bombers fly over domes
+- [x] Naval (wave 3, agent c, 2026-10-12): naval factories T1→T2→T3 (in-place upgrades), frigate, attack sub,
+      destroyer (guns + torpedoes + torpedo defense), cruiser (AA + missiles), battleship, T2 torpedo bomber, T1/T2
+      sonar, torpedo launcher; water placement (`NavalRules`, client ghost), torpedoes (run under water, home, die on
+      shore), rate-limited torpedo defense, subs only seen by sonar/omni and only hit by torpedoes; Archipelago sea
+      lanes + harbor beaches (playable: coast reachable, battleship lanes between starts); client: ship models, wakes,
+      torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
+      - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
+            avoidance in narrow channels
 - [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
 - [ ] Transports/ferry, air staging, engineer assist chains
 - [ ] Second faction (Cybran-like) with distinct visuals and units

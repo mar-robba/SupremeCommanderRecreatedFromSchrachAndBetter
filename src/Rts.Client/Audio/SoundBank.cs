@@ -34,6 +34,15 @@ public enum SoundId
     WarnEnergy,
     UnderAttack,
     CommanderAlert,
+    // Strategic (shields, missiles, nukes): recipes in SoundBank.Strategic.cs
+    ShieldHit,
+    ShieldDown,
+    ShieldUp,
+    TacticalLaunch,
+    NukeLaunch,
+    NukeExplosion,
+    Intercept,
+    StrategicAlert,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>
@@ -44,7 +53,7 @@ public readonly record struct SoundInfo(float Gain, int Voices, float Range, int
 /// Each recipe is deterministic for a variant seed; several variants per sound avoid machine-gun repetition.
 /// Output: mono float PCM at <see cref="Synth.SampleRate"/>, peak-normalized to 0.9.
 /// </summary>
-public static class SoundBank
+public static partial class SoundBank
 {
     public static readonly int Count = Enum.GetValues<SoundId>().Length;
 
@@ -77,6 +86,14 @@ public static class SoundBank
         SoundId.WarnEnergy => new(0.42f, 1, 1f, 1, Ui: true),
         SoundId.UnderAttack => new(0.45f, 1, 1f, 1, Ui: true),
         SoundId.CommanderAlert => new(0.5f, 1, 1f, 1, Ui: true),
+        SoundId.ShieldHit => new(0.3f, 8, 1f, 3),
+        SoundId.ShieldDown => new(0.6f, 3, 1.5f, 2),
+        SoundId.ShieldUp => new(0.42f, 3, 1.3f, 2),
+        SoundId.TacticalLaunch => new(0.62f, 4, 1.7f, 2),
+        SoundId.NukeLaunch => new(0.85f, 2, 3f, 1),
+        SoundId.NukeExplosion => new(1f, 2, 6f, 2),
+        SoundId.Intercept => new(0.55f, 4, 1.8f, 3),
+        SoundId.StrategicAlert => new(0.55f, 1, 1f, 1, Ui: true),
         _ => new(0.4f, 2, 1f, 1),
     };
 
@@ -126,6 +143,14 @@ public static class SoundBank
             SoundId.WarnEnergy => Warning(81, 76),
             SoundId.UnderAttack => Alarm(76, 71, 3),
             SoundId.CommanderAlert => Alarm(79, 72, 4),
+            SoundId.ShieldHit => ShieldHit(ref rng),
+            SoundId.ShieldDown => ShieldDown(ref rng),
+            SoundId.ShieldUp => ShieldUp(ref rng),
+            SoundId.TacticalLaunch => TacticalLaunch(ref rng),
+            SoundId.NukeLaunch => NukeLaunch(ref rng),
+            SoundId.NukeExplosion => NukeExplosion(ref rng),
+            SoundId.Intercept => Intercept(ref rng),
+            SoundId.StrategicAlert => StrategicAlert(),
             _ => Synth.Alloc(0.05f),
         };
         Synth.RemoveDc(b);

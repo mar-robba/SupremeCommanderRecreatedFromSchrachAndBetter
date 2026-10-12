@@ -61,7 +61,7 @@ public enum UnitCategory : ulong
 /// Blueprints are immutable after loading and may be read from any thread.
 /// Units: distances in world units (1 unit ~ 1 SupCom "ogrid"), time in seconds, rates per second.
 /// </summary>
-public sealed class UnitBlueprint
+public sealed partial class UnitBlueprint
 {
     /// <summary>Unique string id, e.g. "uef_t1_tank". Also the file name.</summary>
     public string Id = "";
@@ -83,6 +83,9 @@ public sealed class UnitBlueprint
     /// <summary>Structure footprint in grid cells (blocks pathing). Ignored for mobile units.</summary>
     public int FootprintX = 1;
     public int FootprintZ = 1;
+    /// <summary>Water structures (Structure + Naval): minimum water depth over every footprint cell (0 = any water
+    /// surface). Naval factories use Terrain.MinShipDepth so ships can leave them. See Naval/NavalRules.</summary>
+    public float MinWaterDepth;
 
     public EconomyBlueprint Economy = new();
     public MovementBlueprint Movement = new();

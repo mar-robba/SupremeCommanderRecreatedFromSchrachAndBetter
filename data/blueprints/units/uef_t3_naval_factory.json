@@ -1,0 +1,43 @@
+{
+  "Id": "uef_t3_naval_factory",
+  "Name": "T3 Naval Factory",
+  "Description": "Builds every ship up to the T3 battleship. Upgrade of the T2 naval factory.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Factory",
+    "Tech3"
+  ],
+  "MaxHealth": 18000,
+  "Radius": 4.5,
+  "FootprintX": 10,
+  "FootprintZ": 10,
+  "MinWaterDepth": 1.0,
+  "Economy": {
+    "BuildCostMass": 2400,
+    "BuildCostEnergy": 14000,
+    "BuildTime": 3200,
+    "BuildRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 26,
+    "SonarRadius": 50
+  },
+  "Visual": {
+    "Shape": "naval_factory",
+    "Size": [
+      10,
+      3.4,
+      10
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "uef_t1_frigate",
+    "uef_t1_sub",
+    "uef_t2_destroyer",
+    "uef_t2_cruiser",
+    "uef_t3_battleship"
+  ]
+}

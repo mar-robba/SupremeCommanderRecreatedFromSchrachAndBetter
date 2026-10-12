@@ -1,0 +1,82 @@
+{
+  "Id": "uef_t3_battleship",
+  "Name": "Summit Battleship",
+  "Description": "T3 battleship: three long-range gauss artillery turrets, anti-air, anti-torpedo. Needs open water.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "DirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 36000,
+  "Radius": 3.0,
+  "Economy": {
+    "BuildCostMass": 9000,
+    "BuildCostEnergy": 60000,
+    "BuildTime": 22000
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 3.2,
+    "Acceleration": 1,
+    "TurnRate": 25
+  },
+  "Intel": {
+    "VisionRadius": 50,
+    "RadarRadius": 150,
+    "SonarRadius": 60
+  },
+  "Weapons": [
+    {
+      "Name": "Gauss Artillery",
+      "Range": 110,
+      "MinRange": 8,
+      "Damage": 300,
+      "DamageRadius": 2.5,
+      "RateOfFire": 0.4,
+      "ProjectilesPerShot": 3,
+      "Spread": 3,
+      "MuzzleVelocity": 40,
+      "Ballistic": true,
+      "TurretTurnRate": 30,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    },
+    {
+      "Name": "AA Railgun",
+      "Range": 35,
+      "Damage": 15,
+      "RateOfFire": 3,
+      "MuzzleVelocity": 60,
+      "TurretTurnRate": 240,
+      "FiringTolerance": 15,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "laser"
+    },
+    {
+      "Name": "Anti-Torpedo Flares",
+      "Range": 12,
+      "RateOfFire": 0.4,
+      "Damage": 0,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "antitorpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "battleship",
+    "Size": [
+      5.0,
+      4.2,
+      18.0
+    ],
+    "Icon": "naval"
+  }
+}

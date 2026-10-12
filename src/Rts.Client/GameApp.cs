@@ -27,6 +27,8 @@ public sealed class ClientOptions
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene) or "naval" (NavalScene).</summary>
+    public string? Scene;
     public int Width = 1600;
     public int Height = 900;
     /// <summary>
@@ -69,6 +71,10 @@ public sealed class ClientOptions
     public bool VolumeGiven;
     /// <summary>Disable the fog of war (reveal all; also toggled with F7).</summary>
     public bool NoFog;
+    /// <summary>--sandbox: start (or set up) a sandbox game (Rts.Client/Sandbox).</summary>
+    public bool Sandbox;
+    /// <summary>--exec "cmd; cmd": sandbox console script run at the start of the game (implies --sandbox).</summary>
+    public string? Exec;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -115,6 +121,7 @@ public sealed class ClientOptions
                 case "--select": o.Select = Next().ToLowerInvariant(); break;
                 case "--ui-demo": o.UiDemo = true; break;
                 case "--tech-demo": o.TechDemo = true; break;
+                case "--scene": o.Scene = Next().ToLowerInvariant(); break;
                 case "--ui-place": o.UiPlace = Next(); break;
                 case "--mouse":
                     var mp = Next().Split(',').Select(float.Parse).ToArray();
@@ -125,6 +132,8 @@ public sealed class ClientOptions
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
                 case "--nofog": o.NoFog = true; break;
+                case "--sandbox": o.Sandbox = true; break;
+                case "--exec": o.Exec = Next(); o.Sandbox = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
@@ -136,6 +145,7 @@ public sealed class ClientOptions
             }
         }
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
+        if (o.Scene == NavalScene.Name) NavalScene.ApplyDefaults(o);
         return o;
     }
 }
@@ -180,7 +190,7 @@ public static class GameApp
         app.Current = opt.StartScreen switch
         {
             StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt, audio), opt),
-            StartScreen.Setup => new SkirmishSetupScreen(app),
+            StartScreen.Setup => new SkirmishSetupScreen(app, opt.Sandbox),
             StartScreen.Settings => new SettingsScreen(app),
             _ => new MainMenuScreen(app),
         };

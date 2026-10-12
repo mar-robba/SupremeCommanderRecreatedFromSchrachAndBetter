@@ -10,13 +10,15 @@ namespace Rts.Client.Rendering;
 /// Projectiles (from snapshots, interpolated as pos - vel * (1 - alpha) * tick so they stay in sync with the
 /// one-tick-behind unit interpolation) and particle effects for sim EffectEvents.
 /// Debug: F9 toggles a client-side fake battle (fake projectiles/impacts/deaths/build effects, also via CLI
-/// --fxtest), F10 spawns a big explosion under the cursor.
+/// --fxtest), F10 spawns a big explosion under the cursor, Shift+F10 a nuke (gated by <see cref="DebugKeysEnabled"/>).
+/// Nuke detonations: <see cref="NukeFx"/> (+ <see cref="DrawOverlay"/> for the screen flash).
 /// </summary>
-public sealed class EffectsRenderer : IDisposable
+public sealed partial class EffectsRenderer : IDisposable
 {
     private const float TickSeconds = 1f / SimWorld.TicksPerSecond;
     private readonly GameContext _ctx;
     private readonly ParticleSystem _ps;
+    private readonly NukeFx _nuke;
     private readonly QuadBatch _proj;
     private readonly Dictionary<int, (Vector3 pos, int frame)> _trails = new();
     private readonly List<int> _stale = new();
@@ -26,6 +28,8 @@ public sealed class EffectsRenderer : IDisposable
     private int _fakeId = -1;
 
     public bool FakeBattle;
+    /// <summary>F9/F10 debug keys (the sandbox uses those keys and turns this off).</summary>
+    public static bool DebugKeysEnabled = true;
     public int ParticleCount => _ps.Count;
     /// <summary>The particle pool (other renderers may emit into it, e.g. smoking wrecks).</summary>
     public ParticleSystem Particles => _ps;
@@ -44,6 +48,7 @@ public sealed class EffectsRenderer : IDisposable
     {
         _ctx = ctx;
         _ps = new ParticleSystem(ctx.Terrain);
+        _nuke = new NukeFx(_ps, ctx.Terrain);
         _proj = new QuadBatch(Shaders.Particle.Shader);
         FakeBattle = fakeBattle;
     }
@@ -67,9 +72,12 @@ public sealed class EffectsRenderer : IDisposable
     /// <summary>Spawns the particle recipe for a sim effect event.</summary>
     public void Spawn(in EffectEvent e)
     {
+        if (e.Kind == EffectKind.Nuke) { _nuke.Spawn(e.Pos, e.Size); return; } // always, even off-screen (NukeFx)
+        if (SpawnStrategic(in e)) return; // EffectsRenderer.Strategic.cs
         float size = MathF.Max(0.3f, e.Size);
         var fv = FrameView.Current;
         if (!fv.SphereVisible(e.Pos, size * 6 + 4)) { if (e.Kind != EffectKind.UnitDeath) return; }
+        if (SpawnNaval(e, size)) return; // torpedoes, torpedo defense, ships/subs dying on water (EffectsRenderer.Naval.cs)
         switch (e.Kind)
         {
             case EffectKind.MuzzleFlash:
@@ -105,7 +113,9 @@ public sealed class EffectsRenderer : IDisposable
         if (FakeBattle) UpdateFakeBattle(dt, cur);
 
         _ps.Update(dt);
+        _nuke.Update(dt);
         _proj.Begin();
+        BeginNaval(dt);
         ProjectileCount = 0;
 
         // Real projectiles from the snapshot.
@@ -127,6 +137,8 @@ public sealed class EffectsRenderer : IDisposable
         _ps.Alpha.Begin();
         _ps.Decals.Begin();
         _ps.Build(fv);
+        NavalFrame(dt, cur, prev, alpha, fv); // wakes + underwater particles (EffectsRenderer.Naval.cs)
+        _nuke.Build(fv);
 
         var sp = Shaders.Particle;
         sp.Set("time", Atmosphere.Time);
@@ -135,10 +147,12 @@ public sealed class EffectsRenderer : IDisposable
         Rlgl.DisableDepthMask();
         Raylib.BeginBlendMode(BlendMode.Alpha);
         _ps.Decals.Draw();
+        _uwAlpha?.Draw();
         _ps.Alpha.Draw();
         Raylib.EndBlendMode();
         Raylib.BeginBlendMode(BlendMode.Additive);
         _ps.Additive.Draw();
+        _uwAdd?.Draw();
         _proj.Draw();
         Raylib.EndBlendMode();
         Rlgl.EnableDepthMask();
@@ -174,9 +188,13 @@ public sealed class EffectsRenderer : IDisposable
             case "flak":
                 _proj.Billboard(pos, 0.45f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 170, 80, 255), PShape.Glow, 0);
                 break;
+            case "torpedo": DrawTorpedo(id, pos, dir, fv); break;
             case "bomb":
                 _proj.Streak(pos, dir, 0.5f * zs, 0.22f * zs, cam, new Color(255, 120, 60, 160), PShape.Streak, 0);
                 _proj.Billboard(pos, 0.3f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 80, 40, 255), PShape.Glow, 0);
+                break;
+            case "tactical" or "nuke" or "interceptor" or "antinuke":
+                DrawStrategicProjectile(id, pos, dir, visual, fv, zs); // EffectsRenderer.Strategic.cs
                 break;
             default: // shell (ballistic shells get a faint trail)
             {
@@ -211,13 +229,18 @@ public sealed class EffectsRenderer : IDisposable
         else _trails[id] = (pos, _frame);
     }
 
+    /// <summary>2D screen flash of nuke detonations: call after EndMode3D, before the HUD.</summary>
+    public void DrawOverlay() => _nuke.DrawOverlay();
+
     // ------------------------------------------------------------------ debug
 
     private void HandleDebugKeys()
     {
+        if (!DebugKeysEnabled) return;
         if (Raylib.IsKeyPressed(KeyboardKey.F9)) FakeBattle = !FakeBattle;
+        bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         if (Raylib.IsKeyPressed(KeyboardKey.F10) && _ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
-            Spawn(new EffectEvent { Kind = EffectKind.UnitDeath, Pos = g, Size = 4f, Army = 0, BlueprintIndex = -1 });
+            Spawn(new EffectEvent { Kind = shift ? EffectKind.Nuke : EffectKind.UnitDeath, Pos = g, Size = shift ? 40f : 4f, Army = 0, BlueprintIndex = -1 });
     }
 
     private void UpdateFakeBattle(float dt, SimSnapshot cur)
@@ -307,5 +330,7 @@ public sealed class EffectsRenderer : IDisposable
     {
         _ps.Dispose();
         _proj.Dispose();
+        _uwAlpha?.Dispose();
+        _uwAdd?.Dispose();
     }
 }

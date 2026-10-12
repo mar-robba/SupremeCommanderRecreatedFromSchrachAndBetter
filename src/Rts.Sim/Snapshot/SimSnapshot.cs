@@ -129,6 +129,20 @@ public sealed class SimSnapshot
     public GhostView[] Ghosts = new GhostView[64];
     public int GhostCount;
 
+    // ---- Strategic module (shields, silos, launches): see Strategic/StrategicSnapshotWriter.cs ----
+    /// <summary>Shield domes of units in this snapshot, [0..ShieldCount).</summary>
+    public ShieldView[] Shields = new ShieldView[16];
+    public int ShieldCount;
+    /// <summary>Missile silos of the view army's team, [0..SiloCount).</summary>
+    public SiloView[] Silos = new SiloView[8];
+    public int SiloCount;
+    /// <summary>Recent strategic launches (global, newest last) and the total launch count.</summary>
+    public readonly List<LaunchView> Launches = new();
+    public int LaunchSerial;
+
+    /// <summary>Sandbox mode settings (cheat toggles, AI per army); null outside sandbox. Immutable, see SandboxSystem.</summary>
+    public Systems.SandboxStatus? Sandbox;
+
     public bool TryGetUnit(int slot, int gen, out UnitView view)
     {
         if ((uint)slot < (uint)SlotToView.Length)

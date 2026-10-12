@@ -1,0 +1,50 @@
+{
+  "Id": "uef_t2_mobile_shield",
+  "Name": "Parashield",
+  "Description": "T2 mobile shield generator (hover). Protects nearby units. Needs 45 energy/s.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Shield",
+    "Tech2"
+  ],
+  "MaxHealth": 280,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 150,
+    "BuildCostEnergy": 1400,
+    "BuildTime": 900,
+    "MaintenanceEnergy": 45
+  },
+  "Movement": {
+    "Layer": "Hover",
+    "MaxSpeed": 2.4,
+    "Acceleration": 2.0,
+    "TurnRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Shield": {
+    "Radius": 8,
+    "HeightScale": 0.75,
+    "MaxHealth": 1800,
+    "RegenRate": 18,
+    "RegenDelay": 2,
+    "RechargeTime": 20
+  },
+  "Visual": {
+    "Shape": "mobile_shield",
+    "Size": [
+      1.0,
+      0.9,
+      1.3
+    ],
+    "Icon": "shield"
+  },
+  "BuiltBy": [
+    "uef_t2_land_factory",
+    "uef_t3_land_factory"
+  ]
+}

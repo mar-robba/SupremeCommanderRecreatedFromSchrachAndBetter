@@ -16,6 +16,8 @@ public enum ProjectileFlags : byte
     ProximityFuse = 4,
     /// <summary>Dropped by a bomber.</summary>
     Bomb = 8,
+    /// <summary>Torpedo: runs under water, dies on shore, hits Water/Sub units (Naval/Torpedoes.cs).</summary>
+    Torpedo = 16,
 }
 
 /// <summary>SoA storage for projectiles in flight. Spawn/free only in sequential phases.</summary>

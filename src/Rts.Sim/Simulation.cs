@@ -29,6 +29,7 @@ public sealed class Simulation
         CommandSystem.Run(w, commands);
         AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands
         CommandSystem.Run(w, _aiCommands);
+        SandboxSystem.BeginTick(w); // sandbox only: batched spawns, infinite resources, instant build
         w.Units.RebuildAliveList();
         w.Projectiles.RebuildAliveList();
         w.Grid.Rebuild(w.Units);
@@ -40,6 +41,7 @@ public sealed class Simulation
         FactorySystem.Run(w);
         PathSystem.Run(w);
         MovementSystem.Run(w);
+        Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         TargetingSystem.Run(w);
         WeaponSystem.Run(w);
         ProjectileSystem.Run(w);
@@ -58,6 +60,7 @@ public sealed class Simulation
     {
         SnapshotWriter.Write(World, s, viewArmy);
         s.TickDurationMs = LastTickMs;
+        SandboxSystem.WriteSnapshot(World, s); // sandbox status (null outside sandbox)
     }
 
     /// <summary>Hash of the gameplay-relevant state (for determinism tests and multiplayer desync checks).</summary>
@@ -84,6 +87,7 @@ public sealed class Simulation
         }
         foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); }
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
+        Mix(Strategic.StrategicSystem.Hash(w));
         return h;
     }
 }

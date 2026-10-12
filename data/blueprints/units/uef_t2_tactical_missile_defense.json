@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t2_tactical_missile_defense",
+  "Name": "T2 Tactical Missile Defense",
+  "Description": "Shoots down enemy tactical missiles within 30 (one every 2 s).",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "Tech2"
+  ],
+  "MaxHealth": 1300,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 220,
+    "BuildCostEnergy": 2200,
+    "BuildTime": 700
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Anti-Missile Interceptor",
+      "Range": 30,
+      "Damage": 0,
+      "RateOfFire": 0.5,
+      "MuzzleVelocity": 55,
+      "TargetLayers": ["Air"],
+      "ProjectileVisual": "interceptor",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    }
+  ],
+  "MissileDefense": {
+    "Intercepts": "Tactical",
+    "Radius": 30,
+    "RateOfFire": 0.5,
+    "WeaponIndex": 0
+  },
+  "Visual": {
+    "Shape": "missile_defense",
+    "Size": [
+      1.6,
+      1.8,
+      1.6
+    ],
+    "Icon": "defense"
+  },
+  "BuiltBy": [
+    "uef_t2_engineer",
+    "uef_t3_engineer"
+  ]
+}

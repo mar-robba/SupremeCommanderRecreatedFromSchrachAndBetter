@@ -16,7 +16,9 @@ public class CoreTests
         Assert.True(cmd.Has(UnitCategory.Commander));
         Assert.NotEmpty(cmd.BuildIndices);
         foreach (var bp in db.All)
-            foreach (var w in bp.Weapons) Assert.NotEqual(LayerMask.None, w.TargetMask);
+            for (int k = 0; k < bp.Weapons.Length; k++)
+                if (!Strategic.StrategicSystem.IsManualWeapon(bp, k)) // interceptors target missiles, not layers
+                    Assert.NotEqual(LayerMask.None, bp.Weapons[k].TargetMask);
     }
 
     [Fact]

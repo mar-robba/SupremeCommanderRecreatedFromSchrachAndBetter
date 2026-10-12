@@ -13,6 +13,7 @@ public static class CommandSystem
     {
         foreach (var c in commands)
         {
+            if (c is SandboxCommand sb) { SandboxSystem.Apply(w, sb); continue; } // ignored outside sandbox
             if ((uint)c.Army >= (uint)w.Armies.Length || w.Armies[c.Army].Defeated) continue;
             switch (c)
             {
@@ -79,8 +80,11 @@ public static class CommandSystem
             if (offsets != null) o.FormationOffset = offsets[k];
             var q = w.Units.Orders[i];
 
-            // Structures: only factories accept orders (they become rally orders for produced units).
-            if (bp.IsStructure && !bp.Has(UnitCategory.Factory)) continue;
+            // Structures: only factories accept orders (they become rally orders for produced units); silos accept
+            // Launch orders (Strategic module), and only silo launchers do.
+            bool launch = o.Type == OrderType.Launch;
+            if (launch && !Strategic.SiloSystem.IsLauncher(bp)) continue;
+            if (!launch && bp.IsStructure && !bp.Has(UnitCategory.Factory)) continue;
             if (o.Type == OrderType.Build && !Array.Exists(bp.BuildIndices, b => b == o.BlueprintIndex)) continue;
 
             if (!io.Queue)

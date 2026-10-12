@@ -53,7 +53,7 @@ public sealed class AudioSettings
 /// <para>Device, sound bank and ambient stream belong to the app-wide <see cref="AudioSystem"/> (shared by every
 /// game and the menus); this class is per game.</para>
 /// </summary>
-public sealed class GameAudio : IDisposable
+public sealed partial class GameAudio : IDisposable
 {
     private readonly GameContext _ctx;
     public readonly AudioSettings Settings;
@@ -144,6 +144,7 @@ public sealed class GameAudio : IDisposable
             ScanBombs(cur);
             CheckUnderAttack(interp.Prev, cur);
             CheckResources(cur);
+            CheckLaunches(cur);
             _lastTick = cur.Tick;
         }
         // Battle intensity (audible combat events per second) brightens the music.
@@ -233,6 +234,9 @@ public sealed class GameAudio : IDisposable
             case EffectKind.Reclaim:
                 At(SoundId.ReclaimDone, e.Pos, 1f);
                 return 0;
+            case EffectKind.ShieldHit or EffectKind.ShieldDown or EffectKind.ShieldUp or EffectKind.MissileLaunch
+                or EffectKind.MissileIntercepted or EffectKind.Nuke:
+                return HandleStrategicEffect(e); // GameAudio.Strategic.cs (nuke: one map-wide NukeExplosion)
         }
         return 0;
     }

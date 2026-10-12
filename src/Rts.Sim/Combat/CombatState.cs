@@ -41,6 +41,12 @@ internal enum ImpactKind : byte
     Ground,
     /// <summary>Proximity/timed burst (flak).</summary>
     Burst,
+    /// <summary>Absorbed by an enemy shield dome (Unit = shield generator). Strategic module.</summary>
+    Shield,
+    /// <summary>Interceptor reached its target missile. Strategic module.</summary>
+    Intercept,
+    /// <summary>Strategic missile reached the ground (two-ring blast). Strategic module.</summary>
+    Detonation,
 }
 
 /// <summary>Projectile end-of-life decided in parallel by ProjectileSystem, applied sequentially in chunk order.</summary>

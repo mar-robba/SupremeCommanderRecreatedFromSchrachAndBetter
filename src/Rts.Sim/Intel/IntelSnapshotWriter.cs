@@ -102,7 +102,8 @@ internal static class IntelSnapshotWriter
     public static void AddVisibleEffects(SimWorld w, SimSnapshot s, int viewArmy)
     {
         foreach (var e in w.Events.Effects)
-            if (w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
+            // Nuclear detonations are seen (and heard) by everyone, like the launch warning.
+            if (e.Kind == EffectKind.Nuke || w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
     }
 
     private static void Ensure<T>(ref T[] arr, int size)

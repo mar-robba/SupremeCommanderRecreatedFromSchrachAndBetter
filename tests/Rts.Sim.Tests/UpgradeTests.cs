@@ -306,7 +306,13 @@ public class UpgradeTests
             if (bp.Tech < 2) continue;
             var sim = TestUtil.NewSkirmish(42);
             var w = sim.World;
-            var pos = bp.Economy.RequiresMassDeposit
+            Vector2 pos;
+            if (Rts.Sim.Naval.NavalRules.IsWaterStructure(bp))
+            {
+                // Water structures: nearest water site (the map may have no sea at all; NavalTests cover them).
+                if (!Rts.Sim.Naval.NavalRules.FindSite(w.Occupancy, w.Terrain, bp, CommanderPos(w), 400f, out pos)) continue;
+            }
+            else pos = bp.Economy.RequiresMassDeposit
                 ? NearestDeposit(w, CommanderPos(w), DepositType.Mass)
                 : bp.IsStructure ? FindSite(w, bp.Id, CommanderPos(w), 12) : CommanderPos(w) + new Vector2(8, 8);
             sim.Step([new DebugSpawnCommand(0, b, pos, 1)]);

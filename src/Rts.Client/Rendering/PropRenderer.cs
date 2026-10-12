@@ -12,7 +12,7 @@ namespace Rts.Client.Rendering;
 /// Meshes dither out with the unit meshes when zooming out; the strategic view shows small gray dots instead.
 /// The models are separate GPU copies (own instance buffers), independent from <see cref="UnitRenderer"/>.
 /// </summary>
-public sealed class PropRenderer : IDisposable
+public sealed partial class PropRenderer : IDisposable
 {
     private readonly GameContext _ctx;
     private readonly ParticleSystem? _ps;
@@ -94,12 +94,14 @@ public sealed class PropRenderer : IDisposable
             float squash = structure ? 0.78f : air ? 0.85f : 0.92f;
             float heading = p.Heading + (structure ? 0f : (r3 - 0.5f) * 0.4f);
             float scale = rubble ? MathF.Max(0.6f, p.Radius) : 1f;
+            float baseY = p.Pos.Y - sink, vis = 1f;
+            if (SinkInDeepWater(p, model, bp, h, age, smoke, ref baseY, ref pitch, ref ember, out vis) && vis <= 0.01f) continue; // PropRenderer.Naval.cs
 
             var body = Matrix4x4.CreateScale(scale, squash * scale, scale)
                        * Matrix4x4.CreateRotationX(pitch) * Matrix4x4.CreateRotationZ(roll)
                        * Matrix4x4.CreateRotationY(MathF.PI * 0.5f - heading)
-                       * Matrix4x4.CreateTranslation(p.Pos.X, p.Pos.Y - sink, p.Pos.Z);
-            var data = new Vector4(r4, ember, left, 0);
+                       * Matrix4x4.CreateTranslation(p.Pos.X, baseY, p.Pos.Z);
+            var data = new Vector4(r4, ember, left, vis);
             Add(model.Body, body, data);
 
             if (model.Turret != null)
@@ -117,7 +119,7 @@ public sealed class PropRenderer : IDisposable
                                 * Matrix4x4.CreateTranslation(pivot.X + side.X, pivot.Y * 0.25f, pivot.Z + side.Z);
                     }
                     else local = Matrix4x4.CreateRotationY(yaw) * Matrix4x4.CreateRotationX((r2 - 0.5f) * 0.25f) * Matrix4x4.CreateTranslation(pivot);
-                    Add(model.Turret, local * body, data with { W = 1 });
+                    Add(model.Turret, local * body, data);
                 }
             }
 
@@ -239,7 +241,7 @@ public sealed class PropRenderer : IDisposable
         }
         """;
 
-    // vInst: x = per-wreck random, y = ember glow 0..1, z = mass left 0..1, w = 1 for turrets.
+    // vInst: x = per-wreck random, y = ember glow 0..1, z = mass left 0..1, w = visibility (sinking wrecks dither out).
     private static readonly string FragmentShader = "#version 330\n" + Shaders.CommonFs + Shaders.ShadowFs + """
         in vec3 vWorld;
         in vec3 vNormal;
@@ -249,6 +251,7 @@ public sealed class PropRenderer : IDisposable
         out vec4 finalColor;
         void main() {
             if (fade < 0.999 && bayer4(gl_FragCoord.xy) >= fade) discard;
+            if (vInst.w < 0.999 && bayer4(gl_FragCoord.xy + vec2(1.0, 2.0)) >= vInst.w) discard;
             vec3 n = normalize(vNormal);
             float m = vColor.a;
             vec3 base = vColor.rgb;

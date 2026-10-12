@@ -132,6 +132,14 @@ public static partial class UnitModels
                 break;
             }
             case "sub": Sub(b, w, h, l); break;
+            case "shield_gen": t = ShieldGenerator(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.9f; break;
+            case "mobile_shield": t = MobileShield(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 1.6f; break;
+            case "missile_silo": MissileSilo(b, w, h, l, bp.Silo?.Kind == SiloKind.Strategic); break;
+            case "missile_defense": t = MissileDefenseModel(b, pivots, w, h, l, bp.Silo != null); break;
+            case "artillery_structure": t = ArtilleryStructure(b, pivots, w, h, l); break;
+            case "naval_factory": case "battleship": case "sonar": case "torpedo_launcher": case "torpedo_bomber":
+                t = NavalShape(bp, b, w, h, l, hasWeapon, pivots, ref mode, ref spin); // naval shapes: UnitModels.Naval.cs
+                break;
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));

@@ -38,6 +38,14 @@ public sealed class GameConfig
     // Debug / CLI options carried over restarts.
     public bool Demo;
     public int Stress;
+    /// <summary>Scripted scene (--scene naval, see NavalScene.cs) and the camera it picked (x, z, distance).</summary>
+    public string? Scene;
+    public System.Numerics.Vector3? SceneCamera;
+
+    /// <summary>Sandbox mode: cheats/spawn panel and console, no end of game (see Rts.Client/Sandbox).</summary>
+    public bool Sandbox;
+    /// <summary>Sandbox only: the AI slots start with their AI switched on (off by default: passive enemy armies).</summary>
+    public bool SandboxAi;
 
     public GameConfig()
     {
@@ -47,7 +55,7 @@ public sealed class GameConfig
 
     public GameConfig Clone()
     {
-        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress };
+        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene };
         for (int i = 0; i < MaxSlots; i++) copy.Slots[i] = Slots[i].Clone();
         return copy;
     }
@@ -99,7 +107,7 @@ public sealed class GameConfig
     /// <summary>Config of a game started directly from the command line (army 0 human, the others AI, FFA).</summary>
     public static GameConfig FromOptions(ClientOptions o)
     {
-        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress };
+        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene };
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;

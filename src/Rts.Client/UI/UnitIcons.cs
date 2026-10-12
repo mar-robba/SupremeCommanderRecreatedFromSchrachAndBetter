@@ -48,6 +48,14 @@ public static class UnitIcons
     }
 
     /// <summary>Short label printed on icons (e.g. MEX, PGEN, TANK).</summary>
+    private static string StrategicLabel(UnitBlueprint bp) => bp.Silo?.Kind switch
+    {
+        SiloKind.Tactical => "TML",
+        SiloKind.Strategic => "NUKE",
+        SiloKind.AntiNuke => "A-NUKE",
+        _ => "TMD",
+    };
+
     public static string ShortLabel(UnitBlueprint bp)
     {
         if (bp.Has(UnitCategory.Commander)) return "ACU";
@@ -61,10 +69,12 @@ public static class UnitIcons
             return bp.Has(UnitCategory.Air) ? "AIR FAC" : bp.Has(UnitCategory.Naval) ? "NAV FAC" : "LAND FAC";
         if (bp.IsStructure)
         {
+            if (bp.Silo != null || bp.MissileDefense != null) return StrategicLabel(bp);
             if (bp.Has(UnitCategory.Shield)) return "SHIELD";
             if (bp.Has(UnitCategory.Wall)) return "WALL";
             if (bp.Has(UnitCategory.AntiAir)) return "AA";
             if (bp.HasAny(UnitCategory.Artillery | UnitCategory.IndirectFire)) return "ARTY";
+            if (bp.Has(UnitCategory.AntiNaval)) return "TORP";
             if (bp.Has(UnitCategory.Defense)) return "PD";
             if (bp.Intel.OmniRadius > 0) return "OMNI";
             if (bp.Has(UnitCategory.Radar)) return "RADAR";
@@ -72,16 +82,18 @@ public static class UnitIcons
         }
         else
         {
+            if (bp.Shield != null) return "M-SHLD";
             if (bp.Has(UnitCategory.Engineer)) return "ENG";
             if (bp.Has(UnitCategory.Air))
             {
                 if (bp.Has(UnitCategory.Scout)) return "SCOUT";
-                if (bp.Has(UnitCategory.Bomber)) return "BOMB";
+                if (bp.Has(UnitCategory.Bomber)) return bp.Has(UnitCategory.AntiNaval) ? "T-BOMB" : "BOMB";
                 if (bp.Has(UnitCategory.Fighter)) return "INT";
                 if (bp.Has(UnitCategory.Gunship)) return "GUN";
                 if (bp.Has(UnitCategory.Transport)) return "TRANS";
                 return "AIR";
             }
+            if (bp.Has(UnitCategory.Naval)) return NavalLabel(bp);
             if (bp.Has(UnitCategory.Scout)) return "SCOUT";
             if (bp.HasAny(UnitCategory.Artillery | UnitCategory.IndirectFire)) return "ARTY";
             if (bp.Has(UnitCategory.AntiAir)) return "AA";
@@ -90,6 +102,20 @@ public static class UnitIcons
         var words = bp.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return words.Length == 0 ? "?" : words[^1].Length <= 6 ? words[^1].ToUpperInvariant() : words[^1][..5].ToUpperInvariant();
     }
+
+    /// <summary>Ship class label: by hull shape, else by layer/tech (sub, frigate, destroyer/cruiser, battleship).</summary>
+    private static string NavalLabel(UnitBlueprint bp) => bp.Visual.Shape switch
+    {
+        "frigate" => "FRIG",
+        "sub" => "SUB",
+        "destroyer" => "DEST",
+        "cruiser" => "CRUIS",
+        "battleship" => "BSHIP",
+        _ when bp.Movement.Layer == MotionLayer.Sub => "SUB",
+        _ when bp.Has(UnitCategory.Tech3) => "BSHIP",
+        _ when bp.Has(UnitCategory.Tech2) => bp.Has(UnitCategory.AntiAir) ? "CRUIS" : "DEST",
+        _ => "FRIG",
+    };
 
     /// <summary>Draws a square build/selection icon for the blueprint into r (background, glyph, label, tech).</summary>
     public static void Draw(Rectangle r, UnitBlueprint bp, bool enabled = true, bool compact = false)

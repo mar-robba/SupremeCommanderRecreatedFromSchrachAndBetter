@@ -34,6 +34,21 @@ public enum EffectKind : byte
     BuildStarted,
     BuildComplete,
     Reclaim,
+    // ---- Strategic (Rts.Sim/Strategic) ----
+    /// <summary>A projectile hit a shield dome at Pos (Army = shield owner, Size = damage scale, BlueprintIndex/WeaponIndex = shooter's weapon).</summary>
+    ShieldHit,
+    /// <summary>A shield collapsed (knocked down or energy stall). Pos = dome center, Size = radius, BlueprintIndex = generator.</summary>
+    ShieldDown,
+    /// <summary>A shield came back up. Pos = dome center, Size = radius, BlueprintIndex = generator.</summary>
+    ShieldUp,
+    /// <summary>A silo launched a missile (Pos = launch point, BlueprintIndex/WeaponIndex = silo weapon).</summary>
+    MissileLaunch,
+    /// <summary>A missile was shot down by an interceptor at Pos (BlueprintIndex/WeaponIndex = the destroyed missile's weapon).</summary>
+    MissileIntercepted,
+    /// <summary>Strategic (nuclear) detonation at Pos (ground), Size = outer blast radius. Raised by the strategic
+    /// missile (MissileSystem.Detonate, also for sandbox nukes) and by the sandbox instant blast; always visible
+    /// through fog. One client visual (NukeFx) and one sound.</summary>
+    Nuke,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

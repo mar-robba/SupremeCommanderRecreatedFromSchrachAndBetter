@@ -125,6 +125,41 @@ interpolates prev/cur by time
   ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
   `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
 
+## Shields & strategic weapons (`Rts.Sim/Strategic`)
+- `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
+  silo stockpiles + Launch orders (`SiloSystem`) → shields + `ShieldIndex` (`ShieldSystem`) → missile defenses
+  (`MissileSystem`). Per-unit state lives in `StrategicState.Of(world)`; blueprint data in `UnitBlueprint.Strategic.cs`
+  (`Shield`, `Silo`, `MissileDefense`). Zero cost when no strategic unit exists.
+- **Shields** (ellipsoid domes; T2/T3 generators, `uef_t2_mobile_shield` follows its unit): HP, RegenRate after
+  RegenDelay, RechargeTime after collapsing. Energy upkeep via the flow economy; `Econ.Efficiency` < 0.95 (stall)
+  collapses them. `ShieldIndex` (32-unit grid, army mask per cell) is read in the parallel projectile phase: a
+  projectile segment entering an enemy dome from OUTSIDE is absorbed at the surface and damages the shield; shots
+  fired from inside pass out; area blasts outside a dome don't hurt units inside; beams are blocked on the
+  muzzle→target line. Nukes ignore domes and knock every shield in their outer ring down.
+- **Silos** (TML, nuke, anti-nuke): stockpile built pay-first like construction (MissileCost × dt/BuildTime per tick,
+  scaled by efficiency, up to MaxStorage). `OrderType.Launch` (`Order.LaunchAt(pos)`) at the queue front fires one
+  missile when stocked (TML: only within [MinRange, Range], else dropped); with an empty stockpile it waits.
+  Silo/defense weapons are `WeaponKind.Manual`: never auto-fire. `SiloSystem.SetStock` for scenes/tests;
+  `SiloSystem.InstantStockpile` = sandbox instant build (a free missile per tick up to MaxStorage).
+- **Missiles** are ordinary projectiles registered in `StrategicState`: TML = scripted cruise path above the highest
+  terrain, shield-stoppable; nuke = high arc anywhere, two-ring blast (`OuterDamage/OuterRadius`) queued by
+  `MissileSystem.QueueDetonation` (+ the one `EffectKind.Nuke` effect) and applied at the start of DamageSystem; the
+  next tick `StrategicSystem.Run` vaporizes props/wrecks in the inner ring (clean crater). TMD / anti-nuke fire homing interceptors at the nearest unchased enemy missile in Radius (rate
+  limited; anti-nuke spends a stockpiled missile per shot).
+- **Snapshot** (`Snapshot/StrategicViews.cs`): `Shields` (HP fraction, up, recharge fraction, last hit tick), `Silos` (kind, stock, progress),
+  `Launches` + `LaunchSerial` (nuke launches, GLOBAL: not fog-filtered, drive the "STRATEGIC LAUNCH DETECTED"
+  banner/klaxon); `EffectKind.Nuke` effects are also global (IntelSnapshotWriter never fog-filters them). Enemy missiles otherwise follow projectile fog rules.
+- **Public entry point**: `StrategicApi.LaunchNuke(SimWorld w, int army, Vector2 from, Vector2 target,
+  string siloBp = DefaultNukeSilo)` and `LaunchNuke(w, army, target)` (from the commander, else map center) launch
+  a nuke without a silo (warning, interceptable, same blast); `StrategicApi.Detonate(w, army, center, rings…)` = the
+  blast alone (no missile); `StrategicApi.NukeRings(db)` = the silo missile's rings (client previews). Sequential sim
+  code only. The sandbox `nuke` command uses `LaunchNuke`, `nuke instant` uses `Detonate`.
+- **Client**: `Rendering/ShieldRenderer.cs` (fresnel + hex dome shader, hit ripples, fade on collapse, fog-aware,
+  shield HP bars), `Rendering/EffectsRenderer.Strategic.cs` (missile/nuke trails, interceptors, shield and
+  launch/intercept bursts; the detonation itself is `NukeFx`, see Sandbox below), `Input/StrategicOrders.cs` (Launch mode: L hotkey /
+  Launch button, picks one in-range launcher with most stock), `UI/StrategicHud.cs` (banner, target markers, range
+  and blast rings, silo/shield bars), audio `GameAudio.Strategic.cs`. Visual test bed: `--scene strategic[:shields|:tml|:nuke]`.
+
 ## Map generator (`Rts.Sim/Map`)
 - `MapGenerator.Generate(MapGenSettings)` → immutable `Terrain`. Presets (`MapPreset`): Plains, Lakes, Highlands
   (terraces, cliffs, natural + carved ramps), Canyon (valley network in mesas), Archipelago (islands, needs naval).
@@ -135,6 +170,30 @@ interpolates prev/cur by time
   validated on flat main-component land in every rotated copy), final flood-fill verification.
 - Guarantee (tests in `MapGeneratorTests`): on every preset except Archipelago all starts are connected over
   `Terrain.CanTraverse(Land)`; deposits are buildable; start areas are flat; deterministic per seed; 1024 < 0.5 s.
+- Archipelago instead gets sea lanes (`MapBuilder.Archipelago.cs`): `EnsureSeaLanes` labels the deep water eroded to
+  battleship clearance (r=3) and digs symmetric channels (coarse Dijkstra; only the cheapest one per round, so few
+  land bridges are cut) or inlets until every start has the same big sea within reach; `ShapeBeaches` cuts a
+  slope-limited "harbor beach" from each start plateau to its sea (the plateau core is kept) so builders can walk
+  to the coast. Tests in `NavalTests` (island size, naval site near each start, battleship-sized sea lane).
+
+## Naval (`Rts.Sim/Naval`)
+- Water structures (Structure + `MinWaterDepth` > 0: naval factories T1–T3, sonar, torpedo launcher):
+  `NavalRules.CellBuildable` (every footprint cell needs that much water) is used by `OccupancyGrid.CanPlace` and
+  by the client ghost (`PlacementGrid`, `PlacementError.NeedsDeepWater`); `NavalRules.FindSite` = nearest valid
+  site (AI/tests/scenes). They sit at the water surface. Builders on land walk as close as they can (an unreachable
+  goal shrinks the arrive radius by the gap, `MovementSystem`), then build within range.
+- Torpedoes (`Naval/Torpedoes.cs`): weapons with `ProjectileVisual` "torpedo" (`WeaponKind.Torpedo`,
+  `ProjectileFlags.Torpedo`) drop into the water, run at `RunDepth`, home on the target, hit by a 2D swept circle
+  on the Water/Sub layers and die when the sea floor gets close (shore/shallows). Torpedo defense ("antitorpedo",
+  `WeaponKind.AntiTorpedo`, never targets units): `Torpedoes.Intercept` (sequential, before projectiles move)
+  destroys one torpedo in range per weapon cooldown.
+- Subs (`MotionLayer.Sub`, layer `LayerMask.Sub`) are visible only with sonar/omni coverage (`IntelService`), and
+  only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
+- Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
+  bubble trail, splash/hit/interception bursts, ship wakes scaled by speed and hull), `UnitRenderer.Submerged.cs`
+  (submerged units drawn after the water, see-through and blue-tinted), `PropRenderer.Naval.cs` (wrecks on deep
+  water sink and fade), sonar ring in `BuildPlacement`. `--scene naval` (`NavalScene.cs`): scripted Archipelago
+  fleet battle + naval factory (`--select uef_t1_naval_factory`) for screenshots and tests.
 
 ## Skirmish AI (`Rts.Sim/AI`)
 - Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for
@@ -195,3 +254,33 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+
+## Sandbox mode (`Rts.Sim/Systems/SandboxSystem`, `Rts.Client/Sandbox`)
+- Sim: `SandboxSystem.Enable(world)` (called by `GameSession.CreateSimulation` when `GameConfig.Sandbox`) turns the
+  `SandboxCommand`s on (`Orders/SandboxCommands.cs`; ignored in a normal game): batched spawns (250 units/tick, square
+  spiral, structures on free footprints), per-army toggles (infinite resources, instant build, build anywhere),
+  AI on/off + difficulty at runtime, victory on/off (off = `WinningTeam` stays -1), unit actions (kill, delete, heal,
+  damage, change owner, finish), clear area, nuke. `SandboxSystem.Nuke` launches a REAL strategic missile
+  (`StrategicApi.LaunchNuke`, free) from the army's nearest strategic silo, else its commander, else the map edge
+  nearest its start position (`NukeLaunchSite`): same flight, global launch warning, anti-nuke interception, shield
+  knock-down and crater as a silo launch. `SandboxNukeCommand.Instant` (`nuke instant`) = `NukeInstant`: the same
+  strategic detonation right away (`StrategicApi.Detonate`, rings 30/70 000 + 40/500), no missile. Instant build also
+  fills silo stockpiles (`SiloSystem.InstantStockpile`), so with money + instabuild a silo nuke is ready at once. Like every command
+  they are applied at the start of a tick: deterministic and replay-safe. `SimSnapshot.Sandbox` = immutable `SandboxStatus`.
+- Client: `SandboxController` (owned by `GameSession`, null outside sandbox) = side panel (`SandboxPanel`, F9: army
+  selector, cheats, AI, speed, selection actions, NUKE (missile) / Blast (instant) / clear tools, spawn list of every
+  blueprint grouped by category/tech — shields, silos, missile defense and artillery installations in a "Strategic &
+  shields" group — with search) + console (`SandboxConsole`, F10 or the key left of 1) + map tools + `--exec` script.
+  Panel and console both produce `ConsoleAction`s (`ConsoleActions.cs`) run by `SandboxController.Execute`.
+  `SandboxConsoleParser` / `BlueprintMatcher` are pure (no raylib) and unit-tested in `Rts.Client.Tests`.
+  While a sandbox text field has focus: `SelectionController.InputBlocked`, camera input off, debug/fog/build hotkeys
+  skipped; F9/F10 effect debug keys are disabled in sandbox (`EffectsRenderer.DebugKeysEnabled`).
+  `PlacementGrid.IgnoreDeposits` mirrors the local army's build-anywhere. `InGameScreen` skips the end of game unless
+  victory is on. Entry points: main menu "Sandbox" (skirmish setup with an "Enemy AI" switch, default off), `--sandbox`,
+  `--exec "cmd; cmd"` (implies `--sandbox`; `wait <frames>` for screenshots).
+- Nuke visuals (ONE effect for every nuke: silo missiles, sandbox missiles, sandbox instant blasts): `EffectKind.Nuke`
+  → `Rendering/NukeFx.cs` (self-contained, owned by `EffectsRenderer`: `Spawn` on the event, `Update`/`Build` in the
+  particle pass, `DrawOverlay` = 2D screen flash right after `EndMode3D`, strength by on-screen/camera distance, none
+  for far off-screen blasts): flash, draped shockwave/dust rings, fireball, mushroom cloud (private sorted smoke-puff
+  pool), sparks/debris, scorch decal (90 s). Sound: ONE map-wide synthesized `SoundId.NukeExplosion`
+  (`GameAudio.Strategic.cs` `PlayNuke`, ≈1/distance with a floor).
