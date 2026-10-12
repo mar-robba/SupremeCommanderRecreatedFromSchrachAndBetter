@@ -73,6 +73,8 @@ public sealed class InGameScreen : IScreen
 
     private void CheckOutcome()
     {
+        // Sandbox: the game never ends unless victory was switched on (panel / "victory on").
+        if (_s.Snapshots.Current.Sandbox is { Victory: false }) return;
         var (over, won) = _s.Outcome();
         if (!over) return;
         bool gameOver = _s.Snapshots.Current.WinningTeam >= 0;

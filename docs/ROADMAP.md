@@ -86,6 +86,15 @@ Then:
       kills + veterancy stars in unit panel; effects follow game speed
       - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
 
+- [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
+      blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
+      instant build, build anywhere, reveal map), AI on/off + difficulty per army, victory on/off (default: never ends),
+      speed/pause, selection kill/delete/heal/damage/give/finish, clear area, nuke (`NukeFx`: flash, shockwave, fireball,
+      mushroom cloud, scorch, deep boom; wrecks vaporized); console (F10 / `) with fuzzy unit names, history, Tab
+      completion, help overlay. Sim: `SandboxSystem` + 16 tests; client parser tests (`SandboxConsoleTests`).
+      - [ ] later: select enemy units for the actions (box-select only picks own units), unify the sandbox nuke with
+            agent (b)'s real nukes, save/load sandbox setups
+
 ## Phase 3 — SupCom depth
 - [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
       radar→omni; own build power + engineer assist, factory queue pauses, mex keeps producing, cancel refunds, same

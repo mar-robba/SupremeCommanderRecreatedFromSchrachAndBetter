@@ -34,6 +34,8 @@ public enum EffectKind : byte
     BuildStarted,
     BuildComplete,
     Reclaim,
+    /// <summary>Strategic nuke detonation (Size = outer damage radius). Sandbox nuke for now (SandboxSystem.Nuke).</summary>
+    Nuke,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>
