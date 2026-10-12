@@ -21,6 +21,7 @@ public sealed class AiBrain
     public readonly AiView View = new();
     public readonly AiEconomy Economy;
     public readonly AiMilitary Military;
+    public readonly AiScouting Scouting;
     public readonly AiPlacement Placement;
     public readonly AiStats Stats = new();
     public readonly AiCommands Cmd;
@@ -50,6 +51,7 @@ public sealed class AiBrain
         Placement = new AiPlacement(this);
         Economy = new AiEconomy(this);
         Military = new AiMilitary(this);
+        Scouting = new AiScouting(this);
 
         var db = W.Blueprints;
         BpEngineer = db.IndexOf("uef_t1_engineer");
@@ -130,6 +132,7 @@ public sealed class AiBrain
         W.Paths.EnsureGrids();
         Rally = FindStandable(BasePos + EnemyDir * 24f, MotionLayer.Land);
         AirRally = W.Terrain.Clamp(BasePos + EnemyDir * 10f);
+        Scouting.Initialize();
     }
 
     /// <summary>A point near p where a unit of the layer can stand (searching outward), reachable from the base.</summary>
