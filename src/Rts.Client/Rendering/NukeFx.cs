@@ -227,7 +227,7 @@ public sealed class NukeFx
         p.Vel = Up * (s * 1.13f * rr) + dir * (s * 0.46f * rr * radial / MathF.Max(1e-3f, rad)) + roll * (r * 0.22f)
               + new Vector3(_ps.Range(-1f, 1f), _ps.Range(-0.3f, 0.6f), _ps.Range(-1f, 1f)) * (s * 0.05f * linger); // late puffs break up
         p.Drag = 1f / Tau;
-        p.Life = (1.8f + 9f * linger) * _ps.Range(0.8f, 1.2f);
+        p.Life = (1.8f + 5.5f * linger) * _ps.Range(0.8f, 1.2f);
         p.Size0 = r * _ps.Range(0.7f, 0.95f);
         p.Size1 = r * _ps.Range(1.15f, 1.45f) * (1f + linger * 0.9f);
         p.Rot = _ps.Rand() * MathF.Tau; p.RotVel = _ps.Range(-0.3f, 0.3f); p.Seed = _ps.Rand();
@@ -409,7 +409,7 @@ public sealed class NukeFx
             float size = p.Size0 + (p.Size1 - p.Size0) * (1 - (1 - u) * (1 - u));
             if (!fv.SphereVisible(p.Pos, size)) continue;
             float t = p.T0 + p.Age, s = p.S, f = FireLevel(t);
-            float a = p.Alpha * Smooth(0f, 0.12f, u) * (1f - Smooth(0.55f, 1f, u)) * (1f - 0.45f * Smooth(9f, 20f, t));
+            float a = p.Alpha * Smooth(0f, 0.12f, u) * (1f - Smooth(0.55f, 1f, u)) * (1f - 0.8f * Smooth(7f, 15f, t));
             if (a < 0.01f) continue;
             Vector3 c;
             switch (p.Kind)
