@@ -295,6 +295,9 @@ public class SandboxConsoleTests
         Assert.False(Ok<PauseAction>("pause off").On);
         Assert.Equal(new CameraAction(new Vector2(100, 200), 80), Ok<CameraAction>("camera 100,200 80"));
         Assert.Equal(new CameraAction(new Vector2(100, 200), null), Ok<CameraAction>("camera 100 200"));
+        Assert.Equal(new CameraAction(new Vector2(100, 200), 80), Ok<CameraAction>("camera 100,200,80")); // --camera format
+        Assert.True(Ok<ShowConsoleAction>("console on").On);
+        Assert.Null(Ok<ShowConsoleAction>("console").On);
         Assert.StartsWith("camera:", Err("camera 100"));
         Assert.Equal(30, Ok<WaitAction>("wait 30").Frames);
         Assert.StartsWith("wait:", Err("wait"));
