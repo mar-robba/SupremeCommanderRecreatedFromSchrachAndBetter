@@ -25,6 +25,9 @@ public enum OrderType : byte
     Reclaim,
     /// <summary>Capture Target (engineers, later).</summary>
     Capture,
+    /// <summary>Missile silo (TML / nuke): launch one missile at the ground point Pos (waits for a missile if the
+    /// stockpile is empty). Executed by Strategic/SiloSystem.</summary>
+    Launch,
 }
 
 /// <summary>
@@ -56,6 +59,7 @@ public struct Order
     public static Order BuildAt(int blueprintIndex, Vector2 pos, float heading = 0) => new() { Type = OrderType.Build, Pos = pos, Heading = heading, Target = UnitHandle.None, BlueprintIndex = blueprintIndex, Spawned = UnitHandle.None };
     public static Order RepairUnit(UnitHandle t) => new() { Type = OrderType.Repair, Target = t, BlueprintIndex = -1, Spawned = UnitHandle.None };
     public static Order ReclaimAt(UnitHandle t, Vector2 pos) => new() { Type = OrderType.Reclaim, Target = t, Pos = pos, BlueprintIndex = -1, Spawned = UnitHandle.None };
+    public static Order LaunchAt(Vector2 pos) => new() { Type = OrderType.Launch, Pos = pos, Target = UnitHandle.None, BlueprintIndex = -1, Spawned = UnitHandle.None };
 
     /// <summary>Destination including formation offset.</summary>
     public readonly Vector2 Destination => Pos + FormationOffset;
