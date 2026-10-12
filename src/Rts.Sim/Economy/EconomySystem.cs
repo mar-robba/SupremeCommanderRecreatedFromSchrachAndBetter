@@ -56,9 +56,24 @@ public static class EconomySystem
         e.Efficiency = 1;
     }
 
-    /// <summary>True if the unit currently produces / pays upkeep (complete and not paused).</summary>
-    public static bool IsActiveProducer(UnitStore u, int i) =>
-        (u.Flags[i] & (UnitFlags.UnderConstruction | UnitFlags.Paused | UnitFlags.Dead)) == 0;
+    /// <summary>True if the unit currently produces / pays upkeep (complete and not paused). A paused structure with
+    /// an in-place upgrade in progress only pauses the upgrade: it keeps producing (SupCom).</summary>
+    public static bool IsActiveProducer(UnitStore u, int i)
+    {
+        var f = u.Flags[i];
+        if ((f & (UnitFlags.UnderConstruction | UnitFlags.Dead)) != 0) return false;
+        return (f & UnitFlags.Paused) == 0 || u.Upgrade[i].Active;
+    }
+
+    /// <summary>Energy upkeep (per second) the unit pays this tick: blueprint MaintenanceEnergy, none while a shield
+    /// is collapsed/recharging (SupCom: a down shield costs nothing), reduced by adjacency (<see cref="EconState.AdjEnergyUse"/>).</summary>
+    public static float Upkeep(SimWorld w, Strategic.StrategicState strat, int i, UnitBlueprint bp)
+    {
+        float upkeep = bp.Economy.MaintenanceEnergy;
+        if (upkeep <= 0) return 0;
+        if (bp.Shield != null && !strat.Shield[i].Up) return 0;
+        return upkeep * (1f - w.Units.Econ[i].AdjEnergyUse);
+    }
 
     public static void Run(SimWorld w)
     {
@@ -74,6 +89,7 @@ public static class EconomySystem
         Array.Clear(partial, 0, need);
         var consumers = s.Consumers;
         consumers.Reset(chunks);
+        var strat = Strategic.StrategicState.Of(w);
 
         // Pass 1 (parallel, each unit writes only its own Econ): storage, production, demand.
         Par.For(n, ChunkSize, (c, start, end) =>
@@ -85,7 +101,8 @@ public static class EconomySystem
                 int i = u.AliveList[k];
                 ref var sum = ref partial[baseIdx + u.Army[i]];
                 ref var e = ref u.Econ[i];
-                var eco = w.BpOf(i).Economy;
+                var bpi = w.BpOf(i);
+                var eco = bpi.Economy;
                 float upkeep = 0;
                 float prodMass = 0, prodEnergy = 0;
                 if ((u.Flags[i] & UnitFlags.UnderConstruction) == 0)
@@ -94,10 +111,10 @@ public static class EconomySystem
                     sum.StorageEnergy += eco.StorageEnergy;
                     if (IsActiveProducer(u, i))
                     {
-                        upkeep = eco.MaintenanceEnergy;
-                        prodEnergy = eco.ProductionEnergy;
-                        if (upkeep > 0) sum.ProdMassUpkeep += eco.ProductionMass;
-                        else prodMass = eco.ProductionMass;
+                        upkeep = Upkeep(w, strat, i, bpi);
+                        prodEnergy = eco.ProductionEnergy * (1f + e.AdjEnergyProd);
+                        if (eco.MaintenanceEnergy > 0) sum.ProdMassUpkeep += eco.ProductionMass * (1f + e.AdjMassProd);
+                        else prodMass = eco.ProductionMass * (1f + e.AdjMassProd);
                     }
                 }
                 prodMass += e.ReclaimMass;
@@ -108,7 +125,7 @@ public static class EconomySystem
                 e.EnergyProduction = prodEnergy;
 
                 float reqM = e.MassRequest;
-                float reqE = e.EnergyRequest + upkeep;
+                float reqE = e.EnergyRequest * (1f - e.AdjEnergyUse) + upkeep; // adjacency: pgens cut energy use
                 sum.DemandMass += reqM;
                 sum.DemandEnergy += reqE;
                 if (reqM > 0 && reqE > 0) { sum.BothMass += reqM; sum.BothEnergy += reqE; }
@@ -159,10 +176,11 @@ public static class EconomySystem
                 float eff = 1;
                 if (e.MassRequest > 0) eff = s.EffMass[a];
                 var eco = w.BpOf(i).Economy;
-                bool upkeep = eco.MaintenanceEnergy > 0 && IsActiveProducer(u, i);
+                bool active = eco.MaintenanceEnergy > 0 && IsActiveProducer(u, i);
+                bool upkeep = active && Upkeep(w, strat, i, w.BpOf(i)) > 0;
                 if (e.EnergyRequest > 0 || upkeep) eff = MathF.Min(eff, s.EffEnergy[a]);
                 e.Efficiency = eff;
-                if (upkeep) e.MassProduction += eco.ProductionMass * s.EffEnergy[a];
+                if (active) e.MassProduction += eco.ProductionMass * (1f + e.AdjMassProd) * s.EffEnergy[a];
             }
         }
     }
