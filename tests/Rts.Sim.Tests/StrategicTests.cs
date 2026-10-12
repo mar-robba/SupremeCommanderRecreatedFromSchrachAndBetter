@@ -508,4 +508,23 @@ public class StrategicTests
         }
         Assert.True(seen, "nuclear detonations are global");
     }
+
+    [Theory]
+    [InlineData("uef_t2_engineer", "uef_t2_shield_generator", true)]
+    [InlineData("uef_t2_engineer", "uef_t2_tactical_missile_launcher", true)]
+    [InlineData("uef_t2_engineer", "uef_t2_tactical_missile_defense", true)]
+    [InlineData("uef_t2_engineer", "uef_t2_artillery_installation", true)]
+    [InlineData("uef_t2_engineer", "uef_t3_strategic_missile_launcher", false)]
+    [InlineData("uef_t3_engineer", "uef_t2_shield_generator", true)]
+    [InlineData("uef_t3_engineer", "uef_t3_heavy_shield_generator", true)]
+    [InlineData("uef_t3_engineer", "uef_t3_strategic_missile_launcher", true)]
+    [InlineData("uef_t3_engineer", "uef_t3_strategic_missile_defense", true)]
+    [InlineData("uef_t3_engineer", "uef_t3_heavy_artillery", true)]
+    [InlineData("uef_t2_land_factory", "uef_t2_mobile_shield", true)]
+    [InlineData("uef_t3_land_factory", "uef_t2_mobile_shield", true)]
+    public void StrategicStructuresAreInBuildLists(string builder, string unit, bool expected)
+    {
+        var db = TestUtil.Db;
+        Assert.Equal(expected, db[builder].BuildIndices.Contains(db.IndexOf(unit)));
+    }
 }
