@@ -60,6 +60,7 @@ public static class ContextOrders
                     return new ContextAction(ContextKind.Finish, h, pos);
                 }
                 if (own && tbp.Has(UnitCategory.Factory)) return new ContextAction(ContextKind.Assist, h, pos);
+                if (own && t.UpgradeBp >= 0) return new ContextAction(ContextKind.Assist, h, pos); // assist the upgrade
                 if (t.HealthFrac < 0.995f) return new ContextAction(ContextKind.Repair, h, pos);
                 if (own && tbp.Economy.BuildRate > 0) return new ContextAction(ContextKind.Assist, h, pos);
             }

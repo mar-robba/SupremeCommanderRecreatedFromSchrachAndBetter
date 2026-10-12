@@ -1,0 +1,35 @@
+{
+  "Id": "uef_t2_mass_fabricator",
+  "Name": "T2 Mass Fabricator",
+  "Description": "Converts 150 energy/s into 1 mass/s.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "MassFabricator",
+    "Tech2"
+  ],
+  "MaxHealth": 1000,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 200,
+    "BuildCostEnergy": 3000,
+    "BuildTime": 500,
+    "ProductionMass": 1,
+    "MaintenanceEnergy": 150
+  },
+  "Intel": {
+    "VisionRadius": 8
+  },
+  "Visual": {
+    "Shape": "massfab",
+    "Size": [
+      1.8,
+      1.6,
+      1.8
+    ],
+    "Icon": "eco_mass"
+  }
+}

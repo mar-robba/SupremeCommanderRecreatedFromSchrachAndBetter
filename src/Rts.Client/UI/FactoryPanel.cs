@@ -12,7 +12,9 @@ namespace Rts.Client.UI;
 /// <summary>
 /// Factory panel: unit build buttons (left +1, Shift +5, right-click -1 / Shift -5; hotkeys Z X C V B N),
 /// counts queued in the selected factories, the build queue of the primary factory with progress, and the
-/// Repeat toggle (R). Commands: FactoryEnqueue / FactoryDequeue / FactoryRepeat.
+/// Repeat toggle (R). T2/T3 factories build several tiers: tier tabs (T / Tab cycles) filter the buttons.
+/// The upgrade tile (U, see <see cref="UpgradeUi"/>) upgrades the factory in place; production pauses meanwhile.
+/// Commands: FactoryEnqueue / FactoryDequeue / FactoryRepeat / Upgrade / CancelUpgrade.
 /// </summary>
 public sealed class FactoryPanel
 {
@@ -20,6 +22,12 @@ public sealed class FactoryPanel
     private readonly SelectionController _sel;
     private readonly List<UnitHandle> _factories = new();
     private readonly List<int> _options = new();
+    /// <summary>Tiers present in _options (ascending), the selected tier and the options of that tier.</summary>
+    private readonly List<int> _tiers = new();
+    private readonly List<int> _shown = new();
+    private int _tier;
+    private readonly List<UnitHandle> _upReady = new();
+    private readonly List<UnitHandle> _upBusy = new();
 
     public FactoryPanel(GameContext ctx, SelectionController sel)
     {
@@ -45,10 +53,33 @@ public sealed class FactoryPanel
             foreach (int b in bp.BuildIndices)
                 if (!_options.Contains(b)) _options.Add(b);
         }
+        _tiers.Clear();
+        foreach (int b in _options)
+            if (!_tiers.Contains(_ctx.Db[b].Tech)) _tiers.Add(_ctx.Db[b].Tech);
+        _tiers.Sort();
+        if (_tiers.Count > 0 && !_tiers.Contains(_tier)) _tier = _tiers[^1]; // default: the highest tier
+        _shown.Clear();
+        foreach (int b in _options)
+            if (_tiers.Count <= 1 || _ctx.Db[b].Tech == _tier) _shown.Add(b);
+        UpgradeUi.Collect(_ctx, _factories, snap, _upReady, _upBusy, factories: true);
         return _factories.Count > 0;
     }
 
-    public float DesiredWidth() => MathF.Max(Math.Max(5, _options.Count) * (ButtonSize + Gap) - Gap + 2 * Pad, Ui.P(380));
+    private bool HasUpgrade => _upReady.Count + _upBusy.Count > 0;
+
+    public float DesiredWidth()
+    {
+        int most = Math.Max(5, _tiers.Count <= 1 ? _options.Count : _tiers.Max(t => _options.Count(b => _ctx.Db[b].Tech == t)));
+        float w = (most + (HasUpgrade ? 1 : 0)) * (ButtonSize + Gap) - Gap + (HasUpgrade ? Ui.P(10) : 0) + 2 * Pad;
+        return MathF.Max(w, Ui.P(420));
+    }
+
+    private void CycleTier(int dir)
+    {
+        if (_tiers.Count <= 1) return;
+        int i = Math.Max(0, _tiers.IndexOf(_tier));
+        _tier = _tiers[(i + dir + _tiers.Count) % _tiers.Count];
+    }
 
     private UnitHandle[] FactoriesFor(SimSnapshot snap, int bp)
     {
@@ -82,9 +113,10 @@ public sealed class FactoryPanel
     public void HandleHotkeys(SimSnapshot snap)
     {
         if (Ui.Ctrl || Ui.Alt) return;
-        for (int k = 0; k < BuildMenu.SlotKeys.Length && k < _options.Count; k++)
-            if (Raylib.IsKeyPressed(BuildMenu.SlotKeys[k])) Enqueue(snap, _options[k], Ui.Shift ? 5 : 1);
+        for (int k = 0; k < BuildMenu.SlotKeys.Length && k < _shown.Count; k++)
+            if (Raylib.IsKeyPressed(BuildMenu.SlotKeys[k])) Enqueue(snap, _shown[k], Ui.Shift ? 5 : 1);
         if (Raylib.IsKeyPressed(KeyboardKey.R)) ToggleRepeat(snap);
+        if (Raylib.IsKeyPressed(BuildMenu.TierKey) || Raylib.IsKeyPressed(KeyboardKey.Tab)) CycleTier(Ui.Shift ? -1 : 1);
     }
 
     public void Draw(Rectangle r, SimSnapshot snap)
@@ -108,6 +140,20 @@ public sealed class FactoryPanel
         Ui.Text(rl, rr.X + Ui.P(20), rr.Y + (rr.Height - fs) * 0.5f - 1, fs, repeat ? Color.White : Ui.TextDim, true);
         if (rs.Left) ToggleRepeat(snap);
         if (rs.Hover) Ui.Tooltip(rr, "Repeat build  [R]", "When on, finished units are re-added to the end of the queue (infinite production).");
+        if (_tiers.Count > 1)
+        {
+            // Tier tabs, right-aligned before the Repeat toggle.
+            float pw = Ui.P(30), px = rr.X - Ui.P(8) - _tiers.Count * (pw + Ui.P(3));
+            foreach (int t in _tiers)
+            {
+                var pr = new Rectangle(MathF.Round(px), rr.Y, pw, rr.Height);
+                var ps = Ui.Button(pr, true, t == _tier, t == _tier ? new Color(58, 84, 116, 255) : null);
+                Ui.TextCentered("T" + t, pr, Ui.F(11), t == _tier ? Color.White : Ui.TextDim, true);
+                if (ps.Left) _tier = t;
+                if (ps.Hover) Ui.Tooltip(pr, $"Tech {t} units", "T / Tab: next tier (Shift: previous)");
+                px += pw + Ui.P(3);
+            }
+        }
 
         // Unit buttons with queued counts.
         var counts = new Dictionary<int, int>();
@@ -122,10 +168,12 @@ public sealed class FactoryPanel
         }
         y += Ui.P(4);
         float bs = ButtonSize;
-        int cols = Math.Max(1, (int)((r.Width - 2 * Pad + Gap) / (bs + Gap)));
-        for (int i = 0; i < _options.Count && i < cols; i++)
+        int cols = Math.Max(1, (int)((r.Width - 2 * Pad + Gap - (HasUpgrade ? bs + Gap + Ui.P(10) : 0)) / (bs + Gap)));
+        if (HasUpgrade)
+            UpgradeUi.DrawTile(new Rectangle(MathF.Round(r.X + r.Width - Pad - bs), MathF.Round(y), bs, bs), _ctx, snap, _upReady, _upBusy);
+        for (int i = 0; i < _shown.Count && i < cols; i++)
         {
-            int bpi = _options[i];
+            int bpi = _shown[i];
             var bp = _ctx.Db[bpi];
             var br = new Rectangle(MathF.Round(r.X + Pad + i * (bs + Gap)), MathF.Round(y), bs, bs);
             var st = Ui.Button(br);
@@ -161,9 +209,20 @@ public sealed class FactoryPanel
             if (snap.TryGetUnit(h.Index, h.Generation, out var v) && v.QueueCount > 0) { primary = v; primaryH = h; break; }
 
         int lfs = Ui.F(10.5f);
-        string ql = _factories.Count > 1 ? "QUEUE (first busy factory)" : "QUEUE";
-        Ui.Text(ql, r.X + Pad, y, lfs, Ui.TextDim, true);
         float qy = y + lfs + Ui.P(4);
+        if (primary.UpgradeBp >= 0 || fv.UpgradeBp >= 0)
+        {
+            // The (primary) factory is upgrading: progress bar instead of the queue label; production is paused.
+            var uv = primary.UpgradeBp >= 0 ? primary : fv;
+            var tbp = _ctx.Db[uv.UpgradeBp];
+            Ui.Bar(new Rectangle(r.X + Pad, y - Ui.P(2), r.Width - 2 * Pad, lfs + Ui.P(4)), uv.UpgradeFrac, UpgradeUi.UpgradeGreen,
+                $"Upgrading to {tbp.Name}  {uv.UpgradeFrac * 100:0}%  ·  production paused");
+        }
+        else
+        {
+            string ql = _factories.Count > 1 ? "QUEUE (first busy factory)" : "QUEUE";
+            Ui.Text(ql, r.X + Pad, y, lfs, Ui.TextDim, true);
+        }
         float tile = MathF.Min(Ui.P(40), r.Y + r.Height - Ui.P(6) - qy);
         if (primary.QueueCount == 0)
         {
@@ -201,7 +260,7 @@ public sealed class FactoryPanel
                 string cs = "×" + g.count;
                 Ui.TextShadow(cs, tr.X + tr.Width - Ui.Measure(cs, cfs, true) - Ui.P(3), tr.Y + tr.Height - cfs - Ui.P(3), cfs, Color.White, true);
             }
-            if (g.front && primary.WorkProgress >= 0)
+            if (g.front && primary.WorkProgress >= 0 && primary.UpgradeBp < 0)
                 Ui.Bar(new Rectangle(tr.X + 2, tr.Y + tr.Height - Ui.P(7) - 2, tr.Width - 4, Ui.P(7)), primary.WorkProgress, Ui.BuildBlue);
             if (st.Right) Dequeue([primaryH], g.bp, Ui.Shift ? 5 : 1);
             if (st.Hover)

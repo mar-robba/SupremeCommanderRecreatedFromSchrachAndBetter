@@ -1,0 +1,50 @@
+{
+  "Id": "uef_t3_land_factory",
+  "Name": "T3 Land Factory",
+  "Description": "Builds T1, T2 and T3 land units. Upgrade of the T2 land factory.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Land",
+    "Factory",
+    "Tech3"
+  ],
+  "MaxHealth": 8800,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 3300,
+    "BuildCostEnergy": 22000,
+    "BuildTime": 4400,
+    "BuildRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Visual": {
+    "Shape": "factory3",
+    "Size": [
+      6,
+      3.2,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "uef_t1_engineer",
+    "uef_t1_tank",
+    "uef_t1_artillery",
+    "uef_t1_mobile_aa",
+    "uef_t1_scout",
+    "uef_t2_engineer",
+    "uef_t2_heavy_tank",
+    "uef_t2_amphibious_tank",
+    "uef_t2_mobile_missile",
+    "uef_t2_mobile_flak",
+    "uef_t3_engineer",
+    "uef_t3_assault_bot",
+    "uef_t3_heavy_bot",
+    "uef_t3_mobile_artillery"
+  ]
+}

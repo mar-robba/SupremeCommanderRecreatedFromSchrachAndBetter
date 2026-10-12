@@ -1,0 +1,54 @@
+{
+  "Id": "uef_t2_gunship",
+  "Name": "Stinger",
+  "Description": "T2 gunship: hovers over ground targets with a riot gun.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Gunship",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 1100,
+  "Radius": 0.9,
+  "Economy": {
+    "BuildCostMass": 240,
+    "BuildCostEnergy": 4800,
+    "BuildTime": 1800
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 9,
+    "Acceleration": 5,
+    "TurnRate": 90,
+    "Altitude": 12
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Riot Gun",
+      "Range": 14,
+      "Damage": 12,
+      "RateOfFire": 4,
+      "MuzzleVelocity": 45,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 360,
+      "FiringTolerance": 40
+    }
+  ],
+  "Visual": {
+    "Shape": "gunship",
+    "Size": [
+      1.9,
+      0.8,
+      2.2
+    ],
+    "Icon": "air_gunship"
+  }
+}

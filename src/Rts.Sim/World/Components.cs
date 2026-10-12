@@ -82,7 +82,8 @@ public struct WeaponState
     public int RetargetTimer;
 }
 
-public enum BuilderMode : byte { None, Build, Repair, Reclaim, Assist, Capture }
+/// <summary>Upgrade: in-place structure upgrade, the target is the upgrading structure (see UpgradeSystem).</summary>
+public enum BuilderMode : byte { None, Build, Repair, Reclaim, Assist, Capture, Upgrade }
 
 /// <summary>Engineer/commander/factory build-power state (owned by ConstructionSystem).</summary>
 public struct BuilderState

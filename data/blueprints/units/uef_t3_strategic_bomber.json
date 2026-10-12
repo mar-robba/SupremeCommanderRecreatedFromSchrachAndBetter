@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t3_strategic_bomber",
+  "Name": "Ambassador",
+  "Description": "T3 strategic bomber: devastating bombs, heavily armored.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Bomber",
+    "Tech3"
+  ],
+  "MaxHealth": 4000,
+  "Radius": 1.4,
+  "Economy": {
+    "BuildCostMass": 1050,
+    "BuildCostEnergy": 42000,
+    "BuildTime": 6000
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 12,
+    "Acceleration": 4,
+    "TurnRate": 60,
+    "Altitude": 22
+  },
+  "Intel": {
+    "VisionRadius": 36
+  },
+  "Weapons": [
+    {
+      "Name": "Strategic Bomb",
+      "Range": 5,
+      "Damage": 2500,
+      "RateOfFire": 0.16,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 5,
+      "ProjectileVisual": "bomb",
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "strat_bomber",
+    "Size": [
+      3.6,
+      0.9,
+      3.0
+    ],
+    "Icon": "air_bomber"
+  }
+}

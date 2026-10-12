@@ -76,6 +76,7 @@ public sealed class Simulation
             if (!u.Alive[i]) continue;
             Mix((ulong)i); Mix((ulong)u.Gen[i]); Mix((ulong)u.Bp[i]); Mix((ulong)u.Army[i]);
             MixF(u.Pos[i].X); MixF(u.Pos[i].Y); MixF(u.Heading[i]); MixF(u.Health[i]); MixF(u.BuildFraction[i]);
+            if (u.Upgrade[i].Active) { Mix((ulong)u.Upgrade[i].TargetBp); MixF(u.Upgrade[i].Fraction); }
         }
         var p = w.Projectiles;
         for (int i = 0; i < p.Capacity; i++)

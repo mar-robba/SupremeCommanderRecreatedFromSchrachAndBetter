@@ -1,0 +1,49 @@
+{
+  "Id": "uef_t2_point_defense",
+  "Name": "Triad",
+  "Description": "T2 point defense: triple gauss cannon, outranges T1 units.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 3600,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 520,
+    "BuildCostEnergy": 4200,
+    "BuildTime": 600
+  },
+  "Intel": {
+    "VisionRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Triad Gauss Cannon",
+      "Range": 44,
+      "Damage": 45,
+      "RateOfFire": 0.75,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectilesPerShot": 3,
+      "Spread": 0.5,
+      "TurretTurnRate": 120
+    }
+  ],
+  "Visual": {
+    "Shape": "defense2",
+    "Size": [
+      1.9,
+      2.0,
+      1.9
+    ],
+    "Icon": "defense"
+  }
+}

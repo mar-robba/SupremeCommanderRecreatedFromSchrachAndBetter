@@ -25,7 +25,7 @@ public sealed class UnitModel
 /// (so round parts stay round). UEF-like palette: grey-blue metal, dark trim, team-color panels, glowing lights.
 /// Model space: forward +Z, up +Y, origin at ground level (y = 0) in the footprint center.
 /// </summary>
-public static class UnitModels
+public static partial class UnitModels
 {
     private static readonly Color Hull = Mat.M(116, 122, 131);
     private static readonly Color HullLight = Mat.M(146, 152, 160);
@@ -135,6 +135,9 @@ public static class UnitModels
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));
+                break;
+            case "factory2": case "factory3": case "mex2": case "mex3": case "pgen2": case "pgen3": case "massfab": case "defense2": case "defense3": case "omni": case "engineer2": case "heavy_tank": case "hover_tank": case "missile_launcher": case "flak": case "heavy_bot": case "heavy_artillery": case "asf": case "strat_bomber": case "spy_plane":
+                t = TechShape(bp, b, w, h, l, hasWeapon, pivots, ref mode, ref spin); // T2/T3 shapes: UnitModels.Tech.cs
                 break;
             default:
                 b.BevelBox(V(0, h * 0.5f, 0), V(w, h, l), MathF.Min(w, h) * 0.15f, Hull, HullLight);

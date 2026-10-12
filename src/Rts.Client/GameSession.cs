@@ -168,6 +168,7 @@ public sealed class GameSession : IDisposable
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
         _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
+        UpgradeOverlay.Draw(ctx, cur, prev, alpha);
         if (interactive)
         {
             if (_selection.IsDragging)

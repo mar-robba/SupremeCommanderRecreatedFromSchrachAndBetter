@@ -74,6 +74,27 @@ interpolates prev/cur by time
   props under their footprint. The client sees them as `SimSnapshot.Props` (`PropView`); to reclaim one, send
   `Order.ReclaimAt(UnitHandle.None, pos)`.
 
+## Tech tiers & upgrades — `Rts.Sim/Economy/UpgradeSystem.cs`
+- **Tiers** are just blueprint data: `Tech` 1–3, the `TECH1..3` categories, and build lists. T2/T3 engineers and
+  factories list every lower-tier option plus their own (`Builds`, or `BuiltBy` in the built blueprint); higher tiers come from new builders
+  or from in-place upgrades. Blueprint files load in filename order, so `uef_t2_*`/`uef_t3_*` sort after T1 and
+  T1 indices stay stable.
+- **In-place upgrade** (`UpgradesTo: "<id>"`, chains: land/air factory T1→T2→T3, mex T1→T2→T3, radar T1→T2→omni):
+  `UpgradeCommand` sets `UnitStore.Upgrade[i]` (`UpgradeState`: target bp, fraction, per-tick reservation). The
+  structure builds the TARGET blueprint's BuildTime/cost with its own BuildRate (mex/radar: `SelfRate` = 10 × tech)
+  through the flow economy (`ConstructionSystem.Work` with `BuilderMode.Upgrade`: pay first, then progress).
+  Engineers assist with Guard (or Repair at full HP). Factories pause their queue meanwhile (FactorySystem spends the
+  build power on the upgrade instead); everything else keeps working as the old blueprint (a mex keeps producing).
+  `CancelUpgradeCommand` refunds cost × fraction.
+- **Completion** (sequential): same slot and `UnitHandle` (selection, AI references, queue, rally survive), `Bp`
+  swapped, health keeps its fraction, footprint re-stamped if it changed, weapon states cleared and modules
+  re-initialized via `UnitLifecycle.OnSpawn`. `StateHash` mixes upgrade state only while one is active.
+- **Snapshot/UI**: `UnitView.UpgradeBp` (-1 = none) / `UpgradeFrac`; assisting units report it as `WorkProgress`.
+  Client: upgrade tile + U hotkey (`UI/UpgradeUi.cs`, `UpgradePanel.cs`, factory panel), tier pills (T) in the build
+  menu and factory panel, the target model as a growing hologram + `Rendering/UpgradeOverlay.cs` bar.
+  `--tech-demo` spawns a showcase scene (`UI/TechDemo.cs`). Sandbox/debug: `DebugSpawnCommand` spawns any blueprint
+  complete (covered for every T2/T3 blueprint by `UpgradeTests`).
+
 ## Intel model (fog of war, `Rts.Sim/Intel`)
 - Intel is per TEAM (allies share everything). `IntelService` (`world.Intel`) keeps per team bitsets over a grid of
   2×2-unit cells: vision, radar, sonar, omni, plus an explored byte grid (0 unexplored / 128 explored / 255 visible).

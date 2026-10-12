@@ -1,0 +1,66 @@
+{
+  "Id": "uef_t3_engineer",
+  "Name": "T3 Engineer",
+  "Description": "Builds T1, T2 and T3 structures. Heavy build power.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "Tech3"
+  ],
+  "MaxHealth": 900,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 360,
+    "BuildCostEnergy": 1800,
+    "BuildTime": 1300,
+    "BuildRate": 30
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 2.1,
+    "Acceleration": 2,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Visual": {
+    "Shape": "engineer2",
+    "Size": [
+      1.2,
+      0.95,
+      1.5
+    ],
+    "Icon": "land_engineer"
+  },
+  "Builds": [
+    "uef_t1_land_factory",
+    "uef_t1_air_factory",
+    "uef_t1_mass_extractor",
+    "uef_t1_power_generator",
+    "uef_t1_hydrocarbon",
+    "uef_t1_mass_storage",
+    "uef_t1_energy_storage",
+    "uef_t1_point_defense",
+    "uef_t1_aa_turret",
+    "uef_t1_radar",
+    "uef_t2_land_factory",
+    "uef_t2_air_factory",
+    "uef_t2_mass_extractor",
+    "uef_t2_power_generator",
+    "uef_t2_mass_fabricator",
+    "uef_t2_point_defense",
+    "uef_t2_aa_flak",
+    "uef_t2_radar",
+    "uef_t3_land_factory",
+    "uef_t3_air_factory",
+    "uef_t3_mass_extractor",
+    "uef_t3_power_generator",
+    "uef_t3_mass_fabricator",
+    "uef_t3_point_defense",
+    "uef_t3_sam",
+    "uef_t3_omni_sensor"
+  ]
+}
