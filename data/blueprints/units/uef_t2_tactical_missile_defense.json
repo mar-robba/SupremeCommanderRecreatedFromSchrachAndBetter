@@ -27,7 +27,7 @@
       "Damage": 0,
       "RateOfFire": 0.5,
       "MuzzleVelocity": 55,
-      "TargetLayers": [],
+      "TargetLayers": ["Air"],
       "ProjectileVisual": "interceptor",
       "TurretTurnRate": 0,
       "FiringTolerance": 180

@@ -157,6 +157,7 @@ public sealed class GameSession : IDisposable
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
+        _fx.DrawOverlay2D();
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);

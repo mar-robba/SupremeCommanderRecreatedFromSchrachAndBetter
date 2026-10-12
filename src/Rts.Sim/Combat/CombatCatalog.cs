@@ -108,7 +108,7 @@ public sealed class CombatCatalog
                     float alt = MathF.Max(1f, bp.Movement.Altitude);
                     acquire += bp.Movement.MaxSpeed * MathF.Sqrt(2f * alt / Ballistics.Gravity);
                 }
-                info.ThreatMask |= wb.TargetMask;
+                if (kind != WeaponKind.Manual || wb.Damage > 0) info.ThreatMask |= wb.TargetMask; // interceptors threaten no unit
                 info.Weapons[k] = new WeaponInfo(
                     kind,
                     highArc: info.PrefersStructures,
