@@ -237,7 +237,7 @@ public sealed class AiEconomy
         float airMem = _b.Perception.EnemyAirStrengthMem;
         bool enemyAir = _b.Perception.EnemyAirCountMem > 0.5f || V.EnemyHasAirFactory;
         float aa = enemyAir ? Math.Clamp(0.1f + airMem / (airMem + MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate) + 200f), 0.12f, 0.4f) : 0f;
-        float arty = _b.GameTime > 150 ? 0.25f : 0.1f;
+        float arty = _b.GameTime > 150 ? Cfg.ArtilleryShare : 0.1f;
         float tank = 1f - aa - arty;
         int nT = V.Total(_b.BpTank), nA = V.Total(_b.BpArtillery), nAA = V.Total(_b.BpMobileAA);
         float n = nT + nA + nAA + 1;

@@ -71,7 +71,7 @@ public sealed class AiConfig
     /// <summary>Seconds the army may wait at the staging point for stragglers/strength before attacking anyway.</summary>
     public float AssembleTimeout = 150f;
     /// <summary>The attacking army retreats when its strength drops below this fraction of the initial one (0 = never).</summary>
-    public float RetreatFraction = 0.3f;
+    public float RetreatFraction = 0f;
     /// <summary>Units under this health fraction leave their group and go home (0 = off).</summary>
     public float PullBackHealth;
     /// <summary>Enemies closer than this to the base center are a base threat.</summary>
@@ -85,6 +85,16 @@ public sealed class AiConfig
     public int BomberGroup = 4;
     /// <summary>Send fresh pool units to the army while it attacks (otherwise they wait for it to assemble again).</summary>
     public bool Reinforce = true;
+    /// <summary>Reinforcements for an attacking army leave home in batches of at least this many units, or this
+    /// fraction of the army, or after ReinforceWait seconds.</summary>
+    public int ReinforceBatch = 6;
+    public float ReinforceBatchFraction;
+    public float ReinforceWait = 35f;
+    /// <summary>An attack on a position (not a unit) moves on after this many seconds when the group dominates
+    /// there (0 = only when it idles there).</summary>
+    public float PositionTargetTime = 60f;
+    /// <summary>Share of artillery in the land mix (after the opening).</summary>
+    public float ArtilleryShare = 0.25f;
     /// <summary>Raiding parties against weakly defended enemy extractors (size, max simultaneous; 0 = none).</summary>
     public int RaidSize = 0;
     public int MaxRaids = 0;

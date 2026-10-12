@@ -51,6 +51,7 @@ public static class AiMatch
         for (int t = 0; t < maxTicks && w.WinningTeam < 0; t++)
         {
             sim.Step();
+            if (t == 0) ApplyCfgOverrides(w, players);
             if (t == 0 && Environment.GetEnvironmentVariable("AI_OMNI") == "1")
                 for (int a = 0; a < players; a++)
                     if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) br.Perception.RespectIntel = false; // omniscient AIs (comparison)
@@ -68,6 +69,8 @@ public static class AiMatch
                         for (int a = 0; a < players; a++)
                             if (a != fx.Army && System.Numerics.Vector2.Distance(p, starts[a % starts.Length]) < 45f) { zone = 1; break; }
                     var dbp = (uint)fx.BlueprintIndex < (uint)db.Count ? db[fx.BlueprintIndex] : null;
+                    if (dbp != null && dbp.Has(UnitCategory.Commander))
+                        Console.WriteLine($"COMMANDER DEATH {w.Armies[fx.Army].Name} at {Fmt(w.GameTime)} pos=({p.X:F0},{p.Y:F0}) {System.Numerics.Vector2.Distance(p, starts[fx.Army % starts.Length]):F0} from its start");
                     if (dbp != null && dbp.IsStructure) { deathZoneStruct[fx.Army, zone]++; if (dbp.Has(UnitCategory.MassExtractor)) mexLost[fx.Army]++; }
                     else deathZoneMobile[fx.Army, zone]++;
                 }
@@ -107,6 +110,27 @@ public static class AiMatch
         tickMs.Sort();
         Console.WriteLine($"sim tick ms: avg {tickMs.Average():F2} p50 {tickMs[tickMs.Count / 2]:F2} p95 {tickMs[(int)(tickMs.Count * 0.95)]:F2} max {tickMs[^1]:F2}; " +
                           $"wall {total.Elapsed.TotalSeconds:F1}s ({w.Tick / total.Elapsed.TotalSeconds:F0} ticks/s), hash {sim.StateHash():X16}");
+    }
+
+    /// <summary>AI_CFG="Field=value,..." (all AIs), AI_CFG0/AI_CFG1/... (one army): override AiConfig fields for
+    /// parameter sweeps and head-to-head A/B games (bench only; the sim never reads the environment).</summary>
+    private static void ApplyCfgOverrides(SimWorld w, int players)
+    {
+        for (int a = 0; a < players; a++)
+        {
+            if (AiSystem.StateOf(w)?.BrainOrNull(a) is not { } br) continue;
+            foreach (var spec in new[] { Environment.GetEnvironmentVariable("AI_CFG"), Environment.GetEnvironmentVariable("AI_CFG" + a) })
+            {
+                if (string.IsNullOrEmpty(spec)) continue;
+                foreach (var kv in spec.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var parts = kv.Split('=');
+                    var f = typeof(Rts.Sim.AI.AiConfig).GetField(parts[0].Trim()) ?? throw new ArgumentException("AI_CFG: no field " + parts[0]);
+                    f.SetValue(br.Cfg, Convert.ChangeType(parts[1].Trim(), f.FieldType, System.Globalization.CultureInfo.InvariantCulture));
+                    Console.WriteLine($"  cfg a{a}: {f.Name}={f.GetValue(br.Cfg)}");
+                }
+            }
+        }
     }
 
     /// <summary>AI_DUMP="seconds:army:group[,seconds...]": prints the members of an AI group (orders, movement, path).</summary>

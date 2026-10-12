@@ -620,8 +620,12 @@ public sealed class AiMilitary
 
         Engage(g, 45f, g.Target);
 
+        // Position targets (sorties, last known positions) are done when the group idles there, or after a while
+        // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.
         bool targetGone = !g.TargetUnit.IsNone ? !TargetStillKnown(g.TargetUnit)
-            : g.Idle >= Math.Max(1, n / 2) && W.Tick - g.OrderTick > 50;
+            : (g.Idle >= Math.Max(1, n / 2) && W.Tick - g.OrderTick > 50)
+              || (Cfg.PositionTargetTime > 0 && W.Tick - g.OrderTick > Cfg.PositionTargetTime * SimWorld.TicksPerSecond
+                  && local < g.Strength * 0.5f);
         // Stuck: no progress over 10 s windows while nothing is shooting at us.
         bool stuck = false;
         if (W.Tick - g.OrderTick > 300 && W.Tick - g.CheckTick >= 100)
@@ -1048,8 +1052,9 @@ public sealed class AiMilitary
             _poolSinceTick = -1;
             return;
         }
-        int batch = army.State == AiGroupState.Attack ? 6 : 4;
-        bool waitedEnough = W.Tick - _poolSinceTick > (army.State == AiGroupState.Attack ? 350 : 250);
+        int batch = army.State == AiGroupState.Attack
+            ? Math.Max(Cfg.ReinforceBatch, (int)(army.Members.Count * Cfg.ReinforceBatchFraction)) : 4;
+        bool waitedEnough = W.Tick - _poolSinceTick > (army.State == AiGroupState.Attack ? Cfg.ReinforceWait * 10 : 250);
         if (_tmp.Count < batch && !waitedEnough) return;
         // A batch that has only just left takes the newcomers along; otherwise a new batch leaves.
         AiGroup? rgrp = null;
