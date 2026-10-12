@@ -68,8 +68,12 @@ internal sealed partial class MapBuilder
                 CarveChannelSymmetric([near[0], _center]);
                 continue;
             }
+            // Only the cheapest channel per round: its rotated copies usually join the other seas too, and every
+            // extra channel eats island land (and the expansion deposits on it).
+            int pick = -1;
             foreach (var t in targets)
-                if (paths.TryGetValue(t, out var pts)) CarveChannelSymmetric(pts);
+                if (paths.TryGetValue(t, out var cand) && (pick < 0 || cand.Cost < paths[pick].Cost)) pick = t;
+            CarveChannelSymmetric(paths[pick].Points);
         }
     }
 
@@ -142,7 +146,12 @@ internal sealed partial class MapBuilder
         var segA = new Vector2[_sym.N];
         var segB = new Vector2[_sym.N];
         for (int r = 0; r < _sym.N; r++) { segA[r] = _sym.Rotate(a0, r); segB[r] = _sym.Rotate(b0, r); }
-        float inner = 20f * k, outer = inner + 14f * k;
+        float inner = 14f * k, outer = inner + 10f * k;
+        // The start plateau core stays intact: a cone falling at the beach slope from its edge bounds the cut.
+        float keepR = _flatR * 0.75f;
+        var plateau = new float[_starts.Length];
+        for (int i = 0; i < _starts.Length; i++)
+            plateau[i] = _h[Math.Clamp((int)MathF.Round(_starts[i].Y), 0, n) * s + Math.Clamp((int)MathF.Round(_starts[i].X), 0, n)];
         Parallel.For(0, n + 1, z =>
         {
             for (int x = 0; x <= n; x++)
@@ -153,7 +162,11 @@ internal sealed partial class MapBuilder
                 float dmin = float.MaxValue;
                 for (int r = 0; r < segA.Length; r++) dmin = MathF.Min(dmin, DistToSegment(p, segA[r], segB[r]));
                 float wgt = 1f - MapMath.SmoothStep(inner, outer, dmin);
-                if (wgt > 0) _h[v] -= (_h[v] - e[v]) * wgt;
+                if (wgt <= 0) continue;
+                float cone = float.MinValue;
+                for (int i = 0; i < _starts.Length; i++)
+                    cone = MathF.Max(cone, plateau[i] - a * MathF.Max(0f, Vector2.Distance(p, _starts[i]) - keepR));
+                _h[v] = MathF.Max(_h[v] - (_h[v] - e[v]) * wgt, MathF.Min(_h[v], cone));
             }
         });
     }
@@ -202,7 +215,7 @@ internal sealed partial class MapBuilder
     /// Coarse multi-source Dijkstra from the main sea component to each target component: deep water is cheap,
     /// shallows cost more, land a lot (digging), start islands are avoided. Returns world-space polylines.
     /// </summary>
-    private Dictionary<int, List<Vector2>> FindSeaPaths(int[] labels, int main, List<int> targets)
+    private Dictionary<int, (List<Vector2> Points, float Cost)> FindSeaPaths(int[] labels, int main, List<int> targets)
     {
         int f = Math.Max(2, _n / 128);
         int cw = (_n + f - 1) / f;
@@ -254,7 +267,7 @@ internal sealed partial class MapBuilder
             }
         }
 
-        var result = new Dictionary<int, List<Vector2>>();
+        var result = new Dictionary<int, (List<Vector2> Points, float Cost)>();
         foreach (int t in targets)
         {
             int bestCell = -1;
@@ -276,7 +289,7 @@ internal sealed partial class MapBuilder
             for (int c = bestCell; c >= 0; c = parent[c]) pts.Add(new Vector2((c % cw) * f + f * 0.5f, (c / cw) * f + f * 0.5f));
             pts.Reverse(); // main -> target
             pts.Add(bestPt);
-            result[t] = pts;
+            result[t] = (pts, dist[bestCell]);
         }
         return result;
     }
@@ -288,7 +301,7 @@ internal sealed partial class MapBuilder
         {
             var rp = new List<Vector2>(poly.Count);
             foreach (var p in poly) rp.Add(Vector2.Clamp(_sym.Rotate(p, r), new Vector2(1.5f), new Vector2(_n - 1.5f)));
-            CarveChannel(rp, 6f, 6f + 9f * k, _w - ChannelDepth);
+            CarveChannel(rp, 4.5f, 4.5f + 6f * k, _w - ChannelDepth);
         }
     }
 
