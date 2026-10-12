@@ -163,7 +163,11 @@ public static class MovementSystem
         {
             var end = paths.PathEnd(i, mv, pos);
             remaining = paths.RemainingDistance(i, mv, pos);
-            if (!mv.PathPartial && Vector2.DistanceSquared(pos, end) <= mv.ArriveRadius * mv.ArriveRadius)
+            // Unreachable goal (e.g. a builder walking to a water site): the arrive radius is meant around the goal,
+            // so get as close as it allows instead of stopping a full radius short of the nearest reachable point.
+            float arrive = mv.ArriveRadius;
+            if (mv.PathToNearest && end != mv.Goal) arrive = MathF.Max(MathF.Min(arrive, 1f), arrive - Vector2.Distance(end, mv.Goal));
+            if (!mv.PathPartial && Vector2.DistanceSquared(pos, end) <= arrive * arrive)
             {
                 Arrive(ref mv);
             }

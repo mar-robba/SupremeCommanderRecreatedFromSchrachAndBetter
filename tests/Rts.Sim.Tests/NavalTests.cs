@@ -15,10 +15,10 @@ public static class NavalWorld
     public const float Water = 6f;
 
     /// <summary>
-    /// 128x128 sea (floor at 2 = 4 deep) with a dry land strip x in [60, 68] (height 10) and a shallow shelf
-    /// x in [40, 44] (floor 5.6 = 0.4 deep).
+    /// 128x128 sea (floor at 2 = 4 deep) with a dry land strip x in [60, 68] (height <paramref name="stripHeight"/>)
+    /// and a shallow shelf x in [40, 44] (floor 5.6 = 0.4 deep).
     /// </summary>
-    public static Simulation Basin(int armies = 2, bool strip = true, ulong seed = 1)
+    public static Simulation Basin(int armies = 2, bool strip = true, ulong seed = 1, float stripHeight = 10f)
     {
         const int size = 128;
         var heights = new float[(size + 1) * (size + 1)];
@@ -27,20 +27,17 @@ public static class NavalWorld
         {
             float h = 2f;
             if (x >= 40 && x <= 44) h = 5.6f;
-            if (strip && x >= 60 && x <= 68) h = 10f;
+            if (strip && x >= 60 && x <= 68) h = stripHeight;
             heights[z * (size + 1) + x] = h;
         }
         var terrain = new Terrain(size, size, heights, Water, [], [new Vector2(20, 20), new Vector2(108, 108)], 1);
         var arr = new Army[armies];
-        for (int a = 0; a < armies; a++)
-        {
-            arr[a] = new Army { Index = a, Team = a, Name = $"A{a}" };
-            // Storage so sonar upkeep and construction work.
-            arr[a].Eco.Mass = arr[a].Eco.MassMax = 2000;
-            arr[a].Eco.Energy = arr[a].Eco.EnergyMax = 20000;
-        }
+        for (int a = 0; a < armies; a++) arr[a] = new Army { Index = a, Team = a, Name = $"A{a}" };
         return new Simulation(new SimWorld(TestUtil.Db, terrain, arr, seed, unitCapacity: 2048, projectileCapacity: 8192));
     }
+
+    /// <summary>A power generator on the land strip so the army can pay sensor upkeep (storage comes from units).</summary>
+    public static void Power(Simulation sim, int army) => Spawn(sim, "uef_t1_power_generator", army, 64, 100 + 4 * army);
 
     public static UnitHandle Spawn(Simulation sim, string bp, int army, float x, float z, float heading = 0) =>
         sim.World.SpawnUnit(TestUtil.Db.IndexOf(bp), army, new Vector2(x, z), heading, complete: true);
@@ -199,6 +196,7 @@ public class NavalTests
         var w = sim.World;
         var sub = NavalWorld.Spawn(sim, "uef_t1_sub", 0, 56, 64);
         var tank = NavalWorld.Spawn(sim, "uef_t1_tank", 1, 63, 64); // on the land strip, 7 away
+        NavalWorld.Power(sim, 1);
         TestUtil.Run(sim, 5);
         Assert.False(w.Intel.IsVisible(1, sub.Index), "submerged sub visible without sonar");
         Assert.False(w.Intel.IsDetected(1, sub.Index), "submerged sub detected without sonar");
@@ -221,21 +219,23 @@ public class NavalTests
         var w = sim.World;
         var sub = NavalWorld.Spawn(sim, "uef_t1_sub", 0, 56, 64);
         var tank = NavalWorld.Spawn(sim, "uef_t1_tank", 1, 63, 64);
-        NavalWorld.Spawn(sim, "uef_t1_sonar", 1, 50, 70);
+        NavalWorld.Power(sim, 1);
+        NavalWorld.Spawn(sim, "uef_t1_sonar", 1, 12, 118); // out of the sub's torpedo range
         sim.Step([new IssueOrderCommand(1, [tank], Order.AttackUnit(sub), false)]);
         for (int k = 0; k < 200; k++)
         {
             sim.Step();
             Assert.True(CombatWorld.Weapon(sim, tank).Target.IsNone, "tank acquired a submerged sub");
         }
-        Assert.True(w.Intel.IsDetected(1, sub.Index));
+        Assert.True(w.Intel.IsDetected(1, sub.Index), "sonar should detect the sub");
         Assert.Equal(TestUtil.Db["uef_t1_sub"].MaxHealth, CombatWorld.Health(sim, sub));
     }
 
     [Fact]
     public void ShipsCanBeHitByNormalWeapons()
     {
-        var sim = NavalWorld.Basin(strip: true);
+        // Low strip (1 m above the water) so straight shots aren't stopped by the cliff edge.
+        var sim = NavalWorld.Basin(strip: true, stripHeight: 7f);
         var frigate = NavalWorld.Spawn(sim, "uef_t1_frigate", 0, 54, 64);
         var tank = NavalWorld.Spawn(sim, "uef_t1_tank", 1, 64, 64);
         TestUtil.Run(sim, 200);
@@ -320,6 +320,7 @@ public class NavalTests
             var list = EconomyTestUtil.UnitsOf(w, 0, "uef_t1_naval_factory");
             done = list.Count == 1 && w.Units.IsComplete(list[0]);
         }
+
         Assert.True(done, $"commander at {w.Units.Pos[cmd.Index]} never finished the naval factory at {site}");
     }
 
