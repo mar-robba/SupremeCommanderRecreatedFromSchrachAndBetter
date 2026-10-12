@@ -123,6 +123,9 @@ public static class FactorySystem
                 }
             }
 
+            // In-place upgrade: production pauses (queue and the unit inside are kept) while the factory upgrades.
+            if (u.Upgrade[i].Active) { UpgradeSystem.WorkOnSelf(w, i); continue; }
+
             if (f.Current.IsNone && f.Queue is { Count: > 0 }) StartNext(w, i, bp, ref f);
 
             if (!f.Current.IsNone) ConstructionSystem.Work(w, i, f.Current, BuilderMode.Build);

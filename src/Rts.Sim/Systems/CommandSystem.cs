@@ -27,6 +27,8 @@ public static class CommandSystem
                     foreach (var h in fr.Factories)
                         if (Owns(w, c.Army, h)) w.Units.Factory[h.Index].Repeat = fr.Repeat;
                     break;
+                case UpgradeCommand uc: UpgradeSystem.Apply(w, uc); break;
+                case CancelUpgradeCommand cu: UpgradeSystem.Apply(w, cu); break;
                 case SelfDestructCommand sd:
                     foreach (var h in sd.Units)
                         if (Owns(w, c.Army, h)) w.KillUnit(h.Index, UnitHandle.None);

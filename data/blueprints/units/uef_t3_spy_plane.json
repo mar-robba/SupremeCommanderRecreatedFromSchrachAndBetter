@@ -1,0 +1,41 @@
+{
+  "Id": "uef_t3_spy_plane",
+  "Name": "SR90 Blackbird",
+  "Description": "T3 spy plane: very fast, long vision, radar and omni.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Scout",
+    "Intel",
+    "Tech3"
+  ],
+  "MaxHealth": 400,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 130,
+    "BuildCostEnergy": 2600,
+    "BuildTime": 600
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 24,
+    "Acceleration": 12,
+    "TurnRate": 120,
+    "Altitude": 24
+  },
+  "Intel": {
+    "VisionRadius": 60,
+    "RadarRadius": 100,
+    "OmniRadius": 40
+  },
+  "Visual": {
+    "Shape": "spy_plane",
+    "Size": [
+      1.5,
+      0.4,
+      2.4
+    ],
+    "Icon": "air_fighter"
+  }
+}

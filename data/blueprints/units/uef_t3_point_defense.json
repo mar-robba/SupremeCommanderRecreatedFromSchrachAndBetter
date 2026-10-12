@@ -1,0 +1,48 @@
+{
+  "Id": "uef_t3_point_defense",
+  "Name": "Ravager",
+  "Description": "T3 point defense: rapid-fire heavy gatling cannon.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "DirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 7500,
+  "Radius": 1.3,
+  "FootprintX": 3,
+  "FootprintZ": 3,
+  "Economy": {
+    "BuildCostMass": 2200,
+    "BuildCostEnergy": 18000,
+    "BuildTime": 2200
+  },
+  "Intel": {
+    "VisionRadius": 50
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Gatling Cannon",
+      "Range": 52,
+      "Damage": 60,
+      "RateOfFire": 4,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 100,
+      "FiringTolerance": 8
+    }
+  ],
+  "Visual": {
+    "Shape": "defense3",
+    "Size": [
+      2.7,
+      2.6,
+      2.7
+    ],
+    "Icon": "defense"
+  }
+}

@@ -81,6 +81,11 @@ public sealed class UnitPanel
             Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.BuildFrac, Ui.BuildBlue, $"Under construction  {v.BuildFrac * 100:0}%");
             y += barH + Ui.P(5);
         }
+        else if (v.UpgradeBp >= 0 && (uint)v.UpgradeBp < (uint)_ctx.Db.Count)
+        {
+            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.UpgradeFrac, UpgradeUi.UpgradeGreen, $"Upgrading to {_ctx.Db[v.UpgradeBp].Name}  {v.UpgradeFrac * 100:0}%");
+            y += barH + Ui.P(5);
+        }
         else if (v.WorkProgress >= 0)
         {
             string what = WorkTargetName(snap, v);
@@ -126,6 +131,8 @@ public sealed class UnitPanel
 
     private string CurrentOrderText(SimSnapshot snap, in UnitView v, UnitBlueprint bp)
     {
+        if (v.UpgradeBp >= 0)
+            return bp.Has(UnitCategory.Factory) ? "Upgrading (production paused" + (v.QueueCount > 0 ? $", {v.QueueCount} queued)" : ")") : "Upgrading";
         if (bp.Has(UnitCategory.Factory))
         {
             string s = v.QueueCount > 0 ? $"Producing {_ctx.Db[snap.FactoryQueue[v.QueueStart]].Name}" + (v.QueueCount > 1 ? $" (+{v.QueueCount - 1} queued)" : "") : "Idle";

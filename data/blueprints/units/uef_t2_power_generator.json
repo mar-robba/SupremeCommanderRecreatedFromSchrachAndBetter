@@ -1,0 +1,34 @@
+{
+  "Id": "uef_t2_power_generator",
+  "Name": "T2 Power Generator",
+  "Description": "Produces 500 energy/s.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "PowerGenerator",
+    "Tech2"
+  ],
+  "MaxHealth": 2000,
+  "Radius": 2.0,
+  "FootprintX": 4,
+  "FootprintZ": 4,
+  "Economy": {
+    "BuildCostMass": 1200,
+    "BuildCostEnergy": 12000,
+    "BuildTime": 2200,
+    "ProductionEnergy": 500
+  },
+  "Intel": {
+    "VisionRadius": 10
+  },
+  "Visual": {
+    "Shape": "pgen2",
+    "Size": [
+      3.6,
+      2.8,
+      3.6
+    ],
+    "Icon": "eco_energy"
+  }
+}
