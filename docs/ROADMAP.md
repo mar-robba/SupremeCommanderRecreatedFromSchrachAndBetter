@@ -11,21 +11,50 @@ main has all of wave 3 except the AI. That covers:
 - sandbox.
 Tests: 229 sim + 158 client.
 
-**Wave 4 status (2026-10-14):**
+**Wave 4 status (2026-10-14 ~01:00) — the orchestrator was restarted here. ON RESUME, do this:**
 - ✅ (g) experimentals, (i) save/replays, (h) transports and (d) AI are MERGED (main: 282 sim + 177 client tests).
-  The reports are in `orchestrator/report-<x>.md`. Follow-ups:
+  The reports are in `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/report-<x>.md`. Follow-ups:
   - AI: Highlands/Canyon NvN games sometimes stalemate; T1 mobile artillery is too cost-efficient (balance).
   - Transports:
     - the Atlantis can't dive yet;
     - the order buttons are cramped with a loaded transport selected;
     - the cargo/fuel rows cut off the unit panel;
     - minimap clicks don't work with the new order modes.
-- ⏳ (f) polish: finished. A merge agent is merging main into its branch (D/E hotkey clash with transports), then the
-  orchestrator merges it into main.
-- ⏳ (j) faction infrastructure (pre-wave 5):
-  - `data/factions/<id>.json` with a role table, FactionDb, Army.Faction;
-  - the AI uses roles instead of `uef_*` ids (same hash);
-  - a faction selector in setup; `--faction` / `--factions`.
+  - Experimentals:
+    - Mavor low arc hits hills;
+    - Stop doesn't cancel an enhancement;
+    - shield HP refills on enhancement change.
+  - Save/replays:
+    - no save migrations;
+    - no Load in the pause menu;
+    - in the viewer, F7 doesn't update the view selector.
+  - Polish:
+    - units leaving a factory don't avoid parked units;
+    - no hold-fire state while capturing.
+- ⏳ **(f) polish**: worktree `.claude/worktrees/agent-a768b24833017f018`. The branch is finished (report-f.md). A
+  merge agent (id a37f5f24cbd4c08cb) is merging main (h+d) into it.
+  - It resolves the hotkey clash (D dive/dock, E capture/transport-to → context-dependent), then runs the tests.
+  - Its report goes to `<worktree>/.claude/agent-report.md`.
+  - When it's done (commit on top of 247f6e3, clean tree): `git merge --no-ff worktree-agent-a768b24833017f018` in
+    main, build, both tests, `--scene transport` screenshot. Then `git worktree remove` + `git branch -d`.
+  - If it got interrupted: commit WIP there and start a fresh merge agent with the same brief (see this list).
+- ⏳ **(j) faction infrastructure** (pre-wave 5): worktree `.claude/worktrees/agent-af56bf7a6ab6077e6` (locked; run
+  `git worktree unlock` before removing). Agent id af56bf7a6ab6077e6.
+  - Scope:
+    - `data/factions/<id>.json` with `Roles` (role → blueprint id), FactionDb, `UnitBlueprint.Faction`, Army.Faction;
+    - the AI and StrategicApi use roles instead of `uef_*` ids (AI match hash identical to main);
+    - a faction selector in setup + `--faction` / `--factions`; a sandbox faction filter;
+    - an ARCHITECTURE "Factions" contract and a CLAUDE.md rule.
+  - Report: `<worktree>/.claude/agent-report.md`, progress in `.claude/handoff.md`.
+  - Merge it after (f), then verify, e.g. `Rts.Bench -- ai 30 256 42 hard,normal` → "WINNER: Player (Hard) after
+    14:44" on main e954f07.
+- Then start **wave 5** (below). Write each prompt with the common rules in `orchestrator/common.md`, adapted.
+  Give the AI and Cybran agents the faction/roles contract from the ARCHITECTURE "Factions" section.
+- Housekeeping notes:
+  - Agents use a build lock wrapper `dn.sh` in an old scratchpad.
+  - A stray rewrite of main's `.gitignore` (unknown sub-agent) was reverted; the patch is in
+    `orchestrator/stray-main-gitignore.patch`.
+  - Sub-agents can't write files in `orchestrator/`: save their final message as `report-<x>.md` yourself.
 
 **Next waves (owner: "everything must be done"):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
