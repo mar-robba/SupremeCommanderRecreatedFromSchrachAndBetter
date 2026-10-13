@@ -240,6 +240,8 @@ interpolates prev/cur by time
   armies with `Army.IsAI && !Defeated`, and acts ONLY through normal `Command`s (`AiCommands`), like a player.
   State per world via ConditionalWeakTable (`AiSystem.StateOf(w)`): one `AiBrain` per army + per-unit-slot
   `AiUnitInfo` (role/task, generation-checked).
+  All AI state is plain fields/lists in that table, so it is saved and restored with the game (test
+  `AiSaveLoadTests`: save mid-battle, load, identical continuation); only the `AiSystem.Trace` hook is `[NoSave]`.
 - `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
   offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig`. No difficulty
   cheats (no resource bonus, no map vision): Hard is better through faster reactions, a stronger opening (5 early
