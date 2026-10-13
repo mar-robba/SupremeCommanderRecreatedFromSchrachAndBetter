@@ -45,3 +45,6 @@ Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to se
    `SimSnapshot.cs`, `Simulation.cs`) minimal and additive.
 7. Every feature: build, run tests, add tests for sim logic, screenshot for visuals. Update `docs/ROADMAP.md`.
 8. Don't install system packages/toolchains (the owner refused a rustup install). NuGet packages are fine.
+9. **Saveable state** (save/load + replays, see ARCHITECTURE "Save/load & replays"): sim state = plain fields, arrays,
+   List/Dictionary/HashSet, per-world `ConditionalWeakTable<SimWorld,T>`; no static mutable state, no stored lambdas/delegates.
+   Caches/timings get `[NoSave]` (rebuild lazily or in `IAfterLoad`). `SaveCoverageTests` + `PersistenceTests` must pass.

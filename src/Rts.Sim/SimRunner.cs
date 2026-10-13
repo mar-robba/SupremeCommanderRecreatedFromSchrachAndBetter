@@ -29,6 +29,9 @@ public sealed class SimRunner : IDisposable
     public Exception? Fault { get; private set; }
     public double LastTickMs => _sim.LastTickMs;
     public int Tick => _sim.World.Tick;
+    /// <summary>True while the sim thread runs (false before <see cref="Start"/>, after <see cref="Stop"/> or a <see cref="Fault"/>):
+    /// then <see cref="Post"/>ed jobs only run at the next <see cref="RunJobs"/>.</summary>
+    public bool IsRunning => _running;
 
     /// <summary>Optional hook run on the sim thread before each tick (e.g. AI players issuing commands).</summary>
     public Action<Simulation>? BeforeTick;
