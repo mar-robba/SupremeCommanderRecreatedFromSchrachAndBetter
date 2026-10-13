@@ -67,6 +67,10 @@ public struct MoveState
     /// <summary>Air units: center of the idle orbit (last goal) and orbit direction (+1 CCW, -1 CW).</summary>
     public Vector2 OrbitCenter;
     public float OrbitDir;
+    /// <summary>Idle air units chasing a target their weapons engaged (<see cref="Systems.IdleAirEngage"/>); they
+    /// return to <see cref="IdleHome"/> (the orbit center when the chase began) afterwards.</summary>
+    public bool IdleChase;
+    public Vector2 IdleHome;
 }
 
 /// <summary>Per-weapon state; units have up to UnitStore.MaxWeapons weapons (index = unit * MaxWeapons + w).</summary>

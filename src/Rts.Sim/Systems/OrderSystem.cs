@@ -18,6 +18,7 @@ public static class OrderSystem
     public static void Run(SimWorld w)
     {
         var u = w.Units;
+        Combat.CombatState.Of(w); // create the combat cache before the parallel loop (idle air engage reads its catalog)
         Par.For(u.AliveCount, 256, (_, start, end) =>
         {
             for (int k = start; k < end; k++)
@@ -43,9 +44,11 @@ public static class OrderSystem
 
         if (q.IsEmpty)
         {
+            if (IdleAirEngage.Update(w, i, bp, ref mv)) return;
             mv.HasGoal = false;
             return;
         }
+        mv.IdleChase = false;
 
         ref var o = ref q.Current;
         switch (o.Type)
@@ -148,7 +151,7 @@ public static class OrderSystem
 
     public static float ArriveRadius(UnitBlueprint bp) => MathF.Max(DefaultArriveRadius, bp.Radius);
 
-    private static bool AnyWeaponEngaged(UnitStore u, int i, UnitBlueprint bp)
+    internal static bool AnyWeaponEngaged(UnitStore u, int i, UnitBlueprint bp)
     {
         var ws = u.WeaponsOf(i);
         for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
