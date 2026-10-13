@@ -197,7 +197,7 @@ public sealed class BuildMenu
             {
                 var (rate, n) = BuildRate(snap, bpi);
                 Ui.Tooltip(br, UnitIcons.BuildTooltip(bp, key, rate, n,
-                    "Click to place · Shift+click on the map queues more · R rotates · right-click / Esc cancels"));
+                    "Click to place · Shift+click on the map queues more · Shift+drag lays a line · R rotates · right-click / Esc cancels"));
             }
         }
     }

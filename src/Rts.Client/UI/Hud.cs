@@ -212,9 +212,10 @@ public sealed class Hud : IDisposable
         if (_sel.Placement.Active)
         {
             var bp = _sel.Placement.Blueprint!;
-            banner = $"PLACE {bp.Name.ToUpperInvariant()}  ·  LMB place  ·  Shift+LMB queue  ·  R rotate  ·  RMB / Esc cancel";
+            banner = $"PLACE {bp.Name.ToUpperInvariant()}  ·  LMB place  ·  Shift+LMB queue  ·  Shift+drag line  ·  R rotate  ·  RMB / Esc cancel";
             col = new Color(140, 230, 150, 255);
-            if (_sel.Placement.HasPos && _sel.Placement.Error != PlacementError.None)
+            if (_sel.Placement.LineHint() is { } lineHint) cursor = lineHint;
+            else if (_sel.Placement.HasPos && _sel.Placement.Error != PlacementError.None)
                 cursor = PlacementGrid.Describe(_sel.Placement.Error);
         }
         else if (_sel.Mode != Mode.Normal)
@@ -243,7 +244,7 @@ public sealed class Hud : IDisposable
         {
             int fs = Ui.F(12);
             var m = Ui.Mouse;
-            var tc = _sel.Placement.Active ? Ui.Bad : col;
+            var tc = _sel.Placement.Active && !_sel.Placement.LineActive ? Ui.Bad : col;
             Ui.TextShadow(cursor, m.X + Ui.P(18), m.Y + Ui.P(14), fs, tc, true);
         }
     }

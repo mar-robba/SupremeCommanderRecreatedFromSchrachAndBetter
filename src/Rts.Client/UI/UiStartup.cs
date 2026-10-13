@@ -12,7 +12,8 @@ namespace Rts.Client.UI;
 /// <c>--select commander|engineer|factory|army</c> selects own units once they appear in a snapshot,
 /// <c>--ui-demo</c> spawns a small base for army 0 (land + air factory, engineers, eco) via DebugSpawnCommand,
 /// queues units in the land factory and selects it, <c>--ui-place &lt;blueprintId&gt;</c> starts structure
-/// placement, <c>--mouse x,y</c> pins the cursor (to show hover tooltips / the placement ghost).
+/// placement (<c>id@x,z</c>: plus a Shift+drag line from world point x,z to the cursor), <c>--mouse x,y</c> pins the
+/// cursor (to show hover tooltips / the placement ghost).
 /// </summary>
 public sealed class UiStartup
 {
@@ -22,6 +23,7 @@ public sealed class UiStartup
     private readonly bool _demo;
     private readonly string? _place;
     private readonly Vector2? _mouse;
+    private readonly Vector2? _lineFrom;
     private int _frames;
     private bool _selectDone, _queued, _placeDone;
 
@@ -32,6 +34,13 @@ public sealed class UiStartup
         _select = o.Select ?? (o.UiDemo ? "factory" : o.UiPlace != null ? "commander" : null);
         _demo = o.UiDemo;
         _place = o.UiPlace;
+        if (_place != null && _place.IndexOf('@') is int at and >= 0)
+        {
+            var xz = _place[(at + 1)..].Split(',');
+            if (xz.Length == 2 && float.TryParse(xz[0], System.Globalization.CultureInfo.InvariantCulture, out float lx)
+                && float.TryParse(xz[1], System.Globalization.CultureInfo.InvariantCulture, out float lz)) _lineFrom = new Vector2(lx, lz);
+            _place = _place[..at];
+        }
         _mouse = o.MousePos;
         _selectDone = _select == null;
         _queued = !_demo;
@@ -128,6 +137,7 @@ public sealed class UiStartup
         {
             int bp = _ctx.Db.IndexOf(_place!);
             if (bp >= 0) _sel.Placement.Begin(bp);
+            if (bp >= 0 && _lineFrom is Vector2 lf) _sel.Placement.DebugHoldLine(lf);
             _placeDone = true;
         }
     }
