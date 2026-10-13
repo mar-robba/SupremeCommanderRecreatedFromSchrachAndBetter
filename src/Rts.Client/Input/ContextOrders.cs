@@ -9,7 +9,7 @@ using Rts.Sim.World;
 
 namespace Rts.Client.Input;
 
-public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Load, PickUp, Dock, Unload }
+public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Capture, Load, PickUp, Dock, Unload }
 
 /// <summary>What a right-click at the cursor would do (shown as a cursor hint, see UI/CursorHint).</summary>
 public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target, Vector2 Pos, int PropId = -1, float Mass = 0, float Radius = 0)
@@ -24,6 +24,7 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
         ContextKind.Repair => "Repair",
         ContextKind.Finish => "Assist construction",
         ContextKind.Reclaim => Mass >= 1f ? $"Reclaim  +{Mass:0} mass" : "Reclaim",
+        ContextKind.Capture => "Capture",
         ContextKind.Load => "Load",
         ContextKind.PickUp => "Pick up",
         ContextKind.Dock => "Dock",
@@ -37,37 +38,50 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
 /// wreck → Reclaim, own/allied unfinished unit → Repair (finishes it), own factory → Guard (assist production),
 /// damaged own/allied unit → Repair, other own engineer → Guard (assist). Non-builders in the same selection get
 /// the plain order (guard the target / move to the wreck). Without builders the default right-click applies.
-/// Transports (see <see cref="TransportInput"/>): land units on an own transport = Load, a transport on an own land
-/// unit = Pick up, aircraft on an own air carrier = Dock, a transport with cargo on the ground = Unload there.
+/// A selection of ONLY engineers / commanders captures a capturable enemy (complete, not a commander) instead of
+/// attacking it. Relations are evaluated from the point of view of one army (the sandbox splits mixed selections).
+/// Transports (see <see cref="TransportInput"/>, local army only): land units on an own transport = Load (before the
+/// builder actions), a transport on an own land unit = Pick up, aircraft on an own air carrier = Dock, a transport
+/// with cargo on the ground = Unload there (after Reclaim on a wreck).
 /// </summary>
 public static class ContextOrders
 {
     /// <summary>Evaluates the action under the mouse for the current selection (Normal mode).</summary>
     public static ContextAction Evaluate(GameContext ctx, SelectionController sel, Vector2 mouse)
     {
+        int army = ArmyCommands.PrimaryArmy(ctx, sel.Selected);
+        return Evaluate(ctx, sel, army, ArmyCommands.OfArmy(ctx, sel.Selected, army), mouse);
+    }
+
+    /// <summary>The action under the mouse for <paramref name="units"/> (all of <paramref name="army"/>).</summary>
+    public static ContextAction Evaluate(GameContext ctx, SelectionController sel, int army, IReadOnlyList<UnitHandle> units, Vector2 mouse)
+    {
         var snap = ctx.Snapshots.Current;
-        bool builders = HasBuilders(ctx, sel.Selected, snap);
+        bool builders = HasBuilders(snap, ctx, army, units, out bool onlyBuilders);
         var hover = sel.PickUnit(mouse);
-        var cargo = CargoSelection.Of(ctx, sel.Selected, snap);
+        // Transport input works for the local army's units only (the sandbox's foreign selections skip it).
+        bool transports = army == ctx.LocalArmy;
+        var cargo = transports ? CargoSelection.Of(ctx, units, snap) : default;
         if (hover is UnitView t)
         {
             var h = new UnitHandle(t.Index, t.Gen);
-            if (ctx.IsEnemy(t.Army)) return new ContextAction(ContextKind.Attack, h, new Vector2(t.Pos.X, t.Pos.Z));
-            if (t.Army == ctx.LocalArmy && (t.Flags & UnitFlags.UnderConstruction) == 0)
+            var tbp = ctx.Db[t.Bp];
+            if (ctx.AreEnemies(army, t.Army))
+                return new ContextAction(onlyBuilders && CanCapture(tbp, t) ? ContextKind.Capture : ContextKind.Attack, h, new Vector2(t.Pos.X, t.Pos.Z));
+            if (transports && t.Army == army && (t.Flags & UnitFlags.UnderConstruction) == 0)
             {
-                var tk = TransportInput.TargetContext(cargo, ctx.Db[t.Bp], TransportInput.UsedSlots(snap, t.Index, t.Gen), sel.Selected.Contains(h));
+                var tk = TransportInput.TargetContext(cargo, tbp, TransportInput.UsedSlots(snap, t.Index, t.Gen), sel.Selected.Contains(h));
                 if (tk != ContextKind.None) return new ContextAction(tk, h, new Vector2(t.Pos.X, t.Pos.Z));
             }
             if (sel.Selected.Contains(h)) return new ContextAction(ContextKind.Move, UnitHandle.None, default);
-            var tbp = ctx.Db[t.Bp];
-            bool own = t.Army == ctx.LocalArmy;
+            bool own = t.Army == army;
             var pos = new Vector2(t.Pos.X, t.Pos.Z);
             if (builders)
             {
                 if ((t.Flags & UnitFlags.UnderConstruction) != 0)
                 {
                     // A mobile unit being built sits inside its factory: assist the factory instead.
-                    if (tbp.IsMobile && FactoryAt(ctx, snap, t) is UnitView f)
+                    if (tbp.IsMobile && FactoryAt(ctx, snap, army, t) is UnitView f)
                         return new ContextAction(ContextKind.Assist, new UnitHandle(f.Index, f.Gen), new Vector2(f.Pos.X, f.Pos.Z));
                     return new ContextAction(ContextKind.Finish, h, pos);
                 }
@@ -83,7 +97,7 @@ public static class ContextOrders
             ref var p = ref snap.Props[k];
             return new ContextAction(ContextKind.Reclaim, UnitHandle.None, new Vector2(p.Pos.X, p.Pos.Z), p.Id, p.Mass, p.Radius);
         }
-        if (TransportInput.GroundContext(cargo) == ContextKind.Unload && ctx.PickGround(mouse) is Vector3 g)
+        if (transports && TransportInput.GroundContext(cargo) == ContextKind.Unload && ctx.PickGround(mouse) is Vector3 g)
             return new ContextAction(ContextKind.Unload, UnitHandle.None, new Vector2(g.X, g.Z), Radius: 2.5f);
         return new ContextAction(ContextKind.Move, UnitHandle.None, default);
     }
@@ -93,18 +107,18 @@ public static class ContextOrders
     /// one (Load / Pick up / Dock / Unload). Returns false
     /// when the default right-click handling (attack / guard / move) should run instead.
     /// </summary>
-    public static bool TryIssue(GameContext ctx, SelectionController sel, Vector2 mouse, bool queue)
+    public static bool TryIssue(GameContext ctx, SelectionController sel, int army, IReadOnlyList<UnitHandle> units, Vector2 mouse, bool queue)
     {
-        var a = Evaluate(ctx, sel, mouse);
+        var a = Evaluate(ctx, sel, army, units, mouse);
         if (a.Kind is ContextKind.Load or ContextKind.PickUp or ContextKind.Dock or ContextKind.Unload)
             return TransportInput.IssueContext(ctx, sel, a, queue);
-        if (a.Kind is not (ContextKind.Reclaim or ContextKind.Repair or ContextKind.Finish or ContextKind.Assist)) return false;
+        if (a.Kind is not (ContextKind.Reclaim or ContextKind.Repair or ContextKind.Finish or ContextKind.Assist or ContextKind.Capture)) return false;
         var snap = ctx.Snapshots.Current;
         var builders = new List<UnitHandle>();
         var others = new List<UnitHandle>();
-        foreach (var h in sel.Selected)
+        foreach (var h in units)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != army) continue;
             (IsBuilder(ctx.Db[v.Bp]) ? builders : others).Add(h);
         }
         if (builders.Count == 0) return false;
@@ -118,15 +132,20 @@ public static class ContextOrders
             case ContextKind.Assist:
                 forBuilders = forOthers = Order.GuardUnit(a.Target);
                 break;
+            case ContextKind.Capture:
+                forBuilders = Order.CaptureUnit(a.Target);
+                forOthers = Order.AttackUnit(a.Target);
+                break;
             default: // Repair / Finish
                 forBuilders = Order.RepairUnit(a.Target);
                 forOthers = Order.GuardUnit(a.Target);
                 break;
         }
-        ctx.Runner.Enqueue(new IssueOrderCommand(ctx.LocalArmy, builders.ToArray(), forBuilders, queue));
-        if (others.Count > 0) ctx.Runner.Enqueue(new IssueOrderCommand(ctx.LocalArmy, others.ToArray(), forOthers, queue));
+        ctx.Runner.Enqueue(new IssueOrderCommand(army, builders.ToArray(), forBuilders, queue));
+        if (others.Count > 0) ctx.Runner.Enqueue(new IssueOrderCommand(army, others.ToArray(), forOthers, queue));
         float y = ctx.Terrain.GetSurfaceHeight(a.Pos);
-        ctx.Feedback.AddClickMarker(new Vector3(a.Pos.X, y, a.Pos.Y), a.Kind == ContextKind.Reclaim ? OrderType.Reclaim : OrderType.Repair);
+        var marker = a.Kind switch { ContextKind.Reclaim => OrderType.Reclaim, ContextKind.Capture => OrderType.Capture, _ => OrderType.Repair };
+        ctx.Feedback.AddClickMarker(new Vector3(a.Pos.X, y, a.Pos.Y), marker);
         UiSounds.Confirm();
         return true;
     }
@@ -134,23 +153,34 @@ public static class ContextOrders
     /// <summary>Mobile units with build power (engineers, commander).</summary>
     public static bool IsBuilder(UnitBlueprint bp) => bp.IsMobile && bp.Economy.BuildRate > 0;
 
-    private static bool HasBuilders(GameContext ctx, List<UnitHandle> selected, SimSnapshot snap)
+    /// <summary>Can an engineer / commander capture this unit? (complete, actually seen, not a commander, has a build
+    /// time: the sim's <c>CaptureSystem.CanCapture</c> rules seen from the client.)</summary>
+    public static bool CanCapture(UnitBlueprint bp, in UnitView t) =>
+        (t.Flags & (UnitFlags.UnderConstruction | UnitFlags.RadarOnly | UnitFlags.Dead)) == 0 && !bp.Has(UnitCategory.Commander)
+        && bp.Economy.BuildTime > 0;
+
+    /// <summary>Any complete builder of the army among the units; onlyBuilders = every unit of the army is one.</summary>
+    private static bool HasBuilders(SimSnapshot snap, GameContext ctx, int army, IReadOnlyList<UnitHandle> units, out bool onlyBuilders)
     {
-        foreach (var h in selected)
-            if (snap.TryGetUnit(h.Index, h.Generation, out var v) && v.Army == ctx.LocalArmy && IsBuilder(ctx.Db[v.Bp])
-                && (v.Flags & UnitFlags.UnderConstruction) == 0)
-                return true;
-        return false;
+        bool any = false, other = false;
+        foreach (var h in units)
+        {
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != army) continue;
+            if (IsBuilder(ctx.Db[v.Bp]) && (v.Flags & UnitFlags.UnderConstruction) == 0) any = true;
+            else other = true;
+        }
+        onlyBuilders = any && !other;
+        return any;
     }
 
     /// <summary>The allied factory whose footprint contains unit u (a unit being produced), if any.</summary>
-    private static UnitView? FactoryAt(GameContext ctx, SimSnapshot snap, in UnitView u)
+    private static UnitView? FactoryAt(GameContext ctx, SimSnapshot snap, int army, in UnitView u)
     {
         for (int k = 0; k < snap.UnitCount; k++)
         {
             ref var f = ref snap.Units[k];
             var fbp = ctx.Db[f.Bp];
-            if (!fbp.Has(UnitCategory.Factory) || ctx.IsEnemy(f.Army)) continue;
+            if (!fbp.Has(UnitCategory.Factory) || ctx.AreEnemies(army, f.Army)) continue;
             float half = MathF.Max(fbp.FootprintX, fbp.FootprintZ) * 0.5f;
             if (MathF.Abs(f.Pos.X - u.Pos.X) <= half && MathF.Abs(f.Pos.Z - u.Pos.Z) <= half) return f;
         }

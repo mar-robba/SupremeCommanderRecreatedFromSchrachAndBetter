@@ -13,11 +13,13 @@ namespace Rts.Client;
 /// two TMLs firing at an army 1 base protected by a TMD, a nuke silo launching at an army 1 cluster (with a shield,
 /// which the nuke knocks down). The variant pre-steps the sim so the screenshot catches the interesting moment:
 /// shields = domes being hit, tml = missiles in flight, nuke = a few ticks before the detonation.
-/// Positions are printed to the console (use them with --camera).
+/// Each variant frames its action with a default camera (an explicit --camera wins); positions are printed to the
+/// console (use them with --camera).
 /// </summary>
 public static class StrategicScene
 {
-    public static void Setup(Simulation sim, string scene)
+    /// <summary>Builds the scene; returns the default camera (x, z, distance) framing the variant's action.</summary>
+    public static Vector3 Setup(Simulation sim, string scene)
     {
         var w = sim.World;
         var db = w.Blueprints;
@@ -101,7 +103,15 @@ public static class StrategicScene
                 for (int t = 0; t < 20; t++) sim.Step();
                 break;
         }
-        Console.WriteLine($"StrategicScene '{variant}': shields at {S.X:0},{S.Y:0} (mobile {M.X:0},{M.Y:0}); TML {T0.X:0},{T0.Y:0} -> {TT.X:0},{TT.Y:0}; nuke {N0.X:0},{N0.Y:0} -> {NT.X:0},{NT.Y:0}");
+        // Default yaw looks towards -z (larger z = nearer the bottom of the screen).
+        var cam = variant switch
+        {
+            "tml" => new Vector3((T0.X + TT.X) * 0.5f + 2, (T0.Y + TT.Y) * 0.5f + 2, 80), // launchers, missiles, TMD base
+            "nuke" => new Vector3(NT.X, NT.Y + 6, 95),                                     // the target: the blast fills the view
+            _ => new Vector3(S.X + 8, S.Y + 8, 68),                                        // dome, mobile shield, artillery line
+        };
+        Console.WriteLine($"StrategicScene '{variant}': shields at {S.X:0},{S.Y:0} (mobile {M.X:0},{M.Y:0}); TML {T0.X:0},{T0.Y:0} -> {TT.X:0},{TT.Y:0}; nuke {N0.X:0},{N0.Y:0} -> {NT.X:0},{NT.Y:0}; default camera {cam.X:0},{cam.Y:0},{cam.Z:0}");
+        return cam;
     }
 
     private static bool NukeAltitude(Simulation sim, out float alt, out float vy)

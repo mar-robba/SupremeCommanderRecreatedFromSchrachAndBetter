@@ -44,11 +44,14 @@ public static class CursorHint
         Ui.TextShadow(a.Label, c.X + r + Ui.P(6), c.Y - fs * 0.5f - 1, fs, col, true);
     }
 
+    public static readonly Color CaptureColor = new(110, 225, 235, 255);
+
     private static Color ColorOf(ContextKind k) => k switch
     {
         ContextKind.Attack => new Color(255, 105, 90, 255),
         ContextKind.Reclaim => new Color(130, 235, 120, 255),
         ContextKind.Guard => new Color(120, 190, 255, 255),
+        ContextKind.Capture => CaptureColor,
         ContextKind.Load or ContextKind.PickUp or ContextKind.Dock or ContextKind.Unload => TransportInput.Cyan,
         _ => new Color(245, 210, 90, 255),
     };
@@ -77,6 +80,7 @@ public static class CursorHint
                 Raylib.DrawTriangle(c + new Vector2(-s * 0.85f, -s * 0.2f), c + new Vector2(0, s * 1.1f), c + new Vector2(s * 0.85f, -s * 0.2f), col);
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.85f, s * 0.95f), new Vector2(s * 1.7f, s * 0.8f), col);
                 break;
+            case ContextKind.Capture: DrawFlag(c, s, col); break;
             case ContextKind.Load or ContextKind.PickUp or ContextKind.Unload: // open box + arrow in / out
             {
                 bool up = k != ContextKind.Unload;
@@ -99,6 +103,15 @@ public static class CursorHint
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.3f, 0), new Vector2(s * 0.6f, s * 1.05f), col);
                 break;
         }
+    }
+
+    /// <summary>Capture glyph: a flag on a pole.</summary>
+    public static void DrawFlag(Vector2 c, float s, Color col)
+    {
+        float t = MathF.Max(2f, s * 0.22f);
+        Raylib.DrawLineEx(c + new Vector2(-s * 0.6f, -s * 1.1f), c + new Vector2(-s * 0.6f, s * 1.1f), t, col);
+        Raylib.DrawTriangle(c + new Vector2(-s * 0.5f, -s * 1.05f), c + new Vector2(-s * 0.5f, s * 0.05f), c + new Vector2(s * 0.95f, -s * 0.5f), col);
+        Raylib.DrawLineEx(c + new Vector2(-s * 1.0f, s * 1.1f), c + new Vector2(-s * 0.2f, s * 1.1f), t, col);
     }
 
     /// <summary>Screen-space polyline of a circle lying on the ground.</summary>

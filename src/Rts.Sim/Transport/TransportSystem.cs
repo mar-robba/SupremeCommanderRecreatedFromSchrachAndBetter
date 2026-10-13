@@ -332,7 +332,7 @@ public static class TransportSystem
         var u = w.Units;
         var c = w.Cargo;
         if (bp.CargoKind != CargoLayer.Air || bp.CargoSize <= 0 || w.Tick < c.NoAutoDockUntil[i]) return;
-        bool hurt = u.Health[i] < bp.MaxHealth * AutoDockHealth;
+        bool hurt = u.Health[i] < Combat.Veterancy.MaxHealth(bp, u.Kills[i]) * AutoDockHealth;
         bool dry = bp.FuelSeconds > 0 && c.Fuel[i] <= 0;
         if (!hurt && !dry) return;
         var t = FindAirCarrier(w, i, bp, needRoom: true);
@@ -357,10 +357,11 @@ public static class TransportSystem
             u.Heading[j] = u.Heading[i];
             if (cb.Layer != CargoLayer.Air) continue;
             var jbp = w.BpOf(j);
-            if (u.Health[j] < jbp.MaxHealth) u.Health[j] = MathF.Min(jbp.MaxHealth, u.Health[j] + cb.RepairRate * jbp.MaxHealth * SimWorld.Dt);
+            float jmax = Combat.Veterancy.MaxHealth(jbp, u.Kills[j]); // veterans repair to their raised max
+            if (u.Health[j] < jmax) u.Health[j] = MathF.Min(jmax, u.Health[j] + cb.RepairRate * jmax * SimWorld.Dt);
             float fuelMax = jbp.FuelSeconds;
             if (fuelMax > 0 && c.Fuel[j] < fuelMax) c.Fuel[j] = MathF.Min(fuelMax, c.Fuel[j] + cb.RefuelRate * fuelMax * SimWorld.Dt);
-            bool done = u.Health[j] >= jbp.MaxHealth && (fuelMax <= 0 || c.Fuel[j] >= fuelMax);
+            bool done = u.Health[j] >= jmax && (fuelMax <= 0 || c.Fuel[j] >= fuelMax);
             if (done && (!cb.KeepDocked || u.Orders[j].Count > 1))
             {
                 Undock(w, i, bp, j, k);
@@ -508,6 +509,7 @@ public static class TransportSystem
         mv.BlockedTime = 0;
         mv.StuckRepaths = 0;
         mv.GroupId = 0;
+        mv.LeaveTime = 0; // a unit picked up while still rolling out of its factory doesn't resume that drive-out
         mv.OrbitCenter = w.Units.Pos[j];
     }
 

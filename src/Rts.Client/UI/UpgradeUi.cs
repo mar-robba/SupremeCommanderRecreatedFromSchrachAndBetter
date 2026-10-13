@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Audio;
+using Rts.Client.Input;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
@@ -31,7 +32,7 @@ public static class UpgradeUi
         upgrading.Clear();
         foreach (var h in selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !ctx.Controls(v.Army)) continue;
             var bp = ctx.Db[v.Bp];
             if (!bp.IsStructure) continue;
             if (factories is bool f && bp.Has(UnitCategory.Factory) != f) continue;
@@ -43,14 +44,14 @@ public static class UpgradeUi
     public static void Start(GameContext ctx, List<UnitHandle> ready)
     {
         if (ready.Count == 0) { UiSounds.Error(); return; }
-        ctx.Runner.Enqueue(new UpgradeCommand(ctx.LocalArmy, ready.ToArray()));
+        ArmyCommands.Send(ctx, ready, (army, units) => new UpgradeCommand(army, units));
         UiSounds.Confirm();
     }
 
     public static void Cancel(GameContext ctx, List<UnitHandle> upgrading)
     {
         if (upgrading.Count == 0) return;
-        ctx.Runner.Enqueue(new CancelUpgradeCommand(ctx.LocalArmy, upgrading.ToArray()));
+        ArmyCommands.Send(ctx, upgrading, (army, units) => new CancelUpgradeCommand(army, units));
         UiSounds.Confirm();
     }
 

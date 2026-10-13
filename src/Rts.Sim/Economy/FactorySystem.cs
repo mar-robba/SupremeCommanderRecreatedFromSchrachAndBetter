@@ -10,8 +10,9 @@ namespace Rts.Sim.Systems;
 /// Factory build queues (SEQUENTIAL, runs right after ConstructionSystem). The front of
 /// <see cref="FactoryState.Queue"/> is built inside the factory as an UnderConstruction unit (it can't move or
 /// shoot), progressing with the factory's BuildRate × economy efficiency (via <see cref="ConstructionSystem.Work"/>,
-/// so assisting engineers add their build power). When complete the unit is moved to the factory exit and receives a
-/// copy of the factory's own order queue (rally orders), or a short move out of the exit. With Repeat on, the
+/// so assisting engineers add their build power). When complete the unit drives out of the factory to the exit
+/// (<see cref="FactoryExitMotion"/>; aircraft take off) and receives a copy of the factory's own order queue (rally
+/// orders), or a short move out of the exit. With Repeat on, the
 /// finished item is re-appended to the queue. A destroyed factory kills its unfinished unit.
 /// </summary>
 public static class FactorySystem
@@ -187,15 +188,24 @@ public static class FactorySystem
             }
         }
         exit = w.Terrain.Clamp(exit);
-        u.Pos[unit] = exit;
+        // The unit starts where it was built (factory center) and drives out to the exit (FactoryExitMotion);
+        // aircraft take off from the pad. A moving mobile factory (Fatboy) drops it straight at its back.
+        var start = fbp.IsMobile ? exit : FactoryExitMotion.Start(w, f);
+        u.Pos[unit] = start;
         u.Heading[unit] = heading;
         u.Elevation[unit] = layer switch
         {
-            MotionLayer.Air => w.Terrain.GetSurfaceHeight(exit) + ubp.Movement.Altitude,
-            MotionLayer.Land or MotionLayer.Amphibious => w.Terrain.GetHeight(exit),
-            MotionLayer.Sub => w.Terrain.WaterLevel - 1.5f,
-            _ => w.Terrain.GetSurfaceHeight(exit),
+            MotionLayer.Air => w.Terrain.GetSurfaceHeight(start),
+            MotionLayer.Land or MotionLayer.Amphibious => w.Terrain.GetHeight(start),
+            MotionLayer.Sub => (u.Flags[unit] & UnitFlags.Surfaced) != 0 ? w.Terrain.WaterLevel : w.Terrain.WaterLevel - Naval.NavalMotion.SubDepth,
+            _ => w.Terrain.GetSurfaceHeight(start),
         };
+        if (layer != MotionLayer.Air && start != exit)
+        {
+            ref var mv = ref u.Move[unit];
+            mv.FactoryExit = exit;
+            mv.LeaveTime = FactoryExitMotion.MaxLeaveTime;
+        }
 
         var q = u.Orders[unit];
         q.Clear();

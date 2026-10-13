@@ -15,6 +15,10 @@ namespace Rts.Client.Input;
 /// <see cref="OccupancyGrid.SnapStructure"/>; extractors snap to the nearest deposit. Green/red validity is
 /// computed client-side by <see cref="PlacementGrid"/>. Left click issues a Build order to the selected builders
 /// (Shift = queue and stay in placement mode while Shift is held), right click / Esc cancels, R rotates.
+/// Shift + left-drag lays a straight line of copies from the press point to the cursor (<see cref="PlacementLine"/>):
+/// blocked ghosts are drawn red and skipped, the release queues one Build order per valid ghost, in line order.
+/// Adjacency preview (<see cref="AdjacencyPreview"/>): touching own structures that would give or get a bonus are
+/// outlined and linked to the ghost, with a short summary next to it (<see cref="DrawOverlay"/>).
 /// </summary>
 public sealed class BuildPlacement
 {
@@ -30,6 +34,17 @@ public sealed class BuildPlacement
     public PlacementError Error;
     private bool _placedWithShift;
     private double _rejectFlashUntil;
+    /// <summary>Adjacency bonuses at the ghost position (null = none / no position).</summary>
+    public AdjacencyPreviewResult? Adjacency;
+
+    /// <summary>Shift+drag line: snapped center where the drag started (null = no line being dragged).</summary>
+    private Vector2? _lineAnchor;
+    /// <summary>Screenshot hook (<see cref="DebugHoldLine"/>): keep the line open instead of committing it.</summary>
+    private bool _lineHold;
+    /// <summary>Ghost centers of the line being dragged (anchor first) and their placement errors.</summary>
+    public readonly List<Vector2> LinePos = new();
+    public readonly List<PlacementError> LineErr = new();
+    public bool LineActive => Active && _lineAnchor.HasValue;
 
     public BuildPlacement(GameContext ctx)
     {
@@ -46,6 +61,7 @@ public sealed class BuildPlacement
         BpIndex = bpIndex;
         HasPos = false;
         _placedWithShift = false;
+        _lineAnchor = null;
     }
 
     public void Cancel()
@@ -53,7 +69,20 @@ public sealed class BuildPlacement
         BpIndex = -1;
         HasPos = false;
         _placedWithShift = false;
+        _lineAnchor = null;
+        _lineHold = false;
     }
+
+    /// <summary>Screenshot helper (--ui-place id@x,z): shows a line dragged from the world point to the cursor.</summary>
+    public void DebugHoldLine(Vector2 worldAnchor)
+    {
+        if (!Active || !CanLine(_ctx.Db[BpIndex])) return;
+        _lineAnchor = SnapToCursor(_ctx.Db[BpIndex], worldAnchor);
+        _lineHold = true;
+    }
+
+    /// <summary>Deposit-bound structures (extractors) are placed one by one.</summary>
+    private static bool CanLine(UnitBlueprint bp) => !bp.Economy.RequiresMassDeposit && !bp.Economy.RequiresHydroDeposit;
 
     /// <summary>Structures face the map center by default (90-degree steps).</summary>
     private float DefaultHeading()
@@ -71,7 +100,7 @@ public sealed class BuildPlacement
         var list = new List<UnitHandle>();
         foreach (var h in selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
             if (bp.IsMobile && Array.IndexOf(bp.BuildIndices, BpIndex) >= 0) list.Add(h);
         }
@@ -89,7 +118,7 @@ public sealed class BuildPlacement
         if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { Cancel(); return; }
         if (Raylib.IsKeyPressed(KeyboardKey.R)) Heading = DMath.WrapAngle(Heading + MathF.PI * 0.5f);
         // SupCom: after shift-placing, releasing Shift leaves placement mode.
-        if (_placedWithShift && !shift) { Cancel(); return; }
+        if (_placedWithShift && !shift && _lineAnchor == null) { Cancel(); return; }
 
         Grid.Refresh(snap, _ctx.LocalArmy);
         var bp = _ctx.Db[BpIndex];
@@ -98,20 +127,62 @@ public sealed class BuildPlacement
             Pos = SnapToCursor(bp, new Vector2(g.X, g.Z));
             HasPos = true;
             Error = Grid.Check(bp, Pos);
+            Adjacency = ComputeAdjacency(bp, Pos, snap, ArmyCommands.PrimaryArmy(_ctx, builders));
         }
-        else HasPos = false;
+        else { HasPos = false; Adjacency = null; }
+
+        if (_lineAnchor is Vector2 anchor)
+        {
+            if (HasPos) LayoutLine(bp, anchor);
+            if (_lineHold) return;
+            // Right click drops the line (placement mode stays); releasing the left button anywhere commits it.
+            if (Raylib.IsMouseButtonPressed(MouseButton.Right)) { _lineAnchor = null; return; }
+            if (!Raylib.IsMouseButtonDown(MouseButton.Left)) CommitLine(builders);
+            return;
+        }
 
         if (mouseOverUi) return;
         if (Raylib.IsMouseButtonPressed(MouseButton.Right)) { Cancel(); return; }
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && HasPos)
         {
+            // Shift: the press starts a line; a release without dragging places the single ghost (= shift-click).
+            if (shift && CanLine(bp)) { _lineAnchor = Pos; LayoutLine(bp, Pos); return; }
             if (Error != PlacementError.None) { _rejectFlashUntil = Raylib.GetTime() + 0.35; UiSounds.Error(); return; }
-            _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, builders, Order.BuildAt(BpIndex, Pos, Heading), shift));
+            var order = Order.BuildAt(BpIndex, Pos, Heading);
+            ArmyCommands.Send(_ctx, builders, (army, units) => new IssueOrderCommand(army, units, order, shift));
             _ctx.Feedback.AddClickMarker(new Vector3(Pos.X, _ctx.Terrain.GetSurfaceHeight(Pos), Pos.Y), OrderType.Build);
             UiSounds.Confirm();
             if (shift) _placedWithShift = true;
             else Cancel();
         }
+    }
+
+    private void LayoutLine(UnitBlueprint bp, Vector2 anchor)
+    {
+        PlacementLine.Layout(anchor, Pos, bp.FootprintX, bp.FootprintZ, LinePos);
+        LineErr.Clear();
+        foreach (var p in LinePos) LineErr.Add(Grid.Check(bp, p));
+    }
+
+    /// <summary>One queued Build order per valid ghost, in line order (anchor first), like successive shift-clicks.</summary>
+    private void CommitLine(UnitHandle[] builders)
+    {
+        _lineAnchor = null;
+        int placed = 0;
+        for (int i = 0; i < LinePos.Count; i++)
+        {
+            if (LineErr[i] != PlacementError.None) continue;
+            var p = LinePos[i];
+            var order = Order.BuildAt(BpIndex, p, Heading);
+            ArmyCommands.Send(_ctx, builders, (army, units) => new IssueOrderCommand(army, units, order, true));
+            _ctx.Feedback.AddClickMarker(new Vector3(p.X, _ctx.Terrain.GetSurfaceHeight(p), p.Y), OrderType.Build);
+            placed++;
+        }
+        LinePos.Clear();
+        LineErr.Clear();
+        if (placed == 0) { _rejectFlashUntil = Raylib.GetTime() + 0.35; UiSounds.Error(); return; }
+        UiSounds.Confirm();
+        _placedWithShift = true; // releasing Shift leaves placement mode, as after a shift-click
     }
 
     /// <summary>Grid snap; deposit-bound structures snap to the nearest matching deposit near the cursor.</summary>
@@ -124,6 +195,71 @@ public sealed class BuildPlacement
             if (Grid.NearestDeposit(cursor, type, radius) is Deposit d) return OccupancyGrid.SnapStructure(bp, d.Pos);
         }
         return OccupancyGrid.SnapStructure(bp, cursor);
+    }
+
+    /// <summary>Adjacency preview against the army's structures (complete or being built) near the ghost.</summary>
+    private AdjacencyPreviewResult? ComputeAdjacency(UnitBlueprint bp, Vector2 pos, SimSnapshot snap, int army)
+    {
+        if (!Rts.Sim.Systems.AdjacencyRules.Participates(bp)) return null;
+        var near = new List<(int, UnitBlueprint, Vector2)>();
+        for (int k = 0; k < snap.UnitCount; k++)
+        {
+            ref var v = ref snap.Units[k];
+            if (v.Army != army) continue;
+            var ob = _ctx.Db[v.Bp];
+            if (!ob.IsStructure) continue;
+            var p = new Vector2(v.Pos.X, v.Pos.Z);
+            float rx = (bp.FootprintX + ob.FootprintX) * 0.5f + 1, rz = (bp.FootprintZ + ob.FootprintZ) * 0.5f + 1;
+            if (MathF.Abs(p.X - pos.X) > rx || MathF.Abs(p.Y - pos.Y) > rz) continue;
+            near.Add((k, ob, p));
+        }
+        var r = AdjacencyPreview.Compute(bp, pos, near);
+        return r.IsEmpty ? null : r;
+    }
+
+    private static readonly Color AdjReceive = new(120, 255, 150, 235), AdjGive = new(255, 215, 90, 235), AdjBoth = new(120, 230, 255, 235);
+
+    private static Color AdjColor(in AdjacencyLink l) =>
+        !l.Gives.IsZero && !l.Receives.IsZero ? AdjBoth : l.Receives.IsZero ? AdjGive : AdjReceive;
+
+    /// <summary>Outlines touching structures that exchange a bonus with the ghost and links them to it (no depth test).</summary>
+    private void DrawAdjacency3D(UnitBlueprint bp)
+    {
+        if (Adjacency is not { } adj) return;
+        float t = (float)Raylib.GetTime();
+        float y0 = _ctx.Terrain.GetSurfaceHeight(Pos) + bp.Visual.Size.Y * 0.35f;
+        foreach (var l in adj.Links)
+        {
+            var col = AdjColor(l);
+            DrawFootprintOutline(l.Bp, l.Pos, col);
+            float y1 = _ctx.Terrain.GetSurfaceHeight(l.Pos) + l.Bp.Visual.Size.Y * 0.35f;
+            var a = new Vector3(Pos.X, y0, Pos.Y);
+            var b = new Vector3(l.Pos.X, y1, l.Pos.Y);
+            Raylib.DrawLine3D(a, b, col);
+            // A pulse travels the way the bonus flows (both ways: alternating).
+            float k = (t * 1.2f) % 1f;
+            bool toGhost = l.Gives.IsZero || (!l.Receives.IsZero && ((int)(t * 1.2f) & 1) == 1);
+            var dot = toGhost ? Vector3.Lerp(b, a, k) : Vector3.Lerp(a, b, k);
+            Raylib.DrawSphereEx(dot, 0.22f, 6, 6, col);
+        }
+    }
+
+    /// <summary>2D summary next to the ghost (call after EndMode3D).</summary>
+    public void DrawOverlay()
+    {
+        if (!Active || !HasPos || LineActive || Adjacency is not { } adj) return;
+        var lines = AdjacencyPreview.Summary(adj);
+        if (lines.Count == 0) return;
+        var bp = _ctx.Db[BpIndex];
+        var anchor = new Vector3(Pos.X, _ctx.Terrain.GetSurfaceHeight(Pos) + bp.Visual.Size.Y, Pos.Y);
+        var sp = Raylib.GetWorldToScreen(anchor, _ctx.Camera.Camera);
+        int fs = UI.Ui.F(12);
+        float x = sp.X + UI.Ui.P(14), y = sp.Y - lines.Count * (fs + 2) - UI.Ui.P(4);
+        foreach (var line in lines)
+        {
+            UI.Ui.TextShadow(line, x, y, fs, line.StartsWith("Adjacency") ? AdjReceive : AdjGive, true);
+            y += fs + 2;
+        }
     }
 
     // ------------------------------------------------------------------ drawing (inside BeginMode3D)
@@ -140,7 +276,8 @@ public sealed class BuildPlacement
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();
         DrawQueuedGhosts(selected, snap);
-        if (Active && HasPos)
+        if (LineActive) DrawLine3D();
+        else if (Active && HasPos)
         {
             var bp = _ctx.Db[BpIndex];
             bool ok = Error == PlacementError.None;
@@ -149,15 +286,34 @@ public sealed class BuildPlacement
             // The ghost is drawn on top of everything so it stays visible inside/behind other structures.
             Rlgl.DrawRenderBatchActive();
             Rlgl.DisableDepthTest();
-            DrawFootprint(bp, Pos, true);
+            DrawFootprint(bp, Pos, Error);
             var fill = ok ? new Color(120, 240, 140, 60) : new Color(250, 90, 80, flash ? 150 : 70);
             var line = ok ? OkLine : BadLine;
             DrawGhostBox(bp, Pos, Heading, fill, line);
+            DrawAdjacency3D(bp);
             Rlgl.DrawRenderBatchActive();
             Rlgl.EnableDepthTest();
         }
         Rlgl.DrawRenderBatchActive();
         Rlgl.EnableBackfaceCulling();
+    }
+
+    /// <summary>Ghosts of the Shift+drag line: green = will be queued, red = blocked (skipped).</summary>
+    private void DrawLine3D()
+    {
+        var bp = _ctx.Db[BpIndex];
+        bool flash = Raylib.GetTime() < _rejectFlashUntil && ((int)(Raylib.GetTime() * 16) & 1) == 0;
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.DisableDepthTest();
+        for (int i = 0; i < LinePos.Count; i++)
+        {
+            bool ok = LineErr[i] == PlacementError.None;
+            DrawFootprint(bp, LinePos[i], LineErr[i]);
+            var fill = ok ? new Color(120, 240, 140, 60) : new Color(250, 90, 80, flash ? 150 : 70);
+            DrawGhostBox(bp, LinePos[i], Heading, fill, ok ? OkLine : BadLine);
+        }
+        Rlgl.DrawRenderBatchActive();
+        Rlgl.EnableDepthTest();
     }
 
     private void DrawQueuedGhosts(IReadOnlyList<UnitHandle> selected, SimSnapshot snap)
@@ -203,7 +359,7 @@ public sealed class BuildPlacement
     private float SurfaceY(float x, float z, bool naval) =>
         naval ? MathF.Max(_ctx.Terrain.VertexHeight((int)x, (int)z), _ctx.Terrain.WaterLevel) : _ctx.Terrain.VertexHeight((int)x, (int)z);
 
-    private void DrawFootprint(UnitBlueprint bp, Vector2 pos, bool perCell)
+    private void DrawFootprint(UnitBlueprint bp, Vector2 pos, PlacementError err)
     {
         var (x0, z0, x1, z1) = OccupancyGrid.Footprint(bp, pos);
         bool naval = bp.HasAny(UnitCategory.Naval);
@@ -212,7 +368,7 @@ public sealed class BuildPlacement
         for (int x = x0; x <= x1; x++)
         {
             var e = Grid.CellError(bp, x, z);
-            if (Error is PlacementError.NeedsMassDeposit or PlacementError.NeedsHydroDeposit) e = Error;
+            if (err is PlacementError.NeedsMassDeposit or PlacementError.NeedsHydroDeposit) e = err;
             var col = e == PlacementError.None ? OkFill : e == PlacementError.Planned ? new Color(240, 160, 40, 120) : BadFill;
             var a = new Vector3(x, SurfaceY(x, z, naval) + lift, z);
             var b = new Vector3(x + 1, SurfaceY(x + 1, z, naval) + lift, z);
@@ -224,7 +380,7 @@ public sealed class BuildPlacement
             Raylib.DrawTriangle3D(a, c, b, col);
             Raylib.DrawTriangle3D(b, c, d, col);
         }
-        DrawFootprintOutline(bp, pos, Error == PlacementError.None ? OkLine : BadLine);
+        DrawFootprintOutline(bp, pos, err == PlacementError.None ? OkLine : BadLine);
     }
 
     private void DrawFootprintOutline(UnitBlueprint bp, Vector2 pos, Color col)
@@ -285,8 +441,21 @@ public sealed class BuildPlacement
     {
         if (!Active) return "";
         var bp = _ctx.Db[BpIndex];
+        if (LineActive) return LineHint() is { } lh ? $"Place {bp.Name}: {lh}" : $"Place {bp.Name}";
         string s = $"Place {bp.Name}";
         if (HasPos && Error != PlacementError.None) s += "  —  " + PlacementGrid.Describe(Error);
+        return s;
+    }
+
+    /// <summary>Cursor text while dragging a line: "5 to build, 2 blocked (skipped)" (null = no line).</summary>
+    public string? LineHint()
+    {
+        if (!LineActive || LinePos.Count == 0) return null;
+        int bad = 0;
+        foreach (var e in LineErr) if (e != PlacementError.None) bad++;
+        int ok = LinePos.Count - bad;
+        string s = ok == 0 ? "nothing to build" : $"{ok} to build";
+        if (bad > 0) s += $", {bad} blocked (skipped)";
         return s;
     }
 }

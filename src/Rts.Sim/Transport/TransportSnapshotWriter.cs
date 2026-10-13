@@ -49,7 +49,7 @@ internal static class TransportSnapshotWriter
                         s.CargoUnits[s.CargoUnitCount++] = new CargoUnitView
                         {
                             Bp = jbp.Index,
-                            HealthFrac = jbp.MaxHealth > 0 ? u.Health[h.Index] / jbp.MaxHealth : 1f,
+                            HealthFrac = jbp.MaxHealth > 0 ? u.Health[h.Index] / Combat.Veterancy.MaxHealth(jbp, u.Kills[h.Index]) : 1f,
                             Fuel = jf > 0 ? Math.Clamp(c.Fuel[h.Index] / jf, 0f, 1f) : -1f,
                             Size = jbp.CargoSize,
                         };

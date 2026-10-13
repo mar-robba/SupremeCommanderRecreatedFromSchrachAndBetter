@@ -59,6 +59,8 @@ public sealed class SandboxController : IDisposable
     {
         Ctx = ctx;
         Selection = selection;
+        // Sandbox: units of every army can be selected and ordered (orders are split per army).
+        ctx.ControlAnyArmy = true;
         TargetArmy = ctx.LocalArmy;
         ParseCtx = new ConsoleContext { Db = ctx.Db, LocalArmy = ctx.LocalArmy, ArmyCount = ctx.ArmyColors.Length };
         Panel = new SandboxPanel(this);
@@ -78,6 +80,7 @@ public sealed class SandboxController : IDisposable
     public void Dispose()
     {
         EffectsRenderer.DebugKeysEnabled = true;
+        Ctx.ControlAnyArmy = false;
         PlacementGrid.IgnoreDeposits = false;
         UnlockCamera();
     }
@@ -564,6 +567,7 @@ public sealed class SandboxController : IDisposable
         "Esc  close console / help, cancel the map tool       Space  pause      + / -  game speed",
         "Map tool (spawn / nuke / clear): left click apply, Shift+click repeat, right click cancel",
         "F7  fog of war on/off (client)      F8  performance overlay",
+        "Units of every army can be selected and ordered (orders go to each unit's own army); panel actions apply to them",
     ];
 
     private void DrawHelp()

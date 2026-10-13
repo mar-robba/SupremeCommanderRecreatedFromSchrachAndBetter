@@ -29,6 +29,14 @@ public struct UnitView
     /// <summary>In-place structure upgrade in progress: target blueprint (-1 = not upgrading) and its 0..1 progress.</summary>
     public int UpgradeBp;
     public float UpgradeFrac;
+    /// <summary>Effective max health (blueprint MaxHealth × veterancy bonus, see Combat/Veterancy).</summary>
+    public float MaxHealth;
+    /// <summary>What the unit's build power is doing (Build/Repair/Reclaim/Assist/Capture/Upgrade), None if idle.</summary>
+    public BuilderMode WorkMode;
+    /// <summary>0..1 progress of an enemy capturing this unit (0 = not being captured).</summary>
+    public float CaptureFrac;
+    /// <summary>Adjacency bonuses (fractions, see EconState): +mass production, +energy production, -energy use.</summary>
+    public float AdjMassProd, AdjEnergyProd, AdjEnergyUse;
     /// <summary>Aircraft flight fuel 0..1 (-1 = the unit uses no fuel). See Transport/TransportSystem.</summary>
     public float Fuel;
 }

@@ -150,7 +150,8 @@ public static class UpgradeSystem
         if (!up.Active) return;
         var obp = w.BpOf(t);
         var nbp = w.Blueprints[up.TargetBp];
-        float hpFrac = obp.MaxHealth > 0 ? u.Health[t] / obp.MaxHealth : 1f;
+        float oldMax = Combat.Veterancy.MaxHealth(obp, u.Kills[t]); // veterancy-effective max health
+        float hpFrac = oldMax > 0 ? u.Health[t] / oldMax : 1f;
         up = default;
 
         if (obp.FootprintX != nbp.FootprintX || obp.FootprintZ != nbp.FootprintZ)
@@ -160,7 +161,8 @@ public static class UpgradeSystem
             w.Occupancy.Stamp(nbp, u.Pos[t], t);
         }
         u.Bp[t] = nbp.Index;
-        u.Health[t] = Math.Clamp(hpFrac * nbp.MaxHealth, 1f, nbp.MaxHealth);
+        float newMax = Combat.Veterancy.MaxHealth(nbp, u.Kills[t]);
+        u.Health[t] = Math.Clamp(hpFrac * newMax, 1f, newMax);
         // Fresh weapon states (targets, ground targets) as for a new unit, then every module re-initializes.
         var ws = u.WeaponsOf(t);
         ws.Clear();
