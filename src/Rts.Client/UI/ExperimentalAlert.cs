@@ -111,8 +111,8 @@ public sealed class ExperimentalAlert
             {
                 float t = (age * 0.8f + k / 3f) % 1f;
                 float alpha = (1f - t) * MathF.Min(1f, (BannerTime - age) * 0.8f);
-                Raylib.DrawCircleLinesV(s, Ui.P(10) + t * Ui.P(46), new Color(255, 140, 40, (int)(230 * alpha)));
-                Raylib.DrawCircleLinesV(s, Ui.P(11) + t * Ui.P(46), new Color(255, 140, 40, (int)(120 * alpha)));
+                float rad = Ui.P(18) + t * Ui.P(70);
+                Raylib.DrawRing(s, rad - MathF.Max(2f, Ui.P(3)), rad, 0, 360, 48, new Color(255, 140, 40, (int)(230 * alpha)));
             }
         }
     }

@@ -131,7 +131,18 @@ Then:
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
       - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
             avoidance in narrow channels
-- [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
+- [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
+      build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
+      **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
+      **Mavor** (strategic artillery, range 1500, 20000 energy per shot via `EnergyPerShot`); "Experimental detected" alert + sound
+      - [ ] later: Monkeylord/Czar-like experimentals (2nd faction), Mavor/Fatboy AI use, crush animation, shield HP kept on enhancement swap
+- [x] Commander enhancements (2026-10-13, wave 4g): slots LeftArm/RightArm/Back with prerequisites (blueprint variants per slot
+      combination), built on itself over time like an upgrade (drain, assist with Guard, cancel refunds, any order interrupts),
+      remove = instant without refund; ACU: Heavy Antimatter Cannon, Zephyr Amplifier, Advanced/T3 Engineering, Resource Allocation,
+      Personal Shield → Shield Generator Field, Tactical Missile Pack; enhancement panel, model attachments
+      - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
+- [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
+      High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
 - [ ] Transports/ferry, air staging, engineer assist chains
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [ ] Mass fabricators, adjacency bonus
