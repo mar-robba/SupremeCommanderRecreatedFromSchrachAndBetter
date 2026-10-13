@@ -38,7 +38,7 @@ public static class ConstructionSystem
     public const float PropPickRadius = 2.5f;
     private const float CompleteEpsilon = 1e-4f;
 
-    private static readonly List<int> _tmp = new();
+    [Persistence.NoSave] private static readonly List<int> _tmp = new(); // scratch, cleared before use
 
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {

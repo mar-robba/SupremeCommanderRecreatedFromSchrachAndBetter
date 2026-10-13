@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -127,7 +128,7 @@ internal sealed class ClassCodec : RefCodec
 internal sealed class PlainCodec : RefCodec
 {
     protected override string ComputeSignature() => "";
-    public override object Create(GraphReader r) => Type == typeof(Lock) ? new Lock() : new object();
+    public override object Create(GraphReader r) => Activator.CreateInstance(Type)!;
 }
 
 internal sealed class ArrayCodec<T> : RefCodec
@@ -139,7 +140,7 @@ internal sealed class ArrayCodec<T> : RefCodec
     {
         int min = Val<T>.MinEncodedSize;
         int n = r.In.Count(min == 0 ? (long)r.In.Remaining * 64 + 4096 : r.In.Remaining / min);
-        return n == 0 ? Array.Empty<T>() : new T[n];
+        return new T[n]; // never Array.Empty: identity (shared vs distinct empty arrays) is part of the graph
     }
 
     public override void WriteBody(GraphWriter w, object o) => Val<T>.WriteSpan(w, (T[])o);

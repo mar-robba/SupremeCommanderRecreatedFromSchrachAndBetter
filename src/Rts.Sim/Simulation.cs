@@ -14,7 +14,7 @@ namespace Rts.Sim;
 public sealed class Simulation
 {
     public readonly SimWorld World;
-    public double LastTickMs { get; private set; }
+    [field: Persistence.NoSave] public double LastTickMs { get; private set; } // wall clock, not saved
     /// <summary>Commands produced by the skirmish AI this tick (reused list).</summary>
     private readonly List<Command> _aiCommands = new();
 

@@ -51,7 +51,7 @@ internal sealed class PathSolver
     private const int S = NavGraph.S;
     private const int SC = S * S;
 
-    [ThreadStatic] private static PathSolver? t_solver;
+    [ThreadStatic, Persistence.NoSave] private static PathSolver? t_solver;
     public static PathSolver ForThread() => t_solver ??= new PathSolver();
 
     private int[] _sectorSlot = [];
