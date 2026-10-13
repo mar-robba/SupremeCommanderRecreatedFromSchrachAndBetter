@@ -128,7 +128,7 @@ public sealed class AiConfig
         },
         AiDifficulty.Hard => new AiConfig
         {
-            // Hard = faster reactions, longer mex chains, steadier pressure, raids, snipes and micro - no bonuses.
+            // Hard = faster reactions, a stronger opening, an artillery-heavy mix, raids, snipes and micro - no bonuses.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
             MaxEngineers = 12, EarlyEngineers = 5, MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
@@ -140,6 +140,7 @@ public sealed class AiConfig
             RetreatFraction = 0, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
             PushTime = 840, LateGameTime = 1140, BomberGroup = 5, Reinforce = true,
             RaidSize = 6, MaxRaids = 1, CommanderSnipe = true, FocusFire = true,
+            ArtilleryShare = 0.55f, // matrix: 0.15 -> 36 % wins vs Normal, 0.25 -> 57 %, 0.4 -> 78 %, 0.55 -> 86 %
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
     };
