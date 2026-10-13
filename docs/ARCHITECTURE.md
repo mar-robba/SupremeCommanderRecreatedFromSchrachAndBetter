@@ -342,6 +342,16 @@ interpolates prev/cur by time
   Headless check: `Rts.Bench -- replay <file>`; timings/sizes: `Rts.Bench -- savebench`.
 - Threading: `SaveGame.Capture` only on the sim thread (a `SimRunner.Post` job; jobs also run while paused) or with
   the runner stopped; `SaveGame.Encode` (compression) and file writes run on a background task.
+- Client (`Rts.Client/Persistence`, `Menus/{SaveListScreen,FileLoadingScreen,ReplayScreen,InGameSaveUi,MessageBox}`):
+  `GameRecording` (owned by `GameSession`) sets the recorder as runner hooks for every game, captures saves through a
+  runner job and writes files on a worker (toasts); the replay is written when a team wins and again on quit/restart
+  (same file; games under 5 s are dropped; app exit waits for pending writes). `ClientGameData` = the client config
+  stored in `GameInfo.ClientData` (rebuilds names/colors/sandbox on load). Pause menu "Save Game" dialog, F5/F6
+  quicksave/quickload; main menu "Load Game" / "Replays" lists (header only; damaged/incompatible files greyed with
+  the reason; load errors in a message box). Replay viewer = `GameSession` over `ReplayPlayer.Sim` with
+  `GameContext.ReadOnly` (no order/build/enhancement UI, commands ignored by the player anyway): play/pause, speed
+  0.5×–16×, timeline seek (`ReplaySeeker`: runner job `SeekTo` + `ReplaceSimulation`), fog view per army or all,
+  DESYNC banner, other-build warning.
 - **Keeping new state saveable** (rule for every feature): sim state lives in plain fields of sim classes/structs,
   arrays, `List`/`Dictionary`/`HashSet`/`Queue`/`Stack`, or a per-world `ConditionalWeakTable<SimWorld, T>`.
   No static mutable state, no stored lambdas/delegates (store an enum/id and dispatch in code; a cached delegate to

@@ -17,6 +17,11 @@ Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to se
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;
   `nuke x,z` fires a real strategic missile (anti-nukes can intercept it), `nuke instant x,z` = the blast at once;
   multi-word unit names use `_`, e.g. `spawn strategic_missile_launcher me at 100,128`)
+- Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
+  `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
+  (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`).
+  Headless replay check (exit 1 = desync): `dotnet run -c Release --project tools/Rts.Bench -- replay <file>`;
+  save/load timings: `... -- savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnitsPerArmy] [threads]`
 - **Visual check (agents must use this after client changes):**
   `dotnet run --project src/Rts.Client -- --demo --screenshot screenshots/<name>.png --frames 120 --size 1280x720 [--camera x,z,dist]`
   then Read the PNG to look at it. A display is available (X11/XWayland).
