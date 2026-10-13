@@ -14,7 +14,7 @@ using Rts.Sim.World;
 ///   replay &lt;file.rtsreplay&gt; [threads]   re-simulates a replay headless and checks every recorded state hash.
 ///                                          Exit code 0 = in sync, 1 = desync, 2 = cannot open.
 ///   savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnitsPerArmy] [threads]
-///                                          records an AI match (Hard AIs), optionally adds a big sandbox army per player,
+///                                          records an AI match (Hard AIs); extraUnits > 0 = sandbox: victory off, then a big army per player is spawned at the end,
 ///                                          then measures save/load (cold + warm), file sizes and the recording cost per
 ///                                          tick, and writes the replay + save so `replay` can verify them.
 /// </summary>
@@ -99,10 +99,14 @@ public static class ReplayBench
         int hashCount = 0;
         var wall = Stopwatch.StartNew();
         var sw = new Stopwatch();
+        // Sandbox (extra > 0): victory off so the game lasts; the extra armies are spawned at the end (late-game size).
+        int spawnAt = extra > 0 ? maxTicks : -1;
+        if (extra > 0) maxTicks += players * extra / 250 + 30;
         for (int t = 0; t < maxTicks && w.WinningTeam < 0; t++)
         {
             var cmds = none;
-            if (t == 0 && extra > 0) cmds = SpawnArmies(sim, players, extra);
+            if (t == 0 && extra > 0) cmds = [new SandboxSetVictoryCommand(0, false)];
+            if (t == spawnAt) cmds = SpawnArmies(sim, players, extra);
             sw.Restart();
             var run = recorder.BeforeStep(sim, cmds);
             if (t == 0) { firstHookMs = sw.Elapsed.TotalMilliseconds; sw.Restart(); }
@@ -165,7 +169,7 @@ public static class ReplayBench
     }
 
     /// <summary>Sandbox-style mass spawn (recorded like the client's sandbox console): <paramref name="perArmy"/> land
-    /// units per player around its start, ordered to attack-move to the map centre.</summary>
+    /// units per player near its start position.</summary>
     private static List<Command> SpawnArmies(Simulation sim, int players, int perArmy)
     {
         var w = sim.World;
