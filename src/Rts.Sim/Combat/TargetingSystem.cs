@@ -17,6 +17,8 @@ namespace Rts.Sim.Systems;
 ///    every <see cref="EngagedScanInterval"/> ticks a re-scan switches to a strictly higher-priority target.
 /// 4. Otherwise a staggered scan (every <see cref="IdleScanInterval"/>..+2 ticks, immediately after losing a target)
 ///    of the spatial grid picks the best target: priority tier (see <see cref="Tier"/>), then distance, then index.
+/// Non-forced targets must be hittable from where the unit stands (<see cref="LineOfFire"/>: terrain line of fire for
+/// straight shots/beams, an arc solution for shells), checked on acquisition and on every engaged re-scan.
 /// </summary>
 public static class TargetingSystem
 {
@@ -64,7 +66,9 @@ public static class TargetingSystem
             if (!forced.IsNone && ws.Target == forced && u.IsActive(forced) && CombatState.CanSee(w, army, forced.Index)) continue;
 
             bool had = !ws.Target.IsNone;
-            if (had && u.IsActive(ws.Target) && CanEngage(w, s, army, pos, wbp.TargetMask, winfo.AcquireRange, wbp.MinRange, ws.Target.Index))
+            // Line of fire is re-checked on the engaged re-scan cadence (a target behind a cliff is dropped).
+            if (had && u.IsActive(ws.Target) && CanEngage(w, s, army, pos, wbp.TargetMask, winfo.AcquireRange, wbp.MinRange, ws.Target.Index)
+                && (ws.RetargetTimer > 0 || LineOfFire.CanHit(w, s, i, winfo, wbp, ws.Target.Index)))
             {
                 if (ws.RetargetTimer <= 0)
                 {
@@ -130,6 +134,9 @@ public static class TargetingSystem
             W = w,
             S = s,
             Shooter = info,
+            ShooterIndex = i,
+            WInfo = winfo,
+            WBp = wbp,
             ShooterLayer = myLayer,
             Army = army,
             Pos = u.Pos[i],
@@ -150,6 +157,9 @@ public static class TargetingSystem
         public SimWorld W;
         public CombatState S;
         public UnitCombatInfo Shooter;
+        public int ShooterIndex;
+        public WeaponInfo WInfo;
+        public WeaponBlueprint WBp;
         public LayerMask ShooterLayer;
         public int Army;
         public Vector2 Pos;
@@ -173,6 +183,7 @@ public static class TargetingSystem
             if (tier > BestTier) return true;
             if (tier == BestTier && (d2 > BestD2 || (d2 == BestD2 && j > Best))) return true;
             if (!CombatState.CanSee(W, Army, j)) return true;
+            if (!LineOfFire.CanHit(W, S, ShooterIndex, WInfo, WBp, j)) return true;
             Best = j;
             BestTier = tier;
             BestD2 = d2;

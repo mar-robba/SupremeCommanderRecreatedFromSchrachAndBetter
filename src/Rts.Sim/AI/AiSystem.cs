@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Rts.Sim.Orders;
+using Rts.Sim.Persistence;
 using Rts.Sim.World;
 
 namespace Rts.Sim.AI;
@@ -18,6 +19,11 @@ namespace Rts.Sim.AI;
 public static class AiSystem
 {
     private static readonly ConditionalWeakTable<SimWorld, AiState> _states = new();
+
+    /// <summary>Diagnostics hook (tools only, e.g. the bench with AI_TRACE=1): receives (army, message) for notable
+    /// AI decisions (waves, retreats, targets). Never read by the AI, so it cannot affect the simulation (and is not
+    /// part of a save).</summary>
+    [NoSave] public static Action<int, string>? Trace;
 
     /// <summary>AI state of a world (null until an AI army has thought once). For tools/tests/debug UI.</summary>
     public static AiState? StateOf(SimWorld w) => _states.TryGetValue(w, out var s) ? s : null;
