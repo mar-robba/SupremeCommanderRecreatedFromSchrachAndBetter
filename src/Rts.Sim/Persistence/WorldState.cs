@@ -83,6 +83,8 @@ public static class WorldState
         o.VarU(FormatVersion);
         o.VarU((ulong)ext.Count);
         o.Raw(ext.Fingerprint);
+        o.Raw(GameInfo.BlueprintHashOf(w.Blueprints));
+        o.Raw(GameInfo.TerrainHashOf(w.Terrain));
         var g = new GraphWriter(o, ext) { BodyMap = bodyMap };
         g.WriteRef(sim);
         var present = new List<(string key, object value)>();
@@ -108,8 +110,10 @@ public static class WorldState
         var ext = ExternalsOf(db, terrain);
         int count = input.Count(int.MaxValue);
         ulong fp = input.Raw<ulong>();
-        if (count != ext.Count || fp != ext.Fingerprint)
-            throw new IncompatibleSaveException("The blueprints or the map of this file differ from the ones of this build");
+        if (count != ext.Count || fp != ext.Fingerprint || input.Raw<ulong>() != GameInfo.BlueprintHashOf(db))
+            throw new IncompatibleSaveException("The unit blueprints of this file differ from the ones of this build");
+        if (input.Raw<ulong>() != GameInfo.TerrainHashOf(terrain))
+            throw new IncompatibleSaveException("The map of this file differs from the given terrain");
         var g = new GraphReader(input, ext);
         if (g.ReadRef() is not Simulation sim) throw ByteReader.Corrupt("no simulation root");
         int n = input.Count(Tables.Count);
