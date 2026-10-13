@@ -19,7 +19,9 @@ interpolates prev/cur by time
 ## Tick pipeline (`Simulation.Step`, fixed order)
 1. `CommandSystem`: validate and apply player commands (orders, factory queues, debug spawn); then
    `AiSystem` (skirmish AI, `Rts.Sim/AI/`) lets AI armies think and its commands go through `CommandSystem` too.
-2. Rebuild `AliveList`s, then `SpatialGrid.Rebuild` (counting sort, 8-unit cells).
+   Then `TransportSystem` (sequential, `Rts.Sim/Transport/`): load/unload/ferry/dock orders, fuel, carriers carry
+   their cargo (see Transports & cargo) — before the rebuild, so units that board leave the map the same tick.
+2. Rebuild `AliveList`s (carried units are skipped), then `SpatialGrid.Rebuild` (counting sort, 8-unit cells).
 3. `IntelSystem`: fog of war, radar, sonar, omni per team (see Intel model).
 4. `EconomySystem`: sum the production and the requests from the previous tick, compute efficiency, update storage.
 5. `OrderSystem` (parallel): the front order of each mobile unit becomes a movement goal and forced targets.
@@ -228,6 +230,41 @@ interpolates prev/cur by time
   (submerged units drawn after the water, see-through and blue-tinted), `PropRenderer.Naval.cs` (wrecks on deep
   water sink and fade), sonar ring in `BuildPlacement`. `--scene naval` (`NavalScene.cs`): scripted Archipelago
   fleet battle + naval factory (`--select uef_t1_naval_factory`) for screenshots and tests.
+
+## Transports & cargo (`Rts.Sim/Transport`)
+- One mechanic for land transports, air staging and the Atlantis: a **carrier** has `Cargo {Layer Land|Air,
+  Capacity (slots), LoadRange, RepairRate, RefuelRate, KeepDocked, HoverHeight}` in its blueprint
+  (`Data/UnitBlueprint.Transport.cs`). What a unit weighs as cargo is `TransportSize` (-1 = derived: land T1 = 1,
+  T2 = 2, T3/commander = 4 slots; aircraft T1–T2 = 1, T3 = 2; structures, ships and experimentals can't be carried).
+- **Carried units** get `UnitFlags.Carried`: they stay alive (handles valid, `IsActive` true) but `RebuildAliveList`
+  skips them, so they are off the grid, untargetable, out of intel/economy and out of `snap.Units`. Their position
+  follows the carrier each tick. When a unit boards, weapon locks and front Attack orders on it are dropped
+  (`PurgeReferences`; Attack orders issued later are dropped by `DropAttackOnCarried`). A destroyed carrier kills
+  its cargo, recursively (no emergency drop, like SupCom).
+- State in `SimWorld.Cargo` (`CargoState`: `Carrier[]`, `Holds[]` lists, `Fuel[]`, `AirMode[]`, timers) — plain
+  arrays/lists (save/load friendly).
+- Orders (`TransportOrders` builds and issues them; `CommandSystem` hands Load/Unload/TransportTo/Ferry/Dock to it):
+  `Load` (land unit → walk to the transport and board; transport → fly to the unit and pick it up), `Unload` (land
+  transports fly there, land and drop the cargo in rings; air carriers launch their aircraft), `TransportTo`
+  (issue-time only: cargo is split among the selected transports, biggest units first, into Load + Unload; no
+  transports = Move), `Ferry` (transport: shuttles between a pickup beacon and a drop point forever, leaves 3 s after
+  the last boarding or when full; land unit: walks to the beacon and boards a ferry transport), `Dock` (aircraft:
+  to a given/nearest air carrier). Queued orders after the transport order resume after the drop.
+- VTOL (`Systems/MovementSystem.Vtol.cs`): air units with land cargo hover and land (`AirMode`) to load/unload.
+- Fuel: aircraft burn `FuelSeconds` (0 = derived 400/600/800 s by tech; < 0 = unlimited) while flying; out of fuel
+  = half speed. Idle aircraft below 50% HP or out of fuel auto-dock at the nearest air carrier with room.
+  Air Staging repairs/refuels for free and releases aircraft when full; `KeepDocked` carriers (the Atlantis) keep
+  them until Unload (Launch) or until the aircraft gets new queued orders.
+- Mobile factory (Atlantis): builds aircraft on deck (`SyncFactoryUnit` keeps the unit being built on the carrier)
+  and carries them.
+- Assist chains (`Economy/AssistChain.cs`): an engineer guarding an engineer that guards a builder… helps the root
+  builder (depth 8, cycle-safe); a guard repairs its damaged guarded unit first.
+- Snapshot (`Snapshot/TransportViews.cs`, written by `TransportSnapshotWriter`): `CargoViews` (carrier, used/capacity
+  slots, landing) + `CargoUnits` (blueprint, health, fuel, size of each carried unit), `Ferries` (army, pickup, drop,
+  transports), `UnitView.Fuel`.
+- Client: models in `Rendering/UnitModels.Transport.cs`, cargo drawn under transports / on the pads and the deck in
+  `Rendering/UnitRenderer.Cargo.cs`, ferry routes in `Rendering/TransportOverlay.cs`, orders/context clicks/cargo
+  and fuel in the UI; `--scene transport` (`TransportScene.cs`) shows everything.
 
 ## Skirmish AI (`Rts.Sim/AI`)
 - Runs inside the deterministic sim (sequential, AliveList order, DetRandom, no Dictionary/HashSet iteration) for

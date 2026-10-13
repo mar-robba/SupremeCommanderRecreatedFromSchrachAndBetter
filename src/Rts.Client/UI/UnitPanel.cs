@@ -34,7 +34,7 @@ public sealed class UnitPanel
             if (snap.TryGetUnit(h.Index, h.Generation, out var v)) views.Add(v);
         if (views.Count == 0) return;
         if (views.Count == 1) DrawSingle(r, snap, views[0]);
-        else DrawMulti(r, views);
+        else DrawMulti(r, snap, views);
     }
 
     private void DrawSingle(Rectangle r, SimSnapshot snap, UnitView v)
@@ -98,6 +98,7 @@ public sealed class UnitPanel
         }
 
         if (!underConstruction) y = StrategicHud.DrawUnitPanelBars(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
+        if (!underConstruction) y = CargoPanel.DrawSingle(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
         int fs = Ui.F(11.5f);
         string order = CurrentOrderText(snap, v, bp);
         Ui.Text("Order:", r.X + pad, y, fs, Ui.TextFaint, true);
@@ -167,6 +168,11 @@ public sealed class UnitPanel
             OrderType.Reclaim => "Reclaiming",
             OrderType.Capture => "Capturing",
             OrderType.Launch => "Launching",
+            OrderType.Load => bp.Cargo != null ? "Picking up" : "Boarding a transport",
+            OrderType.Unload => bp.Cargo?.Layer == CargoLayer.Air ? "Launching aircraft" : "Unloading",
+            OrderType.TransportTo => "Transporting",
+            OrderType.Ferry => bp.Cargo != null ? "Ferrying" : "Waiting for a ferry",
+            OrderType.Dock => "Docking",
             _ => "Idle",
         };
         if (v.OrderCount > 1) text += $" (+{v.OrderCount - 1} queued)";
@@ -194,7 +200,7 @@ public sealed class UnitPanel
         return l;
     }
 
-    private void DrawMulti(Rectangle r, List<UnitView> views)
+    private void DrawMulti(Rectangle r, SimSnapshot snap, List<UnitView> views)
     {
         // Group by blueprint: commander first, then engineers, then mobile, then structures; stable by bp index.
         var groups = views.GroupBy(v => v.Bp)
@@ -207,6 +213,7 @@ public sealed class UnitPanel
         float barH = Ui.P(12);
         Ui.Bar(new Rectangle(r.X + pad, y, r.Width - 2 * pad, barH), totalMax > 0 ? totalHp / totalMax : 0, new Color(70, 200, 70, 255), $"Health {totalHp / MathF.Max(1, totalMax) * 100:0}%");
         y += barH + Ui.P(6);
+        y = CargoPanel.DrawMulti(_ctx, snap, views, r.X + pad, y, r.Width - 2 * pad, barH);
 
         float btn = Ui.P(46), gap = Ui.P(4);
         int cols = Math.Max(1, (int)((r.Width - 2 * pad + gap) / (btn + gap)));

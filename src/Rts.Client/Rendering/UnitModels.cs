@@ -119,7 +119,10 @@ public static partial class UnitModels
             case "fighter": Fighter(b, w, h, l); break;
             case "bomber": Bomber(b, w, h, l); break;
             case "gunship": Gunship(b, w, h, l); break;
-            case "transport": Transport(b, w, h, l); break;
+            case "transport": CourierTransport(b, w, h, l); break; // cargo shapes: UnitModels.Transport.cs
+            case "transport2": StarLifterTransport(b, pivots, w, h, l, hasWeapon, out t); break;
+            case "air_staging": AirStaging(b, w, h, l); break;
+            case "atlantis": t = Atlantis(b, pivots, w, h, l, hasWeapon); break;
             case "frigate":
             case "destroyer":
             case "cruiser":
@@ -627,22 +630,6 @@ public static partial class UnitModels
             b.Cylinder(V(sd * 0.18f * w, 0.36f * h, 0.12f * l), Axis.Z, 0.25f * l, 0.04f * w, 0.04f * w, 6, Dark);
         }
         b.Box(V(0, 0.55f * h, -0.47f * l), V(0.2f * w, 0.12f * h, 0.03f * l), Team);
-    }
-
-    private static void Transport(MeshBuilder b, float w, float h, float l)
-    {
-        b.Loft(MeshBuilder.Chamfered(0.36f * w, 0.5f * h, 0.08f * w), [
-            new Station(-0.5f * l, 0.7f, 0.6f, 0, 0.55f * h), new Station(-0.3f * l, 1, 1, 0, 0.5f * h),
-            new Station(0.32f * l, 1, 1, 0, 0.5f * h), new Station(0.5f * l, 0.6f, 0.5f, 0, 0.45f * h)], Axis.Z, Hull, Dark);
-        b.Box(V(0, 0.62f * h, 0.42f * l), V(0.2f * w, 0.1f * h, 0.1f * l), Glass);
-        b.Box(V(0, 0.76f * h, 0), V(0.2f * w, 0.02f * h, 0.5f * l), Team);
-        foreach (int sd in (ReadOnlySpan<int>)[-1, 1])
-        foreach (float z in (ReadOnlySpan<float>)[-0.28f, 0.22f])
-        {
-            b.Box(V(sd * 0.28f * w, 0.55f * h, z * l), V(0.22f * w, 0.05f * h, 0.06f * l), HullDark);
-            b.Cylinder(V(sd * 0.38f * w, 0.4f * h, z * l), Axis.Y, 0.25f * h, 0.12f * w, 0.12f * w, 10, Hull, Black);
-            b.Cylinder(V(sd * 0.38f * w, 0.5f * h, z * l), Axis.Y, 0.08f * h, 0.125f * w, 0.125f * w, 10, Team);
-        }
     }
 
     // ================================================================ naval

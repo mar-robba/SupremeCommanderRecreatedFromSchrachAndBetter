@@ -31,6 +31,8 @@ public sealed class SimWorld
     public readonly List<int> PendingDeaths = new();
     public readonly PathService Paths;
     public readonly IntelService Intel;
+    /// <summary>Cargo/transport state: who carries whom, fuel, VTOL modes (Rts.Sim/Transport).</summary>
+    public readonly Transport.CargoState Cargo;
     public bool CheatsEnabled = true;
     /// <summary>Set when only one team remains.</summary>
     public int WinningTeam = -1;
@@ -51,6 +53,7 @@ public sealed class SimWorld
         Props = new PropStore(Math.Max(4096, unitCapacity));
         Paths = new PathService(this);
         Intel = new IntelService(this);
+        Cargo = new Transport.CargoState(unitCapacity);
     }
 
     public bool IsEnemy(int armyA, int armyB) => armyA != armyB && Armies[armyA].Team != Armies[armyB].Team;
