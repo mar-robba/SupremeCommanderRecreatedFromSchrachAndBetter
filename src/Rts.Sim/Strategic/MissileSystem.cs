@@ -32,7 +32,7 @@ public static class MissileSystem
     public const float DefaultCruise = 16f;
     private static readonly float TurnCos = MathF.Cos(InterceptorTurnRate * SimWorld.Dt);
     private static readonly float TurnSin = MathF.Sin(InterceptorTurnRate * SimWorld.Dt);
-    private static readonly List<int> _tmp = new();
+    [Persistence.NoSave] private static readonly List<int> _tmp = new(); // scratch, cleared before use
 
     internal static void InitUnit(StrategicState s, SimWorld w, int i, UnitBlueprint bp) =>
         s.Defense[i] = new DefenseState { Cooldown = 0 };

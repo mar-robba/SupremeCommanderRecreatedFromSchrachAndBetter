@@ -38,12 +38,15 @@ public static class GameSetup
         0x2F6FE0FF, 0xE03A2FFF, 0x3CB043FF, 0xE8C31AFF, 0xF07F17FF, 0x9B4FD8FF, 0x2FC9D8FF, 0xE6E6E6FF,
     ];
 
+    /// <summary>The map generator settings of a skirmish (saves/replays store them to regenerate the terrain).</summary>
+    public static MapGenSettings MapSettingsFor(SkirmishSettings s) => new()
+    {
+        Size = s.MapSize, Players = s.Players, Seed = s.Seed, Preset = s.MapPreset, WaterAmount = s.WaterAmount,
+    };
+
     public static Simulation CreateSkirmish(BlueprintDb db, SkirmishSettings s)
     {
-        var terrain = MapGenerator.Generate(new MapGenSettings
-        {
-            Size = s.MapSize, Players = s.Players, Seed = s.Seed, Preset = s.MapPreset, WaterAmount = s.WaterAmount,
-        });
+        var terrain = MapGenerator.Generate(MapSettingsFor(s));
         var armies = new Army[s.Players];
         for (int a = 0; a < s.Players; a++)
         {

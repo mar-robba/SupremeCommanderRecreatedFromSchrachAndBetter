@@ -51,7 +51,7 @@ internal sealed class PathSolver
     private const int S = NavGraph.S;
     private const int SC = S * S;
 
-    [ThreadStatic] private static PathSolver? t_solver;
+    [ThreadStatic, Persistence.NoSave] private static PathSolver? t_solver;
     public static PathSolver ForThread() => t_solver ??= new PathSolver();
 
     private int[] _sectorSlot = [];
@@ -237,7 +237,7 @@ internal sealed class PathSolver
 
     /// <summary>Heuristic weight in 1/4 steps (weighted A*: bounded suboptimality, far fewer expansions around
     /// obstacles; the string pulling pass removes most of the extra length).</summary>
-    public static int HeuristicWeightQuarters = 6;
+    public const int HeuristicWeightQuarters = 6;
 
     private static int Heur(int dx, int dz) => Octile(dx, dz) * HeuristicWeightQuarters >> 2;
 

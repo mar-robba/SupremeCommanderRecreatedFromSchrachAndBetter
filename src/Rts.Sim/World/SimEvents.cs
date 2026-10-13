@@ -71,6 +71,6 @@ public sealed class SimEvents
 {
     public readonly List<DamageEvent> Damage = new();
     public readonly List<AreaDamageEvent> AreaDamage = new();
-    /// <summary>Effects since the last snapshot (cleared by the snapshot writer).</summary>
-    public readonly List<EffectEvent> Effects = new();
+    /// <summary>Effects since the last snapshot (cleared by the snapshot writer). Cosmetic: not saved.</summary>
+    [Persistence.NoSave] public readonly List<EffectEvent> Effects = new();
 }
