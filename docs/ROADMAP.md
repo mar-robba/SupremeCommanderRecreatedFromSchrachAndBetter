@@ -165,7 +165,8 @@ Shared contracts (still valid):
       from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
       lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
       - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
-        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out
+        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out; nearby own units keep
+        shooting a unit being captured (no hold-fire state yet)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
