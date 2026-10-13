@@ -48,7 +48,7 @@ public sealed class FactoryPanel
         {
             if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
             var bp = _ctx.Db[v.Bp];
-            if (!bp.IsStructure || !bp.Has(UnitCategory.Factory)) continue;
+            if (!bp.Has(UnitCategory.Factory) || bp.BuildIndices.Length == 0) continue; // structures and mobile factories (Fatboy)
             _factories.Add(h);
             foreach (int b in bp.BuildIndices)
                 if (!_options.Contains(b)) _options.Add(b);
