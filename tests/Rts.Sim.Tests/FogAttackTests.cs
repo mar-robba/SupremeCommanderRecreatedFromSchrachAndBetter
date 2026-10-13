@@ -24,7 +24,7 @@ public class FogAttackTests
         var sim = World();
         var w = sim.World;
         var tank = CombatWorld.Spawn(sim, "uef_t1_tank", 0, 20, 64);
-        var enemy = CombatWorld.Spawn(sim, "uef_t1_commander", 1, 36, 64); // tough, in vision (16 away)
+        var enemy = CombatWorld.Spawn(sim, "uef_commander", 1, 36, 64); // tough, in vision (16 away)
         sim.Step();
         Assert.True(w.Intel.IsVisible(0, enemy.Index));
         sim.Step([new IssueOrderCommand(0, [tank], Order.AttackUnit(enemy), false)]);
@@ -48,7 +48,7 @@ public class FogAttackTests
         var sim = World();
         var w = sim.World;
         var tank = CombatWorld.Spawn(sim, "uef_t1_tank", 0, 20, 64);
-        var enemy = CombatWorld.Spawn(sim, "uef_t1_commander", 1, 36, 64);
+        var enemy = CombatWorld.Spawn(sim, "uef_commander", 1, 36, 64);
         sim.Step();
         sim.Step([new IssueOrderCommand(0, [tank], Order.AttackUnit(enemy), false)]);
         for (int t = 0; t < 30; t++) sim.Step();
