@@ -34,8 +34,17 @@ Tests: 229 sim + 158 client.
     - a unit with the missile pack doesn't move into range;
     - `--select` can't pick variant ids.
 - **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
-- **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
-  desync detection.
+- ✅ **(i) Persistence**: MERGED 2026-10-14.
+  - Automatic deep serializer, so save → load → continue gives identical bytes and hash.
+  - Every game is recorded with a hash every 10 ticks; replay viewer with seek and DESYNC banner.
+  - F5/F6 quicksave/quickload; Load Game and Replays screens.
+  - `--saves`, `--replays`, `--load F`, `--replay F [--seek T]`, `Rts.Bench -- replay F` / `savebench`.
+  - Sizes: a 25-min 4-AI game on 512 → save 1.8 MB, load 0.3 s, replay 165 KB.
+  - Follow-ups:
+    - no save migrations (layout change = old files incompatible);
+    - no Load in the pause menu;
+    - in the viewer, F7 doesn't update the view selector;
+    - a short hitch every 60 s at seek checkpoints.
 
 Merge order: when each one finishes, read `report-<x>.md`, merge into main, run the tests, look at a screenshot, then
 remove its worktree and branch. Merge (i) last, or ask it to re-run its round-trip tests after the others' merges.
