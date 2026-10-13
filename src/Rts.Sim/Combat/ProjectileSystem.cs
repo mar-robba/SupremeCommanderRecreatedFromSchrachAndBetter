@@ -23,7 +23,8 @@ namespace Rts.Sim.Systems;
 /// - DamageRadius &gt; 0 → AreaDamageEvent (layers = weapon TargetMask), else DamageEvent to the unit hit
 ///   (ground hits damage the nearest enemy whose sphere contains the impact point, if any).
 /// - Shields (Strategic module): a segment entering an up enemy shield dome from outside before any other impact
-///   is absorbed there (damage to the shield, no area damage). If the shield already collapsed earlier in the same
+///   is absorbed there (damage to the shield, no area damage); bombs that start inside an enemy dome (released by
+///   an aircraft flying inside it) are absorbed by it at once. If the shield already collapsed earlier in the same
 ///   tick the projectile flies on. Strategic missiles/interceptors are stepped by Strategic/MissileSystem.
 /// </summary>
 public static class ProjectileSystem
@@ -112,7 +113,12 @@ public static class ProjectileSystem
 
         // Enemy shield dome entered from outside on this segment (Strategic module): absorbs the projectile unless
         // something else happens first. shieldT = 2 when none.
-        int shieldEntry = ShieldSystem.FirstEntry(strat, P.Army[p], pos0, pos1, out float shieldT);
+        // Bombs released by an aircraft flying INSIDE an enemy dome are absorbed by it at once (shieldT = -1: before
+        // anything else on the segment), so bombers can't bomb under shields; other shots fired inside pass out.
+        float shieldT;
+        int shieldEntry = (flags & ProjectileFlags.Bomb) != 0 ? ShieldSystem.FirstContaining(strat, P.Army[p], pos0) : -1;
+        if (shieldEntry >= 0) shieldT = -1f;
+        else shieldEntry = ShieldSystem.FirstEntry(strat, P.Army[p], pos0, pos1, out shieldT);
         if (shieldEntry >= 0 && shieldT <= groundT)
         {
             groundT = 2f; // the ground beyond the dome is never reached
@@ -182,7 +188,9 @@ public static class ProjectileSystem
         }
         if (shieldEntry >= 0)
         {
-            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = strat.Index.Entries[shieldEntry].Unit, Pos = Vector3.Lerp(pos0, pos1, shieldT) });
+            ref var dome = ref strat.Index.Entries[shieldEntry];
+            var at = shieldT < 0 ? ShieldIndex.SurfaceAbove(dome, pos0) : Vector3.Lerp(pos0, pos1, shieldT);
+            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = dome.Unit, Pos = at });
             return;
         }
 

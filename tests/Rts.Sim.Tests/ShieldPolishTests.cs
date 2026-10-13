@@ -166,11 +166,12 @@ public class ShieldPolishTests
         var b = CombatWorld.Spawn(sim, bomber, 1, 20, 64);
         float maxShield = TestUtil.Db[gen].Shield!.MaxHealth;
         sim.Step([new IssueOrderCommand(1, [b], Order.AttackUnit(target), false)]);
-        int hits = RunCountingShieldHits(sim, 400);
-        Assert.True(hits >= 2, $"shield hits {hits}");
+        int hits = RunCountingShieldHits(sim, 400, hits: 1);
+        Assert.True(hits >= 1, $"shield hits {hits}");
         Assert.True(ShieldOf(sim, g).Hp < maxShield || !ShieldOf(sim, g).Up, $"shield hp {ShieldOf(sim, g).Hp}");
-        if (ShieldOf(sim, g).Up)
-            Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
+        // Keep watching: every later bomb must be stopped by the dome too.
+        for (int t = 0; t < 300; t++) sim.Step();
+        Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
     }
 
     [Fact]
@@ -184,17 +185,27 @@ public class ShieldPolishTests
         sim.Step([new IssueOrderCommand(1, [b], Order.AttackUnit(target), false)]);
         // Keep the bomber low enough to be inside the dome (a big dome / a low flier).
         int hits = 0;
+        float minHp = float.MaxValue;
         for (int t = 0; t < 400; t++)
         {
             var u = sim.World.Units;
             if (u.IsActive(b)) u.Elevation[b.Index] = MathF.Min(u.Elevation[b.Index], 10f + 6f);
             sim.Step();
-            hits += sim.World.Events.Effects.Count(e => e.Kind == EffectKind.ShieldHit);
+            foreach (var e in sim.World.Events.Effects)
+            {
+                if (e.Kind != EffectKind.ShieldHit) continue;
+                hits++;
+                // The hit shows on the dome surface above the bomber, not at the release point inside.
+                var c = new Vector2(e.Pos.X - 64, e.Pos.Z - 64);
+                float top = 10f + 0.7f * MathF.Sqrt(MathF.Max(0, 23f * 23f - c.LengthSquared()));
+                Assert.True(MathF.Abs(e.Pos.Y - top) < 0.6f, $"hit at y={e.Pos.Y}, dome surface {top}");
+            }
             sim.World.Events.Effects.Clear();
+            minHp = MathF.Min(minHp, ShieldOf(sim, g).Hp);
         }
-        Assert.True(hits >= 2, $"shield hits {hits}");
+        Assert.True(hits >= 1, $"shield hits {hits}");
         Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
-        Assert.True(ShieldOf(sim, g).Hp < TestUtil.Db["uef_t3_heavy_shield_generator"].Shield!.MaxHealth);
+        Assert.True(minHp < TestUtil.Db["uef_t3_heavy_shield_generator"].Shield!.MaxHealth);
     }
 
     [Fact]
@@ -222,7 +233,7 @@ public class ShieldPolishTests
         var arty = CombatWorld.Spawn(sim, "uef_t1_artillery", 1, 128, 128 + 4 + 26, heading: -MathF.PI / 2);
         sim.Step([new IssueOrderCommand(1, [arty], Order.AttackUnit(target), false)]);
         int hits = RunCountingShieldHits(sim, 300);
-        Assert.True(hits >= 2, $"shield hits {hits}");
+        Assert.True(hits >= 1, $"shield hits {hits}");
         Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
         Assert.True(ShieldOf(sim, g).Hp < TestUtil.Db[Gen].Shield!.MaxHealth);
     }

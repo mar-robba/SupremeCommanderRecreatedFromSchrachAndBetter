@@ -147,6 +147,13 @@ public static class ShieldSystem
         return s.Index.FirstEntry(s.EnemyMask[army], a, b, s.Shield, out t);
     }
 
+    /// <summary>Entry index of the first up enemy (to <paramref name="army"/>) dome containing point p, or -1.</summary>
+    public static int FirstContaining(StrategicState s, int army, Vector3 p)
+    {
+        if (s.Index.Count == 0) return -1;
+        return s.Index.FirstContaining(s.EnemyMask[army], p, s.Shield);
+    }
+
     /// <summary>
     /// Instant weapons (beams): absorbed by the first up enemy dome that the muzzle→target line enters from outside.
     /// Returns true if the shot was absorbed (shield damaged, effect emitted). Sequential (WeaponSystem.Emit).
