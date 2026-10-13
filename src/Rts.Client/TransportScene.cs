@@ -16,7 +16,7 @@ namespace Rts.Client;
 /// five vignettes (positions printed to the console for <c>--camera x,z,dist</c>):
 /// <list type="number">
 /// <item>Boarding: a C-6 with two units already clamped under it, four tanks walking up to board (Load).</item>
-/// <item>A full C-14 (12 slots) flying with TransportTo to another island.</item>
+/// <item>A full C-14 (12 slots) flying with TransportTo to another island, over the Atlantis after ~5 s.</item>
 /// <item>A ferry route: a C-6 with Ferry(beacon, drop to another island) and tanks ordered to the beacon.</item>
 /// <item>An Air Staging Facility with four damaged, empty-tanked fighters docked and two more queued (Dock).</item>
 /// <item>An Atlantis on deep water off the island with a deck full of aircraft, building interceptors.</item>
@@ -60,9 +60,12 @@ public static class TransportScene
         UnitHandle Unit(string id, Vector2 pos, float heading) => w.SpawnUnit(db.IndexOf(id), A, t.Clamp(pos, 4f), heading);
         float hd = DMath.HeadingOf(d);
 
-        // Other islands: the C-14's destination and the ferry drop point.
-        var other = Find(t, s0 + d * 60f, q => Away(q) && OpenLand(t, q, 4f)) ?? s0 + d * 60f;
-        var ferryDrop = Find(t, other + p * 14f, q => Away(q) && OpenLand(t, q, 4f) && Vector2.Distance(q, other) > 8f) ?? other + p * 10f;
+        // Other islands: the ferry drop point; open deep water for the Atlantis; the C-14 flies past the Atlantis.
+        var ferryDrop = Find(t, s0 + d * 60f, q => Away(q) && OpenLand(t, q, 4f)) ?? s0 + d * 60f;
+        var sea = Find(t, s0 + d * 40f - p * 18f, q => OpenWater(t, q, 12f)) ?? Find(t, s0 + d * 40f, q => OpenWater(t, q, 8f));
+        var seaDir = sea is Vector2 sd0 && Vector2.DistanceSquared(sd0, s0) > 1 ? Vector2.Normalize(sd0 - s0) : d;
+        var seaPos = sea ?? s0 + d * 40f;
+        var other = Find(t, seaPos + seaDir * 45f, q => Away(q) && OpenLand(t, q, 4f)) ?? ferryDrop;
 
         // 1) Boarding: C-6 hovering over open ground, an engineer + mobile AA already aboard, four tanks walk up.
         var boardAt = Find(t, s0 + p * 14f, q => OnHome(q) && OpenLand(t, q, 7f)) ?? s0 + p * 10f;
@@ -77,8 +80,8 @@ public static class TransportScene
         }
         cmds.Add(new IssueOrderCommand(A, walkers.ToArray(), TransportOrders.Load(c6), false));
 
-        // 2) A full C-14 (12 slots) taking off from the coast towards the other island.
-        var liftAt = Find(t, s0 + d * 16f - p * 4f, q => OnHome(q) && OpenLand(t, q, 3f)) ?? s0 + d * 12f;
+        // 2) A full C-14 (12 slots) taking off from the island towards another island, passing the Atlantis after ~5 s.
+        var liftAt = Find(t, seaPos - seaDir * 45f, q => OnHome(q) && OpenLand(t, q, 3f)) ?? s0 + d * 12f;
         var c14 = Unit("uef_t2_transport", liftAt, DMath.HeadingOf(other - liftAt));
         foreach (var id in (ReadOnlySpan<string>)["uef_t2_heavy_tank", "uef_t2_heavy_tank", "uef_t1_tank", "uef_t1_tank",
                      "uef_t1_tank", "uef_t1_tank", "uef_t1_mobile_aa", "uef_t1_mobile_aa", "uef_t1_engineer", "uef_t1_engineer"])
@@ -112,7 +115,6 @@ public static class TransportScene
         }
 
         // 5) Atlantis on open deep water off the island, deck full of aircraft, building interceptors.
-        var sea = Find(t, s0 + d * 40f - p * 18f, q => OpenWater(t, q, 12f)) ?? Find(t, s0 + d * 40f, q => OpenWater(t, q, 8f));
         var atlantis = UnitHandle.None;
         if (sea is Vector2 seaAt)
         {
@@ -151,14 +153,14 @@ public static class TransportScene
         }
         sim.Step(cmds);
 
-        var cam = s0 + d * 6f;
-        cfg.SceneCamera = new Vector3(cam.X, cam.Y, 62f);
+        var cam = (boardAt + beacon + (stagingAt ?? s0) + s0) * 0.25f + d * 4f;
+        cfg.SceneCamera = new Vector3(cam.X, cam.Y, 50f);
         Console.WriteLine($"transport scene: (1) boarding C-6 at {boardAt.X:0},{boardAt.Y:0} (e.g. --camera {boardAt.X:0},{boardAt.Y:0},22)");
         Console.WriteLine($"transport scene: (2) loaded C-14 from {liftAt.X:0},{liftAt.Y:0} to {other.X:0},{other.Y:0}");
         Console.WriteLine($"transport scene: (3) ferry beacon {beacon.X:0},{beacon.Y:0} -> drop {ferryDrop.X:0},{ferryDrop.Y:0}");
         if (stagingAt is Vector2 sa) Console.WriteLine($"transport scene: (4) air staging at {Snap(sa).X:0},{Snap(sa).Y:0} (e.g. --camera {Snap(sa).X:0},{Snap(sa).Y:0},18)");
-        if (sea is Vector2 sv) Console.WriteLine($"transport scene: (5) Atlantis at {sv.X:0},{sv.Y:0} (e.g. --camera {sv.X:0},{sv.Y:0},34)");
-        Console.WriteLine($"transport scene: default camera {cam.X:0},{cam.Y:0},62");
+        if (sea is Vector2 sv) Console.WriteLine($"transport scene: (5) Atlantis at {sv.X:0},{sv.Y:0} (e.g. --camera {sv.X:0},{sv.Y:0},40)");
+        Console.WriteLine($"transport scene: default camera {cam.X:0},{cam.Y:0},50");
     }
 
     private static Vector2 Snap(Vector2 q) => new(MathF.Round(q.X), MathF.Round(q.Y));
