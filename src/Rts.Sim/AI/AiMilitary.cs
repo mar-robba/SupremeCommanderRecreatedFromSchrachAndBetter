@@ -705,6 +705,7 @@ public sealed class AiMilitary
 
     private readonly List<int> _focusEnemies = new();
     private float[] _focusLeft = [];
+    private Vector2[] _focusPos = [];
     private readonly List<(int target, int unit)> _focusPairs = new();
 
     /// <summary>Hard micro (<see cref="AiConfig.FocusFire"/>): every direct-fire member picks, among the identified
@@ -724,8 +725,17 @@ public sealed class AiMilitary
             if (Vector2.DistanceSquared(u.Pos[e], g.Anchor) < near * near) _focusEnemies.Add(e);
         }
         if (_focusEnemies.Count == 0) return;
-        if (_focusLeft.Length < _focusEnemies.Count) _focusLeft = new float[_focusEnemies.Count * 2];
-        for (int k = 0; k < _focusEnemies.Count; k++) _focusLeft[k] = u.Health[_focusEnemies[k]];
+        if (_focusLeft.Length < _focusEnemies.Count)
+        {
+            _focusLeft = new float[_focusEnemies.Count * 2];
+            _focusPos = new Vector2[_focusEnemies.Count * 2];
+        }
+        int ne = _focusEnemies.Count;
+        for (int k = 0; k < ne; k++)
+        {
+            _focusLeft[k] = u.Health[_focusEnemies[k]];
+            _focusPos[k] = u.Pos[_focusEnemies[k]];
+        }
         _focusPairs.Clear();
         foreach (int i in g.Members)
         {
@@ -734,20 +744,8 @@ public sealed class AiMilitary
             var wb = bp.Weapons[0];
             if (wb.Ballistic || (wb.TargetMask & LayerMask.Land) == 0) continue;
             float dmg = wb.Damage * wb.ProjectilesPerShot * wb.RateOfFire * Cfg.FocusHorizon;
-            var p = u.Pos[i];
-            int best = -1;
-            float bestLeft = float.MaxValue, bestD = float.MaxValue;
-            for (int k = 0; k < _focusEnemies.Count; k++)
-            {
-                int e = _focusEnemies[k];
-                float r = wb.Range + 1f;
-                float d = Vector2.DistanceSquared(p, u.Pos[e]);
-                if (d > r * r) continue;
-                float left = _focusLeft[k] > 0 ? _focusLeft[k] : 1e6f + _focusLeft[k]; // saturated targets last
-                if (left < bestLeft || (left == bestLeft && d < bestD)) { best = k; bestLeft = left; bestD = d; }
-            }
+            int best = PickFocusTarget(u.Pos[i], wb.Range + 1f, _focusPos.AsSpan(0, ne), _focusLeft.AsSpan(0, ne), dmg);
             if (best < 0) continue;
-            _focusLeft[best] -= dmg;
             var th = u.HandleOf(_focusEnemies[best]);
             if (u.Weapons[i * UnitStore.MaxWeapons].Target == th) continue;
             _focusPairs.Add((_focusEnemies[best], i));
@@ -762,6 +760,24 @@ public sealed class AiMilitary
             _b.Cmd.Order(_tmp, Order.AttackUnit(u.HandleOf(t)));
             if (then != default) _b.Cmd.Order(_tmp, Order.AttackMoveTo(then), queue: true);
         }
+    }
+
+    /// <summary>Focus-fire choice of one shooter at 'shooter' with weapon range 'range': among the enemies in range,
+    /// the one with the least health left (healthLeft = health minus the damage already assigned; saturated targets,
+    /// left &lt;= 0, only when nothing else is in range), nearest on ties. Assigns 'damage' to it. -1 if none in range.</summary>
+    public static int PickFocusTarget(Vector2 shooter, float range, ReadOnlySpan<Vector2> enemyPos, Span<float> healthLeft, float damage)
+    {
+        int best = -1;
+        float bestLeft = float.MaxValue, bestD = float.MaxValue, r2 = range * range;
+        for (int k = 0; k < enemyPos.Length; k++)
+        {
+            float d = Vector2.DistanceSquared(shooter, enemyPos[k]);
+            if (d > r2) continue;
+            float left = healthLeft[k] > 0 ? healthLeft[k] : 1e6f + healthLeft[k];
+            if (left < bestLeft || (left == bestLeft && d < bestD)) { best = k; bestLeft = left; bestD = d; }
+        }
+        if (best >= 0) healthLeft[best] -= damage;
+        return best;
     }
 
     /// <summary>Nearest known (seen or on radar) enemy land unit or structure within radius of p.</summary>
