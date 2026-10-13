@@ -214,6 +214,8 @@ public static class MovementSystem
             }
         }
 
+        if (mv.LeaveTime > 0) FactoryExitMotion.Steer(w, i, bp, ref mv, pos, onBlocked, dt, ref desiredHeading, ref desiredSpeed, ref wantsMove);
+
         // Turn; vehicles must roughly face the direction before driving at full speed.
         float maxTurn = mb.TurnRate * DMath.Deg2Rad * dt;
         heading = DMath.RotateTowards(heading, desiredHeading, maxTurn);

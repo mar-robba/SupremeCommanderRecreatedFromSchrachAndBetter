@@ -71,6 +71,10 @@ public struct MoveState
     /// return to <see cref="IdleHome"/> (the orbit center when the chase began) afterwards.</summary>
     public bool IdleChase;
     public Vector2 IdleHome;
+    /// <summary>Surface units just released by a factory: seconds left to drive (through the factory's own
+    /// footprint) to <see cref="FactoryExit"/>; 0 = not leaving (<see cref="Systems.FactoryExitMotion"/>).</summary>
+    public float LeaveTime;
+    public Vector2 FactoryExit;
 }
 
 /// <summary>Per-weapon state; units have up to UnitStore.MaxWeapons weapons (index = unit * MaxWeapons + w).</summary>
