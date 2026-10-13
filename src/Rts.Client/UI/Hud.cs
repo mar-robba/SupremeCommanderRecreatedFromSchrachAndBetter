@@ -71,12 +71,8 @@ public sealed class Hud : IDisposable
         if (m.X <= 3 || m.Y <= 3 || m.X >= Ui.Sw - 4 || m.Y >= Ui.Sh - 4) return false;
         bool Hit(Rectangle r) => r.Width > 0 && Raylib.CheckCollisionPointRec(m, r);
         if (Hit(_top) || Hit(_mini)) return true;
-<<<<<<< HEAD
         if (_showSelectionPanels && (Hit(_infoR) || (!_ctx.ReadOnly && Hit(_ordersR)))) return true;
-=======
-        if (_showSelectionPanels && (Hit(_infoR) || Hit(_ordersR))) return true;
-        if (_enh.Hit(m)) return true;
->>>>>>> main
+        if (!_ctx.ReadOnly && _enh.Hit(m)) return true;
         return _buildKind != BuildKind.None && Hit(_buildR);
     }
 
@@ -115,7 +111,7 @@ public sealed class Hud : IDisposable
             else if (_factory.Refresh(snap)) { _buildKind = BuildKind.Factory; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _factory.DesiredWidth())), H); }
             else if (_upgrade.Refresh(snap)) { _buildKind = BuildKind.Upgrade; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _upgrade.DesiredWidth())), H); }
         }
-        _enh.Layout(snap, _showSelectionPanels, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
+        _enh.Layout(snap, _showSelectionPanels && !_ctx.ReadOnly, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
     }
 
     public void Draw()

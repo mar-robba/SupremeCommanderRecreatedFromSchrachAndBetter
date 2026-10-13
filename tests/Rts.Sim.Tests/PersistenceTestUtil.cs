@@ -87,6 +87,9 @@ public static class PersistenceTestUtil
             if (up.Count > 0) cmds.Add(new UpgradeCommand(0, up.ToArray()));
         }
         if (tick == 900) cmds.Add(new SandboxNukeCommand(0, w.Terrain.StartPositions[3]));
+        // Commander enhancements: one finished before the save, one in progress at the save tick.
+        if (tick == 600) cmds.Add(new EnhanceCommand(0, [w.Armies[0].Commander], "AdvancedEngineering"));
+        if (tick == 1050) cmds.Add(new EnhanceCommand(0, [w.Armies[0].Commander], "PersonalShield"));
         if (tick == 1500) cmds.Add(new SandboxSetAiCommand(0, 3, false));
         return cmds;
     }
