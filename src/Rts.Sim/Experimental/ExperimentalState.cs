@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using Rts.Sim.Core;
 using Rts.Sim.World;
 
 namespace Rts.Sim.Experimental;
