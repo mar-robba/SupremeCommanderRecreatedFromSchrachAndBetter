@@ -66,6 +66,9 @@ public sealed class AiConfig
     public int MaxArmy = 110;
     /// <summary>The army attacks when its strength is this multiple of the estimated enemy strength at the objective.</summary>
     public float AttackMargin = 1.3f;
+    /// <summary>Share of the estimated enemy land army (away from the objective) the attack must also outweigh: it
+    /// may come to help the defenders.</summary>
+    public float EnemyArmyShare = 0.35f;
     /// <summary>The army gathers this far from its objective (outside the known defenses) before attacking (0 = no staging).</summary>
     public float StageDistance = 45f;
     /// <summary>Seconds the army may wait at the staging point for stragglers/strength before attacking anyway.</summary>

@@ -418,7 +418,7 @@ public sealed class AiMilitary
     {
         float local = V.ThreatAt(target, 32f);
         float rest = MathF.Max(0, _b.Perception.EnemyLandEstimate - local);
-        return MathF.Max(MinAttackStrength(), Cfg.AttackMargin * (local + 0.35f * rest));
+        return MathF.Max(MinAttackStrength(), Cfg.AttackMargin * (local + Cfg.EnemyArmyShare * rest));
     }
 
     private void ManageArmy()
