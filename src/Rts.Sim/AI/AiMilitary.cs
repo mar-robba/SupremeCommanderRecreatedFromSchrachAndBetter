@@ -461,6 +461,7 @@ public sealed class AiMilitary
                 }
                 if (_tmp.Count > 0) _b.Cmd.Order(_tmp, Order.AttackMoveTo(g.Staging));
                 Engage(g, 30f, g.Staging);
+                if (Cfg.FocusFire) FocusFire(g, g.Staging);
                 float elapsed = (W.Tick - g.StateTick) * SimWorld.Dt;
                 if (W.Tick - _armyDefendTick < 60) break; // part of the army is defending the base
                 if (g.Regroup)
@@ -619,6 +620,7 @@ public sealed class AiMilitary
         }
 
         Engage(g, 45f, g.Target);
+        if (Cfg.FocusFire && local > 0) FocusFire(g, g.Target);
 
         // Position targets (sorties, last known positions) are done when the group idles there, or after a while
         // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.
@@ -699,6 +701,67 @@ public sealed class AiMilitary
         g.EngageTick = W.Tick;
         _b.Cmd.Order(_tmp, Order.AttackMoveTo(ep));
         if (then != default) _b.Cmd.Order(_tmp, Order.AttackMoveTo(then), queue: true);
+    }
+
+    private readonly List<int> _focusEnemies = new();
+    private float[] _focusLeft = [];
+    private readonly List<(int target, int unit)> _focusPairs = new();
+
+    /// <summary>Hard micro (<see cref="AiConfig.FocusFire"/>): every direct-fire member picks, among the identified
+    /// enemy land units in its weapon range, the one with the least health left after the damage already assigned to
+    /// it (FocusHorizon seconds of each shooter's damage), so the group kills units one after the other instead of
+    /// spreading its fire. Only members whose weapon is not already on their pick get an order (attack it, then
+    /// attack-move on to 'then').</summary>
+    private void FocusFire(AiGroup g, Vector2 then)
+    {
+        var u = W.Units;
+        _focusEnemies.Clear();
+        const float near = 60f;
+        foreach (int e in V.EnemyMobile)
+        {
+            if (!_b.Perception.IsIdentified(e)) continue;
+            if (W.BpOf(e).Movement.Layer is MotionLayer.Air or MotionLayer.Water or MotionLayer.Sub) continue;
+            if (Vector2.DistanceSquared(u.Pos[e], g.Anchor) < near * near) _focusEnemies.Add(e);
+        }
+        if (_focusEnemies.Count == 0) return;
+        if (_focusLeft.Length < _focusEnemies.Count) _focusLeft = new float[_focusEnemies.Count * 2];
+        for (int k = 0; k < _focusEnemies.Count; k++) _focusLeft[k] = u.Health[_focusEnemies[k]];
+        _focusPairs.Clear();
+        foreach (int i in g.Members)
+        {
+            var bp = W.BpOf(i);
+            if (bp.Weapons.Length == 0 || bp.HasAny(UnitCategory.IndirectFire | UnitCategory.AntiAir)) continue;
+            var wb = bp.Weapons[0];
+            if (wb.Ballistic || (wb.TargetMask & LayerMask.Land) == 0) continue;
+            float dmg = wb.Damage * wb.ProjectilesPerShot * wb.RateOfFire * Cfg.FocusHorizon;
+            var p = u.Pos[i];
+            int best = -1;
+            float bestLeft = float.MaxValue, bestD = float.MaxValue;
+            for (int k = 0; k < _focusEnemies.Count; k++)
+            {
+                int e = _focusEnemies[k];
+                float r = wb.Range + 1f;
+                float d = Vector2.DistanceSquared(p, u.Pos[e]);
+                if (d > r * r) continue;
+                float left = _focusLeft[k] > 0 ? _focusLeft[k] : 1e6f + _focusLeft[k]; // saturated targets last
+                if (left < bestLeft || (left == bestLeft && d < bestD)) { best = k; bestLeft = left; bestD = d; }
+            }
+            if (best < 0) continue;
+            _focusLeft[best] -= dmg;
+            var th = u.HandleOf(_focusEnemies[best]);
+            if (u.Weapons[i * UnitStore.MaxWeapons].Target == th) continue;
+            _focusPairs.Add((_focusEnemies[best], i));
+        }
+        if (_focusPairs.Count == 0) return;
+        _focusPairs.Sort((a, b) => a.target != b.target ? a.target.CompareTo(b.target) : a.unit.CompareTo(b.unit));
+        for (int s = 0; s < _focusPairs.Count;)
+        {
+            int t = _focusPairs[s].target;
+            _tmp.Clear();
+            while (s < _focusPairs.Count && _focusPairs[s].target == t) _tmp.Add(_focusPairs[s++].unit);
+            _b.Cmd.Order(_tmp, Order.AttackUnit(u.HandleOf(t)));
+            if (then != default) _b.Cmd.Order(_tmp, Order.AttackMoveTo(then), queue: true);
+        }
     }
 
     /// <summary>Nearest known (seen or on radar) enemy land unit or structure within radius of p.</summary>

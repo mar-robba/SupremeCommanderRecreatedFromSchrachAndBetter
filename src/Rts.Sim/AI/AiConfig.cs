@@ -100,6 +100,11 @@ public sealed class AiConfig
     public int MaxRaids = 0;
     /// <summary>Attack the enemy commander directly when it is seen near the army and the army can take it.</summary>
     public bool CommanderSnipe;
+    /// <summary>Micro: direct-fire units of a fighting group spread their fire over the weakest enemies in range
+    /// (enough damage on each to kill it, then the next) instead of each shooting the nearest one.</summary>
+    public bool FocusFire;
+    /// <summary>Seconds of a shooter's damage counted against a focus target before the next shooter picks another.</summary>
+    public float FocusHorizon = 3f;
 
     public static AiConfig For(AiDifficulty d) => d switch
     {
@@ -121,15 +126,15 @@ public sealed class AiConfig
             // Hard = faster reactions, longer mex chains, steadier pressure, raids, snipes and micro - no bonuses.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
-            MaxEngineers = 12, EarlyEngineers = 4, MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
-            PowerMargin = 0.8f, MexChain = 2, MaxMassStorage = 2, MaxEnergyStorage = 1,
+            MaxEngineers = 12, EarlyEngineers = 5, MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
+            PowerMargin = 0.8f, MexChain = 1, MaxMassStorage = 2, MaxEnergyStorage = 1,
             BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 4, QueueDepth = 2, SpendRatio = 1.1f,
             LandScouts = 2, AirScouts = 1, ScoutRebuildTime = 60, MaxRadars = 3, RadarTime = 150,
             FirstAttackTime = 200, FirstWave = 8, WaveGrowth = 3, MaxWave = 45, MaxArmy = 130,
             AttackMargin = 1.25f, StageDistance = 45f, AssembleTimeout = 120,
-            RetreatFraction = 0.35f, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
+            RetreatFraction = 0, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
             PushTime = 840, LateGameTime = 1140, BomberGroup = 5, Reinforce = true,
-            RaidSize = 6, MaxRaids = 1, CommanderSnipe = true,
+            RaidSize = 6, MaxRaids = 1, CommanderSnipe = true, FocusFire = true,
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
     };
