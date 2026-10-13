@@ -69,10 +69,10 @@ Shared contracts (still valid):
 ## Phase 1 — Core gameplay (wave 1, parallel agents) ✅ merged 2026-10-10
 - [x] **Combat** (merged 2026-10-10): targeting with priorities/layers/staggered scans, turrets, lead aiming,
       ballistic artillery, bombs, beams, homing missiles, flak, layer-filtered area damage (bench 6k units ≈ 3 ms/tick)
-      - [ ] later: EnergyPerShot, veterancy bonuses, idle aircraft engaging, terrain blocking direct fire
+      - [ ] later: terrain blocking direct fire (EnergyPerShot: wave 4g; veterancy, idle aircraft engage: wave 4f)
 - [x] **Economy & construction** (merged 2026-10-10): flow economy with efficiency/stall, engineers
       build/assist/repair/reclaim, factories with queue/repeat/rally/refund, deposits, storage, wrecks (PropStore)
-      - [ ] later: Capture, pause toggle, adjacency bonus, units drive out of the factory, reclaim energy from units
+      - [ ] later: reclaim energy from units (capture, pause, adjacency, factory drive-out: wave 4f)
 - [x] **Pathfinding & movement** (merged 2026-10-10): HPA*-style sector regions + portals, cached goal fields,
       corridor A* + string pulling, formation path sharing, per-tick solve cap, air orbit, naval/hover/amphibious,
       priority separation, stuck → repath (1024 map, 6k units ≈ 2.5 ms/tick)
@@ -104,7 +104,7 @@ Shared contracts (still valid):
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
-      - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
+      - [ ] later: a human listening pass on the sounds (volume settings: menus branch)
 
 - [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
       blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
@@ -133,15 +133,15 @@ Shared contracts (still valid):
       T2/T3 artillery), `StrategicApi.LaunchNuke` (used by the sandbox nuke), dome shader + ripples, missile trails,
       nuke explosion (`NukeFx`, shared with the sandbox) + flash + sound, launch mode (L), global launch warning,
       `--scene strategic`
-      - [ ] later: collapsed shields still pay upkeep; AI builds/uses shields, TML, nukes (wave 4); bombers fly over domes
+      - [ ] later: AI builds/uses shields, TML, nukes (wave 4)
 - [x] Naval (wave 3, agent c, 2026-10-12): naval factories T1→T2→T3 (in-place upgrades), frigate, attack sub,
       destroyer (guns + torpedoes + torpedo defense), cruiser (AA + missiles), battleship, T2 torpedo bomber, T1/T2
       sonar, torpedo launcher; water placement (`NavalRules`, client ghost), torpedoes (run under water, home, die on
       shore), rate-limited torpedo defense, subs only seen by sonar/omni and only hit by torpedoes; Archipelago sea
       lanes + harbor beaches (playable: coast reachable, battleship lanes between starts); client: ship models, wakes,
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
-      - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
-            avoidance in narrow channels
+      - [ ] later: AI builds and uses navy (wave 4), ships steering around each other in narrow channels
+            (they only push apart now)
 - [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
       build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
       **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
@@ -157,7 +157,16 @@ Shared contracts (still valid):
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
 - [ ] Transports/ferry, air staging, engineer assist chains
 - [ ] Second faction (Cybran-like) with distinct visuals and units
-- [ ] Mass fabricators, adjacency bonus
+- [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
+      absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs
+      ships); sub dive/surface (D); adjacency bonus (pgens cut energy use, storages boost mex/pgens; placement lines);
+      veterancy (+10% HP and regen per level); pause (H: factories, engineers, upgrades, enhancements, silos, fabs,
+      shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
+      from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
+      lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
+      - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
+        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out
+- [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
 - [ ] 1024 maps with 4–8 players, 5k+ units at 60 FPS (instancing, LOD, culling)
