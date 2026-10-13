@@ -192,7 +192,7 @@ public static class FactorySystem
         {
             MotionLayer.Air => w.Terrain.GetSurfaceHeight(exit) + ubp.Movement.Altitude,
             MotionLayer.Land or MotionLayer.Amphibious => w.Terrain.GetHeight(exit),
-            MotionLayer.Sub => w.Terrain.WaterLevel - 1.5f,
+            MotionLayer.Sub => (u.Flags[unit] & UnitFlags.Surfaced) != 0 ? w.Terrain.WaterLevel : w.Terrain.WaterLevel - Naval.NavalMotion.SubDepth,
             _ => w.Terrain.GetSurfaceHeight(exit),
         };
 
