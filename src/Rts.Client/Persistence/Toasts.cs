@@ -30,7 +30,7 @@ public static class Toasts
         while (_incoming.TryDequeue(out var m)) _shown.Add((m.text, m.error, now));
         _shown.RemoveAll(m => now - m.t > Duration);
         if (_shown.Count > 4) _shown.RemoveRange(0, _shown.Count - 4);
-        float y = Ui.P(40);
+        float y = Ui.P(30) + 28; // below the top bar and the perf line
         int fs = Ui.F(13);
         foreach (var (text, error, t) in _shown)
         {

@@ -73,8 +73,8 @@ public sealed class SaveListScreen : IScreen
             Open(sel!);
         if (MenuUi.BigButton(delR, "Delete", sel != null && !modal) || (sel != null && !modal && MenuUi.Key(KeyboardKey.Delete)))
             _confirmDelete = sel;
-        Ui.Text($"Folder: {Path.GetFullPath(_replays ? SaveStore.ReplaysDir : SaveStore.SavesDir)}", x + bw + Ui.P(16),
-            by + (bh - Ui.F(10.5f)) * 0.5f, Ui.F(10.5f), Ui.TextFaint);
+        string folder = $"Folder: {Path.GetFullPath(_replays ? SaveStore.ReplaysDir : SaveStore.SavesDir)}";
+        Ui.Text(Ui.Fit(folder, delR.X - x - bw - Ui.P(32), Ui.F(10.5f)), x + bw + Ui.P(16), by + (bh - Ui.F(10.5f)) * 0.5f, Ui.F(10.5f), Ui.TextFaint);
 
         if (!modal) KeyboardNavigation();
         DrawModal();

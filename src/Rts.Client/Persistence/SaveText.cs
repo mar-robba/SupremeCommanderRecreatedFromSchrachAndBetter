@@ -37,7 +37,8 @@ public static class SaveText
     public static string Title(SaveEntry e)
     {
         string name = e.Info?.Name is { Length: > 0 } n ? n : e.FileName;
-        return e.FileName == SaveStore.QuickSaveName ? $"{name} (quicksave)" : name;
+        if (e.FileName != SaveStore.QuickSaveName) return name;
+        return name == SaveStore.QuickSaveName ? "Quicksave" : $"{name} (quicksave)";
     }
 
     /// <summary>Second line of a list entry: map, players, length (or the error of an unreadable file).</summary>

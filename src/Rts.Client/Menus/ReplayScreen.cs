@@ -17,7 +17,6 @@ namespace Rts.Client.Menus;
 public sealed class ReplayScreen : IScreen
 {
     private static readonly float[] Speeds = [0.5f, 1f, 2f, 4f, 8f, 16f];
-    private const int SeekChunk = 50;
 
     private readonly AppHost _app;
     private readonly GameSession _s;
@@ -32,11 +31,7 @@ public sealed class ReplayScreen : IScreen
     private bool _dragging;
     private int _dragTick;
 
-    // Seek state: written by the render thread (target) and the sim-thread job.
-    private readonly object _seekLock = new();
-    private bool _seeking;
-    private int _seekTarget;
-    private volatile string? _seekError;
+    private readonly ReplaySeeker _seeker;
 
     public ReplayScreen(AppHost app, GameSession session, ReplayPlayer player, ClientOptions opt)
     {
@@ -44,6 +39,7 @@ public sealed class ReplayScreen : IScreen
         _s = session;
         _player = player;
         _opt = opt;
+        _seeker = new ReplaySeeker(player, session.Runner);
         _s.Runner.Speed = Speeds[_speed];
         _s.MouseOverExtraUi = () => !_menu && (Ui.Hover(_panel) || _dragging);
         SetView(-1);
@@ -103,8 +99,9 @@ public sealed class ReplayScreen : IScreen
     private void DrawControls(bool interactive)
     {
         var snap = _s.Snapshots.Current;
-        float w = MathF.Min(Ui.Sw - Ui.P(40), Ui.P(860)), h = Ui.P(66);
-        _panel = Ui.R((Ui.Sw - w) * 0.5f, Ui.P(36), w, h);
+        // Bottom right, like a video player (the orders/build panels are hidden in replays; minimap + info panel at the left).
+        float w = MathF.Min(Ui.Sw - Ui.P(466), Ui.P(860)), h = Ui.P(66);
+        _panel = Ui.R(Ui.Sw - Ui.P(4) - w, Ui.Sh - Ui.P(4) - h, w, h);
         Ui.Panel(_panel);
         float x = _panel.X + Ui.P(8), y = _panel.Y + Ui.P(7), bh = Ui.P(24);
 
@@ -112,7 +109,7 @@ public sealed class ReplayScreen : IScreen
         var pr = Ui.R(x, y, Ui.P(34), bh);
         if (Ui.Button(pr, interactive).Left) _s.Runner.Paused = !_s.Runner.Paused;
         DrawPlayPause(pr, _s.Runner.Paused);
-        if (Ui.Hover(pr)) Ui.Tooltip(pr, _s.Runner.Paused ? "Play" : "Pause", "Space", above: false);
+        if (Ui.Hover(pr)) Ui.Tooltip(pr, _s.Runner.Paused ? "Play" : "Pause", "Space", above: true);
         x += pr.Width + Ui.P(8);
 
         // Speed.
@@ -125,7 +122,7 @@ public sealed class ReplayScreen : IScreen
         if (Ui.Button(plus, interactive && _speed < Speeds.Length - 1).Left) SetSpeed(_speed + 1);
         Ui.TextCentered("+", plus, Ui.F(14), Ui.TextColor, true);
         var speedR = Ui.R(minus.X, y, plus.X + plus.Width - minus.X, bh);
-        if (Ui.Hover(speedR)) Ui.Tooltip(speedR, "Replay speed", "+ / - keys: 0.5x to 16x", above: false);
+        if (Ui.Hover(speedR)) Ui.Tooltip(speedR, "Replay speed", "+ / - keys: 0.5x to 16x", above: true);
         x = plus.X + plus.Width + Ui.P(10);
 
         // Time label + timeline.
@@ -160,7 +157,7 @@ public sealed class ReplayScreen : IScreen
                 lx += Ui.P(14);
             }
             Ui.Text(label, lx, r.Y + (rh - lf) * 0.5f - 1, lf, sel ? Color.White : Ui.TextColor, sel);
-            if (a >= 0 && Ui.Hover(r)) Ui.Tooltip(r, players[a].Name, $"See what {players[a].Name} saw (fog of war)\nSelection and resources follow this army", above: false);
+            if (a >= 0 && Ui.Hover(r)) Ui.Tooltip(r, players[a].Name, $"See what {players[a].Name} saw (fog of war)\nSelection and resources follow this army", above: true);
             vx += lw + Ui.P(4);
         }
 
@@ -207,7 +204,7 @@ public sealed class ReplayScreen : IScreen
         bool hot = _dragging || Ui.Hover(hit);
         Raylib.DrawRectangleRec(Ui.R(kx - Ui.P(4), r.Y - Ui.P(5), Ui.P(8), r.Height + Ui.P(10)), hot ? Color.White : new Color(180, 200, 220, 255));
         if (Ui.Hover(hit) && !_dragging)
-            Ui.Tooltip(hit, $"Seek to {SaveText.Length((TickAt(Ui.Mouse.X) - start) / 10f)}", "Click or drag (going back re-simulates from the nearest checkpoint)", above: false);
+            Ui.Tooltip(hit, $"Seek to {SaveText.Length((TickAt(Ui.Mouse.X) - start) / 10f)}", "Click or drag (going back re-simulates from the nearest checkpoint)", above: true);
     }
 
     private static void DrawPlayPause(Rectangle r, bool paused)
@@ -225,77 +222,34 @@ public sealed class ReplayScreen : IScreen
 
     private void DrawBanners()
     {
-        float y = _panel.Y + _panel.Height + Ui.P(6);
-        int fs = Ui.F(13);
-        if (_player.DesyncTick >= 0)
+        // Stacked upwards above the control panel.
+        float y = _panel.Y - Ui.P(4);
+        int fs = Ui.F(13), small = Ui.F(11.5f);
+        if (_seeker.Error != null)
         {
-            string t = $"DESYNC at tick {_player.DesyncTick}: the replay no longer matches the recorded game";
-            var r = Ui.R(_panel.X, y, _panel.Width, fs + Ui.P(12));
-            Raylib.DrawRectangleRec(r, new Color(150, 28, 24, 235));
-            Raylib.DrawRectangleLinesEx(r, 1, new Color(255, 120, 100, 255));
-            Ui.TextCentered(t, r, fs, Color.White, true);
-            y += r.Height + Ui.P(4);
+            y -= small + Ui.P(4);
+            Ui.TextShadow("Seek failed: " + _seeker.Error, _panel.X, y, small, Ui.Bad);
         }
         if (_player.DifferentBuild)
         {
             string t = "Recorded with a different game build: it may desync";
-            Ui.TextShadow(t, _panel.X + (_panel.Width - Ui.Measure(t, Ui.F(11.5f))) * 0.5f, y, Ui.F(11.5f), Ui.Warn);
-            y += Ui.F(11.5f) + Ui.P(4);
+            y -= small + Ui.P(4);
+            Ui.TextShadow(t, _panel.X + (_panel.Width - Ui.Measure(t, small)) * 0.5f, y, small, Ui.Warn);
         }
-        if (_seekError != null) Ui.TextShadow("Seek failed: " + _seekError, _panel.X, y, Ui.F(11.5f), Ui.Bad);
-    }
-
-    // ------------------------------------------------------------------ seeking (sim thread job)
-
-    private bool IsSeeking(out int target)
-    {
-        lock (_seekLock)
+        if (_player.DesyncTick >= 0)
         {
-            target = _seekTarget;
-            return _seeking;
+            string t = $"DESYNC at tick {_player.DesyncTick}: the replay no longer matches the recorded game";
+            y -= fs + Ui.P(12);
+            var r = Ui.R(_panel.X, y, _panel.Width, fs + Ui.P(12));
+            Raylib.DrawRectangleRec(r, new Color(150, 28, 24, 235));
+            Raylib.DrawRectangleLinesEx(r, 1, new Color(255, 120, 100, 255));
+            Ui.TextCentered(Ui.Fit(t, r.Width - Ui.P(12), fs, true), r, fs, Color.White, true);
         }
     }
 
-    private void Seek(int tick)
-    {
-        tick = Math.Clamp(tick, _player.StartTick, _player.EndTick);
-        lock (_seekLock)
-        {
-            _seekTarget = tick;
-            if (_seeking) return; // the running job picks up the new target
-            _seeking = true;
-        }
-        _seekError = null;
-        _s.Runner.Post(SeekJob);
-    }
+    private bool IsSeeking(out int target) => _seeker.IsSeeking(out target);
 
-    /// <summary>Sim thread: moves the player towards the target in chunks (each chunk publishes a snapshot, so the
-    /// view follows), then re-posts itself until the target (which may change meanwhile) is reached.</summary>
-    private void SeekJob(SimRunner r)
-    {
-        try
-        {
-            int target;
-            lock (_seekLock) target = _seekTarget;
-            int cur = _player.Tick;
-            _player.SeekTo(target < cur ? target : Math.Min(target, cur + SeekChunk));
-            r.ReplaceSimulation(_player.Sim);
-            lock (_seekLock)
-            {
-                if (_player.Tick != _seekTarget)
-                {
-                    r.Post(SeekJob);
-                    return;
-                }
-                _seeking = false;
-            }
-        }
-        catch (Exception e)
-        {
-            _seekError = e.Message;
-            lock (_seekLock) _seeking = false;
-        }
-    }
+    private void Seek(int tick) => _seeker.SeekTo(tick);
 
     // ------------------------------------------------------------------ menu
 

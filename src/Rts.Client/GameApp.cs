@@ -82,6 +82,8 @@ public sealed class ClientOptions
     public int SeekTick = -1, SaveAt = -1;
     public bool SaveDialog, WriteReplay;
 
+    public ClientOptions Copy() => (ClientOptions)MemberwiseClone();
+
     public static ClientOptions Parse(string[] args)
     {
         var o = new ClientOptions();

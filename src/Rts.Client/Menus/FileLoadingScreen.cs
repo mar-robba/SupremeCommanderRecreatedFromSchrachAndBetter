@@ -21,6 +21,7 @@ public sealed class FileLoadingScreen : IScreen
     private readonly bool _fromList;
     private readonly Task<object> _task;
     private float _time;
+    private int _frames;
     private bool _shownFinal, _done;
     private string? _error;
 
@@ -38,6 +39,7 @@ public sealed class FileLoadingScreen : IScreen
     public void Frame(float dt)
     {
         _time += dt;
+        _frames++;
         Raylib.ClearBackground(new Color(10, 14, 20, 255));
         MenuUi.BeginFrame();
         Raylib.DrawRectangleGradientV(0, 0, Ui.Sw, Ui.Sh, new Color(18, 26, 36, 255), new Color(6, 9, 13, 255));
@@ -74,22 +76,29 @@ public sealed class FileLoadingScreen : IScreen
 
     private void Start(object result)
     {
+        // Screenshot runs: the overlay helpers (--pause-menu, --save-dialog) count the game's own frames.
+        var opt = _opt;
+        if (opt.ScreenshotPath != null)
+        {
+            opt = _opt.Copy();
+            opt.Frames = Math.Max(1, opt.Frames - _frames);
+        }
         if (result is ReplayPlayer player)
         {
             var cfg = ClientGameData.ConfigFor(player.Info);
             cfg.Sandbox = false; // read-only: no sandbox panel/console
             int local = Math.Clamp(player.Info.LocalArmy, 0, Math.Max(0, player.Sim.World.Armies.Length - 1));
-            var session = new GameSession(_app.Db, player.Sim, cfg, local, _opt, _app.Audio, replay: player);
-            _app.Go(new ReplayScreen(_app, session, player, _opt));
+            var session = new GameSession(_app.Db, player.Sim, cfg, local, opt, _app.Audio, replay: player);
+            _app.Go(new ReplayScreen(_app, session, player, opt));
         }
         else
         {
             var game = (LoadedGame)result;
             var cfg = ClientGameData.ConfigFor(game.Info);
             int local = Math.Clamp(game.Info.LocalArmy, 0, Math.Max(0, game.Sim.World.Armies.Length - 1));
-            var session = new GameSession(_app.Db, game.Sim, cfg, local, _opt, _app.Audio, new GameRecording(game.Info, game.Replay));
+            var session = new GameSession(_app.Db, game.Sim, cfg, local, opt, _app.Audio, new GameRecording(game.Info, game.Replay));
             Toasts.Show($"Loaded: {(game.Info.Name.Length > 0 ? game.Info.Name : Path.GetFileNameWithoutExtension(_path))}");
-            _app.Go(new InGameScreen(_app, session, _opt));
+            _app.Go(new InGameScreen(_app, session, opt));
         }
     }
 
