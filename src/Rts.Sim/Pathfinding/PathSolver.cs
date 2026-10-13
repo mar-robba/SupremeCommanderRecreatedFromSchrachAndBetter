@@ -237,7 +237,7 @@ internal sealed class PathSolver
 
     /// <summary>Heuristic weight in 1/4 steps (weighted A*: bounded suboptimality, far fewer expansions around
     /// obstacles; the string pulling pass removes most of the extra length).</summary>
-    public static int HeuristicWeightQuarters = 6;
+    public const int HeuristicWeightQuarters = 6;
 
     private static int Heur(int dx, int dz) => Octile(dx, dz) * HeuristicWeightQuarters >> 2;
 

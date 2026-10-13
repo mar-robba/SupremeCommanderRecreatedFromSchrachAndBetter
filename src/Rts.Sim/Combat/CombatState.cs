@@ -89,7 +89,7 @@ internal sealed class CombatState
     public readonly ChunkedBuffer<ShotRequest> Shots = new();
     public readonly ChunkedBuffer<ProjectileImpact> Impacts = new();
     private int _preparedTick = int.MinValue;
-    private readonly Action<int, int, int> _layerBody;
+    [Persistence.NoSave] private Action<int, int, int>? _layerBody; // cached delegate, recreated lazily after a load
     private SimWorld _w;
 
     private CombatState(SimWorld w)
@@ -105,7 +105,6 @@ internal sealed class CombatState
         Array.Fill(_prevGen, -1);
         CellArmies = new ulong[w.Grid.Cols * w.Grid.Rows];
         EnemyArmies = new ulong[w.Armies.Length];
-        _layerBody = ComputeLayers;
     }
 
     /// <summary>Refreshes per-tick caches (idempotent within a tick). Call at the start of each combat system.</summary>
@@ -124,7 +123,7 @@ internal sealed class CombatState
             EnemyArmies[a] = m;
         }
 
-        Par.For(u.AliveCount, 512, _layerBody);
+        Par.For(u.AliveCount, 512, _layerBody ??= ComputeLayers);
 
         var g = w.Grid;
         for (int cz = 0; cz < g.Rows; cz++)

@@ -113,8 +113,12 @@ public sealed class GameInfo
     {
         ulong h = Hash64.Of(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.Heights.AsSpan()));
         h = Hash64.Of(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.Pass.AsSpan()), h);
+        Span<float> dep = stackalloc float[3];
         foreach (var d in t.Deposits) // field by field: the struct has padding
-            h = Hash64.Of(System.Runtime.InteropServices.MemoryMarshal.AsBytes(stackalloc float[] { d.Pos.X, d.Pos.Y, (float)d.Type }), h);
+        {
+            dep[0] = d.Pos.X; dep[1] = d.Pos.Y; dep[2] = (float)d.Type;
+            h = Hash64.Of(System.Runtime.InteropServices.MemoryMarshal.AsBytes(dep), h);
+        }
         h = Hash64.Of(System.Runtime.InteropServices.MemoryMarshal.AsBytes(t.StartPositions.AsSpan()), h);
         return Hash64.Of(BitConverter.GetBytes(t.WaterLevel), h ^ (ulong)t.Width * 31 ^ (ulong)t.Height);
     }
