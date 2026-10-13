@@ -32,6 +32,7 @@ public sealed class Army
     public int Team;
     /// <summary>RGBA packed as 0xRRGGBBAA.</summary>
     public uint Color = 0xFFFFFFFF;
+    /// <summary>Faction id (data/factions, <c>BlueprintDb.Factions</c>); set by GameSetup from the player slot.</summary>
     public string Faction = "uef";
     public bool IsAI;
     /// <summary>Difficulty of the skirmish AI controlling this army (only used when IsAI).</summary>
