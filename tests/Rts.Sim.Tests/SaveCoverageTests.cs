@@ -17,6 +17,7 @@ public class SaveCoverageTests
             $"{problems.Count} save-system problem(s) (see docs/ARCHITECTURE.md 'Save/load & replays'):\n" + string.Join("\n", problems));
     }
 
+#pragma warning disable CS0649 // fields only inspected by reflection
     private sealed class BadState
     {
         public int Fine;
@@ -26,6 +27,7 @@ public class SaveCoverageTests
         public System.Text.StringBuilder? FrameworkClass;
         [NoSave] public System.Text.StringBuilder? Ignored;
     }
+#pragma warning restore CS0649
 
     [Fact]
     public void GuardReportsUnsupportedFields()
