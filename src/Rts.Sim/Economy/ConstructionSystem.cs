@@ -336,13 +336,18 @@ public static class ConstructionSystem
         var u = w.Units;
         var g = o.Target;
         if (!u.IsActive(g) || g.Index == i || !w.IsAlly(u.Army[i], u.Army[g.Index])) { Idle(w, i); return; }
+        g = AssistChain.Root(w, g, i); // assisting an assister = assisting the root of the chain
         int t = g.Index;
         var tbp = w.BpOf(t);
         var work = UnitHandle.None;
         var mode = BuilderMode.None;
         int anchor = t; // unit we must be in range of
         ref var tb = ref u.Builder[t];
-        if (!u.IsComplete(t))
+        if (u.IsComplete(t) && u.Health[t] < tbp.MaxHealth && !u.Upgrade[t].Active)
+        {
+            work = g; mode = BuilderMode.Repair; // a damaged assisted unit (e.g. the factory) is repaired first
+        }
+        else if (!u.IsComplete(t))
         {
             work = g; mode = BuilderMode.Build;
         }

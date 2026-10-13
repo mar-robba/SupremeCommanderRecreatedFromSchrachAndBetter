@@ -198,7 +198,8 @@ public static class FactorySystem
 
         var q = u.Orders[unit];
         q.Clear();
-        var rally = u.Orders[f].AsSpan();
+        // Mobile factories (Atlantis): their own orders are movement orders, not rally points.
+        var rally = fbp.IsMobile ? ReadOnlySpan<Order>.Empty : u.Orders[f].AsSpan();
         if (rally.Length > 0)
         {
             foreach (var o in rally)

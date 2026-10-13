@@ -1,0 +1,21 @@
+{
+  "Id": "uef_x_atlantis",
+  "Name": "Atlantis",
+  "Description": "Experimental aircraft carrier: builds aircraft like an air factory, carries and repairs up to 24 slots of aircraft (Dock) and launches them (Unload). Torpedoes and SAMs.",
+  "Tech": 3,
+  "Categories": ["Mobile", "Naval", "Factory", "Experimental", "AntiAir", "AntiNaval"],
+  "MaxHealth": 26000,
+  "Radius": 3.0,
+  "Economy": { "BuildCostMass": 12000, "BuildCostEnergy": 150000, "BuildTime": 15000, "BuildRate": 60 },
+  "Movement": { "Layer": "Water", "MaxSpeed": 3.5, "Acceleration": 1, "TurnRate": 25 },
+  "Intel": { "VisionRadius": 50, "RadarRadius": 120, "SonarRadius": 60 },
+  "Cargo": { "Layer": "Air", "Capacity": 24, "LoadRange": 4, "RepairRate": 0.02, "RefuelRate": 0.2, "KeepDocked": true },
+  "Weapons": [
+    { "Name": "SAM Launcher", "Range": 48, "Damage": 45, "DamageRadius": 1.2, "RateOfFire": 1.2, "MuzzleVelocity": 30, "TurretTurnRate": 240, "FiringTolerance": 30, "TargetLayers": ["Air"], "ProjectileVisual": "missile" },
+    { "Name": "Torpedo Launcher", "Range": 40, "Damage": 250, "RateOfFire": 0.3, "MuzzleVelocity": 10, "TurretTurnRate": 720, "FiringTolerance": 60, "TargetLayers": ["Water", "Sub"], "ProjectileVisual": "torpedo" },
+    { "Name": "Anti-Torpedo Flares", "Range": 10, "RateOfFire": 0.6, "Damage": 0, "TargetLayers": ["Water", "Sub"], "ProjectileVisual": "antitorpedo" }
+  ],
+  "Visual": { "Shape": "atlantis", "Size": [7, 4, 22], "Icon": "experimental" },
+  "Builds": ["uef_t1_air_scout", "uef_t1_interceptor", "uef_t1_bomber", "uef_t2_gunship", "uef_t2_fighter_bomber", "uef_t2_torpedo_bomber", "uef_t3_air_superiority", "uef_t3_strategic_bomber", "uef_t3_spy_plane", "uef_t1_transport", "uef_t2_transport"],
+  "BuiltBy": ["uef_t3_engineer"]
+}
