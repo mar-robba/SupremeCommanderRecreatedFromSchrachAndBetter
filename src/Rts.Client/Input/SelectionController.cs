@@ -23,7 +23,7 @@ public sealed class SelectionController
     private double _lastClickTime;
     private UnitHandle _lastClicked = UnitHandle.None;
 
-    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch }
+    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Unload, TransportTo, Ferry }
     public CommandMode Mode = CommandMode.Normal;
 
     /// <summary>Structure placement mode (build menu).</summary>
@@ -110,6 +110,7 @@ public sealed class SelectionController
             StrategicOrders.HandleHotkey(_ctx, this, ctrl);
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+        TransportInput.Update(_ctx, this, ctrl); // U unload / E transport / F ferry / D dock
         for (int g = 0; g <= 9; g++)
         {
             if (!Raylib.IsKeyPressed(KeyboardKey.Zero + g)) continue;
@@ -289,6 +290,7 @@ public sealed class SelectionController
         if (Selected.Count == 0) return false;
         var mouse = Raylib.GetMousePosition();
         if (mode == CommandMode.Launch) return StrategicOrders.TryLaunch(_ctx, this, mouse);
+        if (TransportInput.IsTransportMode(mode)) return TransportInput.TryIssueMode(_ctx, this, mouse, queue, mode);
         // Engineers / commander: reclaim wrecks, repair, finish or assist (see ContextOrders).
         if (mode == CommandMode.Normal && ContextOrders.TryIssue(_ctx, this, mouse, queue)) return true;
         var units = Selected.ToArray();

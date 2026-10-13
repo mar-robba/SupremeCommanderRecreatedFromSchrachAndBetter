@@ -9,7 +9,7 @@ using Rts.Sim.World;
 
 namespace Rts.Client.Input;
 
-public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim }
+public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Load, PickUp, Dock, Unload }
 
 /// <summary>What a right-click at the cursor would do (shown as a cursor hint, see UI/CursorHint).</summary>
 public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target, Vector2 Pos, int PropId = -1, float Mass = 0, float Radius = 0)
@@ -24,6 +24,10 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
         ContextKind.Repair => "Repair",
         ContextKind.Finish => "Assist construction",
         ContextKind.Reclaim => Mass >= 1f ? $"Reclaim  +{Mass:0} mass" : "Reclaim",
+        ContextKind.Load => "Load",
+        ContextKind.PickUp => "Pick up",
+        ContextKind.Dock => "Dock",
+        ContextKind.Unload => "Unload here",
         _ => "",
     };
 }
@@ -33,6 +37,8 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
 /// wreck → Reclaim, own/allied unfinished unit → Repair (finishes it), own factory → Guard (assist production),
 /// damaged own/allied unit → Repair, other own engineer → Guard (assist). Non-builders in the same selection get
 /// the plain order (guard the target / move to the wreck). Without builders the default right-click applies.
+/// Transports (see <see cref="TransportInput"/>): land units on an own transport = Load, a transport on an own land
+/// unit = Pick up, aircraft on an own air carrier = Dock, a transport with cargo on the ground = Unload there.
 /// </summary>
 public static class ContextOrders
 {
@@ -42,10 +48,16 @@ public static class ContextOrders
         var snap = ctx.Snapshots.Current;
         bool builders = HasBuilders(ctx, sel.Selected, snap);
         var hover = sel.PickUnit(mouse);
+        var cargo = CargoSelection.Of(ctx, sel.Selected, snap);
         if (hover is UnitView t)
         {
             var h = new UnitHandle(t.Index, t.Gen);
             if (ctx.IsEnemy(t.Army)) return new ContextAction(ContextKind.Attack, h, new Vector2(t.Pos.X, t.Pos.Z));
+            if (t.Army == ctx.LocalArmy && (t.Flags & UnitFlags.UnderConstruction) == 0)
+            {
+                var tk = TransportInput.TargetContext(cargo, ctx.Db[t.Bp], TransportInput.UsedSlots(snap, t.Index, t.Gen), sel.Selected.Contains(h));
+                if (tk != ContextKind.None) return new ContextAction(tk, h, new Vector2(t.Pos.X, t.Pos.Z));
+            }
             if (sel.Selected.Contains(h)) return new ContextAction(ContextKind.Move, UnitHandle.None, default);
             var tbp = ctx.Db[t.Bp];
             bool own = t.Army == ctx.LocalArmy;
@@ -71,16 +83,21 @@ public static class ContextOrders
             ref var p = ref snap.Props[k];
             return new ContextAction(ContextKind.Reclaim, UnitHandle.None, new Vector2(p.Pos.X, p.Pos.Z), p.Id, p.Mass, p.Radius);
         }
+        if (TransportInput.GroundContext(cargo) == ContextKind.Unload && ctx.PickGround(mouse) is Vector3 g)
+            return new ContextAction(ContextKind.Unload, UnitHandle.None, new Vector2(g.X, g.Z), Radius: 2.5f);
         return new ContextAction(ContextKind.Move, UnitHandle.None, default);
     }
 
     /// <summary>
-    /// Issues the builder-specific context order at the mouse (Reclaim / Repair / Finish / Assist). Returns false
+    /// Issues the builder-specific context order at the mouse (Reclaim / Repair / Finish / Assist) or the transport
+    /// one (Load / Pick up / Dock / Unload). Returns false
     /// when the default right-click handling (attack / guard / move) should run instead.
     /// </summary>
     public static bool TryIssue(GameContext ctx, SelectionController sel, Vector2 mouse, bool queue)
     {
         var a = Evaluate(ctx, sel, mouse);
+        if (a.Kind is ContextKind.Load or ContextKind.PickUp or ContextKind.Dock or ContextKind.Unload)
+            return TransportInput.IssueContext(ctx, sel, a, queue);
         if (a.Kind is not (ContextKind.Reclaim or ContextKind.Repair or ContextKind.Finish or ContextKind.Assist)) return false;
         var snap = ctx.Snapshots.Current;
         var builders = new List<UnitHandle>();

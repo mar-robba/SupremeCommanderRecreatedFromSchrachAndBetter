@@ -127,6 +127,8 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             if (v.UpgradeBp >= 0) AddUnit(Model(v.UpgradeBp), v.Index, pos, heading, turret, turn, col, true, MathF.Max(0.02f, v.UpgradeFrac), time);
         }
 
+        AddCargo(cur, prev, alpha, teamCols, fv, time); // units inside transports / docked aircraft: UnitRenderer.Cargo.cs
+
         // Fog of war: last-seen enemy structures ("ghosts"), greyed team color; the fog dims them further.
         for (int k = 0; k < cur.GhostCount; k++)
         {

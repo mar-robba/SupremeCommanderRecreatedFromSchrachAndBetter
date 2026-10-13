@@ -9,14 +9,15 @@ namespace Rts.Client.UI;
 
 /// <summary>
 /// Order buttons with SupCom-like hotkeys: Stop (S), Move (M), Attack-move (A), Patrol (P), Guard/Assist (G),
-/// Self-destruct (Ctrl+K, asks for confirmation). Hotkeys themselves are handled by SelectionController.
+/// Self-destruct (Ctrl+K, asks for confirmation); transport orders when they apply (<see cref="TransportInput"/>):
+/// Unload / Launch (U), Transport-to (E), Ferry (F), Dock (D). Hotkeys themselves are handled by SelectionController.
 /// </summary>
 public sealed class OrdersPanel
 {
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
 
-    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch }
+    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Unload, TransportTo, Ferry, Dock }
 
     public OrdersPanel(GameContext ctx, SelectionController sel)
     {
@@ -45,8 +46,7 @@ public sealed class OrdersPanel
 
         float pad = Ui.P(6);
         float bw = (r.Width - 4 * pad) / 3f;
-        float bh = MathF.Min(bw, (r.Y + r.Height - y - 3 * pad) / 2f);
-        var buttons = new (Btn id, string label, string key, bool enabled, bool active)[]
+        var buttons = new List<(Btn id, string label, string key, bool enabled, bool active)>
         {
             (Btn.Stop, "Stop", "S", true, false),
             anyLauncher && !canMove ? (Btn.Launch, "Launch", "L", true, _sel.Mode == Mode.Launch) : (Btn.Move, "Move", "M", canMove, _sel.Mode == Mode.Move),
@@ -55,7 +55,15 @@ public sealed class OrdersPanel
             (Btn.Guard, anyEngineer || anyFactory ? "Assist" : "Guard", "G", canMove, _sel.Mode == Mode.Guard),
             (Btn.SelfDestruct, "Destruct", "^K", true, _sel.PendingSelfDestruct != null),
         };
-        for (int i = 0; i < buttons.Length; i++)
+        var tb = TransportInput.ButtonsFor(CargoSelection.Of(_ctx, _sel.Selected, snap));
+        if ((tb & TransportButtons.Unload) != 0) buttons.Add((Btn.Unload, "Unload", "U", true, _sel.Mode == Mode.Unload));
+        if ((tb & TransportButtons.Launch) != 0) buttons.Add((Btn.Unload, "Launch", "U", true, _sel.Mode == Mode.Unload));
+        if ((tb & TransportButtons.TransportTo) != 0) buttons.Add((Btn.TransportTo, "Transport", "E", true, _sel.Mode == Mode.TransportTo));
+        if ((tb & TransportButtons.Ferry) != 0) buttons.Add((Btn.Ferry, "Ferry", "F", true, _sel.Mode == Mode.Ferry));
+        if ((tb & TransportButtons.Dock) != 0) buttons.Add((Btn.Dock, "Dock", "D", true, false));
+        int rows = (buttons.Count + 2) / 3;
+        float bh = MathF.Min(bw, (r.Y + r.Height - y - (rows + 1) * pad) / rows);
+        for (int i = 0; i < buttons.Count; i++)
         {
             var b = buttons[i];
             var br = new Rectangle(MathF.Round(r.X + pad + (i % 3) * (bw + pad)), MathF.Round(y + pad * 0.5f + (i / 3) * (bh + pad)), MathF.Round(bw), MathF.Round(bh));
@@ -67,7 +75,7 @@ public sealed class OrdersPanel
             Ui.Text(b.label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled ? Ui.TextColor : Ui.TextFaint);
             Ui.HotkeyBadge(br, b.key);
             if (st.Left) Execute(b.id);
-            if (st.Hover) Ui.Tooltip(br, b.label == "Destruct" ? "Self-destruct  [Ctrl+K]" : $"{Title(b.id, b.label)}  [{b.key}]", Description(b.id));
+            if (st.Hover) Ui.Tooltip(br, b.label == "Destruct" ? "Self-destruct  [Ctrl+K]" : $"{Title(b.id, b.label)}  [{b.key}]", Description(b.id, b.label));
         }
     }
 
@@ -82,6 +90,10 @@ public sealed class OrdersPanel
             case Btn.Guard: _sel.SetMode(Mode.Guard); break;
             case Btn.Launch: _sel.SetMode(Mode.Launch); break;
             case Btn.SelfDestruct: _sel.PendingSelfDestruct ??= _sel.Selected.ToArray(); break;
+            case Btn.Unload: TransportInput.StartUnload(_ctx, _sel, Ui.Shift); break;
+            case Btn.TransportTo: TransportInput.StartMode(_sel, Mode.TransportTo); break;
+            case Btn.Ferry: TransportInput.StartMode(_sel, Mode.Ferry); break;
+            case Btn.Dock: TransportInput.DockNow(_ctx, _sel, Ui.Shift); break;
         }
     }
 
@@ -89,10 +101,11 @@ public sealed class OrdersPanel
     {
         Btn.AttackMove => "Attack-move",
         Btn.Guard => label == "Assist" ? "Guard / Assist" : "Guard",
+        Btn.TransportTo => "Transport to",
         _ => label,
     };
 
-    private static string Description(Btn id) => id switch
+    private static string Description(Btn id, string label) => id switch
     {
         Btn.Stop => "Clears all orders of the selected units.",
         Btn.Move => "Click a destination. Shift queues waypoints. (Right-click on the ground also moves.)",
@@ -101,6 +114,11 @@ public sealed class OrdersPanel
         Btn.Guard => "Click a friendly unit: combat units guard it, engineers and factories assist its construction.",
         Btn.SelfDestruct => "Destroys the selected units (asks for confirmation).",
         Btn.Launch => "Click a ground target: one selected launcher with the target in range fires a missile (it waits if its stockpile is empty).",
+        Btn.Unload when label == "Launch" => "Docked aircraft take off (air staging: at once; Atlantis: click the launch point).",
+        Btn.Unload => "Click the drop point: the transports land there and unload. (Right-click on the ground also unloads.)",
+        Btn.TransportTo => "Click a destination: the selected units are shared among the selected transports, picked up and dropped there.",
+        Btn.Ferry => "Transports: click the pickup beacon, then the drop point - they shuttle units left at the beacon. Land units: click a beacon to wait there.",
+        Btn.Dock => "The selected aircraft fly to the nearest air staging / carrier to repair and refuel. (Right-click a carrier: dock there.)",
         _ => "",
     };
 
@@ -114,6 +132,11 @@ public sealed class OrdersPanel
         switch (id)
         {
             case Btn.Launch: StrategicHud.DrawLaunchGlyph(c, s, t, enabled, col); break;
+            case Btn.Unload or Btn.TransportTo or Btn.Ferry or Btn.Dock: TransportGlyphs.Draw(id switch
+            {
+                Btn.Unload => TransportButtons.Unload, Btn.TransportTo => TransportButtons.TransportTo,
+                Btn.Ferry => TransportButtons.Ferry, _ => TransportButtons.Dock,
+            }, c, s, t, enabled ? TransportInput.Cyan : col); break;
             case Btn.Stop:
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.8f, s * 0.8f), new Vector2(s * 1.6f, s * 1.6f), enabled ? new Color(230, 80, 70, 255) : col);
                 break;

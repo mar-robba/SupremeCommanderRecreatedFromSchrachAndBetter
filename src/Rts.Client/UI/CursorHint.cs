@@ -7,7 +7,8 @@ namespace Rts.Client.UI;
 
 /// <summary>
 /// Cursor hint for context orders (<see cref="SelectionController.HoverAction"/>): a small badge with a glyph
-/// and a label next to the mouse (Attack, Guard, Assist, Repair, Assist construction, Reclaim +N mass) and a
+/// and a label next to the mouse (Attack, Guard, Assist, Repair, Assist construction, Reclaim +N mass, Load, Pick up,
+/// Dock, Unload here) and a
 /// ring around the hovered target. Nothing is shown for plain moves. Call after the HUD (2D).
 /// </summary>
 public static class CursorHint
@@ -21,7 +22,7 @@ public static class CursorHint
         // Ring around the target on the ground.
         float radius = a.Radius;
         Vector3 center;
-        if (a.Kind == ContextKind.Reclaim) center = new Vector3(a.Pos.X, ctx.Terrain.GetHeight(a.Pos.X, a.Pos.Y), a.Pos.Y);
+        if (a.Kind is ContextKind.Reclaim or ContextKind.Unload) center = new Vector3(a.Pos.X, ctx.Terrain.GetHeight(a.Pos.X, a.Pos.Y), a.Pos.Y);
         else
         {
             var snap = ctx.Snapshots.Current;
@@ -48,6 +49,7 @@ public static class CursorHint
         ContextKind.Attack => new Color(255, 105, 90, 255),
         ContextKind.Reclaim => new Color(130, 235, 120, 255),
         ContextKind.Guard => new Color(120, 190, 255, 255),
+        ContextKind.Load or ContextKind.PickUp or ContextKind.Dock or ContextKind.Unload => TransportInput.Cyan,
         _ => new Color(245, 210, 90, 255),
     };
 
@@ -74,6 +76,23 @@ public static class CursorHint
             case ContextKind.Guard: // shield
                 Raylib.DrawTriangle(c + new Vector2(-s * 0.85f, -s * 0.2f), c + new Vector2(0, s * 1.1f), c + new Vector2(s * 0.85f, -s * 0.2f), col);
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.85f, s * 0.95f), new Vector2(s * 1.7f, s * 0.8f), col);
+                break;
+            case ContextKind.Load or ContextKind.PickUp or ContextKind.Unload: // open box + arrow in / out
+            {
+                bool up = k != ContextKind.Unload;
+                Raylib.DrawLineEx(c + new Vector2(-s, s * 0.1f), c + new Vector2(-s, s * 1.0f), 2, col);
+                Raylib.DrawLineEx(c + new Vector2(-s, s * 1.0f), c + new Vector2(s, s * 1.0f), 2, col);
+                Raylib.DrawLineEx(c + new Vector2(s, s * 1.0f), c + new Vector2(s, s * 0.1f), 2, col);
+                Raylib.DrawLineEx(c + new Vector2(0, up ? -s * 1.1f : -s * 0.2f), c + new Vector2(0, up ? s * 0.2f : s * 0.75f), 2.5f, col);
+                if (up) Raylib.DrawTriangle(c + new Vector2(-s * 0.5f, 0), c + new Vector2(0, s * 0.65f), c + new Vector2(s * 0.5f, 0), col);
+                else Raylib.DrawTriangle(c + new Vector2(0, -s * 1.15f), c + new Vector2(-s * 0.5f, -s * 0.45f), c + new Vector2(s * 0.5f, -s * 0.45f), col);
+                break;
+            }
+            case ContextKind.Dock: // landing pad: H in a ring
+                Raylib.DrawCircleLinesV(c, s * 1.05f, col);
+                Raylib.DrawLineEx(c + new Vector2(-s * 0.45f, -s * 0.6f), c + new Vector2(-s * 0.45f, s * 0.6f), 2, col);
+                Raylib.DrawLineEx(c + new Vector2(s * 0.45f, -s * 0.6f), c + new Vector2(s * 0.45f, s * 0.6f), 2, col);
+                Raylib.DrawLineEx(c + new Vector2(-s * 0.45f, 0), c + new Vector2(s * 0.45f, 0), 2, col);
                 break;
             default: // assist / finish: up arrow (adds build power)
                 Raylib.DrawTriangle(c + new Vector2(0, -s * 1.1f), c + new Vector2(-s * 0.85f, 0), c + new Vector2(s * 0.85f, 0), col);

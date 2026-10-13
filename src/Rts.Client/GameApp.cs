@@ -322,6 +322,7 @@ public static class GameApp
             var col = building ? new Color(90, 170, 255, 255) : f > 0.5f ? new Color(70, 220, 70, 255) : f > 0.25f ? new Color(240, 200, 40, 255) : new Color(230, 50, 40, 255);
             Raylib.DrawRectangle((int)(sp.X - w / 2) - 1, (int)sp.Y - 1, (int)w + 2, 5, Color.Black);
             Raylib.DrawRectangle((int)(sp.X - w / 2), (int)sp.Y, (int)(w * f), 3, col);
+            if (sel && !building) TransportOverlay.DrawFuelSliver(sp.X - w / 2, sp.Y, w, v.Fuel); // aircraft fuel
         }
     }
 }

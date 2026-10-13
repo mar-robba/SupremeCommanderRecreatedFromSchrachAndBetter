@@ -119,7 +119,10 @@ public static partial class UnitModels
             case "fighter": Fighter(b, w, h, l); break;
             case "bomber": Bomber(b, w, h, l); break;
             case "gunship": Gunship(b, w, h, l); break;
-            case "transport": Transport(b, w, h, l); break;
+            case "transport": CourierTransport(b, w, h, l); break; // cargo shapes: UnitModels.Transport.cs
+            case "transport2": StarLifterTransport(b, pivots, w, h, l, hasWeapon, out t); break;
+            case "air_staging": AirStaging(b, w, h, l); break;
+            case "atlantis": t = Atlantis(b, pivots, w, h, l, hasWeapon); break;
             case "frigate":
             case "destroyer":
             case "cruiser":
