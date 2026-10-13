@@ -1,0 +1,27 @@
+{
+  "Id": "uef_x_fatboy",
+  "Name": "Fatboy",
+  "Description": "Experimental mobile factory: builds T1-T3 land units while moving, personal bubble shield, heavy cannons and flak. Crushes small units.",
+  "Tech": 4,
+  "Categories": [ "Mobile", "Land", "Factory", "Experimental", "DirectFire", "AntiAir" ],
+  "MaxHealth": 12500,
+  "RegenRate": 5,
+  "Radius": 3.0,
+  "FootprintX": 6,
+  "FootprintZ": 8,
+  "Economy": { "BuildCostMass": 28000, "BuildCostEnergy": 350000, "BuildTime": 47500, "BuildRate": 120, "MaintenanceEnergy": 200 },
+  "Movement": { "Layer": "Land", "MaxSpeed": 1.6, "Acceleration": 0.8, "TurnRate": 30, "MaxSlope": 0.6 },
+  "Intel": { "VisionRadius": 40, "RadarRadius": 70 },
+  "Weapons": [
+    { "Name": "Heavy Gauss Cannon (L)", "Range": 70, "Damage": 500, "DamageRadius": 2, "RateOfFire": 0.5, "MuzzleVelocity": 45, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 45 },
+    { "Name": "Heavy Gauss Cannon (R)", "Range": 70, "Damage": 500, "DamageRadius": 2, "RateOfFire": 0.5, "MuzzleVelocity": 45, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 45 },
+    { "Name": "Riot Gun", "Range": 32, "Damage": 60, "RateOfFire": 3, "MuzzleVelocity": 40, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 120 },
+    { "Name": "Flak Cannon", "Range": 40, "Damage": 40, "DamageRadius": 3, "RateOfFire": 2, "MuzzleVelocity": 50, "TargetLayers": [ "Air" ], "ProjectileVisual": "flak", "TurretTurnRate": 180 }
+  ],
+  "Shield": { "Radius": 13, "HeightScale": 0.7, "MaxHealth": 7000, "RegenRate": 60, "RegenDelay": 2, "RechargeTime": 40 },
+  "Experimental": { "CrushRadius": 3.6, "CrushDamage": 5000, "DeathDamage": 2500, "DeathRadius": 10, "DeathDelay": 1.5 },
+  "WreckMassFraction": 0.9,
+  "Visual": { "Shape": "fatboy", "Size": [ 6, 4.2, 8.5 ], "Icon": "experimental" },
+  "BuildListFrom": [ "uef_t3_land_factory" ],
+  "BuiltBy": [ "uef_t3_engineer" ]
+}

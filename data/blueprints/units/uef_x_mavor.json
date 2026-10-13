@@ -1,0 +1,21 @@
+{
+  "Id": "uef_x_mavor",
+  "Name": "Mavor",
+  "Description": "Experimental strategic artillery: map-scale range (1500), very inaccurate, devastating shells. Each shot needs 20000 energy. Needs intel on targets.",
+  "Tech": 4,
+  "Categories": [ "Structure", "Experimental", "Strategic" ],
+  "MaxHealth": 12000,
+  "Radius": 5,
+  "FootprintX": 10,
+  "FootprintZ": 10,
+  "Economy": { "BuildCostMass": 60000, "BuildCostEnergy": 900000, "BuildTime": 120000 },
+  "Intel": { "VisionRadius": 30 },
+  "Weapons": [
+    { "Name": "Mavor Strategic Cannon", "Range": 1500, "MinRange": 100, "Damage": 4000, "DamageRadius": 6.5, "RateOfFire": 0.12, "MuzzleVelocity": 125,
+      "Spread": 25, "Ballistic": true, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 10, "FiringTolerance": 2, "EnergyPerShot": 20000 }
+  ],
+  "Experimental": { "DeathDamage": 3000, "DeathRadius": 12, "DeathDelay": 1.5 },
+  "WreckMassFraction": 0.9,
+  "Visual": { "Shape": "mavor", "Size": [ 9, 8, 9 ], "Icon": "experimental" },
+  "BuiltBy": [ "uef_t3_engineer" ]
+}

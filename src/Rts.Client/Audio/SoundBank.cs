@@ -43,6 +43,10 @@ public enum SoundId
     NukeExplosion,
     Intercept,
     StrategicAlert,
+    // Experimentals: recipes in SoundBank.Experimental.cs
+    ExperimentalAlert,
+    SuperHeavyFire,
+    ExplosionHuge,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>
@@ -94,7 +98,7 @@ public static partial class SoundBank
         SoundId.NukeExplosion => new(1f, 2, 6f, 2),
         SoundId.Intercept => new(0.55f, 4, 1.8f, 3),
         SoundId.StrategicAlert => new(0.55f, 1, 1f, 1, Ui: true),
-        _ => new(0.4f, 2, 1f, 1),
+        _ => ExperimentalInfo(id), // SoundBank.Experimental.cs
     };
 
     /// <summary>Synthesizes all variants of all sounds (≈0.1–0.3 s on one core; safe to run on a worker thread).</summary>
@@ -151,7 +155,7 @@ public static partial class SoundBank
             SoundId.NukeExplosion => NukeExplosion(ref rng),
             SoundId.Intercept => Intercept(ref rng),
             SoundId.StrategicAlert => StrategicAlert(),
-            _ => Synth.Alloc(0.05f),
+            _ => GenerateExperimental(id, ref rng), // SoundBank.Experimental.cs
         };
         Synth.RemoveDc(b);
         b = Synth.TrimTail(b);

@@ -17,11 +17,13 @@ public static class UnitLifecycle
         FactorySystem.InitUnit(w, i, bp);
         EconomySystem.InitUnit(w, i, bp);
         Strategic.StrategicSystem.InitUnit(w, i, bp);
+        Experimental.ExperimentalSystem.InitUnit(w, i, bp);
     }
 
     public static void OnDeath(SimWorld w, int i, UnitBlueprint bp)
     {
         ConstructionSystem.OnUnitDeath(w, i, bp);
         FactorySystem.OnUnitDeath(w, i, bp);
+        Experimental.ExperimentalSystem.OnUnitDeath(w, i, bp);
     }
 }

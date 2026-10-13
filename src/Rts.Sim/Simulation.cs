@@ -41,6 +41,7 @@ public sealed class Simulation
         FactorySystem.Run(w);
         PathSystem.Run(w);
         MovementSystem.Run(w);
+        Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         TargetingSystem.Run(w);
         WeaponSystem.Run(w);
@@ -88,6 +89,7 @@ public sealed class Simulation
         foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); }
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
         Mix(Strategic.StrategicSystem.Hash(w));
+        Mix(Experimental.ExperimentalSystem.Hash(w));
         return h;
     }
 }
