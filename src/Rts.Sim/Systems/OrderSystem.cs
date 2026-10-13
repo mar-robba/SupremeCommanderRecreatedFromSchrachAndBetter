@@ -189,7 +189,7 @@ public static class OrderSystem
         {
             MotionLayer.Air => w.Units.IsComplete(i) && w.Units.Elevation[i] > w.Terrain.GetSurfaceHeight(w.Units.Pos[i]) + 1f ? LayerMask.Air : LayerMask.Land,
             MotionLayer.Water => LayerMask.Water,
-            MotionLayer.Sub => (w.Units.Flags[i] & UnitFlags.Surfaced) != 0 ? LayerMask.Water : LayerMask.Sub, // dive toggle
+            MotionLayer.Sub => Naval.Submarines.LayerOf(w, i), // dive toggle (by depth: halfway up = surface layer)
             MotionLayer.Hover => w.Terrain.IsUnderwater(w.Units.Pos[i]) ? LayerMask.Water : LayerMask.Land,
             MotionLayer.Amphibious => w.Terrain.IsUnderwater(w.Units.Pos[i]) ? LayerMask.Sub : LayerMask.Land,
             _ => bp.HasAny(UnitCategory.Naval) ? LayerMask.Water : LayerMask.Land,
