@@ -11,51 +11,32 @@ main has all of wave 3 except the AI. That covers:
 - sandbox.
 Tests: 229 sim + 158 client.
 
-**Wave 4 running** (5 agents in parallel; ids, worktrees and prompts in
-`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave4.md` and `common.md`):
-- **(d) AI**: the owner asked to resume it. It is a fresh agent in the existing worktree `agent-a1c38e069748a3b2b`:
-  merge main, tuning matrix, docs.
-- **(f) Polish/SupCom details**:
-  - collapsed shields with no upkeep;
-  - bombs absorbed by domes;
-  - ship-to-ship collision and sub dive/surface;
-  - adjacency bonus, veterancy bonuses, pause, capture;
-  - sandbox selects/controls any army;
-  - default cameras for `--scene`.
-- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
-  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
-  - 8 ACU enhancements; Quantum Gateway + SCU.
-  - Try it: `--scene experimental[:mavor|:fog]`.
-  - Follow-ups:
-    - Mavor low arc hits hills at short range, and it has no target priority;
-    - Stop doesn't cancel an enhancement;
-    - an occupied slot needs a right-click clear first;
-    - shield HP refills on enhancement change;
-    - a unit with the missile pack doesn't move into range;
-    - `--select` can't pick variant ids.
-- **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
-- ✅ **(i) Persistence**: MERGED 2026-10-14.
-  - Automatic deep serializer, so save → load → continue gives identical bytes and hash.
-  - Every game is recorded with a hash every 10 ticks; replay viewer with seek and DESYNC banner.
-  - F5/F6 quicksave/quickload; Load Game and Replays screens.
-  - `--saves`, `--replays`, `--load F`, `--replay F [--seek T]`, `Rts.Bench -- replay F` / `savebench`.
-  - Sizes: a 25-min 4-AI game on 512 → save 1.8 MB, load 0.3 s, replay 165 KB.
-  - Follow-ups:
-    - no save migrations (layout change = old files incompatible);
-    - no Load in the pause menu;
-    - in the viewer, F7 doesn't update the view selector;
-    - a short hitch every 60 s at seek checkpoints.
-
-Merge order: when each one finishes, read `report-<x>.md`, merge into main, run the tests, look at a screenshot, then
-remove its worktree and branch. Merge (i) last, or ask it to re-run its round-trip tests after the others' merges.
-
-Known follow-ups not assigned: none from the old list (all were given to f).
+**Wave 4 status (2026-10-14):**
+- ✅ (g) experimentals, (i) save/replays, (h) transports and (d) AI are MERGED (main: 282 sim + 177 client tests).
+  The reports are in `orchestrator/report-<x>.md`. Follow-ups:
+  - AI: Highlands/Canyon NvN games sometimes stalemate; T1 mobile artillery is too cost-efficient (balance).
+  - Transports:
+    - the Atlantis can't dive yet;
+    - the order buttons are cramped with a loaded transport selected;
+    - the cargo/fuel rows cut off the unit panel;
+    - minimap clicks don't work with the new order modes.
+- ⏳ (f) polish: finished. A merge agent is merging main into its branch (D/E hotkey clash with transports), then the
+  orchestrator merges it into main.
+- ⏳ (j) faction infrastructure (pre-wave 5):
+  - `data/factions/<id>.json` with a role table, FactionDb, Army.Faction;
+  - the AI uses roles instead of `uef_*` ids (same hash);
+  - a faction selector in setup; `--faction` / `--factions`.
 
 **Next waves (owner: "everything must be done"):**
-- **Wave 5**: the AI uses T2/T3 upgrades, navy, strategic weapons, experimentals and transports; balance pass.
-  Also: 2nd faction (Cybran-like: Monkeylord, Soul Ripper, stealth, ...), and scale/perf (1024 maps, 4–8 players,
-  5k+ units at 60 FPS).
-- **Wave 6**: lockstep multiplayer (on top of the replay command log + desync hash), final polish.
+- **Wave 5** (after f + j are merged), 5 parallel agents:
+  1. AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
+     anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
+  2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
+     amphibious walkers; distinct models.
+  3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
+  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+     migrations.
+  5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
 Shared contracts (still valid):
 - `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
