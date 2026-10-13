@@ -17,6 +17,7 @@ public static class UnitLifecycle
         FactorySystem.InitUnit(w, i, bp);
         EconomySystem.InitUnit(w, i, bp);
         Strategic.StrategicSystem.InitUnit(w, i, bp);
+        Transport.TransportSystem.InitUnit(w, i, bp);
         Experimental.ExperimentalSystem.InitUnit(w, i, bp);
     }
 
@@ -24,6 +25,7 @@ public static class UnitLifecycle
     {
         ConstructionSystem.OnUnitDeath(w, i, bp);
         FactorySystem.OnUnitDeath(w, i, bp);
+        Transport.TransportSystem.OnUnitDeath(w, i, bp); // cargo dies with its carrier
         Experimental.ExperimentalSystem.OnUnitDeath(w, i, bp);
     }
 }

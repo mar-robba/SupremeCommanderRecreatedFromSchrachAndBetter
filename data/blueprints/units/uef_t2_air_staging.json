@@ -1,0 +1,16 @@
+{
+  "Id": "uef_t2_air_staging",
+  "Name": "Air Staging Facility",
+  "Description": "T2 air staging: up to 4 aircraft dock to be repaired and refuelled, then take off again.",
+  "Tech": 2,
+  "Categories": ["Structure", "Air", "Tech2"],
+  "MaxHealth": 2400,
+  "Radius": 3,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": { "BuildCostMass": 240, "BuildCostEnergy": 2400, "BuildTime": 500 },
+  "Intel": { "VisionRadius": 20 },
+  "Cargo": { "Layer": "Air", "Capacity": 4, "LoadRange": 3, "RepairRate": 0.05, "RefuelRate": 0.25 },
+  "Visual": { "Shape": "air_staging", "Size": [6, 1.2, 6], "Icon": "factory" },
+  "BuiltBy": ["uef_t2_engineer", "uef_t3_engineer"]
+}

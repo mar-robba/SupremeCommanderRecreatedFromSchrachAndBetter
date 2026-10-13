@@ -35,6 +35,17 @@ public static class NavalRules
         return bp.MinWaterDepth <= 0 || CellDepth(t, cx, cz) >= bp.MinWaterDepth;
     }
 
+    /// <summary>Every footprint cell inside the map and <see cref="CellBuildable"/> (mobile naval units built in place
+    /// by engineers, e.g. the Atlantis, must start on water).</summary>
+    public static bool FootprintBuildable(Terrain t, UnitBlueprint bp, Vector2 pos)
+    {
+        var (x0, z0, x1, z1) = World.OccupancyGrid.Footprint(bp, pos);
+        for (int z = z0; z <= z1; z++)
+        for (int x = x0; x <= x1; x++)
+            if (!t.CellInBounds(x, z) || !CellBuildable(t, bp, x, z)) return false;
+        return true;
+    }
+
     /// <summary>
     /// Nearest valid (<see cref="World.OccupancyGrid.CanPlace"/>) snapped site for a structure within maxRadius of
     /// `near` (ring scan, ties by scan order: deterministic). Useful to find a coastal spot for a naval factory.

@@ -153,7 +153,8 @@ public sealed class AiEconomy
     {
         if (_b.BpLandFactory < 0) return false;
         int n = TotalWithReserved(_b.BpLandFactory);
-        if (n >= Cfg.MaxLandFactories + (Floating ? 3 : 0)) return false;
+        int cap = Floating ? Math.Min(Cfg.MaxLandFactoriesFloat, Math.Max(Cfg.MaxLandFactories + 3, (int)(MassIncome / 4.5f) + 1)) : Cfg.MaxLandFactories;
+        if (n >= cap) return false;
         if (n == 0) return true;
         if (InProgress(_b.BpLandFactory) > 0 || EnergyStall || EnergyRatio < 0.25f) return false;
         if (n < Cfg.MaxLandFactories && MassIncome >= 4.5f * n + 1f) return true;
@@ -166,19 +167,33 @@ public sealed class AiEconomy
         int n = TotalWithReserved(_b.BpAirFactory);
         if (n >= Cfg.MaxAirFactories || InProgress(_b.BpAirFactory) > 0) return false;
         if (V.LandFactories.Count < 2 || EnergyStall) return false;
-        bool time = _b.GameTime >= Cfg.AirFactoryTime * (1 + n) || (n == 0 && V.EnemyAirCount > 2 && _b.GameTime > 180);
+        bool time = _b.GameTime >= Cfg.AirFactoryTime * (1 + n) || (n == 0 && _b.Perception.EnemyAirCountMem > 2 && _b.GameTime > 180);
         return time && MassIncome >= 10f + 8f * n && EnergyIncome >= 140f;
     }
 
     // ------------------------------------------------------------------ factories
 
+    /// <summary>Factories allowed to start new units this think (the others let their queues run out), so that the
+    /// planned mass spending stays near income and engineers keep building eco at full speed.</summary>
+    public int FactoryBudget;
+
     private void ManageFactories()
     {
-        foreach (int f in V.LandFactories) Factory(f, air: false);
-        foreach (int f in V.AirFactories) Factory(f, air: true);
+        var eco = W.Armies[_b.Army].Eco;
+        float budget = MassIncome * Cfg.SpendRatio + (MassRatio > 0.3f ? eco.Mass / 60f : 0f);
+        int busy = 0;
+        foreach (int e in V.Engineers) if (W.Units.Builder[e].Mode is BuilderMode.Build or BuilderMode.Repair) busy++;
+        float engineerSpend = busy * 2.5f + (V.Commander >= 0 && W.Units.Builder[V.Commander].Mode == BuilderMode.Build ? 5f : 0f);
+        FactoryBudget = Math.Max(1, (int)((budget - engineerSpend * 0.7f) / 4f));
+        if (Floating) FactoryBudget += 2;
+        int slot = 0;
+        bool airFirst = _b.Perception.EnemyAirCountMem > 4;
+        if (airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, slot++ < FactoryBudget);
+        foreach (int f in V.LandFactories) Factory(f, air: false, slot++ < FactoryBudget);
+        if (!airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, slot++ < FactoryBudget);
     }
 
-    private void Factory(int f, bool air)
+    private void Factory(int f, bool air, bool allowed)
     {
         ref var info = ref _b.Info(f);
         if (!info.RallySet)
@@ -190,6 +205,8 @@ public sealed class AiEconomy
         var q = W.Units.Factory[f].Queue;
         int len = q?.Count ?? 0;
         if (len >= Cfg.QueueDepth) return;
+        // Over the mass budget: only engineers (when short of them) may still be queued here.
+        if (!allowed && (len > 0 || _b.BpEngineer < 0 || air || V.Total(_b.BpEngineer) >= EngineerTarget())) return;
         if (len >= 1 && (EnergyStall || MassStall)) return;
         // Deep energy stall: let the power catch up instead of starting more units (unless we lack engineers).
         if (EnergyStall && EnergyIncome < EnergyDemand * 0.6f && V.Total(_b.BpEngineer) >= 2) return;
@@ -211,14 +228,16 @@ public sealed class AiEconomy
     private int ChooseLand()
     {
         if (_b.BpEngineer >= 0 && V.Total(_b.BpEngineer) < EngineerTarget()) return _b.BpEngineer;
-        if (_b.BpScout >= 0 && ScoutsOrdered < 2 && V.Total(_b.BpScout) < 1 && _b.GameTime > 40)
+        if (_b.Scouting.WantLandScout())
         {
             ScoutsOrdered++;
+            _b.Scouting.LandScoutOrdered();
             return _b.BpScout;
         }
-        bool enemyAir = V.EnemyAirCount > 0 || V.EnemyHasAirFactory;
-        float aa = enemyAir ? Math.Clamp(0.1f + V.EnemyAirStrength / (V.EnemyAirStrength + V.EnemyLandStrength + 200f), 0.12f, 0.4f) : 0f;
-        float arty = _b.GameTime > 150 ? 0.25f : 0.1f;
+        float airMem = _b.Perception.EnemyAirStrengthMem;
+        bool enemyAir = _b.Perception.EnemyAirCountMem > 0.5f || V.EnemyHasAirFactory;
+        float aa = enemyAir ? Math.Clamp(0.1f + airMem / (airMem + MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate) + 200f), 0.12f, 0.4f) : 0f;
+        float arty = _b.GameTime > 150 ? Cfg.ArtilleryShare : 0.1f;
         float tank = 1f - aa - arty;
         int nT = V.Total(_b.BpTank), nA = V.Total(_b.BpArtillery), nAA = V.Total(_b.BpMobileAA);
         float n = nT + nA + nAA + 1;
@@ -230,13 +249,15 @@ public sealed class AiEconomy
 
     private int ChooseAir()
     {
-        if (_b.BpAirScout >= 0 && AirScoutsOrdered < 2 && V.Total(_b.BpAirScout) < 1)
+        if (_b.Scouting.WantAirScout())
         {
             AirScoutsOrdered++;
+            _b.Scouting.AirScoutOrdered();
             return _b.BpAirScout;
         }
         int inter = V.Total(_b.BpInterceptor), bomb = V.Total(_b.BpBomber);
-        int wantInter = Math.Min(24, 2 + V.EnemyAirCount + (int)(V.EnemyAirStrength / 200f));
+        int airCount = (int)MathF.Ceiling(_b.Perception.EnemyAirCountMem);
+        int wantInter = Math.Min(24, 2 + airCount + (int)(_b.Perception.EnemyAirStrengthMem / 200f));
         if (_b.BpInterceptor >= 0 && inter < wantInter) return _b.BpInterceptor;
         if (_b.BpBomber >= 0 && bomb < 12 && bomb <= inter + 2) return _b.BpBomber;
         return _b.BpInterceptor >= 0 ? _b.BpInterceptor : _b.BpBomber;
@@ -521,11 +542,12 @@ public sealed class AiEconomy
             float dFrom = Vector2.Distance(p, from);
             if (maxFromAnchor > 0 && dFrom > maxFromAnchor) continue;
             float score = dBase + 0.5f * dFrom;
+            // Deposits closer to an enemy base than to ours are expensive to hold: only when nothing better is left.
+            float dEnemy = float.MaxValue;
+            foreach (var es in _b.EnemyStarts) dEnemy = MathF.Min(dEnemy, Vector2.Distance(es, p));
+            if (dEnemy < 45f && dEnemy < dBase) continue;
+            if (dEnemy < dBase) score += (dBase - dEnemy) * 1.5f + 40f;
             if (score >= bestScore) continue;
-            bool nearEnemyBase = false;
-            foreach (var es in _b.EnemyStarts)
-                if (Vector2.DistanceSquared(es, p) < 40f * 40f && Vector2.DistanceSquared(es, p) < dBase * dBase) { nearEnemyBase = true; break; }
-            if (nearEnemyBase) continue;
             if (_b.Placement.IsDepositReserved(d)) continue;
             if (!_b.Placement.DepositFree(d, bpx, out var s)) continue;
             if (V.ThreatAt(p, 24f) > 0) continue;
@@ -535,6 +557,26 @@ public sealed class AiEconomy
             site = s;
         }
         return best;
+    }
+
+    /// <summary>Debug: one line per mass/hydro deposit (distance to base, occupant, blacklist, threat, reachability).</summary>
+    public string DescribeDeposits()
+    {
+        var sb = new System.Text.StringBuilder();
+        var deps = W.Terrain.Deposits;
+        var u = W.Units;
+        for (int d = 0; d < deps.Length; d++)
+        {
+            var p = deps[d].Pos;
+            int occ = W.Occupancy.At((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y));
+            string who = occ < 0 ? "free" : u.Army[occ] == _b.Army ? (u.IsComplete(occ) ? "OURS" : "ours-site") : $"army{u.Army[occ]}";
+            int bpx = deps[d].Type == DepositType.Mass ? _b.BpMex : _b.BpHydro;
+            bool looksFree = bpx >= 0 && _b.Placement.DepositFree(d, bpx, out _);
+            bool reach = _b.CanReachNear(MotionLayer.Amphibious, 0.5f, _b.BasePos, p, 1.5f);
+            sb.Append($"    dep{d} {deps[d].Type} ({p.X:F0},{p.Y:F0}) dBase={Vector2.Distance(p, _b.BasePos):F0} {who} looksFree={looksFree} " +
+                      $"blocked={Math.Max(0, _depositBlockedUntil.Length > d ? _depositBlockedUntil[d] - W.Tick : 0) / 10}s threat={V.ThreatAt(p, 24f):F0} reserved={_b.Placement.IsDepositReserved(d)} reach={reach}\n");
+        }
+        return sb.ToString();
     }
 
     /// <summary>Base structure at a free spot found by spiral search (preferred direction from the base center).</summary>
@@ -549,9 +591,10 @@ public sealed class AiEconomy
     private bool TryDefense(int unit, bool isCommander)
     {
         // Anti-air at the base once the enemy has (or builds) aircraft.
-        if (_b.BpAA >= 0 && (V.EnemyAirCount > 0 || V.EnemyHasAirFactory) && MassRatio > 0.1f)
+        int airSeen = (int)MathF.Ceiling(_b.Perception.EnemyAirCountMem);
+        if (_b.BpAA >= 0 && (airSeen > 0 || V.EnemyHasAirFactory) && MassRatio > 0.1f)
         {
-            int want = Math.Min(Cfg.BaseAntiAir, 1 + V.EnemyAirCount / 3);
+            int want = Math.Min(Cfg.BaseAntiAir, 1 + airSeen / 3);
             if (TotalWithReserved(_b.BpAA) < want)
             {
                 var dir = DMath.Dir(_b.Rng(0xAA).Range(0f, DMath.TwoPi));
@@ -606,8 +649,44 @@ public sealed class AiEconomy
             if (TryBuildInBase(unit, _b.BpMassStorage, -_b.EnemyDir, 8, maxR, false)) return true;
         if (_b.BpEnergyStorage >= 0 && EnergyRatio > 0.95f && EnergyIncome > 150f && TotalWithReserved(_b.BpEnergyStorage) < Cfg.MaxEnergyStorage)
             if (TryBuildInBase(unit, _b.BpEnergyStorage, -_b.EnemyDir, 8, maxR, false)) return true;
-        if (_b.BpRadar >= 0 && _b.GameTime > 300 && EnergyIncome > 100f && TotalWithReserved(_b.BpRadar) < 1)
-            if (TryBuildInBase(unit, _b.BpRadar, _b.EnemyDir, 12, maxR, false)) return true;
+        return TryRadar(unit, isCommander);
+    }
+
+    /// <summary>Radar coverage: one at the base, then next to outlying extractors no own radar covers yet.</summary>
+    private bool TryRadar(int unit, bool isCommander)
+    {
+        if (_b.BpRadar < 0 || _b.GameTime < Cfg.RadarTime || EnergyIncome < 60f || EnergyStall) return false;
+        int have = TotalWithReserved(_b.BpRadar);
+        if (have >= Cfg.MaxRadars) return false;
+        var u = W.Units;
+        float cover = MathF.Max(20f, W.Blueprints[_b.BpRadar].Intel.RadarRadius * 0.7f);
+        if (have == 0) return TryBuildInBase(unit, _b.BpRadar, _b.EnemyDir, 12, isCommander ? Cfg.CommanderRadius : 34, false);
+        if (isCommander || MassStall) return false;
+        int best = -1;
+        float bd = float.MaxValue;
+        foreach (int s in V.Structures)
+        {
+            if (u.Bp[s] != _b.BpMex || !u.IsComplete(s)) continue;
+            var p = u.Pos[s];
+            if (Covered(p, cover)) continue;
+            if (V.ThreatAt(p, 20f) > 0) continue;
+            float d = Vector2.DistanceSquared(p, u.Pos[unit]);
+            if (d < bd) { bd = d; best = s; }
+        }
+        if (best < 0) return false;
+        var mp = u.Pos[best];
+        if (!_b.Placement.FindSite(_b.BpRadar, mp, _b.BasePos - mp, 3.5f, 10f, out var site)) return false;
+        IssueBuild(unit, _b.BpRadar, site, -1, false);
+        return true;
+    }
+
+    private bool Covered(Vector2 p, float cover)
+    {
+        var u = W.Units;
+        foreach (int s in V.Structures)
+            if (u.Bp[s] == _b.BpRadar && Vector2.DistanceSquared(u.Pos[s], p) < cover * cover) return true;
+        foreach (var r in _b.Placement.Reserved)
+            if (r.Bp == _b.BpRadar && Vector2.DistanceSquared(r.Pos, p) < cover * cover) return true;
         return false;
     }
 

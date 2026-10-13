@@ -198,6 +198,8 @@ public sealed class Hud : IDisposable
             new("Build menu: Z X C V B N select · Tab / Shift+Tab category · R rotate · Esc / right click cancel", d, 11.5f),
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
             new("T / Shift+T: tech tier filter (build menu, factory) · U: upgrade selected structures (factory, mex, radar) · right-click the upgrade tile: cancel", d, 11.5f),
+            new("Transports: U unload (air carrier: launch) · E transport to · F ferry (beacon, then drop point) · D dock aircraft (nearest air staging / carrier)", d, 11.5f),
+            new("Right-click: units on a transport = board · transport on a unit = pick up · loaded transport on the ground = unload · aircraft on an air staging = dock", d, 11.5f),
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
             new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
             new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
@@ -229,7 +231,7 @@ public sealed class Hud : IDisposable
                 Mode.Patrol => ("PATROL: click patrol point (Shift: add points, RMB cancel)", "Patrol", new Color(120, 190, 255, 255)),
                 Mode.Move => ("MOVE: click destination (Shift: queue, RMB cancel)", "Move", new Color(130, 230, 130, 255)),
                 Mode.Guard => ("GUARD / ASSIST: click a friendly unit (RMB cancel)", "Guard / assist", new Color(240, 210, 100, 255)),
-                _ => (null, null, col),
+                _ => TransportInput.ModeHint(_ctx, _sel) ?? (null, null, col),
             };
         }
         if (banner != null)

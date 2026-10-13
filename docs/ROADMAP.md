@@ -11,42 +11,61 @@ main has all of wave 3 except the AI. That covers:
 - sandbox.
 Tests: 229 sim + 158 client.
 
-**Wave 4 running** (5 agents in parallel; ids, worktrees and prompts in
-`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave4.md` and `common.md`):
-- **(d) AI**: the owner asked to resume it. It is a fresh agent in the existing worktree `agent-a1c38e069748a3b2b`:
-  merge main, tuning matrix, docs.
-- **(f) Polish/SupCom details**:
-  - collapsed shields with no upkeep;
-  - bombs absorbed by domes;
-  - ship-to-ship collision and sub dive/surface;
-  - adjacency bonus, veterancy bonuses, pause, capture;
-  - sandbox selects/controls any army;
-  - default cameras for `--scene`.
-- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
-  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
-  - 8 ACU enhancements; Quantum Gateway + SCU.
-  - Try it: `--scene experimental[:mavor|:fog]`.
-  - Follow-ups:
-    - Mavor low arc hits hills at short range, and it has no target priority;
+**Wave 4 status (2026-10-14 ~01:00) — the orchestrator was restarted here. ON RESUME, do this:**
+- ✅ (g) experimentals, (i) save/replays, (h) transports and (d) AI are MERGED (main: 282 sim + 177 client tests).
+  The reports are in `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/report-<x>.md`. Follow-ups:
+  - AI: Highlands/Canyon NvN games sometimes stalemate; T1 mobile artillery is too cost-efficient (balance).
+  - Transports:
+    - the Atlantis can't dive yet;
+    - the order buttons are cramped with a loaded transport selected;
+    - the cargo/fuel rows cut off the unit panel;
+    - minimap clicks don't work with the new order modes.
+  - Experimentals:
+    - Mavor low arc hits hills;
     - Stop doesn't cancel an enhancement;
-    - an occupied slot needs a right-click clear first;
-    - shield HP refills on enhancement change;
-    - a unit with the missile pack doesn't move into range;
-    - `--select` can't pick variant ids.
-- **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
-- **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
-  desync detection.
-
-Merge order: when each one finishes, read `report-<x>.md`, merge into main, run the tests, look at a screenshot, then
-remove its worktree and branch. Merge (i) last, or ask it to re-run its round-trip tests after the others' merges.
-
-Known follow-ups not assigned: none from the old list (all were given to f).
+    - shield HP refills on enhancement change.
+  - Save/replays:
+    - no save migrations;
+    - no Load in the pause menu;
+    - in the viewer, F7 doesn't update the view selector.
+  - Polish:
+    - units leaving a factory don't avoid parked units;
+    - no hold-fire state while capturing.
+- ⏳ **(f) polish**: worktree `.claude/worktrees/agent-a768b24833017f018`. The branch is finished (report-f.md). A
+  merge agent (id a37f5f24cbd4c08cb) is merging main (h+d) into it.
+  - It resolves the hotkey clash (D dive/dock, E capture/transport-to → context-dependent), then runs the tests.
+  - Its report goes to `<worktree>/.claude/agent-report.md`.
+  - When it's done (commit on top of 247f6e3, clean tree): `git merge --no-ff worktree-agent-a768b24833017f018` in
+    main, build, both tests, `--scene transport` screenshot. Then `git worktree remove` + `git branch -d`.
+  - If it got interrupted: commit WIP there and start a fresh merge agent with the same brief (see this list).
+- ⏳ **(j) faction infrastructure** (pre-wave 5): worktree `.claude/worktrees/agent-af56bf7a6ab6077e6` (locked; run
+  `git worktree unlock` before removing). Agent id af56bf7a6ab6077e6.
+  - Scope:
+    - `data/factions/<id>.json` with `Roles` (role → blueprint id), FactionDb, `UnitBlueprint.Faction`, Army.Faction;
+    - the AI and StrategicApi use roles instead of `uef_*` ids (AI match hash identical to main);
+    - a faction selector in setup + `--faction` / `--factions`; a sandbox faction filter;
+    - an ARCHITECTURE "Factions" contract and a CLAUDE.md rule.
+  - Report: `<worktree>/.claude/agent-report.md`, progress in `.claude/handoff.md`.
+  - Merge it after (f), then verify, e.g. `Rts.Bench -- ai 30 256 42 hard,normal` → "WINNER: Player (Hard) after
+    14:44" on main e954f07.
+- Then start **wave 5** (below). Write each prompt with the common rules in `orchestrator/common.md`, adapted.
+  Give the AI and Cybran agents the faction/roles contract from the ARCHITECTURE "Factions" section.
+- Housekeeping notes:
+  - Agents use a build lock wrapper `dn.sh` in an old scratchpad.
+  - A stray rewrite of main's `.gitignore` (unknown sub-agent) was reverted; the patch is in
+    `orchestrator/stray-main-gitignore.patch`.
+  - Sub-agents can't write files in `orchestrator/`: save their final message as `report-<x>.md` yourself.
 
 **Next waves (owner: "everything must be done"):**
-- **Wave 5**: the AI uses T2/T3 upgrades, navy, strategic weapons, experimentals and transports; balance pass.
-  Also: 2nd faction (Cybran-like: Monkeylord, Soul Ripper, stealth, ...), and scale/perf (1024 maps, 4–8 players,
-  5k+ units at 60 FPS).
-- **Wave 6**: lockstep multiplayer (on top of the replay command log + desync hash), final polish.
+- **Wave 5** (after f + j are merged), 5 parallel agents:
+  1. AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
+     anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
+  2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
+     amphibious walkers; distinct models.
+  3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
+  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+     migrations.
+  5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
 Shared contracts (still valid):
 - `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
@@ -92,15 +111,20 @@ Shared contracts (still valid):
 - [x] Skirmish AI (merged 2026-10-11) — `src/Rts.Sim/AI`: deterministic in-sim AI issuing Commands; perception
       layer + threat maps, opening build order, expansion, power balance, air factory, PD/AA, waves to reachable targets,
       retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
-      - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
-            no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
+      - [x] wave 4a (AI resume): fog-fair perception (RespectIntel=true: ghosts, threat memory, staleness, commander
+            last seen), land/air scouts + radar, staging on the walking route, reinforcement batches, regroup,
+            recall when the base is losing, no army retreat, late-game push + snipes, terrain line of fire for
+            non-forced targets (sim: `Combat/LineOfFire.cs`), Hard: artillery-heavy mix + micro (focus fire,
+            pull-back, raids, snipes); ~0.02-0.03 ms/tick per AI. Bench 30 min/256/4 land presets: NvN ends by
+            commander kill in ~86 %, Hard beats Normal in 86 % (166-8-18 of 192), Easy loses 23/24; 4p FFAs on 512 end
+      - [ ] later: Highlands/Canyon NvN stalemates (equal armies trading), Hard vs Hard ends only ~69 %; T1 artillery
+            looks too cost-efficient (balance); AI uses T2/T3, navy, strategic weapons, experimentals, transports
 - [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
 - [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
       fog ViewArmy = local human (defeated player "Keep Watching" = fog off); settings: master/effects/music
       volumes (saved) on an app-wide `AudioSystem` (menus: clicks + music); end screen `ArmyStats`
-      - [ ] AI on new presets: builds and fights everywhere, but Highlands/Canyon AI-vs-AI often end in a stalemate
-            (bench: Plains s42 winner 19:49, Lakes s5 winner 13:06, Highlands s7 none in 40 min, Canyon s3 none in 30)
+      - [x] AI on new presets: builds and fights everywhere; most NvN games end by commander kill (see Skirmish AI)
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
@@ -155,7 +179,16 @@ Shared contracts (still valid):
       - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
 - [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
-- [ ] Transports/ferry, air staging, engineer assist chains
+- [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
+      (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
+      (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
+      transports) / Ferry (beacon → drop, repeats) / Dock; aircraft fuel (half speed when empty) + auto-return; T2 Air
+      Staging (repairs/refuels, releases when done); Atlantis experimental carrier (builds, carries and launches
+      aircraft); engineer assist chains (guard a guard → helps the root builder; guards repair first); client:
+      models, cargo hanging under transports, context clicks, order buttons, cargo counter, fuel bar, ferry lines,
+      `--scene transport`
+      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (needs the sub dive toggle), staging
+            repair cost, T3 heavy transport, emergency drop, gunship VTOL hover
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [ ] Mass fabricators, adjacency bonus
 

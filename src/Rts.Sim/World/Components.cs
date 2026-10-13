@@ -18,6 +18,9 @@ public enum UnitFlags : ushort
     Paused = 1 << 5,
     /// <summary>Visible to enemies via radar only (set by intel; informational).</summary>
     RadarOnly = 1 << 6,
+    /// <summary>Inside a carrier (transport / air staging / Atlantis): off the map. Not in AliveList (so not in the
+    /// spatial grid, untargetable, no weapons/intel/economy); moved with the carrier by Transport.TransportSystem.</summary>
+    Carried = 1 << 10,
 }
 
 /// <summary>Movement module state (owned by MovementSystem / PathSystem).</summary>
