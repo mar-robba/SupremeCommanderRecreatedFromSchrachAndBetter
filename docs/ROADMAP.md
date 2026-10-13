@@ -132,7 +132,16 @@ Then:
       - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
             avoidance in narrow channels
 - [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
-- [ ] Transports/ferry, air staging, engineer assist chains
+- [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
+      (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
+      (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
+      transports) / Ferry (beacon → drop, repeats) / Dock; aircraft fuel (half speed when empty) + auto-return; T2 Air
+      Staging (repairs/refuels, releases when done); Atlantis experimental carrier (builds, carries and launches
+      aircraft); engineer assist chains (guard a guard → helps the root builder; guards repair first); client:
+      models, cargo hanging under transports, context clicks, order buttons, cargo counter, fuel bar, ferry lines,
+      `--scene transport`
+      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (needs the sub dive toggle), staging
+            repair cost, T3 heavy transport, emergency drop, gunship VTOL hover
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [ ] Mass fabricators, adjacency bonus
 
