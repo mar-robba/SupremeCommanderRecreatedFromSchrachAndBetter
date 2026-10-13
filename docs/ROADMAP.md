@@ -22,8 +22,17 @@ Tests: 229 sim + 158 client.
   - adjacency bonus, veterancy bonuses, pause, capture;
   - sandbox selects/controls any army;
   - default cameras for `--scene`.
-- **(g) Experimentals + commanders**: EXP tier, Fatboy, Mavor, crush, death blast, "experimental detected";
-  ACU enhancements (slots); Quantum Gateway + SCU.
+- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
+  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
+  - 8 ACU enhancements; Quantum Gateway + SCU.
+  - Try it: `--scene experimental[:mavor|:fog]`.
+  - Follow-ups:
+    - Mavor low arc hits hills at short range, and it has no target priority;
+    - Stop doesn't cancel an enhancement;
+    - an occupied slot needs a right-click clear first;
+    - shield HP refills on enhancement change;
+    - a unit with the missile pack doesn't move into range;
+    - `--select` can't pick variant ids.
 - **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
 - **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
   desync detection.
