@@ -123,7 +123,7 @@ public static class SnapshotWriter
             var e = ar.Eco;
             s.Armies[a] = new ArmyView
             {
-                Index = a, Team = ar.Team, Color = ar.Color, Defeated = ar.Defeated, UnitCount = ar.UnitCount,
+                Index = a, Team = ar.Team, Color = ar.Color, Faction = ar.Faction, Defeated = ar.Defeated, UnitCount = ar.UnitCount,
                 Mass = e.Mass, MassMax = e.MassMax, MassIncome = e.MassIncome, MassDemand = e.MassDemand, MassEfficiency = e.MassEfficiency,
                 Energy = e.Energy, EnergyMax = e.EnergyMax, EnergyIncome = e.EnergyIncome, EnergyDemand = e.EnergyDemand, EnergyEfficiency = e.EnergyEfficiency,
             };

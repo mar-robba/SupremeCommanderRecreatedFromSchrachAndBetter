@@ -36,7 +36,7 @@ public sealed class AiBrain
     public readonly List<Vector2> EnemyStarts = new();
     private bool _initialized;
 
-    // Blueprint indices (-1 if missing from the data).
+    // Blueprint indices from the army faction's roles (-1 if the faction has no such unit).
     public readonly int BpEngineer, BpTank, BpArtillery, BpMobileAA, BpScout, BpLandFactory, BpAirFactory;
     public readonly int BpMex, BpPgen, BpHydro, BpMassStorage, BpEnergyStorage, BpPD, BpAA, BpRadar;
     public readonly int BpInterceptor, BpBomber, BpAirScout;
@@ -54,25 +54,28 @@ public sealed class AiBrain
         Military = new AiMilitary(this);
         Scouting = new AiScouting(this);
 
-        var db = W.Blueprints;
-        BpEngineer = db.IndexOf("uef_t1_engineer");
-        BpTank = db.IndexOf("uef_t1_tank");
-        BpArtillery = db.IndexOf("uef_t1_artillery");
-        BpMobileAA = db.IndexOf("uef_t1_mobile_aa");
-        BpScout = db.IndexOf("uef_t1_scout");
-        BpLandFactory = db.IndexOf("uef_t1_land_factory");
-        BpAirFactory = db.IndexOf("uef_t1_air_factory");
-        BpMex = db.IndexOf("uef_t1_mass_extractor");
-        BpPgen = db.IndexOf("uef_t1_power_generator");
-        BpHydro = db.IndexOf("uef_t1_hydrocarbon");
-        BpMassStorage = db.IndexOf("uef_t1_mass_storage");
-        BpEnergyStorage = db.IndexOf("uef_t1_energy_storage");
-        BpPD = db.IndexOf("uef_t1_point_defense");
-        BpAA = db.IndexOf("uef_t1_aa_turret");
-        BpRadar = db.IndexOf("uef_t1_radar");
-        BpInterceptor = db.IndexOf("uef_t1_interceptor");
-        BpBomber = db.IndexOf("uef_t1_bomber");
-        BpAirScout = db.IndexOf("uef_t1_air_scout");
+        // Blueprints come from the army faction's roles (never hardcoded ids): -1 = the faction has no such unit.
+        var factions = W.Blueprints.Factions;
+        string faction = W.Armies[army].Faction;
+        int R(string role) => factions.RoleBlueprint(faction, role);
+        BpEngineer = R(FactionRoles.EngineerT1);
+        BpTank = R(FactionRoles.TankT1);
+        BpArtillery = R(FactionRoles.ArtilleryT1);
+        BpMobileAA = R(FactionRoles.MobileAaT1);
+        BpScout = R(FactionRoles.ScoutT1);
+        BpLandFactory = R(FactionRoles.LandFactoryT1);
+        BpAirFactory = R(FactionRoles.AirFactoryT1);
+        BpMex = R(FactionRoles.MexT1);
+        BpPgen = R(FactionRoles.PgenT1);
+        BpHydro = R(FactionRoles.Hydro);
+        BpMassStorage = R(FactionRoles.MassStorage);
+        BpEnergyStorage = R(FactionRoles.EnergyStorage);
+        BpPD = R(FactionRoles.PdT1);
+        BpAA = R(FactionRoles.AaT1);
+        BpRadar = R(FactionRoles.RadarT1);
+        BpInterceptor = R(FactionRoles.InterceptorT1);
+        BpBomber = R(FactionRoles.BomberT1);
+        BpAirScout = R(FactionRoles.AirScoutT1);
     }
 
     public float GameTime => W.GameTime;
