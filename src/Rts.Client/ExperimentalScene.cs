@@ -1,5 +1,6 @@
 using System.Numerics;
 using Rts.Sim;
+using Rts.Sim.Combat;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Map;
@@ -14,7 +15,7 @@ namespace Rts.Client;
 /// <c>--scene experimental[:mavor|:fog]</c>: visual test bed for experimentals and commanders around the map center
 /// (plains, map 512 unless given, 2 players, no AI, fog off unless <c>:fog</c>; army 0 has infinite resources via the
 /// sandbox state). Army 0: a Fatboy driving east through a few army 1 T1 tanks (crushed or shot) while building
-/// 3 T1 tanks, a Mavor firing at an army 1 base ≈200 away (an omni sensor gives the intel), a Quantum Gateway
+/// 3 T1 tanks, a Mavor firing at an army 1 base ≈260 away (the layout origin is chosen for a clear line of fire) (an omni sensor gives the intel), a Quantum Gateway
 /// building an SCU next to an SCU and an enhanced SCU, and a row of commanders (plain + three enhancement
 /// variants). Army 1's base also holds an enemy Fatboy: it triggers the "Experimental detected" alert at start
 /// (with <c>:fog</c> only once it is seen). <c>:mavor</c> pre-steps until a Mavor shell is about to land and aims
@@ -23,6 +24,10 @@ namespace Rts.Client;
 public static class ExperimentalScene
 {
     public const string Name = "experimental";
+
+    // Layout offsets from the scene origin (see FindLayoutCenter).
+    private static readonly Vector2 MavorOff = new(-110, -70), BaseOff = new(150, -70);
+    private const float MavorMuzzle = 4.8f;
 
     /// <summary>Scene defaults for options not given on the command line (call after parsing).</summary>
     public static void ApplyDefaults(ClientOptions o)
@@ -69,11 +74,11 @@ public static class ExperimentalScene
         if (!fatboy.IsNone) cmds.Add(new IssueOrderCommand(0, [fatboy], Order.MoveTo(F1), false));
         for (int k = 0; k < 6; k++) Spawn("uef_t1_tank", 1, F0 + new Vector2(14 + (k / 2) * 5f, -2.5f + (k % 2) * 5f), MathF.PI);
 
-        // 2) Mavor shelling an enemy base ≈200 away; an omni sensor (radar 400) provides the intel.
-        var M = c + new Vector2(-90, -70);
-        var T = c + new Vector2(110, -70);
+        // 2) Mavor shelling an enemy base ≈260 away (clear line of fire); an omni sensor (radar 400) gives the intel.
+        var M = c + MavorOff;
+        var T = c + BaseOff;
         var mavor = Spawn("uef_x_mavor", 0, M, 0);
-        var omni = M + new Vector2(100, 0);
+        var omni = T - new Vector2(100, 0);
         Spawn("uef_t3_omni_sensor", 0, omni);
         var factory = Spawn("uef_t1_land_factory", 1, T);
         for (int k = 0; k < 4; k++) Spawn("uef_t1_power_generator", 1, T + new Vector2(-10 + k * 6.5f, 9));
@@ -105,15 +110,13 @@ public static class ExperimentalScene
         var camera = new Vector3(c.X - 8, c.Y + 60, 135);
         if (variant == "mavor")
         {
-            // Until a Mavor shell is coming down close to the ground.
+            // Until a Mavor shell is about to land on the enemy base (or wherever the last one was seen).
             for (int t = 0; t < 600; t++)
             {
                 sim.Step();
-                if (ShellAltitude(sim, out float alt, out float vy, out var at) && vy < 0 && alt < 14)
-                {
-                    camera = new Vector3(at.X, at.Y, 70);
-                    break;
-                }
+                if (!ShellAltitude(sim, out _, out _, out var at)) continue;
+                camera = new Vector3(at.X, at.Y, 70);
+                if (Vector2.Distance(at, T) < 30) break;
             }
         }
         else for (int t = 0; t < 20; t++) sim.Step();
@@ -139,10 +142,10 @@ public static class ExperimentalScene
             for (float x = -r; x <= r; x += 3)
             for (float z = -r; z <= r; z += 3) samples.Add(o + new Vector2(x, z));
         }
-        Area(new Vector2(-90, -70), 7);
-        Area(new Vector2(10, -70), 3);
-        Area(new Vector2(110, -70), 14);
-        Area(new Vector2(115, -42), 6);
+        Area(MavorOff, 7);
+        Area(BaseOff - new Vector2(100, 0), 3);
+        Area(BaseOff, 14);
+        Area(BaseOff + new Vector2(5, 28), 6);
         Area(new Vector2(-30, 95), 12);
         Area(new Vector2(18, 92), 16);
         var best = mid;
@@ -159,10 +162,27 @@ public static class ExperimentalScene
                 if (p.X >= 4 && p.Y >= 4 && p.X < t.Width - 4 && p.Y < t.Height - 4 && t.GetHeight(p) > t.WaterLevel + 0.5f
                     && t.CanTraverse(MotionLayer.Land, (int)p.X, (int)p.Y)) score++;
             }
+            if (ClearShot(t, o + MavorOff, o + BaseOff)) score += 100000;
             float d = dx * dx + dz * dz;
             if (score > bestScore || (score == bestScore && d < bestD)) { best = o; bestScore = score; bestD = d; }
         }
         return best;
+    }
+
+    /// <summary>True if the Mavor's low arc from m to b stays above the terrain (shells explode on ground contact).</summary>
+    private static bool ClearShot(Terrain t, Vector2 m, Vector2 b)
+    {
+        var from = new Vector3(m.X, t.GetHeight(m) + MavorMuzzle, m.Y);
+        var to = new Vector3(b.X, t.GetHeight(b) + 1f, b.Y);
+        if (!Ballistics.SolveArc(from, to, 125f, Ballistics.Gravity, false, out var v, out float time)) return false;
+        for (int i = 1; i < 40; i++)
+        {
+            float s = time * i / 40f;
+            var p = from + v * s + new Vector3(0, -0.5f * Ballistics.Gravity * s * s, 0);
+            if (p.X < 0 || p.Z < 0 || p.X >= t.Width || p.Z >= t.Height) return false;
+            if (t.GetHeight(p.X, p.Z) > p.Y - 0.5f) return false;
+        }
+        return true;
     }
 
     /// <summary>Altitude, vertical speed and ground position of the first Mavor shell in flight.</summary>

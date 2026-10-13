@@ -170,14 +170,19 @@ public class ExperimentalTests
         TestUtil.Spawn(sim, "uef_t3_omni_sensor", 0, FindSite(w, "uef_t3_omni_sensor", tsite, 8, 40)); // intel on the target
         u.Heading[mavor.Index] = MathF.Atan2(dir.Y, dir.X);
 
-        int Shells() { int n = 0; foreach (int p in w.Projectiles.AliveList) if (w.Projectiles.SourceBp[p] == mavorBp) n++; return n; }
+        int Shell()
+        {
+            var pr = w.Projectiles;
+            for (int p = 0; p < pr.Capacity; p++) if (pr.Alive[p] && pr.SourceBp[p] == mavorBp) return p;
+            return -1;
+        }
 
         // Starved of energy: no shot.
         for (int t = 0; t < 80; t++)
         {
             foreach (var a in w.Armies) a.Eco.Energy = 0;
             sim.Step();
-            Assert.Equal(0, Shells());
+            Assert.Equal(-1, Shell());
         }
         Assert.True(WeaponEnergy.Fraction(w, mavor.Index, 0) < 0.1f);
 
@@ -186,24 +191,27 @@ public class ExperimentalTests
         for (int t = 0; t < 300 && fired < 0; t++)
         {
             StepRich(sim);
-            if (Shells() > 0) fired = t;
+            if (Shell() >= 0) fired = t;
         }
         Assert.True(fired > 0, "the Mavor fired");
+        var wt = u.WeaponsOf(mavor.Index)[0].Target; // any visible enemy (radar also shows the enemy commander)
+        Assert.True(u.IsActive(wt) && u.Army[wt.Index] == 1);
+        var aimed = u.Pos[wt.Index];
         Assert.True(WeaponEnergy.Fraction(w, mavor.Index, 0) < 0.2f, "the shot used the charge");
 
         // Follow the shell to its impact.
         Vector3 last = default;
         for (int t = 0; t < 120; t++)
         {
-            int shell = -1;
-            foreach (int p in w.Projectiles.AliveList) if (w.Projectiles.SourceBp[p] == mavorBp) shell = p;
+            int shell = Shell();
             if (shell < 0) break;
             last = w.Projectiles.Pos[shell];
             StepRich(sim);
         }
         var impact = new Vector2(last.X, last.Z);
         Assert.True(Vector2.Distance(impact, site) > 200f, $"impact {impact} too close to the Mavor");
-        Assert.True(Vector2.Distance(impact, tsite) < 60f, $"impact {impact} far from the target {tsite}");
+        float spread = w.BpOf(mavor.Index).Weapons[0].Spread;
+        Assert.True(Vector2.Distance(impact, aimed) < spread + 20f, $"impact {impact} far from the target {aimed}");
         _ = target;
     }
 

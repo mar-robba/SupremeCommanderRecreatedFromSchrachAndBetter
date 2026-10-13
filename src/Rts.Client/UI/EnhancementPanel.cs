@@ -35,7 +35,7 @@ public sealed class EnhancementPanel
     private UnitBlueprint? _base;
     private Rectangle _r;
     private bool _visible;
-    private bool _dd; // TEMPDEMO
+    private bool _dd, _ds; // TEMPDEMO
 
     public EnhancementPanel(GameContext ctx, SelectionController sel)
     {
@@ -63,6 +63,14 @@ public sealed class EnhancementPanel
     /// </summary>
     public void Layout(SimSnapshot snap, bool show, float x, float bottom, float right)
     {
+        // TEMPDEMO
+        if (Environment.GetEnvironmentVariable("RTS_ENH_SEL") is string ds && !_ds && Raylib.GetTime() > 3)
+        {
+            var pick = new List<UnitHandle>();
+            for (int k = 0; k < snap.UnitCount; k++) if (_ctx.Db[snap.Units[k].Bp].Id == ds) pick.Add(new UnitHandle(snap.Units[k].Index, snap.Units[k].Gen));
+            if (pick.Count > 0) { _sel.SelectOnly(pick); _ds = true; }
+            show = pick.Count > 0;
+        }
         _visible = show && Refresh(snap);
         if (!_visible) return;
         float w = DesiredWidth();

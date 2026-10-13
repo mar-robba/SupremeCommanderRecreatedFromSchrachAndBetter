@@ -6,7 +6,7 @@ namespace Rts.Client.Rendering;
 /// <summary>
 /// Procedural strategic-icon atlas rasterized on the CPU from signed distance functions (anti-aliased, mipmapped).
 /// Each 64px cell = frame shape by domain (circle land, triangle air, shield naval, square structure,
-/// diamond commander, octagon experimental) + white role glyph + tech pips, in a normal and a selected
+/// diamond commander, blunt diamond support commander, octagon experimental) + white role glyph + tech pips, in a normal and a selected
 /// (white border) variant. Channels: R = fill (tinted with the army color by the shader), G = white, B = dark border.
 /// </summary>
 public static unsafe class IconAtlas
@@ -96,7 +96,7 @@ public static unsafe class IconAtlas
     private static float Shape(string kind, Vector2 p)
     {
         if (kind == "commander") return Diamond(p, 25);
-        if (kind == "scu") return MathF.Max(Diamond(p, 23), Box(p, new Vector2(19, 19))); // clipped diamond: commander-like, distinct
+        if (kind == "scu") return MathF.Max(Diamond(p, 25), Box(p, new Vector2(21, 21))); // support commander: blunt-tipped diamond
         if (kind == "experimental") return MathF.Max(Box(p, new Vector2(21, 21)), Diamond(p, 28));
         if (kind.StartsWith("air_")) return Triangle(p, 21);
         if (kind == "naval") return MathF.Max(Box(p, new Vector2(19, 17)), (MathF.Abs(p.X) + p.Y) * 0.7071f - 17);
