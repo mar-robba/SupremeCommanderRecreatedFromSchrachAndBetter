@@ -353,3 +353,46 @@ interpolates prev/cur by time
   for far off-screen blasts): flash, draped shockwave/dust rings, fireball, mushroom cloud (private sorted smoke-puff
   pool), sparks/debris, scorch decal (90 s). Sound: ONE map-wide synthesized `SoundId.NukeExplosion`
   (`GameAudio.Strategic.cs` `PlayNuke`, ≈1/distance with a floor).
+
+## Save/load & replays (`Rts.Sim/Persistence`)
+- One serializer for saves, replays and seek checkpoints: `WorldState.Capture(sim)` writes the whole object graph
+  reachable from the `Simulation` plus every static `ConditionalWeakTable<SimWorld, T>` of Rts.Sim (per-world system
+  state, discovered automatically) — every instance field (private/readonly too) through generated IL (`Val.cs`,
+  `Codecs.cs`, `GraphIO.cs`), object identity/shared references kept, unmanaged arrays block-copied. The immutable
+  `BlueprintDb` and `Terrain` are not stored: references into them become ids (`ExternalSet`); the terrain is
+  regenerated from `GameInfo.Map` (embedded in the file when there are no generator settings). `WorldState.Restore`
+  rebuilds the identical graph: save → load → continue gives the same `StateHash` and the same bytes as the
+  uninterrupted game (`PersistenceTests`, 1 and 4 threads).
+- Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
+  set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
+  + hash, bounds-checked reads). No migrations: files are tied to the build (`GameInfo.SimBuild`).
+- Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
+  army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
+  so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.
+- Replays (`Replay.cs`, `ReplayPlayer.cs`): `SimRunner.Hooks = ReplayRecorder` stores the initial state (first
+  tick), each tick's command list and a `StateHash` every 10 ticks (≈0.02 ms/tick). `ReplayPlayer` (as the runner's
+  hooks or headless) re-simulates from the initial state with the recorded commands (incoming ones are ignored) and
+  compares the hashes → `DesyncTick`; `SeekTo` backwards restores a compressed checkpoint (every 600 ticks) and
+  re-simulates. A loaded save keeps recording into its replay, so a replay always covers the whole game.
+  Headless check: `Rts.Bench -- replay <file>`; timings/sizes: `Rts.Bench -- savebench`.
+- Threading: `SaveGame.Capture` only on the sim thread (a `SimRunner.Post` job; jobs also run while paused) or with
+  the runner stopped; `SaveGame.Encode` (compression) and file writes run on a background task.
+- Client (`Rts.Client/Persistence`, `Menus/{SaveListScreen,FileLoadingScreen,ReplayScreen,InGameSaveUi,MessageBox}`):
+  `GameRecording` (owned by `GameSession`) sets the recorder as runner hooks for every game, captures saves through a
+  runner job and writes files on a worker (toasts); the replay is written when a team wins and again on quit/restart
+  (same file; games under 5 s are dropped; app exit waits for pending writes). `ClientGameData` = the client config
+  stored in `GameInfo.ClientData` (rebuilds names/colors/sandbox on load). Pause menu "Save Game" dialog, F5/F6
+  quicksave/quickload; main menu "Load Game" / "Replays" lists (header only; damaged/incompatible files greyed with
+  the reason; load errors in a message box). Replay viewer = `GameSession` over `ReplayPlayer.Sim` with
+  `GameContext.ReadOnly` (no order/build/enhancement UI, commands ignored by the player anyway): play/pause, speed
+  0.5×–16×, timeline seek (`ReplaySeeker`: runner job `SeekTo` + `ReplaceSimulation`), fog view per army or all,
+  DESYNC banner, other-build warning.
+- **Keeping new state saveable** (rule for every feature): sim state lives in plain fields of sim classes/structs,
+  arrays, `List`/`Dictionary`/`HashSet`/`Queue`/`Stack`, or a per-world `ConditionalWeakTable<SimWorld, T>`.
+  No static mutable state, no stored lambdas/delegates (store an enum/id and dispatch in code; a cached delegate to
+  your own method = `[NoSave] Action? _f;` + `_f ??= Method`), no framework interfaces (`IList<T>`, `IEnumerable<T>`)
+  or `object` as field types. Caches, scratch buffers and wall-clock timings: `[NoSave]` (auto-properties
+  `[field: NoSave]`), rebuilt lazily or in `IAfterLoad.AfterLoad()`; never `[NoSave]` anything that affects future
+  ticks. `SaveCoverageTests` walks every reachable field type and fails with the field path and the fix;
+  `PersistenceTests.SaveLoadContinueMatchesUninterruptedGame` proves the round trip on a rich game (AIs, every
+  blueprint spawned, missiles, nukes, upgrades) — extend that scenario if your feature has state it doesn't reach.

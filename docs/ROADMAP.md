@@ -22,8 +22,17 @@ Tests: 229 sim + 158 client.
   - adjacency bonus, veterancy bonuses, pause, capture;
   - sandbox selects/controls any army;
   - default cameras for `--scene`.
-- **(g) Experimentals + commanders**: EXP tier, Fatboy, Mavor, crush, death blast, "experimental detected";
-  ACU enhancements (slots); Quantum Gateway + SCU.
+- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
+  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
+  - 8 ACU enhancements; Quantum Gateway + SCU.
+  - Try it: `--scene experimental[:mavor|:fog]`.
+  - Follow-ups:
+    - Mavor low arc hits hills at short range, and it has no target priority;
+    - Stop doesn't cancel an enhancement;
+    - an occupied slot needs a right-click clear first;
+    - shield HP refills on enhancement change;
+    - a unit with the missile pack doesn't move into range;
+    - `--select` can't pick variant ids.
 - **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
 - **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
   desync detection.
@@ -113,7 +122,7 @@ Shared contracts (still valid):
       warning, anti-nukes intercept it, shields knocked down); `nuke instant x,z` / panel Blast = the detonation at once;
       instant build fills silo stockpiles; "Strategic & shields" spawn group; one `EffectKind.Nuke` → `NukeFx` + one
       sound for every nuke; real nukes vaporize wrecks in the crater too. Tests: `SandboxNukeTests`.
-      - [ ] later: select enemy units for the actions (box-select only picks own units), save/load sandbox setups
+      - [ ] later: select enemy units for the actions (box-select only picks own units)
 
 ## Phase 3 — SupCom depth
 - [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
@@ -157,5 +166,17 @@ Shared contracts (still valid):
 
 ## Phase 4 — Scale and polish
 - [ ] 1024 maps with 4–8 players, 5k+ units at 60 FPS (instancing, LOD, culling)
-- [ ] Save/load, replays (command logs)
+- [x] Save/load, replays, desync detection (wave 4, agent i, 2026-10-14): automatic deep serializer of the whole sim
+      (`Rts.Sim/Persistence`: IL codecs, shared refs, blueprint/terrain by id, per-type layout check, Brotli files;
+      `[NoSave]` + `IAfterLoad` for caches), save → load → continue = identical state/hash (1 and 4 threads, test with
+      every blueprint, AIs, missiles, nukes, upgrades, enhancements), coverage guard test (`SaveCoverageTests`).
+      Replays = initial state + command log + `StateHash` every 10 ticks (≈0.01 ms/tick); `ReplayPlayer` with desync
+      detection and backward seek (checkpoints). Client: every game recorded (written at the end and on quit), pause
+      menu Save Game + F5/F6 quicksave/quickload, main menu Load Game / Replays lists, replay viewer (pause, 0.5×–16×,
+      timeline seek, fog per army or all, DESYNC banner), sandbox setups saveable, clear errors for damaged/incompatible
+      files; `Rts.Bench replay <file>` / `savebench`. Late game (512 map, 4 AIs, 25 min, 6.6k units): save 1.8 MB,
+      capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
+      - [ ] later: saves/replays don't survive sim code changes (no migration: the layout check refuses them);
+            "Load Game" in the pause menu; replay viewer: F7 fog toggle doesn't update the view selector, seek
+            checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
 - [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)

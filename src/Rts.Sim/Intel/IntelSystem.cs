@@ -101,8 +101,11 @@ public static class IntelSystem
         /// <summary>Per blueprint, in cells (0 = none).</summary>
         private readonly float[] _vision, _radar, _sonar, _omni;
         private readonly bool[] _upkeep, _structure;
-        public readonly Action<int, int, int> BandBody;
-        public readonly Action<int> GhostBody;
+        // Cached delegates (not saved: recreated lazily after a load).
+        [Persistence.NoSave] private Action<int, int, int>? _bandBody;
+        [Persistence.NoSave] private Action<int>? _ghostBody;
+        public Action<int, int, int> BandBody => _bandBody ??= Band;
+        public Action<int> GhostBody => _ghostBody ??= UpdateGhosts;
         public readonly int Bands;
         /// <summary>Work items (team, band), dispatched by descending estimated cost: Parallel.For hands out
         /// contiguous index ranges, and the heavy bands of a dense army blob are adjacent.</summary>
@@ -151,8 +154,6 @@ public static class IntelSystem
             Items = Bands * w.Intel.TeamCount;
             _order = new int[Items];
             _cost = new int[Items];
-            BandBody = Band;
-            GhostBody = UpdateGhosts;
         }
 
         /// <summary>Sequential: vision records (stable counting sort by team and row) and powered sensors.</summary>

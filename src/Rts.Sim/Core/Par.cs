@@ -8,7 +8,7 @@ namespace Rts.Sim.Core;
 /// </summary>
 public static class Par
 {
-    private static ParallelOptions _options = new() { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) };
+    [Persistence.NoSave] private static ParallelOptions _options = new() { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) };
 
     /// <summary>Max worker threads used by the simulation. 1 = fully serial (useful for debugging/tests).</summary>
     public static int MaxThreads

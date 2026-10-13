@@ -71,8 +71,8 @@ public sealed class Hud : IDisposable
         if (m.X <= 3 || m.Y <= 3 || m.X >= Ui.Sw - 4 || m.Y >= Ui.Sh - 4) return false;
         bool Hit(Rectangle r) => r.Width > 0 && Raylib.CheckCollisionPointRec(m, r);
         if (Hit(_top) || Hit(_mini)) return true;
-        if (_showSelectionPanels && (Hit(_infoR) || Hit(_ordersR))) return true;
-        if (_enh.Hit(m)) return true;
+        if (_showSelectionPanels && (Hit(_infoR) || (!_ctx.ReadOnly && Hit(_ordersR)))) return true;
+        if (!_ctx.ReadOnly && _enh.Hit(m)) return true;
         return _buildKind != BuildKind.None && Hit(_buildR);
     }
 
@@ -105,13 +105,13 @@ public sealed class Hud : IDisposable
         float bx = _ordersR.X + _ordersR.Width + gap;
         float avail = Ui.Sw - m - bx;
         _buildKind = BuildKind.None;
-        if (_showSelectionPanels && avail > Ui.P(120))
+        if (_showSelectionPanels && avail > Ui.P(120) && !_ctx.ReadOnly) // replays: no build/factory panels
         {
             if (_build.Refresh(snap)) { _buildKind = BuildKind.Engineer; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _build.DesiredWidth())), H); }
             else if (_factory.Refresh(snap)) { _buildKind = BuildKind.Factory; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _factory.DesiredWidth())), H); }
             else if (_upgrade.Refresh(snap)) { _buildKind = BuildKind.Upgrade; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _upgrade.DesiredWidth())), H); }
         }
-        _enh.Layout(snap, _showSelectionPanels, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
+        _enh.Layout(snap, _showSelectionPanels && !_ctx.ReadOnly, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
     }
 
     public void Draw()
@@ -131,10 +131,10 @@ public sealed class Hud : IDisposable
         else
         {
             _dialogFrames = 0;
-            if (_sel.InputBlocked) { } // sandbox console typing / map tool: no build hotkeys
+            if (_sel.InputBlocked || _ctx.ReadOnly) { } // sandbox console typing / map tool / replay: no build hotkeys
             else if (_buildKind == BuildKind.Engineer) _build.HandleHotkeys();
             else if (_buildKind == BuildKind.Factory && !_sel.Placement.Active) _factory.HandleHotkeys(snap);
-            if (!_sel.Placement.Active) UpgradeUi.HandleHotkey(_ctx, _sel.Selected, snap);
+            if (!_sel.Placement.Active && !_ctx.ReadOnly) UpgradeUi.HandleHotkey(_ctx, _sel.Selected, snap);
         }
 
         DrawTopBar(snap);
@@ -142,7 +142,7 @@ public sealed class Hud : IDisposable
         if (_showSelectionPanels)
         {
             _info.Draw(_infoR, snap);
-            _orders.Draw(_ordersR, snap);
+            if (!_ctx.ReadOnly) _orders.Draw(_ordersR, snap);
         }
         if (_buildKind == BuildKind.Engineer) _build.Draw(_buildR, snap);
         else if (_buildKind == BuildKind.Factory) _factory.Draw(_buildR, snap);
@@ -203,6 +203,7 @@ public sealed class Hud : IDisposable
             new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
             new("Engineers: right-click wreck = reclaim, damaged / unfinished unit = repair, factory = assist · M (nothing selected) or Ctrl+M mute · Ctrl+Shift+M music", d, 11.5f),
             new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
+            new("F5 quicksave · F6 quickload · Esc menu: Save Game · main menu: Load Game, Replays", d, 11.5f),
         ];
     }
 

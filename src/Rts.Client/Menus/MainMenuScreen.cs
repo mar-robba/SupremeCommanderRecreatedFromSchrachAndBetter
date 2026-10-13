@@ -30,6 +30,10 @@ public sealed class MainMenuScreen : IScreen
         by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Sandbox", "Test freely: spawn anything, cheats, nukes")) _app.Go(new SkirmishSetupScreen(_app, sandbox: true));
         by += h + gap;
+        if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Load Game", "Continue a saved game")) _app.Go(new SaveListScreen(_app, replays: false));
+        by += h + gap;
+        if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Replays", "Watch recorded games")) _app.Go(new SaveListScreen(_app, replays: true));
+        by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Settings", "Volume, fullscreen, resolution")) _app.Go(new SettingsScreen(_app));
         by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Quit", "Back to the desktop")) _app.QuitRequested = true;
