@@ -27,7 +27,7 @@ public sealed class ClientOptions
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
-    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene) or "experimental[:mavor|:fog]" (ExperimentalScene).</summary>
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) or "transport" (TransportScene).</summary>
     public string? Scene;
     public int Width = 1600;
     public int Height = 900;
@@ -163,6 +163,7 @@ public sealed class ClientOptions
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
         if (o.Scene == NavalScene.Name) NavalScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.ApplyDefaults(o);
+        else if (o.Scene == TransportScene.Name) TransportScene.ApplyDefaults(o);
         return o;
     }
 }
@@ -344,6 +345,7 @@ public static class GameApp
             var col = building ? new Color(90, 170, 255, 255) : f > 0.5f ? new Color(70, 220, 70, 255) : f > 0.25f ? new Color(240, 200, 40, 255) : new Color(230, 50, 40, 255);
             Raylib.DrawRectangle((int)(sp.X - w / 2) - 1, (int)sp.Y - 1, (int)w + 2, 5, Color.Black);
             Raylib.DrawRectangle((int)(sp.X - w / 2), (int)sp.Y, (int)(w * f), 3, col);
+            if (sel && !building) TransportOverlay.DrawFuelSliver(sp.X - w / 2, sp.Y, w, v.Fuel); // aircraft fuel
         }
     }
 }

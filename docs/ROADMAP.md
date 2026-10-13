@@ -101,15 +101,20 @@ Shared contracts (still valid):
 - [x] Skirmish AI (merged 2026-10-11) — `src/Rts.Sim/AI`: deterministic in-sim AI issuing Commands; perception
       layer + threat maps, opening build order, expansion, power balance, air factory, PD/AA, waves to reachable targets,
       retreat/defense, Easy/Normal/Hard; ~0.01 ms/tick per AI; `Rts.Bench ai` headless matches
-      - [ ] next: switch to RespectIntel=true now that fog exists, use scouts/radar (after fog merge AI-vs-AI seed 42
-            no longer ends within 30 min), less midgame mass stall, 4-player FFA finishing, Hard noticeably stronger
+      - [x] wave 4a (AI resume): fog-fair perception (RespectIntel=true: ghosts, threat memory, staleness, commander
+            last seen), land/air scouts + radar, staging on the walking route, reinforcement batches, regroup,
+            recall when the base is losing, no army retreat, late-game push + snipes, terrain line of fire for
+            non-forced targets (sim: `Combat/LineOfFire.cs`), Hard: artillery-heavy mix + micro (focus fire,
+            pull-back, raids, snipes); ~0.02-0.03 ms/tick per AI. Bench 30 min/256/4 land presets: NvN ends by
+            commander kill in ~86 %, Hard beats Normal in 86 % (166-8-18 of 192), Easy loses 23/24; 4p FFAs on 512 end
+      - [ ] later: Highlands/Canyon NvN stalemates (equal armies trading), Hard vs Hard ends only ~69 %; T1 artillery
+            looks too cost-efficient (balance); AI uses T2/T3, navy, strategic weapons, experimentals, transports
 - [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
 - [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
       fog ViewArmy = local human (defeated player "Keep Watching" = fog off); settings: master/effects/music
       volumes (saved) on an app-wide `AudioSystem` (menus: clicks + music); end screen `ArmyStats`
-      - [ ] AI on new presets: builds and fights everywhere, but Highlands/Canyon AI-vs-AI often end in a stalemate
-            (bench: Plains s42 winner 19:49, Lakes s5 winner 13:06, Highlands s7 none in 40 min, Canyon s3 none in 30)
+      - [x] AI on new presets: builds and fights everywhere; most NvN games end by commander kill (see Skirmish AI)
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
@@ -164,7 +169,20 @@ Shared contracts (still valid):
       - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
 - [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
-- [ ] Transports/ferry, air staging, engineer assist chains
+- [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
+      (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
+      (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
+      transports) / Ferry (beacon → drop, repeats) / Dock; aircraft fuel (half speed when empty) + auto-return; T2 Air
+      Staging (repairs/refuels, releases when done); Atlantis experimental carrier (builds, carries and launches
+      aircraft); engineer assist chains (guard a guard → helps the root builder; guards repair first); client:
+      models, cargo hanging under transports, context clicks, order buttons, cargo counter, fuel bar, ferry lines,
+      `--scene transport`
+      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (the sub toggle exists now: needs
+            Sub layer + surfaced by default + no dock/launch/SAM while submerged), staging repair cost, T3 heavy
+            transport, emergency drop, gunship VTOL hover
+      - [x] merged with wave 4f polish (2026-10-14): shared hotkeys E (transport-to with transports selected, else
+            capture) and D (subs dive + aircraft dock); captured carriers take their cargo along (not when carrying a
+            commander); pausable Atlantis factory; boarding ends the factory roll-out
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs

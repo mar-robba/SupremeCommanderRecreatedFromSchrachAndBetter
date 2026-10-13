@@ -70,6 +70,7 @@ public static class CommandSystem
         units.Sort();
 
         var order = io.Order;
+        if (Transport.TransportOrders.Handles(order.Type)) { Transport.TransportOrders.Issue(w, io, units); return; }
         if (order.Type == OrderType.Build && !CanBuild(w, units, order.BlueprintIndex)) return;
 
         bool formation = order.Type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol;

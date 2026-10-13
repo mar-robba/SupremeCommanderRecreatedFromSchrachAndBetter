@@ -12,7 +12,7 @@ Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to se
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`;
-  visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders) (scene positions are printed; aim with `--camera`))
+  visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis) (scene positions are printed; aim with `--camera`))
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;
   `nuke x,z` fires a real strategic missile (anti-nukes can intercept it), `nuke instant x,z` = the blast at once;

@@ -9,13 +9,14 @@ namespace Rts.Sim.Systems;
 /// executed by <see cref="ConstructionSystem"/>; Guard-assisting engineers join a capture). SEQUENTIAL.
 /// <list type="bullet">
 /// <item>Valid targets: active, complete, ENEMY, non-commander units the captor's army can see
-///   (<see cref="Intel.IntelService.IsVisible"/>). The captor moves into build range first.</item>
+///   (<see cref="Intel.IntelService.IsVisible"/>), not carried, not carrying a commander. The captor moves into build
+///   range first.</item>
 /// <item>Time = target BuildTime / captor BuildRate / 2 seconds; cost = the target's BuildCostEnergy (no mass),
 ///   paid through the flow economy like construction (<see cref="BuilderMode.Capture"/>: request energy at T, apply
 ///   progress at T+1 × <see cref="EconState.Efficiency"/>), so an energy stall slows it down.</item>
 /// <item>Progress lives on the TARGET (<see cref="BuilderState.CaptureProgress"/>): several captors add up (with a
 ///   per-tick reservation so they never overshoot). It resets when nobody worked on it for <see cref="ResetTicks"/>.</item>
-/// <item>At 100% the unit changes army (<see cref="UnitTransfer.Transfer"/>) and an <see cref="EffectKind.Captured"/>
+/// <item>At 100% the unit (with its cargo) changes army (<see cref="UnitTransfer.Transfer"/>) and an <see cref="EffectKind.Captured"/>
 ///   event is raised; the captors' orders then complete.</item>
 /// </list>
 /// </summary>
@@ -36,6 +37,7 @@ public static class CaptureSystem
         if (!w.IsEnemy(army, u.Army[t])) return false;
         var tbp = w.BpOf(t);
         if (tbp.Has(UnitCategory.Commander) || tbp.Economy.BuildTime <= 0) return false;
+        if ((u.Flags[t] & UnitFlags.Carried) != 0 || UnitTransfer.HoldsCommander(w, t)) return false; // inside a carrier / carrying a commander
         return w.Intel.IsVisible(army, t);
     }
 

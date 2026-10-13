@@ -30,6 +30,7 @@ public sealed class Simulation
         AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands
         CommandSystem.Run(w, _aiCommands);
         SandboxSystem.BeginTick(w); // sandbox only: batched spawns, infinite resources, instant build
+        Transport.TransportSystem.Run(w); // load/unload/dock (before AliveList: carried units leave the map), fuel
         w.Units.RebuildAliveList();
         w.Projectiles.RebuildAliveList();
         w.Grid.Rebuild(w.Units);
@@ -90,6 +91,7 @@ public sealed class Simulation
         foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); }
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
         Mix(Strategic.StrategicSystem.Hash(w));
+        Mix(Transport.TransportSystem.Hash(w));
         Mix(Experimental.ExperimentalSystem.Hash(w));
         return h;
     }

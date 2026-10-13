@@ -8,8 +8,10 @@ namespace Rts.Sim.Systems;
 /// Changing a unit's army (capture, sandbox "give"). SEQUENTIAL. The unit keeps its slot and handle, health,
 /// veterancy and construction state; its orders, build work, weapon targets, formation, pause flag and factory
 /// queue are cleared; an in-place upgrade is cancelled (the old owner is refunded like a cancelled build); a
-/// factory's unfinished unit goes with it. Commanders are never transferred (the assassination rule tracks them
-/// per army). Adjacency bonuses follow automatically (AdjacencySystem sees the army change).
+/// factory's unfinished unit goes with it, and so does a carrier's cargo (transport / air staging / Atlantis hold, in
+/// hold order). Commanders are never transferred (the assassination rule tracks them per army), so a carrier holding
+/// one can't be captured (<see cref="HoldsCommander"/>). Adjacency bonuses follow automatically (AdjacencySystem sees
+/// the army change).
 /// </summary>
 public static class UnitTransfer
 {
@@ -35,6 +37,20 @@ public static class UnitTransfer
         f.Queue?.Clear();
         f.Repeat = false;
         if (u.IsActive(f.Current)) Transfer(w, f.Current.Index, army); // the unit inside goes with the factory
+        var holds = w.Cargo.Holds[i];
+        if (holds != null)
+            for (int k = 0; k < holds.Count; k++) // the cargo goes with its carrier
+                if (u.IsActive(holds[k])) Transfer(w, holds[k].Index, army);
         return true;
+    }
+
+    /// <summary>Does carrier i hold a commander (directly or inside a docked transport)?</summary>
+    public static bool HoldsCommander(SimWorld w, int i)
+    {
+        var holds = w.Cargo.Holds[i];
+        if (holds == null) return false;
+        foreach (var h in holds)
+            if (w.Units.IsActive(h) && (w.BpOf(h.Index).Has(UnitCategory.Commander) || HoldsCommander(w, h.Index))) return true;
+        return false;
     }
 }

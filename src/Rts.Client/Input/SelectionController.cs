@@ -24,7 +24,7 @@ public sealed class SelectionController
     private double _lastClickTime;
     private UnitHandle _lastClicked = UnitHandle.None;
 
-    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Capture }
+    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Capture, Unload, TransportTo, Ferry }
     public CommandMode Mode = CommandMode.Normal;
 
     /// <summary>Structure placement mode (build menu).</summary>
@@ -115,6 +115,7 @@ public sealed class SelectionController
             UnitToggles.HandleHotkeys(_ctx, this, ctrl);
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+        TransportInput.Update(_ctx, this, ctrl || _ctx.ReadOnly); // U unload / E transport / F ferry / D dock (replays: none)
         for (int g = 0; g <= 9; g++)
         {
             if (!Raylib.IsKeyPressed(KeyboardKey.Zero + g)) continue;
@@ -295,6 +296,7 @@ public sealed class SelectionController
         var mouse = Raylib.GetMousePosition();
         if (mode == CommandMode.Launch) return StrategicOrders.TryLaunch(_ctx, this, mouse);
         if (mode == CommandMode.Capture) return UnitToggles.TryCapture(_ctx, this, mouse, queue);
+        if (TransportInput.IsTransportMode(mode)) return TransportInput.TryIssueMode(_ctx, this, mouse, queue, mode);
         var target = PickUnit(mouse);
         bool targetIsSelected = target is UnitView sv && Selected.Contains(new UnitHandle(sv.Index, sv.Gen));
         Vector3? ground = null;
@@ -302,7 +304,7 @@ public sealed class SelectionController
         // One order per army (normal games: just the local army); relations are judged from each army's side.
         foreach (var (army, units) in ArmyCommands.Groups(_ctx, Selected))
         {
-            // Engineers / commander: reclaim wrecks, repair, finish, assist or capture (see ContextOrders).
+            // Engineers / commander: reclaim, repair, finish, assist or capture; transports: load / unload / dock (see ContextOrders).
             if (mode == CommandMode.Normal && ContextOrders.TryIssue(_ctx, this, army, units, mouse, queue)) { issued = true; continue; }
             Order order;
             if (mode is CommandMode.Normal or CommandMode.AttackMove or CommandMode.Guard && target is UnitView tv && _ctx.AreEnemies(army, tv.Army))

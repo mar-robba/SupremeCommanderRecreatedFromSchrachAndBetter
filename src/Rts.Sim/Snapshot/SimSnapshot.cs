@@ -37,6 +37,8 @@ public struct UnitView
     public float CaptureFrac;
     /// <summary>Adjacency bonuses (fractions, see EconState): +mass production, +energy production, -energy use.</summary>
     public float AdjMassProd, AdjEnergyProd, AdjEnergyUse;
+    /// <summary>Aircraft flight fuel 0..1 (-1 = the unit uses no fuel). See Transport/TransportSystem.</summary>
+    public float Fuel;
 }
 
 public struct OrderView
@@ -148,6 +150,16 @@ public sealed class SimSnapshot
     public readonly List<LaunchView> Launches = new();
     public int LaunchSerial;
 
+    // ---- Transport module (cargo, ferry routes): see Transport/TransportSnapshotWriter.cs ----
+    /// <summary>Carriers among Units (transports, air staging, Atlantis) with their cargo, [0..CargoViewCount).</summary>
+    public CargoView[] CargoViews = new CargoView[8];
+    public int CargoViewCount;
+    /// <summary>Units inside carriers (ranges given by CargoView.Start/Count), [0..CargoUnitCount).</summary>
+    public CargoUnitView[] CargoUnits = new CargoUnitView[16];
+    public int CargoUnitCount;
+    /// <summary>Ferry routes of the view army's team (all armies without fog), [0..FerryCount).</summary>
+    public FerryView[] Ferries = new FerryView[4];
+    public int FerryCount;
     /// <summary>Sandbox mode settings (cheat toggles, AI per army); null outside sandbox. Immutable, see SandboxSystem.</summary>
     public Systems.SandboxStatus? Sandbox;
 

@@ -2,6 +2,7 @@ using System.Numerics;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
+using Rts.Sim.Pathfinding;
 using Rts.Sim.World;
 
 namespace Rts.Sim.AI;
@@ -21,6 +22,7 @@ public sealed class AiBrain
     public readonly AiView View = new();
     public readonly AiEconomy Economy;
     public readonly AiMilitary Military;
+    public readonly AiScouting Scouting;
     public readonly AiPlacement Placement;
     public readonly AiStats Stats = new();
     public readonly AiCommands Cmd;
@@ -50,6 +52,7 @@ public sealed class AiBrain
         Placement = new AiPlacement(this);
         Economy = new AiEconomy(this);
         Military = new AiMilitary(this);
+        Scouting = new AiScouting(this);
 
         var db = W.Blueprints;
         BpEngineer = db.IndexOf("uef_t1_engineer");
@@ -130,6 +133,7 @@ public sealed class AiBrain
         W.Paths.EnsureGrids();
         Rally = FindStandable(BasePos + EnemyDir * 24f, MotionLayer.Land);
         AirRally = W.Terrain.Clamp(BasePos + EnemyDir * 10f);
+        Scouting.Initialize();
     }
 
     /// <summary>A point near p where a unit of the layer can stand (searching outward), reachable from the base.</summary>
@@ -164,5 +168,47 @@ public sealed class AiBrain
         return false;
     }
 
+    private readonly PathResult _route = new();
+    private Vector2 _routeFrom;
+
+    /// <summary>
+    /// Solves the walking route from 'from' to 'to' (SEQUENTIAL: one path solve) and keeps it for
+    /// <see cref="RoutePointBack"/>. Used to stage attacks along the real route, which on cliff maps can be much
+    /// longer than the straight line. Returns false when there is no full route (unreachable or truncated).
+    /// </summary>
+    public bool SolveRoute(MotionLayer layer, float radius, Vector2 from, Vector2 to, out float length)
+    {
+        length = 0;
+        _route.Reset();
+        _routeFrom = from;
+        var g = W.Paths.GraphFor(layer, NavGrid.ClearanceFor(radius));
+        if (g == null) return false;
+        PathSolver.ForThread().Solve(W.Paths, g, from, to, _route);
+        if (_route.Failed || _route.Partial || _route.Count == 0) { _route.Reset(); return false; }
+        for (int k = 0; k < _route.Count; k++) length += Vector2.Distance(k == 0 ? from : _route.Points[k - 1], _route.Points[k]);
+        return true;
+    }
+
+    /// <summary>The point 'back' world units before the end of the last solved route (its start if shorter).</summary>
+    public Vector2 RoutePointBack(float back)
+    {
+        int n = _route.Count;
+        if (n == 0) return _routeFrom;
+        float left = back;
+        for (int k = n - 1; k >= 0; k--)
+        {
+            var a = k == 0 ? _routeFrom : _route.Points[k - 1];
+            var b = _route.Points[k];
+            float seg = Vector2.Distance(a, b);
+            if (seg >= left) return seg > 1e-4f ? b + (a - b) * (left / seg) : b;
+            left -= seg;
+        }
+        return _routeFrom;
+    }
+
     public UnitBlueprint Bp(int unit) => W.BpOf(unit);
+
+    /// <summary>Emits a diagnostics message (only when a tool installed <see cref="AiSystem.Trace"/>).</summary>
+    public void Trace(string msg) => AiSystem.Trace?.Invoke(Army, msg);
+    public bool Tracing => AiSystem.Trace != null;
 }

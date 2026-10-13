@@ -24,7 +24,7 @@ namespace Rts.Sim.Systems;
 /// PARALLEL, double-buffered: new positions go to UnitStore.ScratchPos, then are committed, so every unit
 /// reads its neighbours' positions (and last tick's velocity/moving snapshot) from the same moment.
 /// </summary>
-public static class MovementSystem
+public static partial class MovementSystem
 {
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
@@ -288,6 +288,7 @@ public static class MovementSystem
 
     private static void StepAir(SimWorld w, int i, UnitBlueprint bp, float dt)
     {
+        if (bp.IsVtol) { StepVtol(w, i, bp, dt); return; } // transports hover/land (MovementSystem.Vtol.cs)
         var u = w.Units;
         ref var mv = ref u.Move[i];
         var mb = bp.Movement;
@@ -329,6 +330,7 @@ public static class MovementSystem
         float desiredHeading = to.LengthSquared() > 1e-6f ? DMath.HeadingOf(to) : heading;
         heading = DMath.RotateTowards(heading, desiredHeading, mb.TurnRate * DMath.Deg2Rad * dt);
 
+        desiredSpeed *= Transport.TransportSystem.AirSpeedFactor(w, i, bp); // out of fuel = slow
         float speed = mv.Speed;
         float dv = mb.Acceleration * dt;
         speed = speed < desiredSpeed ? MathF.Min(desiredSpeed, speed + dv) : MathF.Max(desiredSpeed, speed - dv);

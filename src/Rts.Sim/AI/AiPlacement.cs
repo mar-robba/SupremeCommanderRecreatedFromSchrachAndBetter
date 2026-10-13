@@ -193,13 +193,14 @@ public sealed class AiPlacement
         return true;
     }
 
-    /// <summary>Snapped extractor site of a deposit if it is free (no structure, placeable), else null.</summary>
+    /// <summary>Snapped extractor site of a deposit and whether it is free as far as the AI knows (no own/allied or
+    /// known enemy structure on it; see <see cref="AiPerception.DepositLooksFree"/>).</summary>
     public bool DepositFree(int deposit, int bp, out Vector2 site)
     {
         var w = _b.W;
         var d = w.Terrain.Deposits[deposit];
         var sbp = w.Blueprints[bp];
         site = OccupancyGrid.SnapStructure(sbp, d.Pos);
-        return w.Occupancy.CanPlace(sbp, site, w.Terrain);
+        return _b.Perception.DepositLooksFree(site, sbp);
     }
 }

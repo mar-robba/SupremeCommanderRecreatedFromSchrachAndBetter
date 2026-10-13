@@ -21,6 +21,9 @@ public enum UnitFlags : ushort
     /// <summary>Submarines (MotionLayer.Sub): currently surfaced (Water layer: visible like a ship, hit by surface
     /// weapons). Cleared = submerged (the default). Toggled by <see cref="Orders.SetSubmergedCommand"/>.</summary>
     Surfaced = 1 << 7,
+    /// <summary>Inside a carrier (transport / air staging / Atlantis): off the map. Not in AliveList (so not in the
+    /// spatial grid, untargetable, no weapons/intel/economy); moved with the carrier by Transport.TransportSystem.</summary>
+    Carried = 1 << 10,
 }
 
 /// <summary>Movement module state (owned by MovementSystem / PathSystem).</summary>

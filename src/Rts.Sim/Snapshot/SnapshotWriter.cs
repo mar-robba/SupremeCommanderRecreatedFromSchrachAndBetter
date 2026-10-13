@@ -71,7 +71,7 @@ public static class SnapshotWriter
             Ensure(ref s.Orders, s.OrderCount + v.OrderCount);
             for (int o = 0; o < v.OrderCount; o++)
             {
-                var dest = orders[o].Type is OrderType.Attack or OrderType.Guard or OrderType.Repair or OrderType.Reclaim
+                var dest = orders[o].Type is OrderType.Attack or OrderType.Guard or OrderType.Repair or OrderType.Reclaim or OrderType.Load or OrderType.Dock
                            && u.IsActive(orders[o].Target)
                     ? u.Pos[orders[o].Target.Index]
                     : orders[o].Destination;
@@ -141,6 +141,7 @@ public static class SnapshotWriter
         }
 
         Strategic.StrategicSnapshotWriter.Write(w, s, viewArmy);
+        Transport.TransportSnapshotWriter.Write(w, s, viewArmy);
         s.Effects.Clear();
         if (view != null) IntelSnapshotWriter.AddVisibleEffects(w, s, viewArmy);
         else s.Effects.AddRange(w.Events.Effects);

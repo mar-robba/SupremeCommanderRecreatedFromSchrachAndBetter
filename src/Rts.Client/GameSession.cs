@@ -73,6 +73,7 @@ public sealed class GameSession : IDisposable
         if (cfg.Scene?.StartsWith("strategic") == true) cfg.SceneCamera = StrategicScene.Setup(sim, cfg.Scene);
         else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
         else if (cfg.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.Setup(sim, cfg);
+        else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);
         return sim;
     }
 
@@ -185,6 +186,7 @@ public sealed class GameSession : IDisposable
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
+        TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
         _terrainR.DrawWater();

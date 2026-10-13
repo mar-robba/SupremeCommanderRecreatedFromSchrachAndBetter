@@ -241,6 +241,7 @@ public static class ConstructionSystem
             if (!w.Occupancy.CanPlace(sbp, site, w.Terrain) && !SandboxSystem.BuildAnywhereAllows(w, army, sbp, site)) { Finish(w, i, q); return; }
         }
 
+        else if (sbp.HasAny(UnitCategory.Naval) && !Naval.NavalRules.FootprintBuildable(w.Terrain, sbp, site)) { Finish(w, i, q); return; } // Atlantis: water only
         else if (Experimental.ExperimentalSystem.FindMobileSite(w, army, o.BlueprintIndex, site) is var ms && ms >= 0)
         {
             o.Spawned = u.HandleOf(ms); // same unfinished mobile unit (experimental) already started here: assist it
@@ -368,6 +369,7 @@ public static class ConstructionSystem
         var u = w.Units;
         var g = o.Target;
         if (!u.IsActive(g) || g.Index == i || !w.IsAlly(u.Army[i], u.Army[g.Index])) { Idle(w, i); return; }
+        g = AssistChain.Root(w, g, i); // assisting an assister = assisting the root of the chain
         int t = g.Index;
         var tbp = w.BpOf(t);
         var work = UnitHandle.None;
@@ -375,7 +377,11 @@ public static class ConstructionSystem
         int anchor = t; // unit we must be in range of
         ref var tb = ref u.Builder[t];
         bool paused = (u.Flags[t] & UnitFlags.Paused) != 0; // a paused factory/upgrade: assistants wait too
-        if (!u.IsComplete(t))
+        if (u.IsComplete(t) && u.Health[t] < Combat.Veterancy.MaxHealth(w, t) && !u.Upgrade[t].Active)
+        {
+            work = g; mode = BuilderMode.Repair; // a damaged assisted unit (e.g. the factory) is repaired first
+        }
+        else if (!u.IsComplete(t))
         {
             work = g; mode = BuilderMode.Build;
         }

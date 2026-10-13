@@ -28,6 +28,19 @@ public enum OrderType : byte
     /// <summary>Missile silo (TML / nuke): launch one missile at the ground point Pos (waits for a missile if the
     /// stockpile is empty). Executed by Strategic/SiloSystem.</summary>
     Launch,
+    // ---- Transport module (Rts.Sim/Transport, executed by TransportSystem) ----
+    /// <summary>Land unit: walk to the transport Target and board it. Transport: fly to the unit Target and pick it up.</summary>
+    Load,
+    /// <summary>Carrier: go to Pos, land (VTOL) and drop all cargo around it (air carriers: launch docked aircraft).</summary>
+    Unload,
+    /// <summary>Issue-only (never queued): selected land units are distributed among the selected transports,
+    /// which load them and unload at Pos (becomes Load + Unload orders).</summary>
+    TransportTo,
+    /// <summary>Ferry route. Transport: shuttle forever between the beacon Pos (pickup) and Aux (drop).
+    /// Land unit: walk to the beacon Pos and wait for a ferry transport.</summary>
+    Ferry,
+    /// <summary>Aircraft: dock at the air carrier Target (air staging / Atlantis; None = nearest) to repair and refuel.</summary>
+    Dock,
 }
 
 /// <summary>

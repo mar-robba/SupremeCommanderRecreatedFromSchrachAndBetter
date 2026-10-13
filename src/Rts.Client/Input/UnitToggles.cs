@@ -14,6 +14,7 @@ namespace Rts.Client.Input;
 /// Toggle orders for the selection: pause (<see cref="PauseHotkey"/>: factories, engineers, upgrades, silos, upkeep
 /// users), dive / surface for submarines (<see cref="DiveHotkey"/>) and the capture targeting mode
 /// (<see cref="CaptureHotkey"/>, CommandMode.Capture: click an enemy unit, engineers / commanders capture it).
+/// D and E are shared with the transport orders (<see cref="SharedHotkeys"/>).
 /// Commands are split per army (<see cref="ArmyCommands"/>).
 /// </summary>
 public static class UnitToggles
@@ -137,6 +138,13 @@ public static class UnitToggles
         if (ctrl) return;
         if (Raylib.IsKeyPressed(PauseHotkey) && PauseState(ctx, sel.Selected).Any) TogglePause(ctx, sel.Selected);
         if (Raylib.IsKeyPressed(DiveHotkey) && DiveState(ctx, sel.Selected).Any) ToggleDive(ctx, sel.Selected);
-        if (Raylib.IsKeyPressed(CaptureHotkey) && AnyCapturer(ctx, sel.Selected)) sel.SetMode(SelectionController.CommandMode.Capture);
+        // D and E are shared with the transport orders (SharedHotkeys): D also docks aircraft (TransportInput);
+        // E is transport-to as soon as transports are selected.
+        if (Raylib.IsKeyPressed(CaptureHotkey) && EKey(ctx, sel.Selected) == SharedHotkeys.EAction.Capture)
+            sel.SetMode(SelectionController.CommandMode.Capture);
     }
+
+    /// <summary>What E does for this selection (capture or transport-to, see <see cref="SharedHotkeys.ResolveE"/>).</summary>
+    public static SharedHotkeys.EAction EKey(GameContext ctx, IReadOnlyList<UnitHandle> selected) =>
+        SharedHotkeys.ResolveE(AnyCapturer(ctx, selected), CargoSelection.Of(ctx, selected, ctx.Snapshots.Current).Transports > 0);
 }

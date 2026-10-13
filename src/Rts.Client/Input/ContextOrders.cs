@@ -9,7 +9,7 @@ using Rts.Sim.World;
 
 namespace Rts.Client.Input;
 
-public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Capture }
+public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Capture, Load, PickUp, Dock, Unload }
 
 /// <summary>What a right-click at the cursor would do (shown as a cursor hint, see UI/CursorHint).</summary>
 public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target, Vector2 Pos, int PropId = -1, float Mass = 0, float Radius = 0)
@@ -25,6 +25,10 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
         ContextKind.Finish => "Assist construction",
         ContextKind.Reclaim => Mass >= 1f ? $"Reclaim  +{Mass:0} mass" : "Reclaim",
         ContextKind.Capture => "Capture",
+        ContextKind.Load => "Load",
+        ContextKind.PickUp => "Pick up",
+        ContextKind.Dock => "Dock",
+        ContextKind.Unload => "Unload here",
         _ => "",
     };
 }
@@ -36,6 +40,9 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
 /// the plain order (guard the target / move to the wreck). Without builders the default right-click applies.
 /// A selection of ONLY engineers / commanders captures a capturable enemy (complete, not a commander) instead of
 /// attacking it. Relations are evaluated from the point of view of one army (the sandbox splits mixed selections).
+/// Transports (see <see cref="TransportInput"/>, local army only): land units on an own transport = Load (before the
+/// builder actions), a transport on an own land unit = Pick up, aircraft on an own air carrier = Dock, a transport
+/// with cargo on the ground = Unload there (after Reclaim on a wreck).
 /// </summary>
 public static class ContextOrders
 {
@@ -52,12 +59,20 @@ public static class ContextOrders
         var snap = ctx.Snapshots.Current;
         bool builders = HasBuilders(snap, ctx, army, units, out bool onlyBuilders);
         var hover = sel.PickUnit(mouse);
+        // Transport input works for the local army's units only (the sandbox's foreign selections skip it).
+        bool transports = army == ctx.LocalArmy;
+        var cargo = transports ? CargoSelection.Of(ctx, units, snap) : default;
         if (hover is UnitView t)
         {
             var h = new UnitHandle(t.Index, t.Gen);
             var tbp = ctx.Db[t.Bp];
             if (ctx.AreEnemies(army, t.Army))
                 return new ContextAction(onlyBuilders && CanCapture(tbp, t) ? ContextKind.Capture : ContextKind.Attack, h, new Vector2(t.Pos.X, t.Pos.Z));
+            if (transports && t.Army == army && (t.Flags & UnitFlags.UnderConstruction) == 0)
+            {
+                var tk = TransportInput.TargetContext(cargo, tbp, TransportInput.UsedSlots(snap, t.Index, t.Gen), sel.Selected.Contains(h));
+                if (tk != ContextKind.None) return new ContextAction(tk, h, new Vector2(t.Pos.X, t.Pos.Z));
+            }
             if (sel.Selected.Contains(h)) return new ContextAction(ContextKind.Move, UnitHandle.None, default);
             bool own = t.Army == army;
             var pos = new Vector2(t.Pos.X, t.Pos.Z);
@@ -82,16 +97,21 @@ public static class ContextOrders
             ref var p = ref snap.Props[k];
             return new ContextAction(ContextKind.Reclaim, UnitHandle.None, new Vector2(p.Pos.X, p.Pos.Z), p.Id, p.Mass, p.Radius);
         }
+        if (transports && TransportInput.GroundContext(cargo) == ContextKind.Unload && ctx.PickGround(mouse) is Vector3 g)
+            return new ContextAction(ContextKind.Unload, UnitHandle.None, new Vector2(g.X, g.Z), Radius: 2.5f);
         return new ContextAction(ContextKind.Move, UnitHandle.None, default);
     }
 
     /// <summary>
-    /// Issues the builder-specific context order at the mouse (Reclaim / Repair / Finish / Assist). Returns false
+    /// Issues the builder-specific context order at the mouse (Reclaim / Repair / Finish / Assist) or the transport
+    /// one (Load / Pick up / Dock / Unload). Returns false
     /// when the default right-click handling (attack / guard / move) should run instead.
     /// </summary>
     public static bool TryIssue(GameContext ctx, SelectionController sel, int army, IReadOnlyList<UnitHandle> units, Vector2 mouse, bool queue)
     {
         var a = Evaluate(ctx, sel, army, units, mouse);
+        if (a.Kind is ContextKind.Load or ContextKind.PickUp or ContextKind.Dock or ContextKind.Unload)
+            return TransportInput.IssueContext(ctx, sel, a, queue);
         if (a.Kind is not (ContextKind.Reclaim or ContextKind.Repair or ContextKind.Finish or ContextKind.Assist or ContextKind.Capture)) return false;
         var snap = ctx.Snapshots.Current;
         var builders = new List<UnitHandle>();
