@@ -1,8 +1,5 @@
 using System.Numerics;
 using Raylib_cs;
-using Rts.Sim.Naval;
-using Rts.Sim.Snapshot;
-using Rts.Sim.World;
 
 namespace Rts.Client.Rendering;
 
@@ -13,8 +10,8 @@ namespace Rts.Client.Rendering;
 /// along its view ray until the whole model is just above the water plane: the projection is unchanged, the
 /// depth test against the water passes, nearer geometry (ships, land) still hides it, and the order of the
 /// model's own faces is kept (the same shift per instance). No shadows.
-/// Submarines with <see cref="UnitFlags.Surfaced"/> (dive toggle) are lifted to the water surface and drawn like ships
-/// (opaque, shadows); the lift eases over about a second when they dive or surface (<see cref="SurfacingPos"/>).
+/// Submarines with <c>UnitFlags.Surfaced</c> (dive toggle) ride at the water surface (the sim eases their
+/// elevation, <c>NavalMotion.SubElevation</c>) and so are drawn like ships: opaque, with shadows.
 /// </summary>
 public sealed unsafe partial class UnitRenderer
 {
@@ -23,39 +20,6 @@ public sealed unsafe partial class UnitRenderer
 
     /// <summary>Submerged units drawn last frame (after the water).</summary>
     public int SubmergedUnits => _submerged.Count;
-
-    /// <summary>Per submarine (index, gen): eased 0..1 lift towards the surface and the frame it was last drawn.</summary>
-    private readonly Dictionary<long, (float lift, int frame)> _surfacing = new();
-    private int _surfacingFrame;
-    private const float SurfacingTime = 1.2f;
-
-    /// <summary>Draw position of a unit: surfaced submarines rise to the water surface (eased), others unchanged.</summary>
-    private Vector3 SurfacingPos(in UnitView v, Vector3 pos)
-    {
-        if (_terrain == null || !Submarines.CanDive(_db[v.Bp])) return pos;
-        int frame = _surfacingFrame;
-        long key = ((long)v.Index << 32) | (uint)v.Gen;
-        float target = (v.Flags & UnitFlags.Surfaced) != 0 ? 1f : 0f;
-        float lift = _surfacing.TryGetValue(key, out var s) ? s.lift : target; // first sight: no animation
-        if (s.frame != frame)
-        {
-            float step = Raylib.GetFrameTime() / SurfacingTime;
-            lift = lift < target ? MathF.Min(target, lift + step) : MathF.Max(target, lift - step);
-        }
-        _surfacing[key] = (lift, frame);
-        if (lift <= 0) return pos;
-        float k = lift * lift * (3 - 2 * lift);
-        float surfaceY = MathF.Max(pos.Y, _terrain.WaterLevel);
-        return pos with { Y = float.Lerp(pos.Y, surfaceY, k) };
-    }
-
-    /// <summary>Once per frame (start of Draw): advances the frame stamp and forgets subs not drawn for a while.</summary>
-    private void BeginSurfacingFrame()
-    {
-        _surfacingFrame++;
-        if (_surfacing.Count == 0 || _surfacingFrame % 300 != 0) return;
-        foreach (var key in _surfacing.Where(e => _surfacingFrame - e.Value.frame > 300).Select(e => e.Key).ToList()) _surfacing.Remove(key);
-    }
 
     private bool IsSubmerged(UnitModel model, Vector3 pos) =>
         _terrain != null && !model.Structure && !model.Air && pos.Y < _terrain.WaterLevel - 0.5f;

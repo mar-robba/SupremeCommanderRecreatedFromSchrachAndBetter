@@ -133,9 +133,11 @@ public static class ContextOrders
     /// <summary>Mobile units with build power (engineers, commander).</summary>
     public static bool IsBuilder(UnitBlueprint bp) => bp.IsMobile && bp.Economy.BuildRate > 0;
 
-    /// <summary>Can an engineer / commander capture this unit? (complete, not a commander, actually seen.)</summary>
+    /// <summary>Can an engineer / commander capture this unit? (complete, actually seen, not a commander, has a build
+    /// time: the sim's <c>CaptureSystem.CanCapture</c> rules seen from the client.)</summary>
     public static bool CanCapture(UnitBlueprint bp, in UnitView t) =>
-        (t.Flags & (UnitFlags.UnderConstruction | UnitFlags.RadarOnly | UnitFlags.Dead)) == 0 && !bp.Has(UnitCategory.Commander);
+        (t.Flags & (UnitFlags.UnderConstruction | UnitFlags.RadarOnly | UnitFlags.Dead)) == 0 && !bp.Has(UnitCategory.Commander)
+        && bp.Economy.BuildTime > 0;
 
     /// <summary>Any complete builder of the army among the units; onlyBuilders = every unit of the army is one.</summary>
     private static bool HasBuilders(SimSnapshot snap, GameContext ctx, int army, IReadOnlyList<UnitHandle> units, out bool onlyBuilders)

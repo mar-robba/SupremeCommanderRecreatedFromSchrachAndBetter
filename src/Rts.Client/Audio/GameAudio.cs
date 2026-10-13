@@ -219,6 +219,9 @@ public sealed partial class GameAudio : IDisposable
             case EffectKind.BuildStarted:
                 At(SoundId.BuildStart, e.Pos, e.Army == _ctx.LocalArmy ? 1f : 0.6f);
                 return 0;
+            case EffectKind.Captured: // a unit changed sides (engineer capture)
+                At(SoundId.BuildComplete, e.Pos, e.Army == _ctx.LocalArmy ? 1f : 0.6f, 0.8f);
+                return 0;
             case EffectKind.BuildComplete:
             {
                 bool own = e.Army == _ctx.LocalArmy;

@@ -567,6 +567,7 @@ public sealed class SandboxController : IDisposable
         "Esc  close console / help, cancel the map tool       Space  pause      + / -  game speed",
         "Map tool (spawn / nuke / clear): left click apply, Shift+click repeat, right click cancel",
         "F7  fog of war on/off (client)      F8  performance overlay",
+        "Units of every army can be selected and ordered (orders go to each unit's own army); panel actions apply to them",
     ];
 
     private void DrawHelp()

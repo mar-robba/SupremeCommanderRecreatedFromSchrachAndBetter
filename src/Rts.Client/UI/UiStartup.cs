@@ -95,12 +95,15 @@ public sealed class UiStartup
         if (!_selectDone)
         {
             var picked = new List<UnitHandle>();
+            // "any:<what>": units of every army the player controls (sandbox), e.g. --select any:uef_t1_tank.
+            bool anyArmy = _select!.StartsWith("any:");
+            string what = anyArmy ? _select[4..] : _select;
             for (int k = 0; k < snap.UnitCount; k++)
             {
                 ref var v = ref snap.Units[k];
-                if (v.Army != _ctx.LocalArmy) continue;
+                if (anyArmy ? !_ctx.Controls(v.Army) : v.Army != _ctx.LocalArmy) continue;
                 var bp = _ctx.Db[v.Bp];
-                bool ok = _select switch
+                bool ok = what switch
                 {
                     "commander" or "acu" => bp.Has(UnitCategory.Commander),
                     "engineer" => bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander),
@@ -108,10 +111,10 @@ public sealed class UiStartup
                     "airfactory" or "air_factory" => bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Air),
                     "factories" => bp.Has(UnitCategory.Factory),
                     "army" or "all" => bp.IsMobile,
-                    _ => _ctx.Db[v.Bp].Id == _select,
+                    _ => _ctx.Db[v.Bp].Id == what,
                 };
                 if (ok) picked.Add(new UnitHandle(v.Index, v.Gen));
-                if (ok && _select is "commander" or "acu" or "factory" or "airfactory" or "air_factory") break;
+                if (ok && !anyArmy && what is "commander" or "acu" or "factory" or "airfactory" or "air_factory") break;
             }
             // Wait for the demo factory to exist before giving up on it.
             if (picked.Count > 0 && (!_demo || _queued || _select != "factory"))
