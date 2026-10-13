@@ -243,7 +243,8 @@ interpolates prev/cur by time
 - `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
   offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig`. No difficulty
   cheats (no resource bonus, no map vision): Hard is better through faster reactions, a stronger opening (5 early
-  engineers, mex chains), raids, commander snipes and micro (damaged units pulled back for repair, focus fire).
+  engineers, mex chains), an artillery-heavy land mix (`ArtilleryShare` 0.55 vs 0.25: by far the biggest lever),
+  raids, commander snipes and micro (damaged units pulled back for repair, focus fire).
   Cost ≈ 0.02-0.03 ms/tick per AI (worst game ≈ 0.05).
 - `AiPerception` (fog-fair, `RespectIntel=true`): the only window on enemies. Enemy units count only while seen or on
   radar (radar blips = anonymous, assumed one tank), structures are remembered as ghosts until seen dead, threat maps
@@ -278,8 +279,9 @@ interpolates prev/cur by time
   - Navy/T2/T3/strategic weapons are not used yet (wave 4); on Archipelago the AI builds land units that stay on
     their island (no crash, no command spam).
 - Results (bench, 30 min, 256 maps, 4 land presets): Normal vs Normal ends by commander kill in ~86 % of games
-  (mean ≈ 18.6 min); Hard beats Normal ≈ 57 % of games (65 % of decided ones), Easy loses to Normal ≈ 96 %.
-  Stalemates are equal armies trading in the middle of Highlands/Canyon maps.
+  (mean ≈ 18.6 min); Hard beats Normal in 86 % of games (166 won / 8 lost / 18 undecided of 192), Easy loses to
+  Normal in 23 of 24; Hard vs Hard ends in ~69 %; 4-player FFAs on 512 end by ~30 min. Stalemates are equal armies
+  trading in the middle of Highlands/Canyon maps. T1 mobile artillery is very cost-efficient (balance pass later).
 - Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset]`
   (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
   `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`

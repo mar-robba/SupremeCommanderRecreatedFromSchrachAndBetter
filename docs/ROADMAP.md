@@ -86,11 +86,11 @@ Shared contracts (still valid):
       - [x] wave 4a (AI resume): fog-fair perception (RespectIntel=true: ghosts, threat memory, staleness, commander
             last seen), land/air scouts + radar, staging on the walking route, reinforcement batches, regroup,
             recall when the base is losing, no army retreat, late-game push + snipes, terrain line of fire for
-            non-forced targets (sim: `Combat/LineOfFire.cs`), Hard micro (focus fire, pull-back, raids, snipes);
-            ~0.02-0.03 ms/tick per AI. Bench 30 min/256/4 land presets: NvN ends by commander kill in ~86 %,
-            Hard beats Normal ~57 % (65 % of decided games), Easy loses ~96 %; 4p FFA on 512 progresses
-      - [ ] later: Hard still only ~60 % vs Normal; Highlands/Canyon NvN stalemates (equal armies trading); AI uses
-            T2/T3, navy, strategic weapons, experimentals, transports (wave 5)
+            non-forced targets (sim: `Combat/LineOfFire.cs`), Hard: artillery-heavy mix + micro (focus fire,
+            pull-back, raids, snipes); ~0.02-0.03 ms/tick per AI. Bench 30 min/256/4 land presets: NvN ends by
+            commander kill in ~86 %, Hard beats Normal in 86 % (166-8-18 of 192), Easy loses 23/24; 4p FFAs on 512 end
+      - [ ] later: Highlands/Canyon NvN stalemates (equal armies trading), Hard vs Hard ends only ~69 %; T1 artillery
+            looks too cost-efficient (balance); AI uses T2/T3, navy, strategic weapons, experimentals, transports
 - [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
 - [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
