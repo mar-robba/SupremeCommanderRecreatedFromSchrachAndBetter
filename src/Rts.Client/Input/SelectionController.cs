@@ -64,7 +64,7 @@ public sealed class SelectionController
         if (InputBlocked) { _dragStart = null; return; }
 
         HandleHotkeys(ctrl, shift);
-        HoverAction = !mouseOverUi && Mode == CommandMode.Normal && !Placement.Active && Selected.Count > 0 && !IsDragging
+        HoverAction = !mouseOverUi && !_ctx.ReadOnly && Mode == CommandMode.Normal && !Placement.Active && Selected.Count > 0 && !IsDragging
             ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition()) : ContextAction.None;
 
         if (Placement.Active)
@@ -89,7 +89,7 @@ public sealed class SelectionController
             else ClickSelect(Raylib.GetMousePosition(), shift, ctrl);
             _dragStart = null;
         }
-        if (!mouseOverUi && Raylib.IsMouseButtonPressed(MouseButton.Right))
+        if (!mouseOverUi && !_ctx.ReadOnly && Raylib.IsMouseButtonPressed(MouseButton.Right))
         {
             if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
             else IssueAtCursor(shift, CommandMode.Normal);
@@ -99,7 +99,7 @@ public sealed class SelectionController
     private void HandleHotkeys(bool ctrl, bool shift)
     {
         if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { Mode = CommandMode.Normal; }
-        if (Selected.Count > 0)
+        if (Selected.Count > 0 && !_ctx.ReadOnly) // replays: no orders
         {
             if (Raylib.IsKeyPressed(KeyboardKey.S) && !ctrl) IssueStop();
             if (Raylib.IsKeyPressed(KeyboardKey.A) && !ctrl) SetMode(CommandMode.AttackMove);

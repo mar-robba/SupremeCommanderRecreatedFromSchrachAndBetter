@@ -15,7 +15,7 @@ using Rts.Sim.World;
 namespace Rts.Client;
 
 /// <summary>Which client state the app starts in.</summary>
-public enum StartScreen { Game, MainMenu, Setup, Settings }
+public enum StartScreen { Game, MainMenu, Setup, Settings, Saves, Replays, LoadFile, ReplayFile }
 
 public sealed class ClientOptions
 {
@@ -75,6 +75,12 @@ public sealed class ClientOptions
     public bool Sandbox;
     /// <summary>--exec "cmd; cmd": sandbox console script run at the start of the game (implies --sandbox).</summary>
     public string? Exec;
+    /// <summary>Save/load and replays (Rts.Client/Persistence): --saves / --replays open the lists, --load FILE / --replay FILE
+    /// open a file (--seek TICK: replay start), --save-at N quicksaves at frame N, --save-dialog opens the pause menu's
+    /// save dialog (screenshots), --write-replay keeps the replay of a --screenshot run.</summary>
+    public string? LoadPath, ReplayPath;
+    public int SeekTick = -1, SaveAt = -1;
+    public bool SaveDialog, WriteReplay;
 
     public static ClientOptions Parse(string[] args)
     {
@@ -135,6 +141,14 @@ public sealed class ClientOptions
                 case "--sandbox": o.Sandbox = true; break;
                 case "--exec": o.Exec = Next(); o.Sandbox = true; break;
                 case "--debugwater": TerrainRenderer.DebugWaterLevel = float.Parse(Next()); break;
+                case "--saves": screen = StartScreen.Saves; break;
+                case "--replays": screen = StartScreen.Replays; break;
+                case "--load": o.LoadPath = Next(); screen = StartScreen.LoadFile; break;
+                case "--replay": o.ReplayPath = Next(); screen = StartScreen.ReplayFile; break;
+                case "--seek": o.SeekTick = int.Parse(Next()); break;
+                case "--save-at": o.SaveAt = int.Parse(Next()); break;
+                case "--save-dialog": o.SaveDialog = o.PauseMenu = true; break;
+                case "--write-replay": o.WriteReplay = true; break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
                     {
@@ -161,6 +175,7 @@ public static class GameApp
     {
         AppSettings.Persist = opt.ScreenshotPath == null;
         MenuUi.Automated = opt.ScreenshotPath != null;
+        Persistence.GameRecording.AutoWriteReplays = opt.ScreenshotPath == null || opt.WriteReplay;
         var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
 
@@ -192,6 +207,10 @@ public static class GameApp
             StartScreen.Game => new InGameScreen(app, new GameSession(db, directSim!, directCfg!, directLocal, opt, audio), opt),
             StartScreen.Setup => new SkirmishSetupScreen(app, opt.Sandbox),
             StartScreen.Settings => new SettingsScreen(app),
+            StartScreen.Saves => new SaveListScreen(app, replays: false),
+            StartScreen.Replays => new SaveListScreen(app, replays: true),
+            StartScreen.LoadFile => new FileLoadingScreen(app, opt.LoadPath!, replay: false, opt),
+            StartScreen.ReplayFile => new FileLoadingScreen(app, opt.ReplayPath!, replay: true, opt),
             _ => new MainMenuScreen(app),
         };
 
@@ -216,6 +235,7 @@ public static class GameApp
             app.EndFrame();
         }
         app.Dispose();
+        Persistence.GameRecording.WaitForPendingWrites(TimeSpan.FromSeconds(15)); // replay/save files still being written
         audio.Dispose();
         Raylib.CloseWindow();
     }

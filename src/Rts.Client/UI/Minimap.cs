@@ -175,7 +175,7 @@ public sealed class Minimap : IDisposable
             var wp = ToWorld(m, Ui.Mouse);
             _ctx.Camera.LookAt(wp.X, wp.Y, _ctx.Camera.Distance);
         }
-        if (over && Ui.RightClickIn(panel) && _sel.Selected.Count > 0)
+        if (over && !_ctx.ReadOnly && Ui.RightClickIn(panel) && _sel.Selected.Count > 0)
         {
             if (_sel.Placement.Active) _sel.Placement.Cancel();
             else if (_sel.Mode != SelectionController.CommandMode.Normal) _sel.Mode = SelectionController.CommandMode.Normal;
