@@ -10,8 +10,9 @@ namespace Rts.Client.UI;
 /// <summary>
 /// Engineer / commander construction menu: the union of the selected builders' buildable structures, grouped in
 /// tabs (Economy, Factory, Defense, Intel). Click or hotkey (Z X C V B N) starts placement; Tab / Shift+Tab
-/// switches tab. T2/T3 builders get tier pills (T1/T2/T3, T / Shift+T cycles, default = highest tier) that filter
-/// the items so the hotkeys stay on six slots. Tooltips show cost, build time and description.
+/// switches tab. T2/T3 builders get tier pills (T1/T2/T3/EXP, T / Shift+T cycles, default = highest non-experimental
+/// tier) that filter the items so the hotkeys stay on six slots. Tooltips show cost, build time and description.
+/// Mobile experimentals (Fatboy) are placed like structures; mobile factories get the factory panel instead.
 /// </summary>
 public sealed class BuildMenu
 {
@@ -51,12 +52,14 @@ public sealed class BuildMenu
         {
             if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
             var bp = _ctx.Db[v.Bp];
-            if (!bp.IsMobile || bp.BuildIndices.Length == 0) continue;
+            // Mobile factories (Fatboy) use the factory panel; everything else they list is a unit, not a placement.
+            if (!bp.IsMobile || bp.BuildIndices.Length == 0 || bp.Has(UnitCategory.Factory)) continue;
             _builders.Add(h);
             foreach (int b in bp.BuildIndices)
             {
+                // Structures and mobile units built in place (mobile experimentals such as the Fatboy).
+                if (_all.Contains(b)) continue;
                 var ob = _ctx.Db[b];
-                if (!ob.IsStructure || _all.Contains(b)) continue;
                 _all.Add(b);
                 if (!_tiers.Contains(ob.Tech)) _tiers.Add(ob.Tech);
             }
@@ -64,8 +67,9 @@ public sealed class BuildMenu
         if (_builders.Count == 0) return false;
         _tiers.Sort();
         // Default to the highest tier whenever the selection's top tier changes (e.g. a T2 engineer gets selected).
+        // (Experimentals are not the default: a T3 engineer opens on T3.)
         int maxTier = _tiers.Count > 0 ? _tiers[^1] : 0;
-        if (maxTier != _lastMaxTier || !_tiers.Contains(_tier)) { _tier = maxTier; _lastMaxTier = maxTier; }
+        if (maxTier != _lastMaxTier || !_tiers.Contains(_tier)) { _tier = DefaultTier(); _lastMaxTier = maxTier; }
         foreach (int b in _all)
         {
             var ob = _ctx.Db[b];
@@ -88,8 +92,18 @@ public sealed class BuildMenu
     private float Pad => Ui.P(8);
 
     private float TabWidth(BuildTab t) => Ui.Measure($"{UnitIcons.TabName(t)} {_byTab[t].Count}", Ui.F(11.5f), true) + Ui.P(18);
-    private float PillWidth => Ui.P(30);
-    private float PillsWidth => _tiers.Count > 1 ? _tiers.Count * (PillWidth + Ui.P(3)) + Ui.P(10) : 0;
+    private float PillWidth(int tier) => Ui.P(tier >= 4 ? 38 : 30);
+    private float PillsWidth => _tiers.Count > 1 ? _tiers.Sum(t => PillWidth(t) + Ui.P(3)) + Ui.P(10) : 0;
+    /// <summary>Tier pill label: T1..T3, EXP for experimentals (Tech 4).</summary>
+    public static string TierLabel(int tier) => tier >= 4 ? "EXP" : $"T{tier}";
+
+    /// <summary>Highest non-experimental tier present (the highest one if there are only experimentals).</summary>
+    private int DefaultTier()
+    {
+        for (int i = _tiers.Count - 1; i >= 0; i--)
+            if (_tiers[i] < 4) return _tiers[i];
+        return _tiers.Count > 0 ? _tiers[^1] : 0;
+    }
 
     private void CycleTier(int dir)
     {
@@ -159,17 +173,18 @@ public sealed class BuildMenu
         if (_tiers.Count > 1)
         {
             // Tier pills, right-aligned.
-            float px = r.X + r.Width - Pad - _tiers.Count * (PillWidth + Ui.P(3)) + Ui.P(3);
+            float px = r.X + r.Width - Pad - _tiers.Sum(t => PillWidth(t) + Ui.P(3)) + Ui.P(3);
             if (px < hintX) px = hintX;
             foreach (int t in _tiers)
             {
-                var pr = new Rectangle(MathF.Round(px), MathF.Round(y), PillWidth, th);
+                var pr = new Rectangle(MathF.Round(px), MathF.Round(y), PillWidth(t), th);
                 bool on = t == _tier;
-                var ps = Ui.Button(pr, true, on, on ? new Color(70, 96, 60, 255) : null);
-                Ui.TextCentered($"T{t}", pr, Ui.F(11.5f), on ? Color.White : Ui.TextDim, true);
+                var tint = t >= 4 ? (on ? new Color(120, 62, 48, 255) : new Color(70, 44, 40, 255)) : on ? new Color(70, 96, 60, 255) : (Color?)null;
+                var ps = Ui.Button(pr, true, on, tint);
+                Ui.TextCentered(TierLabel(t), pr, Ui.F(11.5f), on ? Color.White : Ui.TextDim, true);
                 if (ps.Left) _tier = t;
-                if (ps.Hover) Ui.Tooltip(pr, $"Tech {t} structures", "T / Shift+T: next / previous tier");
-                px += PillWidth + Ui.P(3);
+                if (ps.Hover) Ui.Tooltip(pr, t >= 4 ? "Experimental" : $"Tech {t}", "T / Shift+T: next / previous tier");
+                px += PillWidth(t) + Ui.P(3);
             }
             hint = "";
         }

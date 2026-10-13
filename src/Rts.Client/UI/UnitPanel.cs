@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Input;
+using Rts.Sim.Commander;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
@@ -83,7 +84,10 @@ public sealed class UnitPanel
         }
         else if (v.UpgradeBp >= 0 && (uint)v.UpgradeBp < (uint)_ctx.Db.Count)
         {
-            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.UpgradeFrac, UpgradeUi.UpgradeGreen, $"Upgrading to {_ctx.Db[v.UpgradeBp].Name}  {v.UpgradeFrac * 100:0}%");
+            int enh = EnhancementCatalog.Added(_ctx.Db, v.Bp, v.UpgradeBp);
+            string label = enh >= 0 ? $"Enhancing: {bp.Enhancements[enh].Name}  {v.UpgradeFrac * 100:0}%"
+                : $"Upgrading to {_ctx.Db[v.UpgradeBp].Name}  {v.UpgradeFrac * 100:0}%";
+            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.UpgradeFrac, enh >= 0 ? EnhancementPanel.EnhanceColor : UpgradeUi.UpgradeGreen, label);
             y += barH + Ui.P(5);
         }
         else if (v.WorkProgress >= 0)
@@ -99,6 +103,13 @@ public sealed class UnitPanel
         Ui.Text("Order:", r.X + pad, y, fs, Ui.TextFaint, true);
         Ui.Text(Ui.Fit(order, bw - Ui.P(48), fs), r.X + pad + Ui.P(46), y, fs, Ui.TextColor);
         y += fs + Ui.P(4);
+        if (EnhancementPanel.InstalledSummary(bp) is string enhs)
+        {
+            // Installed enhancements (top of each slot's chain), e.g. "T3E · HAC · SGF".
+            Ui.Text("Enh:", r.X + pad, y, fs, Ui.TextFaint, true);
+            Ui.Text(Ui.Fit(enhs, bw - Ui.P(48), fs, true), r.X + pad + Ui.P(46), y, fs, EnhancementPanel.EnhanceColor, true);
+            y += fs + Ui.P(4);
+        }
 
         // Key stats (two compact columns).
         var stats = KeyStats(bp);
@@ -132,6 +143,7 @@ public sealed class UnitPanel
 
     private string CurrentOrderText(SimSnapshot snap, in UnitView v, UnitBlueprint bp)
     {
+        if (v.UpgradeBp >= 0 && EnhancementCatalog.Added(_ctx.Db, v.Bp, v.UpgradeBp) >= 0) return "Enhancing";
         if (v.UpgradeBp >= 0)
             return bp.Has(UnitCategory.Factory) ? "Upgrading (production paused" + (v.QueueCount > 0 ? $", {v.QueueCount} queued)" : ")") : "Upgrading";
         if (bp.Has(UnitCategory.Factory))

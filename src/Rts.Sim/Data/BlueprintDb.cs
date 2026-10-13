@@ -75,6 +75,7 @@ public sealed class BlueprintDb
     /// <summary>Resolves string references and derived flags. Must be called once after all Add() calls.</summary>
     public void FinalizeDb()
     {
+        Commander.EnhancementCatalog.GenerateVariants(this); // enhancement variants are resolved like file blueprints
         foreach (var bp in _all)
         {
             bp.CategoryFlags = UnitCategory.None;
@@ -139,6 +140,7 @@ public sealed class BlueprintDb
                 throw new InvalidDataException($"Blueprint '{to.Id}': upgraded into from both '{_all[to.UpgradesFromIndex].Id}' and '{bp.Id}'");
             to.UpgradesFromIndex = bp.Index;
         }
+        Commander.EnhancementCatalog.ResolveBuildLists(this); // BuildListFrom + enhancement build lists (after BuiltBy)
     }
 }
 

@@ -18,15 +18,29 @@ public static class StrategicSystem
 {
     public static bool HasModule(UnitBlueprint bp) => bp.Shield != null || bp.Silo != null || bp.MissileDefense != null;
 
-    /// <summary>Spawn hook (UnitLifecycle.OnSpawn). Sequential.</summary>
+    /// <summary>Spawn hook (UnitLifecycle.OnSpawn). Sequential.
+    /// Idempotent: it is re-run when a unit changes blueprint in place (upgrades, commander enhancements); the silo
+    /// stock is kept then, and a unit whose new blueprint has no module leaves the list.</summary>
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
-        if (!HasModule(bp)) return;
-        var s = StrategicState.Of(w);
+        bool module = HasModule(bp);
+        StrategicState? s;
+        if (module) s = StrategicState.Of(w);
+        else if (!StrategicState.TryGet(w, out s)) return;
+        var h = w.Units.HandleOf(i);
+        bool reinit = s.Units.Contains(h);
+        if (!module && !reinit) return;
+        var silo = s.Silo[i];
         ShieldSystem.InitUnit(s, w, i, bp);
         SiloSystem.InitUnit(s, w, i, bp);
         MissileSystem.InitUnit(s, w, i, bp);
-        s.Units.Add(w.Units.HandleOf(i));
+        if (reinit && bp.Silo != null)
+        {
+            silo.Stock = Math.Min(silo.Stock, bp.Silo.MaxStorage);
+            s.Silo[i] = silo;
+        }
+        if (!module) s.Units.Remove(h);
+        else if (!reinit) s.Units.Add(h);
     }
 
     public static void Run(SimWorld w)

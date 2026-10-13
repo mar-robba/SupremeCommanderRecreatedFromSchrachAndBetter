@@ -167,6 +167,7 @@ public static class WeaponSystem
             engaged = true;
             if (ws.Cooldown > CooldownEps || !solution) continue;
             if (MathF.Abs(DMath.AngleDiff(ws.TurretHeading, desiredYaw)) > winfo.Tolerance) continue;
+            if (wbp.EnergyPerShot > 0 && !Experimental.WeaponEnergy.TryConsume(w, i, wi, wbp.EnergyPerShot)) continue; // Mavor: charge first
 
             ws.Cooldown += winfo.Period;
             var flashPos = muzzle + new Vector3(MathF.Cos(ws.TurretHeading), 0, MathF.Sin(ws.TurretHeading)) * (bp.Radius * 0.6f);

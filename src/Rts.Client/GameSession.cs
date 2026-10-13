@@ -45,6 +45,7 @@ public sealed class GameSession : IDisposable
     private readonly PropRenderer _props;
     private readonly ShieldRenderer _shields;
     private readonly StrategicHud _stratHud;
+    private readonly ExperimentalAlert _expAlert;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly SelectionController _selection;
@@ -71,6 +72,7 @@ public sealed class GameSession : IDisposable
         }
         if (cfg.Scene?.StartsWith("strategic") == true) StrategicScene.Setup(sim, cfg.Scene);
         else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
+        else if (cfg.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.Setup(sim, cfg);
         return sim;
     }
 
@@ -114,6 +116,7 @@ public sealed class GameSession : IDisposable
         _shields = new ShieldRenderer(Ctx);
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
+        _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
 
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
 
@@ -210,6 +213,7 @@ public sealed class GameSession : IDisposable
             CursorHint.Draw(ctx, _selection, overUi);
         }
         _stratHud.Draw2D(cur, dt);
+        _expAlert.Draw2D(cur, dt);
         _audio.DrawOverlay();
         _perf.Draw(_unitR, _fx);
     }

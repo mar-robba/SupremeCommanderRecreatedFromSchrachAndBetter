@@ -22,8 +22,17 @@ Tests: 229 sim + 158 client.
   - adjacency bonus, veterancy bonuses, pause, capture;
   - sandbox selects/controls any army;
   - default cameras for `--scene`.
-- **(g) Experimentals + commanders**: EXP tier, Fatboy, Mavor, crush, death blast, "experimental detected";
-  ACU enhancements (slots); Quantum Gateway + SCU.
+- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
+  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
+  - 8 ACU enhancements; Quantum Gateway + SCU.
+  - Try it: `--scene experimental[:mavor|:fog]`.
+  - Follow-ups:
+    - Mavor low arc hits hills at short range, and it has no target priority;
+    - Stop doesn't cancel an enhancement;
+    - an occupied slot needs a right-click clear first;
+    - shield HP refills on enhancement change;
+    - a unit with the missile pack doesn't move into range;
+    - `--select` can't pick variant ids.
 - **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
 - **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
   desync detection.
@@ -133,7 +142,19 @@ Shared contracts (still valid):
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
       - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
             avoidance in narrow channels
-- [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
+- [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
+      build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
+      **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
+      **Mavor** (strategic artillery, range 1500, 20000 energy per shot via `EnergyPerShot`); "Experimental detected" alert + sound
+      - [ ] later: Monkeylord/Czar-like experimentals (2nd faction), Mavor/Fatboy AI use, crush animation, shield HP kept on enhancement swap,
+        Mavor's low arc can hit hills at short range (higher/medium arc), Mavor target priority (it shoots any visible enemy)
+- [x] Commander enhancements (2026-10-13, wave 4g): slots LeftArm/RightArm/Back with prerequisites (blueprint variants per slot
+      combination), built on itself over time like an upgrade (drain, assist with Guard, cancel refunds, any order interrupts),
+      remove = instant without refund; ACU: Heavy Antimatter Cannon, Zephyr Amplifier, Advanced/T3 Engineering, Resource Allocation,
+      Personal Shield → Shield Generator Field, Tactical Missile Pack; enhancement panel, model attachments
+      - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
+- [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
+      High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
 - [ ] Transports/ferry, air staging, engineer assist chains
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [ ] Mass fabricators, adjacency bonus

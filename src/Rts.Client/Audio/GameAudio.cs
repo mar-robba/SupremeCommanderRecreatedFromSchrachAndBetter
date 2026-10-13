@@ -189,6 +189,7 @@ public sealed partial class GameAudio : IDisposable
         bool validBp = (uint)e.BlueprintIndex < (uint)db.Count;
         bool validWeapon = validBp && (uint)e.WeaponIndex < (uint)_fire[e.BlueprintIndex].Length;
         string vis = validWeapon ? _visual[e.BlueprintIndex][e.WeaponIndex] : "shell";
+        if (HandleExperimentalEffect(e, validWeapon, vis) is int heavy) return heavy; // GameAudio.Experimental.cs
         switch (e.Kind)
         {
             case EffectKind.MuzzleFlash:

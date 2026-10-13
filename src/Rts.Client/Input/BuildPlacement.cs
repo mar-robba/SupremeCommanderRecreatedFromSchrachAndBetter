@@ -41,7 +41,7 @@ public sealed class BuildPlacement
 
     public void Begin(int bpIndex)
     {
-        if ((uint)bpIndex >= (uint)_ctx.Db.Count || !_ctx.Db[bpIndex].IsStructure) return;
+        if ((uint)bpIndex >= (uint)_ctx.Db.Count) return; // structures, and mobile units built in place (Fatboy)
         if (BpIndex != bpIndex) Heading = DefaultHeading();
         BpIndex = bpIndex;
         HasPos = false;
@@ -184,6 +184,17 @@ public sealed class BuildPlacement
     private bool StructureExistsAt(SimSnapshot snap, int bpIndex, Vector2 p)
     {
         // Construction already started: the real structure is drawn by the unit renderer.
+        if (_ctx.Db[bpIndex].IsMobile)
+        {
+            // Mobile units built in place (Fatboy) are not in the grid: look for the unfinished unit at the site.
+            for (int i = 0; i < snap.UnitCount; i++)
+            {
+                ref var u = ref snap.Units[i];
+                if (u.Bp == bpIndex && (u.Flags & UnitFlags.UnderConstruction) != 0
+                    && Vector2.DistanceSquared(new Vector2(u.Pos.X, u.Pos.Z), p) < 4f) return true;
+            }
+            return false;
+        }
         var (x0, z0, _, _) = OccupancyGrid.Footprint(_ctx.Db[bpIndex], p);
         Grid.Refresh(snap, _ctx.LocalArmy);
         return Grid.At(x0, z0) == PlacementGrid.Structure;

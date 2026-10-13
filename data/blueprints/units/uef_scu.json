@@ -1,0 +1,35 @@
+{
+  "Id": "uef_scu",
+  "Name": "Support Armored Command Unit",
+  "Description": "Support commander (SCU): T3 engineer with a heavy cannon and its own enhancements. Not an assassination target.",
+  "Tech": 3,
+  "Categories": [ "Mobile", "Land", "Engineer", "DirectFire", "Tech3" ],
+  "MaxHealth": 7000,
+  "RegenRate": 5,
+  "Radius": 1.0,
+  "Economy": { "BuildCostMass": 1900, "BuildCostEnergy": 35000, "BuildTime": 6000, "BuildRate": 40, "MaintenanceEnergy": 0 },
+  "Movement": { "Layer": "Amphibious", "MaxSpeed": 1.9, "Acceleration": 1.8, "TurnRate": 90 },
+  "Intel": { "VisionRadius": 26 },
+  "Weapons": [
+    { "Name": "Heavy Plasma Cannon", "Range": 24, "Damage": 120, "RateOfFire": 1, "MuzzleVelocity": 32, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 120 }
+  ],
+  "Visual": { "Shape": "scu", "Size": [ 1.7, 2.3, 1.7 ], "Icon": "scu" },
+  "BuildListFrom": [ "uef_t3_engineer" ],
+  "Enhancements": [
+    { "Id": "HighExplosiveOrdnance", "Name": "High Explosive Ordnance", "Description": "Splash damage (+2.5 radius) and +6 range for the cannon.",
+      "Slot": "RightArm", "BuildCostMass": 700, "BuildCostEnergy": 14000, "BuildTime": 600, "Visual": "cannon", "Icon": "HEO",
+      "Effects": { "Weapons": [ { "Weapon": 0, "DamageRadiusAdd": 2.5, "RangeAdd": 6 } ] } },
+    { "Id": "RapidFabricator", "Name": "Rapid Fabricator", "Description": "+60 build rate.",
+      "Slot": "RightArm", "BuildCostMass": 800, "BuildCostEnergy": 16000, "BuildTime": 700, "Visual": "engineering3", "Icon": "RF",
+      "Effects": { "BuildRateAdd": 60 } },
+    { "Id": "ResourceAllocation", "Name": "Resource Allocation System", "Description": "+6 mass/s and +500 energy/s.",
+      "Slot": "LeftArm", "BuildCostMass": 1200, "BuildCostEnergy": 24000, "BuildTime": 1000, "Visual": "resource", "Icon": "RAS",
+      "Effects": { "ProductionMassAdd": 6, "ProductionEnergyAdd": 500 } },
+    { "Id": "PersonalShield", "Name": "Personal Shield Generator", "Description": "Personal shield (3000 HP). Upkeep 100 energy/s.",
+      "Slot": "Back", "BuildCostMass": 500, "BuildCostEnergy": 10000, "BuildTime": 500, "Visual": "shield", "Icon": "SH",
+      "Effects": { "MaintenanceEnergyAdd": 100, "Shield": { "Radius": 2.8, "HeightScale": 0.9, "CenterHeight": 1.1, "MaxHealth": 3000, "RegenRate": 30, "RegenDelay": 2, "RechargeTime": 25 } } },
+    { "Id": "BubbleShield", "Name": "Bubble Shield Generator", "Description": "Replaces the personal shield with a bubble shield (radius 14, 6000 HP). Upkeep +150 energy/s.",
+      "Slot": "Back", "Prerequisite": "PersonalShield", "BuildCostMass": 1200, "BuildCostEnergy": 24000, "BuildTime": 1000, "Visual": "shield_field", "Icon": "BUB",
+      "Effects": { "MaintenanceEnergyAdd": 150, "Shield": { "Radius": 14, "HeightScale": 0.7, "MaxHealth": 6000, "RegenRate": 55, "RegenDelay": 2, "RechargeTime": 35 } } }
+  ]
+}

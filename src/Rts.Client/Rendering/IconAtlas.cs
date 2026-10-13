@@ -6,7 +6,7 @@ namespace Rts.Client.Rendering;
 /// <summary>
 /// Procedural strategic-icon atlas rasterized on the CPU from signed distance functions (anti-aliased, mipmapped).
 /// Each 64px cell = frame shape by domain (circle land, triangle air, shield naval, square structure,
-/// diamond commander, octagon experimental) + white role glyph + tech pips, in a normal and a selected
+/// diamond commander, blunt diamond support commander, octagon experimental) + white role glyph + tech pips, in a normal and a selected
 /// (white border) variant. Channels: R = fill (tinted with the army color by the shader), G = white, B = dark border.
 /// </summary>
 public static unsafe class IconAtlas
@@ -19,7 +19,7 @@ public static unsafe class IconAtlas
     [
         "land_direct", "land_artillery", "land_aa", "land_engineer", "commander", "air_fighter", "air_bomber",
         "air_gunship", "air_transport", "naval", "factory", "eco_mass", "eco_energy", "defense", "intel", "shield",
-        "experimental", "unknown", "strategic", "artillery",
+        "experimental", "unknown", "strategic", "artillery", "scu",
     ];
 
     private static readonly Dictionary<string, int> KindIndex = Kinds.Select((k, i) => (k, i)).ToDictionary(x => x.k, x => x.i);
@@ -96,6 +96,7 @@ public static unsafe class IconAtlas
     private static float Shape(string kind, Vector2 p)
     {
         if (kind == "commander") return Diamond(p, 25);
+        if (kind == "scu") return MathF.Max(Diamond(p, 25), Box(p, new Vector2(21, 21))); // support commander: blunt-tipped diamond
         if (kind == "experimental") return MathF.Max(Box(p, new Vector2(21, 21)), Diamond(p, 28));
         if (kind.StartsWith("air_")) return Triangle(p, 21);
         if (kind == "naval") return MathF.Max(Box(p, new Vector2(19, 17)), (MathF.Abs(p.X) + p.Y) * 0.7071f - 17);
@@ -143,6 +144,8 @@ public static unsafe class IconAtlas
                     MathF.Min(Segment(p, new(-5, 9), new(0, 4), 2f), Segment(p, new(5, 9), new(0, 4), 2f)));
             case "experimental":
                 return MathF.Min(Segment(p, new(-9, -9), new(9, 9), 3.2f), Segment(p, new(-9, 9), new(9, -9), 3.2f));
+            case "scu": // support commander: dot over a bar
+                return MathF.Min(Circle(p - new Vector2(0, -3.5f), 4.2f), Segment(p, new(-7.5f, 5.5f), new(7.5f, 5.5f), 2.3f));
             default:
                 return 99;
         }
@@ -150,7 +153,7 @@ public static unsafe class IconAtlas
 
     private static void RasterCell(byte[] px, int x0, int y0, string kind, int tech, bool selected)
     {
-        bool hasPips = tech > 1 && kind != "experimental" && kind != "commander";
+        bool hasPips = tech > 1 && kind != "experimental" && kind != "commander" && kind != "scu";
         float border = selected ? 3.6f : 2.4f;
         for (int y = 0; y < Cell; y++)
         for (int x = 0; x < Cell; x++)
