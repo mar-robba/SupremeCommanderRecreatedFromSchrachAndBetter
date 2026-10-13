@@ -59,6 +59,8 @@ public sealed class SandboxController : IDisposable
     {
         Ctx = ctx;
         Selection = selection;
+        // Sandbox: units of every army can be selected and ordered (orders are split per army).
+        ctx.ControlAnyArmy = true;
         TargetArmy = ctx.LocalArmy;
         ParseCtx = new ConsoleContext { Db = ctx.Db, LocalArmy = ctx.LocalArmy, ArmyCount = ctx.ArmyColors.Length };
         Panel = new SandboxPanel(this);
@@ -78,6 +80,7 @@ public sealed class SandboxController : IDisposable
     public void Dispose()
     {
         EffectsRenderer.DebugKeysEnabled = true;
+        Ctx.ControlAnyArmy = false;
         PlacementGrid.IgnoreDeposits = false;
         UnlockCamera();
     }

@@ -15,6 +15,8 @@ namespace Rts.Client.Input;
 /// <see cref="OccupancyGrid.SnapStructure"/>; extractors snap to the nearest deposit. Green/red validity is
 /// computed client-side by <see cref="PlacementGrid"/>. Left click issues a Build order to the selected builders
 /// (Shift = queue and stay in placement mode while Shift is held), right click / Esc cancels, R rotates.
+/// Adjacency preview (<see cref="AdjacencyPreview"/>): touching own structures that would give or get a bonus are
+/// outlined and linked to the ghost, with a short summary next to it (<see cref="DrawOverlay"/>).
 /// </summary>
 public sealed class BuildPlacement
 {
@@ -30,6 +32,8 @@ public sealed class BuildPlacement
     public PlacementError Error;
     private bool _placedWithShift;
     private double _rejectFlashUntil;
+    /// <summary>Adjacency bonuses at the ghost position (null = none / no position).</summary>
+    public AdjacencyPreviewResult? Adjacency;
 
     public BuildPlacement(GameContext ctx)
     {
@@ -71,7 +75,7 @@ public sealed class BuildPlacement
         var list = new List<UnitHandle>();
         foreach (var h in selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
             if (bp.IsMobile && Array.IndexOf(bp.BuildIndices, BpIndex) >= 0) list.Add(h);
         }
@@ -98,15 +102,17 @@ public sealed class BuildPlacement
             Pos = SnapToCursor(bp, new Vector2(g.X, g.Z));
             HasPos = true;
             Error = Grid.Check(bp, Pos);
+            Adjacency = ComputeAdjacency(bp, Pos, snap, ArmyCommands.PrimaryArmy(_ctx, builders));
         }
-        else HasPos = false;
+        else { HasPos = false; Adjacency = null; }
 
         if (mouseOverUi) return;
         if (Raylib.IsMouseButtonPressed(MouseButton.Right)) { Cancel(); return; }
         if (Raylib.IsMouseButtonPressed(MouseButton.Left) && HasPos)
         {
             if (Error != PlacementError.None) { _rejectFlashUntil = Raylib.GetTime() + 0.35; UiSounds.Error(); return; }
-            _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, builders, Order.BuildAt(BpIndex, Pos, Heading), shift));
+            var order = Order.BuildAt(BpIndex, Pos, Heading);
+            ArmyCommands.Send(_ctx, builders, (army, units) => new IssueOrderCommand(army, units, order, shift));
             _ctx.Feedback.AddClickMarker(new Vector3(Pos.X, _ctx.Terrain.GetSurfaceHeight(Pos), Pos.Y), OrderType.Build);
             UiSounds.Confirm();
             if (shift) _placedWithShift = true;
@@ -124,6 +130,71 @@ public sealed class BuildPlacement
             if (Grid.NearestDeposit(cursor, type, radius) is Deposit d) return OccupancyGrid.SnapStructure(bp, d.Pos);
         }
         return OccupancyGrid.SnapStructure(bp, cursor);
+    }
+
+    /// <summary>Adjacency preview against the army's structures (complete or being built) near the ghost.</summary>
+    private AdjacencyPreviewResult? ComputeAdjacency(UnitBlueprint bp, Vector2 pos, SimSnapshot snap, int army)
+    {
+        if (!Rts.Sim.Systems.AdjacencyRules.Participates(bp)) return null;
+        var near = new List<(int, UnitBlueprint, Vector2)>();
+        for (int k = 0; k < snap.UnitCount; k++)
+        {
+            ref var v = ref snap.Units[k];
+            if (v.Army != army) continue;
+            var ob = _ctx.Db[v.Bp];
+            if (!ob.IsStructure) continue;
+            var p = new Vector2(v.Pos.X, v.Pos.Z);
+            float rx = (bp.FootprintX + ob.FootprintX) * 0.5f + 1, rz = (bp.FootprintZ + ob.FootprintZ) * 0.5f + 1;
+            if (MathF.Abs(p.X - pos.X) > rx || MathF.Abs(p.Y - pos.Y) > rz) continue;
+            near.Add((k, ob, p));
+        }
+        var r = AdjacencyPreview.Compute(bp, pos, near);
+        return r.IsEmpty ? null : r;
+    }
+
+    private static readonly Color AdjReceive = new(120, 255, 150, 235), AdjGive = new(255, 215, 90, 235), AdjBoth = new(120, 230, 255, 235);
+
+    private static Color AdjColor(in AdjacencyLink l) =>
+        !l.Gives.IsZero && !l.Receives.IsZero ? AdjBoth : l.Receives.IsZero ? AdjGive : AdjReceive;
+
+    /// <summary>Outlines touching structures that exchange a bonus with the ghost and links them to it (no depth test).</summary>
+    private void DrawAdjacency3D(UnitBlueprint bp)
+    {
+        if (Adjacency is not { } adj) return;
+        float t = (float)Raylib.GetTime();
+        float y0 = _ctx.Terrain.GetSurfaceHeight(Pos) + bp.Visual.Size.Y * 0.35f;
+        foreach (var l in adj.Links)
+        {
+            var col = AdjColor(l);
+            DrawFootprintOutline(l.Bp, l.Pos, col);
+            float y1 = _ctx.Terrain.GetSurfaceHeight(l.Pos) + l.Bp.Visual.Size.Y * 0.35f;
+            var a = new Vector3(Pos.X, y0, Pos.Y);
+            var b = new Vector3(l.Pos.X, y1, l.Pos.Y);
+            Raylib.DrawLine3D(a, b, col);
+            // A pulse travels the way the bonus flows (both ways: alternating).
+            float k = (t * 1.2f) % 1f;
+            bool toGhost = l.Gives.IsZero || (!l.Receives.IsZero && ((int)(t * 1.2f) & 1) == 1);
+            var dot = toGhost ? Vector3.Lerp(b, a, k) : Vector3.Lerp(a, b, k);
+            Raylib.DrawSphereEx(dot, 0.22f, 6, 6, col);
+        }
+    }
+
+    /// <summary>2D summary next to the ghost (call after EndMode3D).</summary>
+    public void DrawOverlay()
+    {
+        if (!Active || !HasPos || Adjacency is not { } adj) return;
+        var lines = AdjacencyPreview.Summary(adj);
+        if (lines.Count == 0) return;
+        var bp = _ctx.Db[BpIndex];
+        var anchor = new Vector3(Pos.X, _ctx.Terrain.GetSurfaceHeight(Pos) + bp.Visual.Size.Y, Pos.Y);
+        var sp = Raylib.GetWorldToScreen(anchor, _ctx.Camera.Camera);
+        int fs = UI.Ui.F(12);
+        float x = sp.X + UI.Ui.P(14), y = sp.Y - lines.Count * (fs + 2) - UI.Ui.P(4);
+        foreach (var line in lines)
+        {
+            UI.Ui.TextShadow(line, x, y, fs, line.StartsWith("Adjacency") ? AdjReceive : AdjGive, true);
+            y += fs + 2;
+        }
     }
 
     // ------------------------------------------------------------------ drawing (inside BeginMode3D)
@@ -153,6 +224,7 @@ public sealed class BuildPlacement
             var fill = ok ? new Color(120, 240, 140, 60) : new Color(250, 90, 80, flash ? 150 : 70);
             var line = ok ? OkLine : BadLine;
             DrawGhostBox(bp, Pos, Heading, fill, line);
+            DrawAdjacency3D(bp);
             Rlgl.DrawRenderBatchActive();
             Rlgl.EnableDepthTest();
         }

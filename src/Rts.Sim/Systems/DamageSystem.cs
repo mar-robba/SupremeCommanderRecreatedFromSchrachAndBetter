@@ -38,13 +38,18 @@ public static class DamageSystem
         w.Events.Damage.Clear();
         w.Events.AreaDamage.Clear();
 
-        // Regeneration.
+        // Regeneration (blueprint RegenRate + veterancy bonus), up to the veterancy max health.
         for (int k = 0; k < u.AliveCount; k++)
         {
             int i = u.AliveList[k];
             if (!u.IsActive(i) || !u.IsComplete(i)) continue;
             var bp = w.BpOf(i);
-            if (bp.RegenRate > 0) u.Health[i] = MathF.Min(bp.MaxHealth, u.Health[i] + bp.RegenRate * SimWorld.Dt);
+            int kills = u.Kills[i];
+            if (bp.RegenRate <= 0 && kills < Combat.Veterancy.KillsPerLevel(bp)) continue; // fast path
+            float regen = Combat.Veterancy.Regen(bp, kills);
+            if (regen <= 0) continue;
+            float max = Combat.Veterancy.MaxHealth(bp, kills);
+            if (u.Health[i] < max) u.Health[i] = MathF.Min(max, u.Health[i] + regen * SimWorld.Dt);
         }
     }
 

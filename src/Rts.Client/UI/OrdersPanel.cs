@@ -9,14 +9,16 @@ namespace Rts.Client.UI;
 
 /// <summary>
 /// Order buttons with SupCom-like hotkeys: Stop (S), Move (M), Attack-move (A), Patrol (P), Guard/Assist (G),
-/// Self-destruct (Ctrl+K, asks for confirmation). Hotkeys themselves are handled by SelectionController.
+/// Self-destruct (Ctrl+K, asks for confirmation), and when they apply: Capture (E, engineers / commander), Pause (H,
+/// pausable units) and Dive / Surface (D, submarines); a third row appears for them. Hotkeys themselves are handled by
+/// SelectionController / UnitToggles.
 /// </summary>
 public sealed class OrdersPanel
 {
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
 
-    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch }
+    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Capture, Pause, Dive }
 
     public OrdersPanel(GameContext ctx, SelectionController sel)
     {
@@ -43,25 +45,33 @@ public sealed class OrdersPanel
         }
         bool canMove = anyMobile || anyFactory;
 
-        float pad = Ui.P(6);
-        float bw = (r.Width - 4 * pad) / 3f;
-        float bh = MathF.Min(bw, (r.Y + r.Height - y - 3 * pad) / 2f);
-        var buttons = new (Btn id, string label, string key, bool enabled, bool active)[]
+        var buttons = new List<(Btn id, string label, string key, bool enabled, bool active)>
         {
             (Btn.Stop, "Stop", "S", true, false),
             anyLauncher && !canMove ? (Btn.Launch, "Launch", "L", true, _sel.Mode == Mode.Launch) : (Btn.Move, "Move", "M", canMove, _sel.Mode == Mode.Move),
             (Btn.AttackMove, "Attack", "A", canMove, _sel.Mode == Mode.AttackMove),
             (Btn.Patrol, "Patrol", "P", canMove, _sel.Mode == Mode.Patrol),
             (Btn.Guard, anyEngineer || anyFactory ? "Assist" : "Guard", "G", canMove, _sel.Mode == Mode.Guard),
-            (Btn.SelfDestruct, "Destruct", "^K", true, _sel.PendingSelfDestruct != null),
         };
-        for (int i = 0; i < buttons.Length; i++)
+        if (UnitToggles.AnyCapturer(_ctx, _sel.Selected))
+            buttons.Add((Btn.Capture, "Capture", UnitToggles.CaptureKeyName, true, _sel.Mode == Mode.Capture));
+        _pause = UnitToggles.PauseState(_ctx, _sel.Selected);
+        if (_pause.Any) buttons.Add((Btn.Pause, _pause.AllOn ? "Resume" : "Pause", UnitToggles.PauseKeyName, true, _pause.AllOn));
+        _dive = UnitToggles.DiveState(_ctx, _sel.Selected);
+        if (_dive.Any) buttons.Add((Btn.Dive, _dive.AllOn ? "Surface" : "Dive", UnitToggles.DiveKeyName, true, false));
+        buttons.Add((Btn.SelfDestruct, "Destruct", "^K", true, _sel.PendingSelfDestruct != null));
+
+        float pad = Ui.P(6);
+        int rows = (buttons.Count + 2) / 3;
+        float bw = (r.Width - 4 * pad) / 3f;
+        float bh = MathF.Min(bw, (r.Y + r.Height - y - (rows + 1) * pad) / rows);
+        for (int i = 0; i < buttons.Count; i++)
         {
             var b = buttons[i];
             var br = new Rectangle(MathF.Round(r.X + pad + (i % 3) * (bw + pad)), MathF.Round(y + pad * 0.5f + (i / 3) * (bh + pad)), MathF.Round(bw), MathF.Round(bh));
             var tint = b.id == Btn.SelfDestruct ? new Color(80, 36, 34, 255) : (Color?)null;
             var st = Ui.Button(br, b.enabled, b.active, tint);
-            DrawGlyph(b.id, br, b.enabled);
+            DrawGlyph(b.id, br, b.enabled, _pause.AllOn, _dive.AllOn);
             int fs = Ui.F(10);
             float lw = Ui.Measure(b.label, fs);
             Ui.Text(b.label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled ? Ui.TextColor : Ui.TextFaint);
@@ -70,6 +80,8 @@ public sealed class OrdersPanel
             if (st.Hover) Ui.Tooltip(br, b.label == "Destruct" ? "Self-destruct  [Ctrl+K]" : $"{Title(b.id, b.label)}  [{b.key}]", Description(b.id));
         }
     }
+
+    private UnitToggles.ToggleState _pause, _dive;
 
     private void Execute(Btn id)
     {
@@ -82,6 +94,9 @@ public sealed class OrdersPanel
             case Btn.Guard: _sel.SetMode(Mode.Guard); break;
             case Btn.Launch: _sel.SetMode(Mode.Launch); break;
             case Btn.SelfDestruct: _sel.PendingSelfDestruct ??= _sel.Selected.ToArray(); break;
+            case Btn.Capture: _sel.SetMode(Mode.Capture); break;
+            case Btn.Pause: UnitToggles.TogglePause(_ctx, _sel.Selected); break;
+            case Btn.Dive: UnitToggles.ToggleDive(_ctx, _sel.Selected); break;
         }
     }
 
@@ -100,11 +115,14 @@ public sealed class OrdersPanel
         Btn.Patrol => "Patrol between the current position and the clicked point. Shift adds patrol points.",
         Btn.Guard => "Click a friendly unit: combat units guard it, engineers and factories assist its construction.",
         Btn.SelfDestruct => "Destroys the selected units (asks for confirmation).",
+        Btn.Capture => "Click an enemy unit: engineers and the commander take it over (costs energy; commanders can't be captured). Shift queues. Right-click also captures when only engineers are selected.",
+        Btn.Pause => "Pauses / resumes production, construction, upgrades, missile stockpiles and upkeep (shields, radar, fabricators). Paused units still move and fight.",
+        Btn.Dive => "Submarines: dive (hidden, only torpedoes and sonar reach them) or surface (visible, hit by surface weapons).",
         Btn.Launch => "Click a ground target: one selected launcher with the target in range fires a missile (it waits if its stockpile is empty).",
         _ => "",
     };
 
-    private static void DrawGlyph(Btn id, Rectangle br, bool enabled)
+    private static void DrawGlyph(Btn id, Rectangle br, bool enabled, bool paused, bool submerged)
     {
         float labelH = Ui.F(10) + Ui.P(4);
         var c = new Vector2(br.X + br.Width * 0.5f, br.Y + (br.Height - labelH) * 0.5f + Ui.P(2));
@@ -114,6 +132,30 @@ public sealed class OrdersPanel
         switch (id)
         {
             case Btn.Launch: StrategicHud.DrawLaunchGlyph(c, s, t, enabled, col); break;
+            case Btn.Capture: CursorHint.DrawFlag(c, s * 0.9f, enabled ? CursorHint.CaptureColor : col); break;
+            case Btn.Pause:
+                if (paused) // resume: play triangle
+                    Raylib.DrawTriangle(c + new Vector2(-s * 0.6f, -s * 0.8f), c + new Vector2(-s * 0.6f, s * 0.8f), c + new Vector2(s * 0.8f, 0), Ui.Good);
+                else
+                {
+                    var amber = enabled ? new Color(245, 200, 90, 255) : col;
+                    Raylib.DrawRectangleV(c + new Vector2(-s * 0.7f, -s * 0.8f), new Vector2(s * 0.5f, s * 1.6f), amber);
+                    Raylib.DrawRectangleV(c + new Vector2(s * 0.2f, -s * 0.8f), new Vector2(s * 0.5f, s * 1.6f), amber);
+                }
+                break;
+            case Btn.Dive:
+            {
+                var sea = enabled ? new Color(90, 170, 255, 255) : col;
+                // Wave line, arrow down (dive) or up (surface).
+                for (int k = 0; k < 3; k++)
+                    Raylib.DrawRing(c + new Vector2(-s * 0.7f + k * s * 0.7f, -s * 0.05f), s * 0.3f, s * 0.3f + t * 0.7f, 0, 180, 8, sea);
+                float dir = submerged ? -1 : 1;
+                var tip = c + new Vector2(0, dir * s * 1.05f);
+                Raylib.DrawLineEx(c - new Vector2(0, dir * s * 0.75f), tip - new Vector2(0, dir * s * 0.3f), t, Color.White);
+                if (dir > 0) Raylib.DrawTriangle(tip, tip + new Vector2(s * 0.4f, -s * 0.45f), tip + new Vector2(-s * 0.4f, -s * 0.45f), Color.White);
+                else Raylib.DrawTriangle(tip, tip + new Vector2(-s * 0.4f, s * 0.45f), tip + new Vector2(s * 0.4f, s * 0.45f), Color.White);
+                break;
+            }
             case Btn.Stop:
                 Raylib.DrawRectangleV(c - new Vector2(s * 0.8f, s * 0.8f), new Vector2(s * 1.6f, s * 1.6f), enabled ? new Color(230, 80, 70, 255) : col);
                 break;

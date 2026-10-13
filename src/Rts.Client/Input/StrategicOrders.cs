@@ -18,7 +18,7 @@ namespace Rts.Client.Input;
 public static class StrategicOrders
 {
     public static bool IsLauncher(GameContext ctx, in UnitView v) =>
-        v.Army == ctx.LocalArmy && (v.Flags & UnitFlags.UnderConstruction) == 0 && SiloSystem.IsLauncher(ctx.Db[v.Bp]);
+        ctx.Controls(v.Army) && (v.Flags & UnitFlags.UnderConstruction) == 0 && SiloSystem.IsLauncher(ctx.Db[v.Bp]);
 
     public static bool AnyLauncher(GameContext ctx, SelectionController sel)
     {
@@ -75,7 +75,7 @@ public static class StrategicOrders
             return false;
         }
         ctx.Feedback.AddClickMarker(g, OrderType.Launch);
-        ctx.Runner.Enqueue(new IssueOrderCommand(ctx.LocalArmy, [new UnitHandle(v.Index, v.Gen)], Order.LaunchAt(p), true));
+        ctx.Runner.Enqueue(new IssueOrderCommand(v.Army, [new UnitHandle(v.Index, v.Gen)], Order.LaunchAt(p), true));
         UiSounds.Confirm();
         return true;
     }

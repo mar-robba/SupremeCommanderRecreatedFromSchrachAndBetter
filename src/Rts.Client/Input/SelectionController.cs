@@ -11,8 +11,9 @@ namespace Rts.Client.Input;
 
 /// <summary>
 /// Selection (click / box / double-click same type), control groups, right-click orders, order modes
-/// (move / attack-move / patrol / guard) and structure placement (<see cref="BuildPlacement"/>).
-/// Talks to the sim ONLY via SimRunner.Enqueue(Command).
+/// (move / attack-move / patrol / guard / launch / capture) and structure placement (<see cref="BuildPlacement"/>).
+/// Talks to the sim ONLY via SimRunner.Enqueue(Command). In the sandbox (<see cref="GameContext.ControlAnyArmy"/>)
+/// units of any army can be selected; orders are then sent once per army (<see cref="ArmyCommands"/>).
 /// </summary>
 public sealed class SelectionController
 {
@@ -23,7 +24,7 @@ public sealed class SelectionController
     private double _lastClickTime;
     private UnitHandle _lastClicked = UnitHandle.None;
 
-    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch }
+    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Capture }
     public CommandMode Mode = CommandMode.Normal;
 
     /// <summary>Structure placement mode (build menu).</summary>
@@ -64,8 +65,11 @@ public sealed class SelectionController
         if (InputBlocked) { _dragStart = null; return; }
 
         HandleHotkeys(ctrl, shift);
-        HoverAction = !mouseOverUi && Mode == CommandMode.Normal && !Placement.Active && Selected.Count > 0 && !IsDragging
-            ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition()) : ContextAction.None;
+        bool hover = !mouseOverUi && !Placement.Active && Selected.Count > 0 && !IsDragging;
+        HoverAction = !hover ? ContextAction.None
+            : Mode == CommandMode.Normal ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition())
+            : Mode == CommandMode.Capture ? UnitToggles.CaptureHover(_ctx, this, Raylib.GetMousePosition())
+            : ContextAction.None;
 
         if (Placement.Active)
         {
@@ -108,6 +112,7 @@ public sealed class SelectionController
             if (Raylib.IsKeyPressed(KeyboardKey.G) && !ctrl) SetMode(CommandMode.Guard);
             if (ctrl && Raylib.IsKeyPressed(KeyboardKey.K)) RequestSelfDestruct();
             StrategicOrders.HandleHotkey(_ctx, this, ctrl);
+            UnitToggles.HandleHotkeys(_ctx, this, ctrl);
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
         for (int g = 0; g <= 9; g++)
@@ -133,7 +138,7 @@ public sealed class SelectionController
     public void IssueStop()
     {
         if (Selected.Count == 0) return;
-        _ctx.Runner.Enqueue(new StopCommand(_ctx.LocalArmy, Selected.ToArray()));
+        ArmyCommands.Send(_ctx, Selected, (army, units) => new StopCommand(army, units));
     }
 
     /// <summary>Asks for self-destruct confirmation (Ctrl+K twice or the dialog confirms).</summary>
@@ -147,7 +152,7 @@ public sealed class SelectionController
     public void ConfirmSelfDestruct()
     {
         if (PendingSelfDestruct is { Length: > 0 } units)
-            _ctx.Runner.Enqueue(new SelfDestructCommand(_ctx.LocalArmy, units));
+            ArmyCommands.Send(_ctx, units, (army, group) => new SelfDestructCommand(army, group));
         PendingSelfDestruct = null;
     }
 
@@ -189,7 +194,7 @@ public sealed class SelectionController
             _ => Order.MoveTo(p),
         };
         _ctx.Feedback.AddClickMarker(new Vector3(p.X, _ctx.Terrain.GetSurfaceHeight(p), p.Y), order.Type);
-        _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, Selected.ToArray(), order, queue));
+        ArmyCommands.Send(_ctx, Selected, (army, units) => new IssueOrderCommand(army, units, order, queue));
         UiSounds.Confirm();
     }
 
@@ -224,7 +229,7 @@ public sealed class SelectionController
     private void ClickSelect(Vector2 mouse, bool shift, bool ctrl)
     {
         var hit = PickUnit(mouse);
-        if (hit is not UnitView v || v.Army != _ctx.LocalArmy)
+        if (hit is not UnitView v || !_ctx.Controls(v.Army))
         {
             if (!shift) Selected.Clear();
             return;
@@ -236,14 +241,14 @@ public sealed class SelectionController
         _lastClicked = h;
         if (dbl || ctrl)
         {
-            // Select all on-screen own units of the same type.
+            // Select all on-screen units of the same type and army.
             if (!shift) Selected.Clear();
             var snap = _ctx.Snapshots.Current;
             int sw = Raylib.GetScreenWidth(), sh = Raylib.GetScreenHeight();
             for (int k = 0; k < snap.UnitCount; k++)
             {
                 ref var u = ref snap.Units[k];
-                if (u.Army != _ctx.LocalArmy || u.Bp != v.Bp) continue;
+                if (u.Army != v.Army || u.Bp != v.Bp) continue;
                 var sp = Raylib.GetWorldToScreen(u.Pos, _ctx.Camera.Camera);
                 if (sp.X < 0 || sp.Y < 0 || sp.X > sw || sp.Y > sh) continue;
                 var uh = new UnitHandle(u.Index, u.Gen);
@@ -271,7 +276,7 @@ public sealed class SelectionController
         for (int k = 0; k < snap.UnitCount; k++)
         {
             ref var v = ref snap.Units[k];
-            if (v.Army != _ctx.LocalArmy) continue;
+            if (!_ctx.Controls(v.Army)) continue;
             var sp = Raylib.GetWorldToScreen(v.Pos, _ctx.Camera.Camera);
             if (!Raylib.CheckCollisionPointRec(sp, r)) continue;
             bool mobile = _ctx.Db[v.Bp].IsMobile;
@@ -289,34 +294,44 @@ public sealed class SelectionController
         if (Selected.Count == 0) return false;
         var mouse = Raylib.GetMousePosition();
         if (mode == CommandMode.Launch) return StrategicOrders.TryLaunch(_ctx, this, mouse);
-        // Engineers / commander: reclaim wrecks, repair, finish or assist (see ContextOrders).
-        if (mode == CommandMode.Normal && ContextOrders.TryIssue(_ctx, this, mouse, queue)) return true;
-        var units = Selected.ToArray();
+        if (mode == CommandMode.Capture) return UnitToggles.TryCapture(_ctx, this, mouse, queue);
         var target = PickUnit(mouse);
         bool targetIsSelected = target is UnitView sv && Selected.Contains(new UnitHandle(sv.Index, sv.Gen));
-        Order order;
-        if (mode is CommandMode.Normal or CommandMode.AttackMove or CommandMode.Guard && target is UnitView tv && _ctx.IsEnemy(tv.Army))
-            order = Order.AttackUnit(new UnitHandle(tv.Index, tv.Gen));
-        else if (mode is CommandMode.Normal or CommandMode.Guard && target is UnitView av && av.Army == _ctx.LocalArmy && !targetIsSelected)
-            order = Order.GuardUnit(new UnitHandle(av.Index, av.Gen));
-        else if (mode == CommandMode.Guard)
+        Vector3? ground = null;
+        bool groundPicked = false, issued = false, marker = false;
+        // One order per army (normal games: just the local army); relations are judged from each army's side.
+        foreach (var (army, units) in ArmyCommands.Groups(_ctx, Selected))
         {
-            UiSounds.Error();
-            return false; // Guard/assist needs a friendly unit under the cursor.
-        }
-        else
-        {
-            if (_ctx.PickGround(mouse) is not Vector3 g) return false;
-            var p = new Vector2(g.X, g.Z);
-            order = mode switch
+            // Engineers / commander: reclaim wrecks, repair, finish, assist or capture (see ContextOrders).
+            if (mode == CommandMode.Normal && ContextOrders.TryIssue(_ctx, this, army, units, mouse, queue)) { issued = true; continue; }
+            Order order;
+            if (mode is CommandMode.Normal or CommandMode.AttackMove or CommandMode.Guard && target is UnitView tv && _ctx.AreEnemies(army, tv.Army))
+                order = Order.AttackUnit(new UnitHandle(tv.Index, tv.Gen));
+            else if (mode is CommandMode.Normal or CommandMode.Guard && target is UnitView av && av.Army == army && !targetIsSelected)
+                order = Order.GuardUnit(new UnitHandle(av.Index, av.Gen));
+            else if (mode == CommandMode.Guard)
+                continue; // Guard/assist needs a friendly unit under the cursor.
+            else
             {
-                CommandMode.AttackMove => Order.AttackMoveTo(p),
-                CommandMode.Patrol => Order.PatrolTo(p),
-                _ => Order.MoveTo(p),
-            };
-            _ctx.Feedback.AddClickMarker(g, order.Type);
+                if (!groundPicked) { ground = _ctx.PickGround(mouse); groundPicked = true; }
+                if (ground is not Vector3 g) continue;
+                var p = new Vector2(g.X, g.Z);
+                order = mode switch
+                {
+                    CommandMode.AttackMove => Order.AttackMoveTo(p),
+                    CommandMode.Patrol => Order.PatrolTo(p),
+                    _ => Order.MoveTo(p),
+                };
+                if (!marker) { _ctx.Feedback.AddClickMarker(g, order.Type); marker = true; }
+            }
+            _ctx.Runner.Enqueue(new IssueOrderCommand(army, units, order, queue));
+            issued = true;
         }
-        _ctx.Runner.Enqueue(new IssueOrderCommand(_ctx.LocalArmy, units, order, queue));
+        if (!issued)
+        {
+            if (mode == CommandMode.Guard) UiSounds.Error();
+            return false;
+        }
         UiSounds.Confirm();
         return true;
     }

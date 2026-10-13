@@ -109,8 +109,11 @@ public struct BuilderState
     /// <summary>As a TARGET: 0..1 progress of an enemy capture (Economy/CaptureSystem); reset when nobody captured
     /// it for a while (see <see cref="CaptureTick"/>).</summary>
     public float CaptureProgress;
-    /// <summary>As a TARGET: last tick capture work was applied to this unit.</summary>
+    /// <summary>As a TARGET: last tick capture work was requested on this unit (the progress resets when nobody
+    /// worked on it for <see cref="Systems.CaptureSystem.ResetTicks"/>).</summary>
     public int CaptureTick;
+    /// <summary>As a TARGET: capture work reserved by captors during <see cref="CaptureTick"/> (no overshoot).</summary>
+    public float CaptureReserved;
 }
 
 /// <summary>Factory production state (owned by FactorySystem).</summary>

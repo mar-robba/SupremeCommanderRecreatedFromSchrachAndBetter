@@ -118,10 +118,10 @@ public static class SandboxSystem
                 case SandboxUnitAction.Kill: w.KillUnit(i, UnitHandle.None); break;
                 case SandboxUnitAction.Delete: ConstructionSystem.RemoveUnitSilently(w, i); break;
                 case SandboxUnitAction.Heal:
-                    u.Health[i] = u.IsComplete(i) ? bp.MaxHealth : MathF.Max(u.Health[i], u.BuildFraction[i] * bp.MaxHealth);
+                    u.Health[i] = u.IsComplete(i) ? Combat.Veterancy.MaxHealth(w, i) : MathF.Max(u.Health[i], u.BuildFraction[i] * bp.MaxHealth);
                     break;
                 case SandboxUnitAction.Damage:
-                    DamageSystem.Apply(w, i, Math.Clamp(c.Amount, 0f, 1f) * bp.MaxHealth, UnitHandle.None);
+                    DamageSystem.Apply(w, i, Math.Clamp(c.Amount, 0f, 1f) * Combat.Veterancy.MaxHealth(w, i), UnitHandle.None);
                     break;
                 case SandboxUnitAction.ChangeOwner: ChangeOwner(w, i, c.TargetArmy); break;
                 case SandboxUnitAction.Complete:
@@ -131,26 +131,9 @@ public static class SandboxSystem
         }
     }
 
-    /// <summary>Gives unit i to another army: orders and work are cleared, a factory's unfinished unit goes with it.
-    /// Commanders are never transferred (the assassination rule tracks them per army).</summary>
-    public static bool ChangeOwner(SimWorld w, int i, int army)
-    {
-        var u = w.Units;
-        if ((uint)army >= (uint)w.Armies.Length || !u.IsActive(i)) return false;
-        int old = u.Army[i];
-        if (old == army || w.BpOf(i).Has(UnitCategory.Commander)) return false;
-        CommandSystem.StopUnit(w, i);
-        u.Move[i].GroupId = 0;
-        foreach (ref var ws in u.WeaponsOf(i)) ws.Target = UnitHandle.None;
-        u.Army[i] = army;
-        w.Armies[old].UnitCount--;
-        w.Armies[army].UnitCount++;
-        ref var f = ref u.Factory[i];
-        f.Queue?.Clear();
-        f.Repeat = false;
-        if (u.IsActive(f.Current)) ChangeOwner(w, f.Current.Index, army);
-        return true;
-    }
+    /// <summary>Gives unit i to another army (see <see cref="UnitTransfer.Transfer"/>: orders and work are cleared,
+    /// a factory's unfinished unit goes with it, commanders are never transferred).</summary>
+    public static bool ChangeOwner(SimWorld w, int i, int army) => UnitTransfer.Transfer(w, i, army);
 
     /// <summary>Removes every unit (and wreck) within radius of center, silently. Returns the units removed.</summary>
     public static int ClearArea(SimWorld w, Vector2 center, float radius, int onlyArmy = -1, bool includeCommanders = false)
@@ -277,10 +260,11 @@ public static class SandboxSystem
             int i = u.AliveList[k];
             if (!u.IsActive(i) || !s.InstantBuild[u.Army[i]]) continue;
             ref var b = ref u.Builder[i];
-            if (b.Mode is not (BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair) || !u.IsActive(b.Target)) continue;
+            if (b.Mode is not (BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair or BuilderMode.Capture) || !u.IsActive(b.Target)) continue;
             int t = b.Target.Index;
-            if (!u.IsComplete(t)) FinishConstruction(w, t);
-            else if (b.Mode == BuilderMode.Repair) u.Health[t] = w.BpOf(t).MaxHealth;
+            if (b.Mode == BuilderMode.Capture) { if (CaptureSystem.CanCapture(w, i, t)) CaptureSystem.Complete(w, t, u.Army[i]); else continue; }
+            else if (!u.IsComplete(t)) FinishConstruction(w, t);
+            else if (b.Mode == BuilderMode.Repair) u.Health[t] = Combat.Veterancy.MaxHealth(w, t);
             else continue;
             b.PendingWork = 0;
             u.Econ[i].MassRequest = 0;
@@ -292,7 +276,7 @@ public static class SandboxSystem
     public static void FinishConstruction(SimWorld w, int t)
     {
         ConstructionSystem.CompleteUnit(w, t);
-        w.Units.Health[t] = w.BpOf(t).MaxHealth;
+        w.Units.Health[t] = Combat.Veterancy.MaxHealth(w, t);
     }
 
     /// <summary>Snapshot hook (sim thread, after SnapshotWriter): sandbox status and no victory unless enabled. (Nuke

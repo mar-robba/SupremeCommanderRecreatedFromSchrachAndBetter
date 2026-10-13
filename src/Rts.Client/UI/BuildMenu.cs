@@ -49,7 +49,7 @@ public sealed class BuildMenu
         _tiers.Clear();
         foreach (var h in _sel.Selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
             if (!bp.IsMobile || bp.BuildIndices.Length == 0) continue;
             _builders.Add(h);

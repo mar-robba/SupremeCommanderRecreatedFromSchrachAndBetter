@@ -86,6 +86,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         DrawnUnits = 0;
         DrawCalls = 0;
         _submerged.Clear();
+        BeginSurfacingFrame();
         if (fade <= 0.001f) return;
         float time = Atmosphere.Time;
 
@@ -121,6 +122,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             DrawnUnits++;
             var col = (uint)v.Army < (uint)teamCols.Length ? teamCols[v.Army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
             bool building = (v.Flags & UnitFlags.UnderConstruction) != 0;
+            pos = SurfacingPos(v, pos); // surfaced submarines ride at the surface like ships (UnitRenderer.Submerged.cs)
             if (!building && IsSubmerged(model, pos)) { _submerged.Add((model, v.Index, pos, heading, turret, col)); continue; } // UnitRenderer.Submerged.cs
             AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
             // In-place upgrade: the target model grows around the structure as a construction hologram.

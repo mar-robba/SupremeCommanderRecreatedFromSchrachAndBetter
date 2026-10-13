@@ -137,4 +137,93 @@ public class ShieldPolishTests
         for (int t = 0; t < ticks + 10; t++) sim.Step();
         Assert.True(ShieldSystem.IsUp(sim.World, gen.Index));
     }
+
+    // ------------------------------------------------------------------ domes vs bombs / shells from above
+
+    /// <summary>Runs until <paramref name="ticks"/> or the shield took at least <paramref name="hits"/> hits; returns the hits.</summary>
+    private static int RunCountingShieldHits(Simulation sim, int ticks, int hits = int.MaxValue)
+    {
+        int n = 0;
+        for (int t = 0; t < ticks && n < hits; t++)
+        {
+            sim.Step();
+            n += sim.World.Events.Effects.Count(e => e.Kind == EffectKind.ShieldHit);
+            sim.World.Events.Effects.Clear();
+        }
+        return n;
+    }
+
+    [Theory]
+    [InlineData("uef_t2_shield_generator", "uef_t1_bomber")]
+    [InlineData("uef_t3_heavy_shield_generator", "uef_t1_bomber")]
+    [InlineData("uef_t2_shield_generator", "uef_t2_fighter_bomber")]
+    public void BombsDroppedFromAboveADomeHitTheShield(string gen, string bomber)
+    {
+        var sim = CombatWorld.Flat();
+        Power(sim, 0, 400);
+        var g = CombatWorld.Spawn(sim, gen, 0, 64, 64);
+        var target = CombatWorld.Spawn(sim, "uef_t1_power_generator", 0, 67, 64);
+        var b = CombatWorld.Spawn(sim, bomber, 1, 20, 64);
+        float maxShield = TestUtil.Db[gen].Shield!.MaxHealth;
+        sim.Step([new IssueOrderCommand(1, [b], Order.AttackUnit(target), false)]);
+        int hits = RunCountingShieldHits(sim, 400);
+        Assert.True(hits >= 2, $"shield hits {hits}");
+        Assert.True(ShieldOf(sim, g).Hp < maxShield || !ShieldOf(sim, g).Up, $"shield hp {ShieldOf(sim, g).Hp}");
+        if (ShieldOf(sim, g).Up)
+            Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
+    }
+
+    [Fact]
+    public void BombsReleasedInsideADomeAreAbsorbedByIt()
+    {
+        var sim = CombatWorld.Flat();
+        Power(sim, 0, 400);
+        var g = CombatWorld.Spawn(sim, "uef_t3_heavy_shield_generator", 0, 64, 64);
+        var target = CombatWorld.Spawn(sim, "uef_t1_power_generator", 0, 70, 64);
+        var b = CombatWorld.Spawn(sim, "uef_t1_bomber", 1, 20, 64);
+        sim.Step([new IssueOrderCommand(1, [b], Order.AttackUnit(target), false)]);
+        // Keep the bomber low enough to be inside the dome (a big dome / a low flier).
+        int hits = 0;
+        for (int t = 0; t < 400; t++)
+        {
+            var u = sim.World.Units;
+            if (u.IsActive(b)) u.Elevation[b.Index] = MathF.Min(u.Elevation[b.Index], 10f + 6f);
+            sim.Step();
+            hits += sim.World.Events.Effects.Count(e => e.Kind == EffectKind.ShieldHit);
+            sim.World.Events.Effects.Clear();
+        }
+        Assert.True(hits >= 2, $"shield hits {hits}");
+        Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
+        Assert.True(ShieldOf(sim, g).Hp < TestUtil.Db["uef_t3_heavy_shield_generator"].Shield!.MaxHealth);
+    }
+
+    [Fact]
+    public void AlliedBombsPassThroughTheDome()
+    {
+        var sim = CombatWorld.Flat();
+        Power(sim, 0, 400);
+        var g = CombatWorld.Spawn(sim, Gen, 0, 64, 64);
+        var enemy = CombatWorld.Spawn(sim, "uef_t1_power_generator", 1, 67, 64);
+        var b = CombatWorld.Spawn(sim, "uef_t1_bomber", 0, 20, 64);
+        sim.Step([new IssueOrderCommand(0, [b], Order.AttackUnit(enemy), false)]);
+        int hits = RunCountingShieldHits(sim, 400);
+        Assert.Equal(0, hits);
+        Assert.True(CombatWorld.Health(sim, enemy) < TestUtil.Db["uef_t1_power_generator"].MaxHealth, "own bombs fall through own dome");
+        Assert.Equal(TestUtil.Db[Gen].Shield!.MaxHealth, ShieldOf(sim, g).Hp);
+    }
+
+    [Fact]
+    public void HighArcArtilleryShellFromOutsideIsAbsorbed()
+    {
+        var sim = CombatWorld.Flat(size: 256);
+        Power(sim, 0, 400);
+        var g = CombatWorld.Spawn(sim, Gen, 0, 128, 128);
+        var target = CombatWorld.Spawn(sim, "uef_t1_power_generator", 0, 128, 128 + 4);
+        var arty = CombatWorld.Spawn(sim, "uef_t1_artillery", 1, 128, 128 + 4 + 26, heading: -MathF.PI / 2);
+        sim.Step([new IssueOrderCommand(1, [arty], Order.AttackUnit(target), false)]);
+        int hits = RunCountingShieldHits(sim, 300);
+        Assert.True(hits >= 2, $"shield hits {hits}");
+        Assert.Equal(TestUtil.Db["uef_t1_power_generator"].MaxHealth, CombatWorld.Health(sim, target));
+        Assert.True(ShieldOf(sim, g).Hp < TestUtil.Db[Gen].Shield!.MaxHealth);
+    }
 }

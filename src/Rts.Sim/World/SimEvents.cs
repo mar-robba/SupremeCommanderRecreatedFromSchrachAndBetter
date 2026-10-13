@@ -49,6 +49,8 @@ public enum EffectKind : byte
     /// missile (MissileSystem.Detonate, also for sandbox nukes) and by the sandbox instant blast; always visible
     /// through fog. One client visual (NukeFx) and one sound.</summary>
     Nuke,
+    /// <summary>A unit was captured (Economy/CaptureSystem): Pos = unit, Army = NEW owner, BlueprintIndex = unit.</summary>
+    Captured,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

@@ -121,6 +121,7 @@ public sealed class Hud : IDisposable
         Raylib.BeginMode3D(_ctx.Camera.Camera);
         _sel.Placement.Draw3D(_sel.Selected);
         Raylib.EndMode3D();
+        _sel.Placement.DrawOverlay();
 
         bool dialog = _sel.PendingSelfDestruct != null;
         if (dialog) HandleDialogInput();
@@ -190,6 +191,7 @@ public sealed class Hud : IDisposable
             new("Left click / drag: select · double-click or Ctrl+click: all of that type on screen", d, 11.5f),
             new("Right click: move / attack / assist · factory selected: set rally point · Shift: queue", d, 11.5f),
             new("S stop · M move · A attack-move · P patrol · G guard/assist · Ctrl+K self-destruct", d, 11.5f),
+            new($"{UnitToggles.CaptureKeyName} capture (engineers / commander; right-click an enemy with only engineers selected) · {UnitToggles.PauseKeyName} pause / resume · {UnitToggles.DiveKeyName} dive / surface (subs)", d, 11.5f),
             new("Build menu: Z X C V B N select · Tab / Shift+Tab category · R rotate · Esc / right click cancel", d, 11.5f),
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
             new("T / Shift+T: tech tier filter (build menu, factory) · U: upgrade selected structures (factory, mex, radar) · right-click the upgrade tile: cancel", d, 11.5f),
@@ -223,6 +225,8 @@ public sealed class Hud : IDisposable
                 Mode.Patrol => ("PATROL: click patrol point (Shift: add points, RMB cancel)", "Patrol", new Color(120, 190, 255, 255)),
                 Mode.Move => ("MOVE: click destination (Shift: queue, RMB cancel)", "Move", new Color(130, 230, 130, 255)),
                 Mode.Guard => ("GUARD / ASSIST: click a friendly unit (RMB cancel)", "Guard / assist", new Color(240, 210, 100, 255)),
+                Mode.Capture => ("CAPTURE: click an enemy unit (Shift: queue, RMB cancel)",
+                                 _sel.HoverAction.Kind == ContextKind.Capture ? null : "Capture: pick an enemy unit", CursorHint.CaptureColor),
                 _ => (null, null, col),
             };
         }

@@ -1,7 +1,9 @@
 using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Input;
+using Rts.Sim.Combat;
 using Rts.Sim.Core;
+using Rts.Sim.Naval;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
 using Rts.Sim.Snapshot;
@@ -11,7 +13,8 @@ namespace Rts.Client.UI;
 
 /// <summary>
 /// Unit info panel. One unit: icon, name, description, health, construction / work progress, current order and
-/// key stats. Several units: a grid of type buttons with counts (click = keep only that type, Shift+click =
+/// key stats, veterancy bonus, adjacency bonuses, pause / dive state and capture progress. Several units: a grid of
+/// type buttons with counts (click = keep only that type, Shift+click =
 /// remove that type) and the group's total health.
 /// </summary>
 public sealed class UnitPanel
@@ -48,9 +51,11 @@ public sealed class UnitPanel
         // Army color strip under the icon.
         Raylib.DrawRectangleRec(new Rectangle(iconR.X, iconR.Y + icon + Ui.P(3), icon, Ui.P(3)), _ctx.ArmyColors[v.Army]);
         // Veterancy stars on the icon.
-        int vet = VeterancyLevel(bp, v.Kills);
+        int vet = Veterancy.Level(bp, v.Kills);
         for (int i = 0; i < vet; i++)
             DrawStar(new Vector2(iconR.X + Ui.P(7) + i * Ui.P(10), iconR.Y + Ui.P(7)), Ui.P(5), new Color(255, 215, 80, 255));
+        bool paused = (v.Flags & UnitFlags.Paused) != 0;
+        if (paused) DrawPausedBadge(iconR);
 
         float tx = iconR.X + icon + Ui.P(8);
         float tw = r.X + r.Width - pad - tx;
@@ -69,11 +74,17 @@ public sealed class UnitPanel
         float bw = r.Width - 2 * pad;
         float barH = Ui.P(15);
 
-        // Health.
-        float hp = v.HealthFrac * bp.MaxHealth;
+        // Health (effective max health: veterancy raises it).
+        float maxHp = MaxHealthOf(v, bp);
+        float hp = v.HealthFrac * maxHp;
         var hpCol = v.HealthFrac > 0.5f ? new Color(70, 200, 70, 255) : v.HealthFrac > 0.25f ? new Color(230, 190, 40, 255) : new Color(220, 50, 40, 255);
-        Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.HealthFrac, hpCol, $"{hp:0} / {bp.MaxHealth:0}");
+        Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.HealthFrac, hpCol, $"{hp:0} / {maxHp:0}");
         y += barH + Ui.P(5);
+        if (v.CaptureFrac > 0)
+        {
+            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.CaptureFrac, new Color(200, 70, 60, 255), $"Being captured  {v.CaptureFrac * 100:0}%");
+            y += barH + Ui.P(5);
+        }
 
         bool underConstruction = (v.Flags & UnitFlags.UnderConstruction) != 0;
         if (underConstruction)
@@ -86,6 +97,13 @@ public sealed class UnitPanel
             Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.UpgradeFrac, UpgradeUi.UpgradeGreen, $"Upgrading to {_ctx.Db[v.UpgradeBp].Name}  {v.UpgradeFrac * 100:0}%");
             y += barH + Ui.P(5);
         }
+        else if (v.WorkMode == BuilderMode.Capture)
+        {
+            string what = CaptureTargetName(snap, v);
+            float f = Math.Clamp(v.WorkProgress, 0, 1);
+            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), f, CursorHint.CaptureColor, what.Length > 0 ? $"Capturing {what}  {f * 100:0}%" : $"Capturing  {f * 100:0}%");
+            y += barH + Ui.P(5);
+        }
         else if (v.WorkProgress >= 0)
         {
             string what = WorkTargetName(snap, v);
@@ -96,12 +114,18 @@ public sealed class UnitPanel
         if (!underConstruction) y = StrategicHud.DrawUnitPanelBars(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
         int fs = Ui.F(11.5f);
         string order = CurrentOrderText(snap, v, bp);
+        if (Submarines.CanDive(bp)) order = ((v.Flags & UnitFlags.Surfaced) != 0 ? "Surfaced · " : "Submerged · ") + order;
+        if (paused) order = "PAUSED · " + order;
         Ui.Text("Order:", r.X + pad, y, fs, Ui.TextFaint, true);
-        Ui.Text(Ui.Fit(order, bw - Ui.P(48), fs), r.X + pad + Ui.P(46), y, fs, Ui.TextColor);
+        Ui.Text(Ui.Fit(order, bw - Ui.P(48), fs), r.X + pad + Ui.P(46), y, fs, paused ? Ui.Warn : Ui.TextColor);
         y += fs + Ui.P(4);
 
+        // Veterancy bonus and adjacency bonuses (structures next to power generators / storages): full-width lines.
+        if (vet > 0) y = InfoLine($"Veteran {vet}:", VeterancyBonusText(bp, vet), new Color(255, 215, 80, 255), r.X + pad, y, bw, fs);
+        if (AdjacencyText(v) is string adj) y = InfoLine("Adjacency:", adj, Ui.Good, r.X + pad, y, bw, fs);
+
         // Key stats (two compact columns).
-        var stats = KeyStats(bp);
+        var stats = KeyStats(bp, v);
         if (bp.Weapons.Length > 0 || v.Kills > 0)
             stats.Insert(0, ("Kills", vet > 0 ? $"{v.Kills} (vet {vet})" : v.Kills.ToString(), vet > 0 ? new Color(255, 215, 80, 255) : Ui.TextColor));
         float colW = bw * 0.5f;
@@ -161,7 +185,60 @@ public sealed class UnitPanel
         return text;
     }
 
-    private static List<(string label, string value, Color color)> KeyStats(UnitBlueprint bp)
+    private static float InfoLine(string label, string value, Color col, float x, float y, float w, int fs)
+    {
+        float lw = Ui.Measure(label, fs, true) + Ui.P(5);
+        Ui.Text(label, x, y, fs, Ui.TextFaint, true);
+        Ui.Text(Ui.Fit(value, w - lw, fs), x + lw, y, fs, col);
+        return y + fs + Ui.P(4);
+    }
+
+    /// <summary>Effective max health (veterancy), falling back to the blueprint value when the snapshot has none.</summary>
+    public static float MaxHealthOf(in UnitView v, UnitBlueprint bp) => v.MaxHealth > 0 ? v.MaxHealth : bp.MaxHealth;
+
+    /// <summary>"+20% HP, +2 HP/s" for a veterancy level.</summary>
+    public static string VeterancyBonusText(UnitBlueprint bp, int level) =>
+        $"+{Veterancy.HealthPerLevel * level * 100:0}% HP, +{Ui.Num(level * Veterancy.RegenPerLevel(bp))} HP/s";
+
+    /// <summary>"+25% mass · -30% energy use", or null without adjacency bonuses.</summary>
+    public static string? AdjacencyText(in UnitView v) =>
+        AdjacencyPreview.Describe(new Rts.Sim.Systems.AdjacencyEffect(v.AdjMassProd, v.AdjEnergyProd, v.AdjEnergyUse)) is { Length: > 0 } s ? s : null;
+
+    /// <summary>Pause glyph in the icon's bottom-right corner.</summary>
+    private static void DrawPausedBadge(Rectangle iconR)
+    {
+        float s = Ui.P(14);
+        var b = new Rectangle(iconR.X + iconR.Width - s - Ui.P(2), iconR.Y + iconR.Height - s - Ui.P(2), s, s);
+        Raylib.DrawRectangleRec(b, new Color(0, 0, 0, 200));
+        Raylib.DrawRectangleLinesEx(b, 1, Ui.Warn);
+        float bw = s * 0.22f, bh = s * 0.6f;
+        Raylib.DrawRectangleV(new Vector2(b.X + s * 0.24f, b.Y + s * 0.2f), new Vector2(bw, bh), Ui.Warn);
+        Raylib.DrawRectangleV(new Vector2(b.X + s * 0.54f, b.Y + s * 0.2f), new Vector2(bw, bh), Ui.Warn);
+    }
+
+    /// <summary>Name of the unit an engineer is capturing: the unit at its capture order's target position, else the
+    /// visible unit being captured whose progress matches.</summary>
+    private string CaptureTargetName(SimSnapshot snap, in UnitView v)
+    {
+        Vector3? at = null;
+        for (int o = 0; o < v.OrderCount; o++)
+            if (snap.Orders[v.OrderStart + o].Type == OrderType.Capture) { at = snap.Orders[v.OrderStart + o].Pos; break; }
+        int best = -1;
+        float bestScore = float.MaxValue;
+        for (int k = 0; k < snap.UnitCount; k++)
+        {
+            ref var t = ref snap.Units[k];
+            if (t.Army == v.Army) continue;
+            float score;
+            if (at is Vector3 p && Vector2.Distance(new Vector2(p.X, p.Z), new Vector2(t.Pos.X, t.Pos.Z)) is float d && d < _ctx.Db[t.Bp].Radius + 3f) score = d;
+            else if (t.CaptureFrac > 0) score = 100 + MathF.Abs(t.CaptureFrac - v.WorkProgress) * 100 + Vector3.Distance(t.Pos, v.Pos) * 0.01f;
+            else continue;
+            if (score < bestScore) { bestScore = score; best = k; }
+        }
+        return best >= 0 ? _ctx.Db[snap.Units[best].Bp].Name : "";
+    }
+
+    private static List<(string label, string value, Color color)> KeyStats(UnitBlueprint bp, in UnitView v)
     {
         var l = new List<(string, string, Color)>();
         var e = bp.Economy;
@@ -174,9 +251,10 @@ public sealed class UnitPanel
         l.Add(("Vision", Ui.Num(bp.Intel.VisionRadius), Ui.TextColor));
         if (bp.Intel.RadarRadius > 0) l.Add(("Radar", Ui.Num(bp.Intel.RadarRadius), new Color(120, 210, 230, 255)));
         if (e.BuildRate > 0) l.Add(("Build power", Ui.Num(e.BuildRate), Ui.BuildBlue));
-        if (e.ProductionMass > 0) l.Add(("Mass", "+" + Ui.Num(e.ProductionMass) + "/s", Ui.MassColor));
-        if (e.ProductionEnergy > 0) l.Add(("Energy", "+" + Ui.Num(e.ProductionEnergy) + "/s", Ui.EnergyColor));
-        if (e.MaintenanceEnergy > 0) l.Add(("Upkeep", "-" + Ui.Num(e.MaintenanceEnergy) + " E/s", Ui.Bad));
+        // Production / upkeep including the adjacency bonuses.
+        if (e.ProductionMass > 0) l.Add(("Mass", "+" + Ui.Num(e.ProductionMass * (1 + v.AdjMassProd)) + "/s", Ui.MassColor));
+        if (e.ProductionEnergy > 0) l.Add(("Energy", "+" + Ui.Num(e.ProductionEnergy * (1 + v.AdjEnergyProd)) + "/s", Ui.EnergyColor));
+        if (e.MaintenanceEnergy > 0) l.Add(("Upkeep", "-" + Ui.Num(e.MaintenanceEnergy * (1 - v.AdjEnergyUse)) + " E/s", Ui.Bad));
         if (e.StorageMass > 0) l.Add(("Mass store", Ui.Num(e.StorageMass), Ui.MassColor));
         if (e.StorageEnergy > 0) l.Add(("Energy store", Ui.Num(e.StorageEnergy), Ui.EnergyColor));
         return l;
@@ -186,7 +264,7 @@ public sealed class UnitPanel
     {
         // Group by blueprint: commander first, then engineers, then mobile, then structures; stable by bp index.
         var groups = views.GroupBy(v => v.Bp)
-            .Select(g => (bp: g.Key, count: g.Count(), hp: g.Sum(v => v.HealthFrac * _ctx.Db[v.Bp].MaxHealth), max: g.Sum(v => _ctx.Db[v.Bp].MaxHealth)))
+            .Select(g => (bp: g.Key, count: g.Count(), hp: g.Sum(v => v.HealthFrac * MaxHealthOf(v, _ctx.Db[v.Bp])), max: g.Sum(v => MaxHealthOf(v, _ctx.Db[v.Bp]))))
             .OrderBy(g => SortKey(_ctx.Db[g.bp])).ThenBy(g => g.bp).ToList();
 
         float pad = Ui.P(8);
@@ -238,14 +316,6 @@ public sealed class UnitPanel
                     new("Click: select only these   Shift+click / right-click: deselect", Ui.TextFaint, 11),
                 });
         }
-    }
-
-    /// <summary>Veterancy stars (0..5): a level every 3 kills per tech level (commander / experimentals: 20).
-    /// Cosmetic for now — the sim does not apply veterancy bonuses yet.</summary>
-    public static int VeterancyLevel(UnitBlueprint bp, int kills)
-    {
-        int per = bp.Has(UnitCategory.Commander) || bp.Has(UnitCategory.Experimental) ? 20 : 3 * Math.Max(1, bp.Tech);
-        return Math.Clamp(kills / per, 0, 5);
     }
 
     /// <summary>Filled five-pointed star (dark outline) centered at c.</summary>
