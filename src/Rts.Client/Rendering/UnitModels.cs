@@ -143,6 +143,10 @@ public static partial class UnitModels
             case "naval_factory": case "battleship": case "sonar": case "torpedo_launcher": case "torpedo_bomber":
                 t = NavalShape(bp, b, w, h, l, hasWeapon, pivots, ref mode, ref spin); // naval shapes: UnitModels.Naval.cs
                 break;
+            case "fatboy": t = Fatboy(b, pivots, w, h, l); break; // experimental-tier shapes: UnitModels.Experimental.cs
+            case "mavor": t = Mavor(b, pivots, w, h, l); break;
+            case "quantum_gateway": t = QuantumGateway(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.5f; break;
+            case "scu": t = Scu(b, pivots, w, h, l); break;
             case "experimental":
                 Spider(b, w, h, l);
                 t = new MeshBuilder(); SpiderTurret(t, w, h, l); pivots.Add(V(0, 0.62f * h, 0));
@@ -159,6 +163,7 @@ public static partial class UnitModels
 
         var (minY, maxY, _) = b.Bounds();
         float radius = 0.5f * MathF.Sqrt(w * w + l * l + h * h) * 1.1f;
+        FinishModel(bp, b, t, w, h, l, ref radius); // enhancement attachments + long-barrel cull radius (UnitModels.Experimental.cs)
         var model = new UnitModel
         {
             Body = new InstancedMesh(b.Upload()),

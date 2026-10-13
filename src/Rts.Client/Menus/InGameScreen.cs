@@ -1,4 +1,5 @@
 using Raylib_cs;
+using Rts.Client.Persistence;
 using Rts.Client.UI;
 
 namespace Rts.Client.Menus;
@@ -26,12 +27,15 @@ public sealed class InGameScreen : IScreen
     private bool _shownDefeat, _shownOver;
     private EndScreen? _end;
     private int _frames;
+    /// <summary>Save dialog, F5 quicksave / F6 quickload (Menus/InGameSaveUi.cs).</summary>
+    private readonly InGameSaveUi _saveUi;
 
     public InGameScreen(AppHost app, GameSession session, ClientOptions opt)
     {
         _app = app;
         _s = session;
         _opt = opt;
+        _saveUi = new InGameSaveUi(app, session, opt);
     }
 
     public GameSession Session => _s;
@@ -45,15 +49,17 @@ public sealed class InGameScreen : IScreen
         if (_opt.PauseMenu && _frames == overlayFrame && _state == State.Playing) OpenPause();
         if (_opt.EndScreen && _frames == overlayFrame && _state != State.Stats) OpenStats();
         if (_opt.FlowTest) FlowTestStep();
+        if (_opt.SaveDialog && _frames == overlayFrame && _state == State.Paused) _saveUi.OpenDialog();
 
         switch (_state)
         {
             case State.Playing:
                 if (_s.HandleEscapeForPause()) OpenPause();
                 else CheckOutcome();
+                _saveUi.HandleHotkeys(_frames);
                 break;
             case State.Paused:
-                if (MenuUi.Key(KeyboardKey.Escape)) Resume();
+                if (!_saveUi.DialogOpen && MenuUi.Key(KeyboardKey.Escape)) Resume();
                 break;
             case State.Ending:
                 _endTimer += dt;
@@ -69,6 +75,7 @@ public sealed class InGameScreen : IScreen
             case State.Ending: DrawEndingBanner(); break;
             case State.Stats: DrawStats(); break;
         }
+        Toasts.Draw();
     }
 
     private void CheckOutcome()
@@ -105,8 +112,14 @@ public sealed class InGameScreen : IScreen
     {
         MenuUi.BeginFrame();
         MenuUi.Dim(140);
+        if (_saveUi.DialogOpen)
+        {
+            _saveUi.DrawDialog();
+            Ui.DrawTooltip();
+            return;
+        }
         float w = Ui.P(320), bh = Ui.P(42), gap = Ui.P(10);
-        float h = Ui.P(64) + 4 * (bh + gap) + Ui.P(10);
+        float h = Ui.P(64) + 5 * (bh + gap) + Ui.P(10);
         var p = Ui.R((Ui.Sw - w) * 0.5f, (Ui.Sh - h) * 0.42f, w, h);
         Ui.Panel(p);
         Ui.TextCentered("PAUSED", Ui.R(p.X, p.Y + Ui.P(12), p.Width, Ui.P(30)), Ui.F(22), Ui.TextColor, true);
@@ -114,12 +127,14 @@ public sealed class InGameScreen : IScreen
         var r = Ui.R(p.X + Ui.P(20), y, w - Ui.P(40), bh);
         if (MenuUi.BigButton(r, "Resume", true, true)) Resume();
         r.Y += bh + gap;
+        if (MenuUi.BigButton(r, "Save Game", _s.Recording != null)) _saveUi.OpenDialog();
+        r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Restart")) _app.StartGame(_s.Config, _opt);
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Quit to Menu")) _app.ToMainMenu();
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Quit to Desktop")) _app.QuitRequested = true;
-        Ui.Text("Esc: resume", p.X, p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
+        Ui.Text("Esc: resume · F5 quicksave · F6 quickload", p.X, p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
         Ui.DrawTooltip();
     }
 

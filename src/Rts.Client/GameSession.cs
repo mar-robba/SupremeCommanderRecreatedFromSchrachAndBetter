@@ -3,11 +3,13 @@ using Raylib_cs;
 using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Menus;
+using Rts.Client.Persistence;
 using Rts.Client.Rendering;
 using Rts.Client.Sandbox;
 using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Data;
+using Rts.Sim.Persistence;
 using Rts.Sim.Systems;
 
 namespace Rts.Client;
@@ -28,6 +30,12 @@ public sealed class GameSession : IDisposable
     public readonly SimRunner Runner;
     public readonly GameContext Ctx;
     public readonly int LocalArmy;
+    /// <summary>Replay recording + saving of this game (null when watching a replay).</summary>
+    public readonly GameRecording? Recording;
+    /// <summary>Replay being watched (read-only session: commands are ignored, the command UI is hidden).</summary>
+    public readonly ReplayPlayer? Replay;
+    /// <summary>Optional: true if the mouse is over an extra overlay (e.g. replay controls) so the world ignores it.</summary>
+    public Func<bool>? MouseOverExtraUi;
     private readonly SnapshotInterpolator _interp;
     private readonly RtsCamera _camera;
     private readonly TerrainRenderer _terrainR;
@@ -37,6 +45,7 @@ public sealed class GameSession : IDisposable
     private readonly PropRenderer _props;
     private readonly ShieldRenderer _shields;
     private readonly StrategicHud _stratHud;
+    private readonly ExperimentalAlert _expAlert;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly SelectionController _selection;
@@ -63,12 +72,16 @@ public sealed class GameSession : IDisposable
         }
         if (cfg.Scene?.StartsWith("strategic") == true) StrategicScene.Setup(sim, cfg.Scene);
         else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
+        else if (cfg.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.Setup(sim, cfg);
         else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);
         return sim;
     }
 
     /// <param name="audio">App-wide audio (null = this game opens its own device from <c>opt.Audio</c>).</param>
-    public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt, AudioSystem? audio = null)
+    /// <param name="recording">Recording of a loaded game (null = a new recording of this game).</param>
+    /// <param name="replay">Watch this replay instead (read-only; <paramref name="sim"/> = its simulation).</param>
+    public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt, AudioSystem? audio = null,
+        GameRecording? recording = null, ReplayPlayer? replay = null)
     {
         Db = db;
         Sim = sim;
@@ -76,6 +89,9 @@ public sealed class GameSession : IDisposable
         LocalArmy = localArmy;
         var terrain = sim.World.Terrain;
         Runner = new SimRunner(sim);
+        // Replays: playback hooks. Games: replay recording (+ saving), see Rts.Client/Persistence.
+        if (replay != null) Runner.Hooks = Replay = replay;
+        else Runner.Hooks = Recording = recording ?? GameRecording.ForNewGame(cfg, sim, localArmy);
         _interp = new SnapshotInterpolator(Runner);
         _camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
         _terrainR = new TerrainRenderer(terrain);
@@ -86,6 +102,7 @@ public sealed class GameSession : IDisposable
             Db = db, Terrain = terrain, Runner = Runner, Snapshots = _interp, Camera = _camera,
             TerrainRenderer = _terrainR, Feedback = new FeedbackMarkers(), LocalArmy = localArmy,
             ArmyColors = sim.World.Armies.Select(a => ColorUtil.FromRgba(a.Color)).ToArray(),
+            ReadOnly = replay != null,
         };
         // Fog of war: the runner filters snapshots for the local (human) army; --nofog / F7 reveal all.
         _fog = new FogRenderer(Ctx, !opt.NoFog);
@@ -100,6 +117,7 @@ public sealed class GameSession : IDisposable
         _shields = new ShieldRenderer(Ctx);
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
+        _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
 
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
 
@@ -145,7 +163,7 @@ public sealed class GameSession : IDisposable
         _perf.BeginFrame();
         _interp.Update();
         _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true);
-        bool overUi = interactive && _hud.MouseOverUi();
+        bool overUi = interactive && (_hud.MouseOverUi() | MouseOverExtraUi?.Invoke() == true);
         if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
         if (interactive)
         {
@@ -153,7 +171,7 @@ public sealed class GameSession : IDisposable
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
-        if (interactive && _sandbox?.TextFocused != true) GameApp.DebugKeys(ctx);
+        if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly) GameApp.DebugKeys(ctx);
 
         var cur = _interp.Current;
         var prev = _interp.Prev;
@@ -197,6 +215,7 @@ public sealed class GameSession : IDisposable
             CursorHint.Draw(ctx, _selection, overUi);
         }
         _stratHud.Draw2D(cur, dt);
+        _expAlert.Draw2D(cur, dt);
         _audio.DrawOverlay();
         _perf.Draw(_unitR, _fx);
     }
@@ -226,6 +245,7 @@ public sealed class GameSession : IDisposable
         if (_disposed) return;
         _disposed = true;
         Runner.Stop();
+        Recording?.Finish(Runner);
         _sandbox?.Dispose();
         _audio.Dispose();
         _hud.Dispose();

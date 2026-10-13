@@ -65,5 +65,185 @@
     "uef_t1_point_defense",
     "uef_t1_aa_turret",
     "uef_t1_radar"
+  ],
+  "Enhancements": [
+    {
+      "Id": "HeavyAntimatterCannon",
+      "Name": "Heavy Antimatter Cannon",
+      "Description": "Doubles the damage of the Zephyr cannon, +8 range and splash damage.",
+      "Slot": "RightArm",
+      "BuildCostMass": 1000,
+      "BuildCostEnergy": 20000,
+      "BuildTime": 900,
+      "Visual": "cannon",
+      "Icon": "HAC",
+      "Effects": {
+        "Weapons": [
+          {
+            "Weapon": 0,
+            "DamageMult": 2,
+            "RangeAdd": 8,
+            "DamageRadiusAdd": 1
+          }
+        ]
+      }
+    },
+    {
+      "Id": "ZephyrAmplifier",
+      "Name": "Zephyr Amplifier",
+      "Description": "+10 range for the Zephyr cannon.",
+      "Slot": "RightArm",
+      "BuildCostMass": 300,
+      "BuildCostEnergy": 6000,
+      "BuildTime": 400,
+      "Visual": "amplifier",
+      "Icon": "AMP",
+      "Effects": {
+        "Weapons": [
+          {
+            "Weapon": 0,
+            "RangeAdd": 10
+          }
+        ]
+      }
+    },
+    {
+      "Id": "AdvancedEngineering",
+      "Name": "Advanced Engineering",
+      "Description": "Builds T2 structures. +15 build rate, +3000 health.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 800,
+      "BuildCostEnergy": 16000,
+      "BuildTime": 700,
+      "Visual": "engineering",
+      "Icon": "T2E",
+      "Effects": {
+        "BuildRateAdd": 15,
+        "MaxHealthAdd": 3000,
+        "BuildListFrom": [
+          "uef_t2_engineer"
+        ]
+      }
+    },
+    {
+      "Id": "T3Engineering",
+      "Name": "T3 Engineering",
+      "Description": "Builds T3 structures and experimentals. +35 build rate, +3000 health.",
+      "Slot": "LeftArm",
+      "Prerequisite": "AdvancedEngineering",
+      "BuildCostMass": 2500,
+      "BuildCostEnergy": 50000,
+      "BuildTime": 1800,
+      "Visual": "engineering3",
+      "Icon": "T3E",
+      "Effects": {
+        "BuildRateAdd": 35,
+        "MaxHealthAdd": 3000,
+        "BuildListFrom": [
+          "uef_t3_engineer"
+        ]
+      }
+    },
+    {
+      "Id": "ResourceAllocation",
+      "Name": "Resource Allocation System",
+      "Description": "+11 mass/s and +1000 energy/s.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 1800,
+      "BuildCostEnergy": 36000,
+      "BuildTime": 1500,
+      "Visual": "resource",
+      "Icon": "RAS",
+      "Effects": {
+        "ProductionMassAdd": 11,
+        "ProductionEnergyAdd": 1000
+      }
+    },
+    {
+      "Id": "PersonalShield",
+      "Name": "Personal Shield Generator",
+      "Description": "Personal shield (4000 HP). Upkeep 100 energy/s.",
+      "Slot": "Back",
+      "BuildCostMass": 600,
+      "BuildCostEnergy": 12000,
+      "BuildTime": 600,
+      "Visual": "shield",
+      "Icon": "SH",
+      "Effects": {
+        "MaintenanceEnergyAdd": 100,
+        "Shield": {
+          "Radius": 3,
+          "HeightScale": 0.9,
+          "CenterHeight": 1.2,
+          "MaxHealth": 4000,
+          "RegenRate": 40,
+          "RegenDelay": 2,
+          "RechargeTime": 25
+        }
+      }
+    },
+    {
+      "Id": "ShieldGeneratorField",
+      "Name": "Shield Generator Field",
+      "Description": "Replaces the personal shield with a bubble shield (radius 18, 8000 HP) protecting nearby units. Upkeep +200 energy/s.",
+      "Slot": "Back",
+      "Prerequisite": "PersonalShield",
+      "BuildCostMass": 1500,
+      "BuildCostEnergy": 30000,
+      "BuildTime": 1200,
+      "Visual": "shield_field",
+      "Icon": "SGF",
+      "Effects": {
+        "MaintenanceEnergyAdd": 200,
+        "Shield": {
+          "Radius": 18,
+          "HeightScale": 0.7,
+          "MaxHealth": 8000,
+          "RegenRate": 70,
+          "RegenDelay": 2,
+          "RechargeTime": 35
+        }
+      }
+    },
+    {
+      "Id": "TacticalMissilePack",
+      "Name": "Tactical Missile Pack",
+      "Description": "Builds and launches tactical missiles (2 stored, range 256). Press L to target.",
+      "Slot": "Back",
+      "BuildCostMass": 1200,
+      "BuildCostEnergy": 24000,
+      "BuildTime": 1000,
+      "Visual": "missile_pack",
+      "Icon": "TML",
+      "Effects": {
+        "AddWeapons": [
+          {
+            "Name": "Tactical Missile Pack",
+            "Range": 256,
+            "MinRange": 15,
+            "Damage": 2000,
+            "DamageRadius": 2.5,
+            "Spread": 1.5,
+            "RateOfFire": 0.1,
+            "MuzzleVelocity": 24,
+            "TargetLayers": [
+              "Land",
+              "Water"
+            ],
+            "ProjectileVisual": "tactical",
+            "TurretTurnRate": 0,
+            "FiringTolerance": 180
+          }
+        ],
+        "Silo": {
+          "Kind": "Tactical",
+          "WeaponIndex": 0,
+          "MaxStorage": 2,
+          "MissileCostMass": 60,
+          "MissileCostEnergy": 900,
+          "MissileBuildTime": 15
+        }
+      }
+    }
   ]
 }

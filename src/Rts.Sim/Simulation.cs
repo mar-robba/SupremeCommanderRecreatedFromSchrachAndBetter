@@ -14,7 +14,7 @@ namespace Rts.Sim;
 public sealed class Simulation
 {
     public readonly SimWorld World;
-    public double LastTickMs { get; private set; }
+    [field: Persistence.NoSave] public double LastTickMs { get; private set; } // wall clock, not saved
     /// <summary>Commands produced by the skirmish AI this tick (reused list).</summary>
     private readonly List<Command> _aiCommands = new();
 
@@ -42,6 +42,7 @@ public sealed class Simulation
         FactorySystem.Run(w);
         PathSystem.Run(w);
         MovementSystem.Run(w);
+        Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         TargetingSystem.Run(w);
         WeaponSystem.Run(w);
@@ -90,6 +91,7 @@ public sealed class Simulation
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
         Mix(Strategic.StrategicSystem.Hash(w));
         Mix(Transport.TransportSystem.Hash(w));
+        Mix(Experimental.ExperimentalSystem.Hash(w));
         return h;
     }
 }

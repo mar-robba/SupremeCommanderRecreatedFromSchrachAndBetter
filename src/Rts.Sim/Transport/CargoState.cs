@@ -27,6 +27,9 @@ public sealed class CargoState
     /// <summary>Units that boarded this tick (references to them are purged from other units' targets).</summary>
     internal readonly List<int> LoadedThisTick = new();
 
+    /// <summary>Scratch list for grid queries (ferry waiters); never carries data between ticks.</summary>
+    [Rts.Sim.Persistence.NoSave] internal readonly List<int> Near = new();
+
     public CargoState(int capacity)
     {
         Carrier = new int[capacity];

@@ -165,9 +165,10 @@ public static class FactorySystem
         var u = w.Units;
         var ubp = w.BpOf(unit);
         var layer = ubp.Movement.Layer;
-        float half = ConstructionSystem.HalfSize(fbp);
+        // Mobile factories (Fatboy) let units out at the back and don't hand their own move orders over as rally.
+        float half = fbp.IsMobile ? fbp.Visual.Size.Z * 0.5f : ConstructionSystem.HalfSize(fbp);
         float dist = half + ubp.Radius + 0.3f;
-        float heading = u.Heading[f];
+        float heading = u.Heading[f] + (fbp.IsMobile ? DMath.Pi : 0f);
         var exit = u.Pos[f] + DMath.Dir(heading) * dist;
         if (layer != MotionLayer.Air)
         {

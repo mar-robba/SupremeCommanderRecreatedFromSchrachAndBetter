@@ -32,6 +32,7 @@ interpolates prev/cur by time
    See `Pathfinding/PathService.cs` for the design.
 9. `MovementSystem` (parallel, double-buffered `ScratchPos`): waypoint following, turn rate, priority separation
    (movers push idle friends), formation pace, stuck → repath, air orbiting, terrain/structure collision.
+   Then `ExperimentalSystem` (sequential): crush, delayed death blasts, mobile-factory carry, energy-per-shot charging.
 10. `TargetingSystem`, `WeaponSystem`, `ProjectileSystem` (combat, see below; code in `Rts.Sim/Combat/`).
 11. `DamageSystem`: apply damage events in order and kill units.
 12. `CleanupSystem`: free dead slots, assassination rule (commander dies -> army defeated), victory.
@@ -161,6 +162,39 @@ interpolates prev/cur by time
   launch/intercept bursts; the detonation itself is `NukeFx`, see Sandbox below), `Input/StrategicOrders.cs` (Launch mode: L hotkey /
   Launch button, picks one in-range launcher with most stock), `UI/StrategicHud.cs` (banner, target markers, range
   and blast rings, silo/shield bars), audio `GameAudio.Strategic.cs`. Visual test bed: `--scene strategic[:shields|:tml|:nuke]`.
+
+## Experimentals & commanders (`Rts.Sim/Experimental`, `Rts.Sim/Commander`)
+- **Experimentals** = blueprints with category `Experimental` and `Tech` 4 (build menu tier "EXP"). Optional
+  `Experimental` block: `CrushRadius`/`CrushDamage`/`CrushMaxTech`/`CrushAllies`, `DeathDamage`/`DeathRadius`/`DeathDelay`.
+  `ExperimentalSystem` (sequential, after MovementSystem; per-world `ExperimentalState`, plain lists/arrays) registers
+  units in `UnitLifecycle.OnSpawn` (idempotent) and:
+  - crush: a moving crusher damages complete enemy land units (Tech ≤ CrushMaxTech, not commander/experimental) within the
+    radius (`DamageEvent`s, grid query sorted by index);
+  - death blast: `OnUnitDeath` queues a `PendingBlast`; after DeathDelay it becomes an `AreaDamageEvent` + big `Explosion`
+    effect (can't add area damage inside OnDeath: DamageSystem is iterating it). The wreck is the normal one
+    (BuildCostMass × WreckMassFraction);
+  - mobile factories (Fatboy: a mobile unit with the `Factory` category; FactorySystem handles it): the unit under
+    construction rides inside; `FactorySystem.Release` lets it out at the back and doesn't copy the factory's own orders;
+  - `EnergyPerShot` weapons (Mavor): charge pay-first through the unit's EnergyRequest (structures own it, builders add to it);
+    `WeaponSystem` fires only with a full charge (`WeaponEnergy.TryConsume`, parallel-safe: own slot).
+  Engineers ordered to build the same mobile unit at the same spot assist one site (`ExperimentalSystem.FindMobileSite`).
+  Keep mobile `Radius` ≤ 3 (it sizes every unit's separation query; use `CrushRadius` for contact).
+- **Enhancements** (`Enhancements` in the blueprint: Id, Slot LeftArm/RightArm/Back, Prerequisite in the same slot,
+  cost/time, Visual/Icon, `Effects`: weapon modifiers, added weapons, health/regen/build rate/production/upkeep/vision,
+  `BuildListFrom`, Shield, Silo). `EnhancementCatalog` (at `BlueprintDb.FinalizeDb`) generates one blueprint VARIANT per slot
+  combination (id `base+Enh1+Enh2`, JSON clone + effects, prerequisite effects stack; `IsVariant`, `Installed`,
+  `EnhancementVariants`). Installing/removing swaps `Units.Bp` in place (same handle, health fraction kept, modules re-init;
+  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock), so every system just reads the new blueprint.
+  `BuildListFrom` merges other builders' final build lists (SCU/T3 Engineering from `uef_t3_engineer`, Fatboy from the T3
+  land factory). Building one reuses `UpgradeState`/`UpgradeSystem`: `EnhanceCommand` stops the unit and targets the variant,
+  `UpgradeSystem.Cost` returns the enhancement's cost/time, the unit works on itself with its BuildRate, engineers assist
+  with Guard, `CancelUpgradeCommand` refunds, any new order cancels it; `RemoveEnhancementCommand` clears a slot at once
+  (no refund). The snapshot's `UpgradeBp`/`UpgradeFrac` carry the progress (`EnhancementCatalog.Added` = which one).
+  Client: `UI/EnhancementPanel.cs`, model attachments in `Rendering/UnitModels.Experimental.cs` (from `Installed` + `Visual`).
+- **Quantum Gateway / SCU**: a T3 factory building `uef_scu` (engineer + cannon with its own enhancements). The SCU has no
+  `Commander` category: assassination only looks at `Army.Commander`.
+- Client: `UI/ExperimentalAlert.cs` warns once per enemy experimental seen in the fog-filtered snapshot (banner + sound);
+  `--scene experimental` shows them all. Sandbox lists hide variants (exact variant ids still spawn).
 
 ## Map generator (`Rts.Sim/Map`)
 - `MapGenerator.Generate(MapGenSettings)` → immutable `Terrain`. Presets (`MapPreset`): Plains, Lakes, Highlands
@@ -321,3 +355,46 @@ interpolates prev/cur by time
   for far off-screen blasts): flash, draped shockwave/dust rings, fireball, mushroom cloud (private sorted smoke-puff
   pool), sparks/debris, scorch decal (90 s). Sound: ONE map-wide synthesized `SoundId.NukeExplosion`
   (`GameAudio.Strategic.cs` `PlayNuke`, ≈1/distance with a floor).
+
+## Save/load & replays (`Rts.Sim/Persistence`)
+- One serializer for saves, replays and seek checkpoints: `WorldState.Capture(sim)` writes the whole object graph
+  reachable from the `Simulation` plus every static `ConditionalWeakTable<SimWorld, T>` of Rts.Sim (per-world system
+  state, discovered automatically) — every instance field (private/readonly too) through generated IL (`Val.cs`,
+  `Codecs.cs`, `GraphIO.cs`), object identity/shared references kept, unmanaged arrays block-copied. The immutable
+  `BlueprintDb` and `Terrain` are not stored: references into them become ids (`ExternalSet`); the terrain is
+  regenerated from `GameInfo.Map` (embedded in the file when there are no generator settings). `WorldState.Restore`
+  rebuilds the identical graph: save → load → continue gives the same `StateHash` and the same bytes as the
+  uninterrupted game (`PersistenceTests`, 1 and 4 threads).
+- Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
+  set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
+  + hash, bounds-checked reads). No migrations: files are tied to the build (`GameInfo.SimBuild`).
+- Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
+  army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
+  so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.
+- Replays (`Replay.cs`, `ReplayPlayer.cs`): `SimRunner.Hooks = ReplayRecorder` stores the initial state (first
+  tick), each tick's command list and a `StateHash` every 10 ticks (≈0.02 ms/tick). `ReplayPlayer` (as the runner's
+  hooks or headless) re-simulates from the initial state with the recorded commands (incoming ones are ignored) and
+  compares the hashes → `DesyncTick`; `SeekTo` backwards restores a compressed checkpoint (every 600 ticks) and
+  re-simulates. A loaded save keeps recording into its replay, so a replay always covers the whole game.
+  Headless check: `Rts.Bench -- replay <file>`; timings/sizes: `Rts.Bench -- savebench`.
+- Threading: `SaveGame.Capture` only on the sim thread (a `SimRunner.Post` job; jobs also run while paused) or with
+  the runner stopped; `SaveGame.Encode` (compression) and file writes run on a background task.
+- Client (`Rts.Client/Persistence`, `Menus/{SaveListScreen,FileLoadingScreen,ReplayScreen,InGameSaveUi,MessageBox}`):
+  `GameRecording` (owned by `GameSession`) sets the recorder as runner hooks for every game, captures saves through a
+  runner job and writes files on a worker (toasts); the replay is written when a team wins and again on quit/restart
+  (same file; games under 5 s are dropped; app exit waits for pending writes). `ClientGameData` = the client config
+  stored in `GameInfo.ClientData` (rebuilds names/colors/sandbox on load). Pause menu "Save Game" dialog, F5/F6
+  quicksave/quickload; main menu "Load Game" / "Replays" lists (header only; damaged/incompatible files greyed with
+  the reason; load errors in a message box). Replay viewer = `GameSession` over `ReplayPlayer.Sim` with
+  `GameContext.ReadOnly` (no order/build/enhancement UI, commands ignored by the player anyway): play/pause, speed
+  0.5×–16×, timeline seek (`ReplaySeeker`: runner job `SeekTo` + `ReplaceSimulation`), fog view per army or all,
+  DESYNC banner, other-build warning.
+- **Keeping new state saveable** (rule for every feature): sim state lives in plain fields of sim classes/structs,
+  arrays, `List`/`Dictionary`/`HashSet`/`Queue`/`Stack`, or a per-world `ConditionalWeakTable<SimWorld, T>`.
+  No static mutable state, no stored lambdas/delegates (store an enum/id and dispatch in code; a cached delegate to
+  your own method = `[NoSave] Action? _f;` + `_f ??= Method`), no framework interfaces (`IList<T>`, `IEnumerable<T>`)
+  or `object` as field types. Caches, scratch buffers and wall-clock timings: `[NoSave]` (auto-properties
+  `[field: NoSave]`), rebuilt lazily or in `IAfterLoad.AfterLoad()`; never `[NoSave]` anything that affects future
+  ticks. `SaveCoverageTests` walks every reachable field type and fails with the field path and the fix;
+  `PersistenceTests.SaveLoadContinueMatchesUninterruptedGame` proves the round trip on a rich game (AIs, every
+  blueprint spawned, missiles, nukes, upgrades) — extend that scenario if your feature has state it doesn't reach.

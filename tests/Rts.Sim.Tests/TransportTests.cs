@@ -270,6 +270,22 @@ public class TransportTests
     }
 
     [Fact]
+    public void AtlantisCanOnlyBeStartedOnWater()
+    {
+        var sim = TestUtil.NewSkirmish();
+        var w = sim.World;
+        var s = Start(w) + new Vector2(10, 10);
+        int atlBp = w.Blueprints.IndexOf("uef_x_atlantis");
+        Assert.False(Rts.Sim.Naval.NavalRules.FootprintBuildable(w.Terrain, w.Blueprints[atlBp], s));
+        var eng = TestUtil.Spawn(sim, "uef_t3_engineer", 0, s);
+        w.Armies[0].Eco.Mass = w.Armies[0].Eco.MassMax;
+        TestUtil.Run(sim, 60, new IssueOrderCommand(0, [eng], Order.BuildAt(atlBp, s + new Vector2(0, 12)), false));
+        for (int i = 0; i < w.Units.Capacity; i++)
+            Assert.False(w.Units.IsActive(i) && w.Units.Bp[i] == atlBp, "an Atlantis was started on land");
+        Assert.True(w.Units.Orders[eng.Index].IsEmpty);
+    }
+
+    [Fact]
     public void AtlantisBuildsLaunchesAndCarriesAircraft()
     {
         var sim = TestUtil.NewSkirmish();
@@ -300,6 +316,44 @@ public class TransportTests
         sim.Step([new IssueOrderCommand(0, [atl], TransportOrders.Unload(w.Units.Pos[atl.Index]), false)]);
         sim.Step();
         Assert.All(planes, p => Assert.False(Carried(w, p)));
+    }
+
+    /// <summary>Save while units are carried, docked and ferried; load; both games continue identically.</summary>
+    [Fact]
+    public void SaveLoadWithCargoContinuesIdentically()
+    {
+        var sim = TestUtil.NewSkirmish();
+        var w = sim.World;
+        var s = Start(w) + new Vector2(8, 8);
+        var tr = TestUtil.Spawn(sim, "uef_t1_transport", 0, s);
+        var tanks = SpawnRow(sim, "uef_t1_tank", 3, s + new Vector2(4, 0));
+        var ferry = TestUtil.Spawn(sim, "uef_t2_transport", 0, s + new Vector2(-6, 6));
+        var walkers = SpawnRow(sim, "uef_t1_tank", 4, s + new Vector2(-6, 12));
+        var site = EconomyTestUtil.FindSite(w, "uef_t2_air_staging", Start(w), 8, 40);
+        TestUtil.Spawn(sim, "uef_t2_air_staging", 0, site);
+        var fighter = TestUtil.Spawn(sim, "uef_t1_interceptor", 0, site + new Vector2(25, 0));
+        w.Units.Health[fighter.Index] *= 0.5f;
+        sim.Step();
+        var drop = w.Terrain.Clamp(s + new Vector2(40, 25));
+        sim.Step([
+            new IssueOrderCommand(0, tanks, TransportOrders.Load(tr), false),
+            new IssueOrderCommand(0, walkers.Append(ferry).ToArray(), TransportOrders.Ferry(s + new Vector2(-6, 9), drop), false),
+            new IssueOrderCommand(0, [fighter], TransportOrders.Dock(UnitHandle.None), false)]);
+        Assert.True(RunUntil(sim, () => tanks.All(t => Carried(w, t)), 300));
+        sim.Step([new IssueOrderCommand(0, [tr], TransportOrders.Unload(drop), false)]);
+        TestUtil.Run(sim, 40);
+        Assert.Contains(tanks, t => Carried(w, t));
+
+        var bytes = Rts.Sim.Persistence.WorldState.Capture(sim);
+        var b = Rts.Sim.Persistence.WorldState.Restore(bytes, w.Blueprints, w.Terrain);
+        Assert.Equal(sim.StateHash(), b.StateHash());
+        for (int k = 0; k < 6; k++)
+        {
+            TestUtil.Run(sim, 50);
+            TestUtil.Run(b, 50);
+            Assert.True(sim.StateHash() == b.StateHash(), $"StateHash differs after {(k + 1) * 50} ticks");
+        }
+        Assert.True(Rts.Sim.Persistence.WorldState.Capture(sim).AsSpan().SequenceEqual(Rts.Sim.Persistence.WorldState.Capture(b)));
     }
 
     [Fact]

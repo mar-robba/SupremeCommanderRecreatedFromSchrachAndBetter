@@ -2,47 +2,58 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-12 evening — read this first in a new session)
-main has all of wave 3 except the AI:
+## ▶ NEXT STEPS (updated 2026-10-12 night — read this first in a new session)
+main has all of wave 3 except the AI. That covers:
 - maps + menus;
-- (a) T2/T3 tech + upgrades (`--tech-demo`);
-- (b) strategic: shields/TML/TMD/nukes/artillery, `--scene strategic[:shields|:tml|:nuke]`;
-- (c) naval, `--scene naval`;
-- (e) sandbox: `--sandbox`, `--exec`, F9 panel, F10 console. The sandbox `nuke` fires a real missile; `nuke instant` is the old blast.
+- T2/T3 + upgrades;
+- strategic (shields/TML/nukes/artillery);
+- naval;
+- sandbox.
 Tests: 229 sim + 158 client.
 
-**Pending:**
-1. **(d) AI**: worktree `.claude/worktrees/agent-a1c38e069748a3b2b`, branch `worktree-agent-a1c38e069748a3b2b`.
-   **Stopped by the owner on 2026-10-12: ask the owner before restarting it.**
-   - Last state: WIP commit d05dca3, NOT fully tested. It has already merged main up to the sandbox, but not strategic/naval.
-   - Handoff: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/handoff-d.md`.
-   - Remaining work: final tests, `git merge main`, bench matrix (every 1v1 should end within 30 min; Hard should beat
-     Normal in 3 of 4), docs.
-2. Remove the naval worktree `.claude/worktrees/agent-a22a2b0fcf5a1b603` (already merged; it was left in case a sub-agent
-   of the naval agent was still running): `git worktree remove ... && git branch -d worktree-agent-a22a2b0fcf5a1b603`.
-3. Known follow-ups:
-   - `--scene strategic` needs `--camera` to frame the action;
-   - collapsed shields still pay upkeep;
-   - bombers fly over shield domes;
-   - ships can overlap;
-   - box-select picks only own units (sandbox);
-   - the AI uses no T2/T3/naval/strategic yet.
+**Wave 4 running** (5 agents in parallel; ids, worktrees and prompts in
+`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave4.md` and `common.md`):
+- **(d) AI**: the owner asked to resume it. It is a fresh agent in the existing worktree `agent-a1c38e069748a3b2b`:
+  merge main, tuning matrix, docs.
+- **(f) Polish/SupCom details**:
+  - collapsed shields with no upkeep;
+  - bombs absorbed by domes;
+  - ship-to-ship collision and sub dive/surface;
+  - adjacency bonus, veterancy bonuses, pause, capture;
+  - sandbox selects/controls any army;
+  - default cameras for `--scene`.
+- ✅ **(g) Experimentals + commanders**: MERGED 2026-10-13.
+  - Fatboy, Mavor, crush, death blast, "experimental detected", EXP tier.
+  - 8 ACU enhancements; Quantum Gateway + SCU.
+  - Try it: `--scene experimental[:mavor|:fog]`.
+  - Follow-ups:
+    - Mavor low arc hits hills at short range, and it has no target priority;
+    - Stop doesn't cancel an enhancement;
+    - an occupied slot needs a right-click clear first;
+    - shield HP refills on enhancement change;
+    - a unit with the missile pack doesn't move into range;
+    - `--select` can't pick variant ids.
+- **(h) Cargo**: T1/T2 transports (load/unload/transport-to/ferry), air staging, Atlantis carrier, engineer assist chains.
+- **(i) Persistence**: replays (command log + hash, viewer, `Rts.Bench replay`), save/load (automatic deep serializer),
+  desync detection.
 
-Agent workflow: see the memory file agent-context-handoff. In short: 300k context cap; fresh agent + handoff note; agents may use sub-agents.
-Orchestrator tools (`agent_ctx.py`, `watch_agents.sh`) and handoff/report files are in
-`~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/`.
+Merge order: when each one finishes, read `report-<x>.md`, merge into main, run the tests, look at a screenshot, then
+remove its worktree and branch. Merge (i) last, or ask it to re-run its round-trip tests after the others' merges.
 
-**Next waves:**
-- **Wave 4**: the AI uses T2/T3 upgrades, navy and strategic weapons; balance pass. Then the polish items above.
-- **Phase 3/4**: experimentals, transports, 2nd faction, save/replays, multiplayer.
+Known follow-ups not assigned: none from the old list (all were given to f).
 
-Shared contracts (still valid): `BuiltBy` (a blueprint adds itself to builders' lists; unknown ids are ignored) and
-`UpgradesTo` (in-place upgrade). Enums are append-only. Edits to shared files stay minimal and additive. New models go
-in new partial files, with only a `case` line in UnitModels.cs.
+**Next waves (owner: "everything must be done"):**
+- **Wave 5**: the AI uses T2/T3 upgrades, navy, strategic weapons, experimentals and transports; balance pass.
+  Also: 2nd faction (Cybran-like: Monkeylord, Soul Ripper, stealth, ...), and scale/perf (1024 maps, 4–8 players,
+  5k+ units at 60 FPS).
+- **Wave 6**: lockstep multiplayer (on top of the replay command log + desync hash), final polish.
 
-Then:
-- **Wave 4**: the AI uses T2/T3 upgrades, naval, shields, TML and nukes; balance pass.
-- **Phase 3/4**: experimentals, transports, 2nd faction, save/replays, multiplayer.
+Shared contracts (still valid):
+- `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
+- `UpgradesTo`: in-place upgrade.
+- Enums are append-only; edits to shared files stay minimal and additive.
+- New models go in new partial files, with only a `case` line in UnitModels.cs.
+- Sim state must stay serializable for agent (i): plain fields/arrays/lists, no stored delegates, no static mutable state.
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
@@ -106,7 +117,7 @@ Then:
       warning, anti-nukes intercept it, shields knocked down); `nuke instant x,z` / panel Blast = the detonation at once;
       instant build fills silo stockpiles; "Strategic & shields" spawn group; one `EffectKind.Nuke` → `NukeFx` + one
       sound for every nuke; real nukes vaporize wrecks in the crater too. Tests: `SandboxNukeTests`.
-      - [ ] later: select enemy units for the actions (box-select only picks own units), save/load sandbox setups
+      - [ ] later: select enemy units for the actions (box-select only picks own units)
 
 ## Phase 3 — SupCom depth
 - [x] T2 and T3 tech (wave 3, agent a, 2026-10-12): in-place upgrades (`UpgradeSystem`: land/air factory, mex,
@@ -131,7 +142,19 @@ Then:
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
       - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
             avoidance in narrow channels
-- [ ] Experimentals (e.g. Fatboy-like, Monkeylord-like, Czar-like)
+- [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
+      build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
+      **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
+      **Mavor** (strategic artillery, range 1500, 20000 energy per shot via `EnergyPerShot`); "Experimental detected" alert + sound
+      - [ ] later: Monkeylord/Czar-like experimentals (2nd faction), Mavor/Fatboy AI use, crush animation, shield HP kept on enhancement swap,
+        Mavor's low arc can hit hills at short range (higher/medium arc), Mavor target priority (it shoots any visible enemy)
+- [x] Commander enhancements (2026-10-13, wave 4g): slots LeftArm/RightArm/Back with prerequisites (blueprint variants per slot
+      combination), built on itself over time like an upgrade (drain, assist with Guard, cancel refunds, any order interrupts),
+      remove = instant without refund; ACU: Heavy Antimatter Cannon, Zephyr Amplifier, Advanced/T3 Engineering, Resource Allocation,
+      Personal Shield → Shield Generator Field, Tactical Missile Pack; enhancement panel, model attachments
+      - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
+- [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
+      High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
 - [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
       (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
       (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
@@ -147,5 +170,17 @@ Then:
 
 ## Phase 4 — Scale and polish
 - [ ] 1024 maps with 4–8 players, 5k+ units at 60 FPS (instancing, LOD, culling)
-- [ ] Save/load, replays (command logs)
+- [x] Save/load, replays, desync detection (wave 4, agent i, 2026-10-14): automatic deep serializer of the whole sim
+      (`Rts.Sim/Persistence`: IL codecs, shared refs, blueprint/terrain by id, per-type layout check, Brotli files;
+      `[NoSave]` + `IAfterLoad` for caches), save → load → continue = identical state/hash (1 and 4 threads, test with
+      every blueprint, AIs, missiles, nukes, upgrades, enhancements), coverage guard test (`SaveCoverageTests`).
+      Replays = initial state + command log + `StateHash` every 10 ticks (≈0.01 ms/tick); `ReplayPlayer` with desync
+      detection and backward seek (checkpoints). Client: every game recorded (written at the end and on quit), pause
+      menu Save Game + F5/F6 quicksave/quickload, main menu Load Game / Replays lists, replay viewer (pause, 0.5×–16×,
+      timeline seek, fog per army or all, DESYNC banner), sandbox setups saveable, clear errors for damaged/incompatible
+      files; `Rts.Bench replay <file>` / `savebench`. Late game (512 map, 4 AIs, 25 min, 6.6k units): save 1.8 MB,
+      capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
+      - [ ] later: saves/replays don't survive sim code changes (no migration: the layout check refuses them);
+            "Load Game" in the pause menu; replay viewer: F7 fog toggle doesn't update the view selector, seek
+            checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
 - [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)

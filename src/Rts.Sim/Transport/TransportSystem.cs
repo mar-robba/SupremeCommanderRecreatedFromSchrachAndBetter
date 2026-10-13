@@ -100,7 +100,6 @@ public static class TransportSystem
                 if (q.IsEmpty && bp.Movement.Layer == MotionLayer.Air && (w.Tick + i) % AutoDockInterval == 0) TryAutoDock(w, i, bp);
             }
             if (bp.Cargo != null && (u.Flags[i] & UnitFlags.Carried) == 0) UpdateCarrier(w, i, bp);
-            if (bp.IsMobile && bp.Has(UnitCategory.Factory)) SyncFactoryUnit(w, i, bp);
         }
         if (c.LoadedThisTick.Count > 0) PurgeReferences(w);
     }
@@ -290,7 +289,7 @@ public static class TransportSystem
         count = 0;
         if (free <= 0) return false;
         // Waiters stand near the beacon: scan the spatial grid around it (last tick's positions).
-        var near = _near;
+        var near = w.Cargo.Near;
         near.Clear();
         w.Grid.QueryRadius(u, beacon, FerryGatherRadius + 1f, near);
         foreach (int j in near)
@@ -368,17 +367,6 @@ public static class TransportSystem
                 k--;
             }
         }
-    }
-
-    /// <summary>Mobile factories (Atlantis): the unit being built rides on deck.</summary>
-    private static void SyncFactoryUnit(SimWorld w, int i, UnitBlueprint bp)
-    {
-        var u = w.Units;
-        var cur = u.Factory[i].Current;
-        if (!u.IsActive(cur) || u.IsComplete(cur.Index)) return;
-        u.Pos[cur.Index] = u.Pos[i];
-        u.Elevation[cur.Index] = u.Elevation[i] + bp.Visual.Size.Y * 0.5f;
-        u.Heading[cur.Index] = u.Heading[i];
     }
 
     // ------------------------------------------------------------------ boarding / release
@@ -609,8 +597,6 @@ public static class TransportSystem
     }
 
     private static float Sq(float v) => v * v;
-
-    private static readonly List<int> _near = new();
 
     /// <summary>Hash of the transport state (determinism tests / desync checks).</summary>
     public static ulong Hash(SimWorld w)

@@ -6,9 +6,11 @@
   "Categories": ["Mobile", "Naval", "Factory", "Experimental", "AntiAir", "AntiNaval"],
   "MaxHealth": 26000,
   "Radius": 3.0,
+  "MinWaterDepth": 2.0,
   "Economy": { "BuildCostMass": 12000, "BuildCostEnergy": 150000, "BuildTime": 15000, "BuildRate": 60 },
   "Movement": { "Layer": "Water", "MaxSpeed": 3.5, "Acceleration": 1, "TurnRate": 25 },
   "Intel": { "VisionRadius": 50, "RadarRadius": 120, "SonarRadius": 60 },
+  "Experimental": { "DeathDamage": 2000, "DeathRadius": 10, "DeathDelay": 1.5 },
   "Cargo": { "Layer": "Air", "Capacity": 24, "LoadRange": 4, "RepairRate": 0.02, "RefuelRate": 0.2, "KeepDocked": true },
   "Weapons": [
     { "Name": "SAM Launcher", "Range": 48, "Damage": 45, "DamageRadius": 1.2, "RateOfFire": 1.2, "MuzzleVelocity": 30, "TurretTurnRate": 240, "FiringTolerance": 30, "TargetLayers": ["Air"], "ProjectileVisual": "missile" },

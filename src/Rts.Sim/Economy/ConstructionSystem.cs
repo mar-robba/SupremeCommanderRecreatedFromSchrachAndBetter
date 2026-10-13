@@ -38,7 +38,7 @@ public static class ConstructionSystem
     public const float PropPickRadius = 2.5f;
     private const float CompleteEpsilon = 1e-4f;
 
-    private static readonly List<int> _tmp = new();
+    [Persistence.NoSave] private static readonly List<int> _tmp = new(); // scratch, cleared before use
 
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
@@ -231,6 +231,14 @@ public static class ConstructionSystem
                 return;
             }
             if (!w.Occupancy.CanPlace(sbp, site, w.Terrain) && !SandboxSystem.BuildAnywhereAllows(w, army, sbp, site)) { Finish(w, i, q); return; }
+        }
+
+        else if (sbp.HasAny(UnitCategory.Naval) && !Naval.NavalRules.FootprintBuildable(w.Terrain, sbp, site)) { Finish(w, i, q); return; } // Atlantis: water only
+        else if (Experimental.ExperimentalSystem.FindMobileSite(w, army, o.BlueprintIndex, site) is var ms && ms >= 0)
+        {
+            o.Spawned = u.HandleOf(ms); // same unfinished mobile unit (experimental) already started here: assist it
+            Work(w, i, o.Spawned, BuilderMode.Build);
+            return;
         }
 
         var a = w.Armies[army];

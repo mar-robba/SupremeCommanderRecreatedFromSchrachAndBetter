@@ -11,7 +11,7 @@ namespace Rts.Sim;
 /// </summary>
 public sealed class SimRunner : IDisposable
 {
-    private readonly Simulation _sim;
+    private Simulation _sim;
     private readonly ConcurrentQueue<Command> _incoming = new();
     private readonly ConcurrentBag<SimSnapshot> _pool = new();
     private readonly List<Command> _tickCommands = new();
@@ -29,9 +29,38 @@ public sealed class SimRunner : IDisposable
     public Exception? Fault { get; private set; }
     public double LastTickMs => _sim.LastTickMs;
     public int Tick => _sim.World.Tick;
+    /// <summary>True while the sim thread runs (false before <see cref="Start"/>, after <see cref="Stop"/> or a <see cref="Fault"/>):
+    /// then <see cref="Post"/>ed jobs only run at the next <see cref="RunJobs"/>.</summary>
+    public bool IsRunning => _running;
 
     /// <summary>Optional hook run on the sim thread before each tick (e.g. AI players issuing commands).</summary>
     public Action<Simulation>? BeforeTick;
+
+    /// <summary>Replay recording or playback (Rts.Sim/Persistence): sees/replaces each tick's sorted commands.</summary>
+    public Persistence.ITickHooks? Hooks;
+    private readonly ConcurrentQueue<Action<SimRunner>> _jobs = new();
+
+    /// <summary>The running simulation. ONLY for code running on the sim thread (jobs, hooks) or with the runner stopped.</summary>
+    public Simulation Simulation => _sim;
+
+    /// <summary>Runs <paramref name="job"/> on the sim thread between two ticks (also while paused), e.g. saving or seeking.
+    /// Not started: runs at the next <see cref="RunJobs"/> / <see cref="RunOneTick"/>.</summary>
+    public void Post(Action<SimRunner> job) => _jobs.Enqueue(job);
+
+    /// <summary>Runs the queued jobs now (sim thread, or any thread when the runner is not started).</summary>
+    public void RunJobs()
+    {
+        while (_jobs.TryDequeue(out var job)) job(this);
+    }
+
+    /// <summary>Swaps in another simulation (replay seek, load). Sim thread (a job) or runner stopped only.</summary>
+    public void ReplaceSimulation(Simulation sim)
+    {
+        _sim = sim;
+        _sim.World.Units.RebuildAliveList();
+        _sim.World.Projectiles.RebuildAliveList();
+        PublishSnapshot();
+    }
 
     public SimRunner(Simulation sim)
     {
@@ -82,7 +111,8 @@ public sealed class SimRunner : IDisposable
             {
                 double now = clock.Elapsed.TotalMilliseconds;
                 double interval = 1000.0 / (Rts.Sim.World.SimWorld.TicksPerSecond * Math.Max(0.05f, Speed));
-                if (Paused) { next = now + interval; Thread.Sleep(5); continue; }
+                RunJobs();
+                if (Paused || Hooks?.Hold(_sim) == true) { next = now + interval; Thread.Sleep(5); continue; }
                 if (now < next)
                 {
                     double wait = next - now;
@@ -105,6 +135,7 @@ public sealed class SimRunner : IDisposable
     /// <summary>Runs one tick synchronously (also usable without the thread, e.g. tests/headless).</summary>
     public void RunOneTick()
     {
+        RunJobs();
         BeforeTick?.Invoke(_sim);
         _tickCommands.Clear();
         while (_incoming.TryDequeue(out var c))
@@ -113,8 +144,17 @@ public sealed class SimRunner : IDisposable
             _tickCommands.Add(c);
         }
         _tickCommands.Sort((a, b) => a.Army != b.Army ? a.Army.CompareTo(b.Army) : a.Sequence.CompareTo(b.Sequence));
-        _sim.Step(_tickCommands);
+        if (Hooks == null) _sim.Step(_tickCommands);
+        else
+        {
+            _sim.Step(Hooks.BeforeStep(_sim, _tickCommands));
+            Hooks.AfterStep(_sim);
+        }
+        PublishSnapshot();
+    }
 
+    private void PublishSnapshot()
+    {
         if (!_pool.TryTake(out var snap)) snap = new SimSnapshot();
         _sim.WriteSnapshot(snap, ViewArmy);
         snap.PublishedAt = Stopwatch.GetTimestamp();
