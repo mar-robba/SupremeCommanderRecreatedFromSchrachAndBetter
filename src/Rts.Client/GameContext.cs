@@ -22,6 +22,8 @@ public sealed class GameContext
     public Color[] ArmyColors = [];
     /// <summary>Fog of war renderer (null before it is created).</summary>
     public FogRenderer? Fog;
+    /// <summary>Watching a replay: no orders (selection and info panels only), see Rts.Client/Persistence.</summary>
+    public bool ReadOnly;
 
     public bool IsEnemy(int army)
     {

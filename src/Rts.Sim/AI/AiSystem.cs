@@ -109,11 +109,11 @@ public struct AiUnitInfo
 public sealed class AiStats
 {
     public long Calls;
-    public double TotalMs;
-    public double MaxMs;
+    [Persistence.NoSave] public double TotalMs; // wall clock: not saved
+    [Persistence.NoSave] public double MaxMs;
     public int Commands;
     /// <summary>Wall-clock totals per phase (perception scan, economy, military).</summary>
-    public double ScanMs, EconMs, MilitaryMs;
+    [Persistence.NoSave] public double ScanMs, EconMs, MilitaryMs;
     /// <summary>Placement searches, failed searches, candidate sites evaluated.</summary>
     public long SiteSearches, SiteFailures, SiteCandidates;
 

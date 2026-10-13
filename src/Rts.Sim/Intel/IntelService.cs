@@ -60,7 +60,7 @@ public sealed class IntelService
     /// <summary>Incremented each time the grids are recomputed (the client re-uploads the fog texture on change).</summary>
     public int Version { get; internal set; }
     /// <summary>Duration of the last IntelSystem update (ms), for benchmarks.</summary>
-    public double LastUpdateMs { get; internal set; }
+    [field: Persistence.NoSave] public double LastUpdateMs { get; internal set; }
 
     public IntelService(SimWorld w, float cellSize = DefaultCellSize)
     {

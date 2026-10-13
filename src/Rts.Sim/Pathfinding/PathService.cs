@@ -35,7 +35,9 @@ public sealed class PathService
     private readonly NavGraph?[] _graphs = new NavGraph?[7 * (NavGrid.MaxClearance + 1)];
     private int[]? _occSnapshot;
     private int _occVersion;
-    private readonly ConcurrentDictionary<long, Lazy<GoalField>> _fields = new();
+    /// <summary>Goal-field cache: not saved (a field is a pure function of its graph version + goal region, so the
+    /// recomputed cache gives identical results; eviction only affects speed).</summary>
+    [Persistence.NoSave] private readonly ConcurrentDictionary<long, Lazy<GoalField>> _fields = new();
     private int _nextGroup;
 
     // Per-unit path storage (indexed by unit slot; PathId == unit index when the unit has a path).
@@ -343,10 +345,10 @@ public sealed class PathService
 /// <summary>Timing/throughput counters (informational only, never feed back into the simulation).</summary>
 public sealed class PathStats
 {
-    public double LastPathMs;
-    public double LastMoveMs;
-    public double TotalPathMs;
-    public double TotalMoveMs;
+    [Persistence.NoSave] public double LastPathMs; // wall clock: not saved
+    [Persistence.NoSave] public double LastMoveMs;
+    [Persistence.NoSave] public double TotalPathMs;
+    [Persistence.NoSave] public double TotalMoveMs;
     public int LastRequests;
     public int LastSolves;
     public int LastSplices;
