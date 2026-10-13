@@ -48,7 +48,7 @@ public sealed class FactoryPanel
         {
             if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
-            if (!bp.IsStructure || !bp.Has(UnitCategory.Factory)) continue;
+            if (!bp.Has(UnitCategory.Factory) || bp.BuildIndices.Length == 0) continue; // structures and mobile factories (Fatboy)
             _factories.Add(h);
             foreach (int b in bp.BuildIndices)
                 if (!_options.Contains(b)) _options.Add(b);
@@ -229,7 +229,9 @@ public sealed class FactoryPanel
         float tile = MathF.Min(Ui.P(40), r.Y + r.Height - Ui.P(6) - qy);
         if (primary.QueueCount == 0)
         {
-            Ui.Text("Empty — click a unit above to queue it. Right-click the ground to set the rally point.", r.X + Pad, qy + Ui.P(4), Ui.F(11), Ui.TextFaint);
+            bool mobile = _ctx.Db[primary.Bp].IsMobile; // mobile factory (Fatboy): right-click moves it
+            Ui.Text(mobile ? "Empty — click a unit above to queue it. It keeps building while it moves."
+                : "Empty — click a unit above to queue it. Right-click the ground to set the rally point.", r.X + Pad, qy + Ui.P(4), Ui.F(11), Ui.TextFaint);
             return;
         }
 

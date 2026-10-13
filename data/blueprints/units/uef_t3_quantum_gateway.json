@@ -1,0 +1,16 @@
+{
+  "Id": "uef_t3_quantum_gateway",
+  "Name": "Quantum Gateway",
+  "Description": "T3 gateway that builds Support Commanders (SCU): engineer and combat units with their own enhancements.",
+  "Tech": 3,
+  "Categories": [ "Structure", "Factory", "Tech3" ],
+  "MaxHealth": 10000,
+  "Radius": 4,
+  "FootprintX": 8,
+  "FootprintZ": 8,
+  "Economy": { "BuildCostMass": 4000, "BuildCostEnergy": 40000, "BuildTime": 5000, "BuildRate": 120 },
+  "Intel": { "VisionRadius": 26 },
+  "Visual": { "Shape": "quantum_gateway", "Size": [ 7.6, 4.5, 7.6 ], "Icon": "factory" },
+  "Builds": [ "uef_scu" ],
+  "BuiltBy": [ "uef_t3_engineer" ]
+}

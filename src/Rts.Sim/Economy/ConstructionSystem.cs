@@ -241,6 +241,13 @@ public static class ConstructionSystem
             if (!w.Occupancy.CanPlace(sbp, site, w.Terrain) && !SandboxSystem.BuildAnywhereAllows(w, army, sbp, site)) { Finish(w, i, q); return; }
         }
 
+        else if (Experimental.ExperimentalSystem.FindMobileSite(w, army, o.BlueprintIndex, site) is var ms && ms >= 0)
+        {
+            o.Spawned = u.HandleOf(ms); // same unfinished mobile unit (experimental) already started here: assist it
+            Work(w, i, o.Spawned, BuilderMode.Build);
+            return;
+        }
+
         var a = w.Armies[army];
         if (a.UnitCount >= a.UnitCap) { Idle(w, i); return; }
         if (sbp.IsStructure && !ClearFootprint(w, sbp, site, army)) { Idle(w, i); return; } // enemy in the way: wait

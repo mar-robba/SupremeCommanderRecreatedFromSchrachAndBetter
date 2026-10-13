@@ -32,6 +32,7 @@ public sealed class SandboxPanel
     {
         _c = c;
         _groups = c.Ctx.Db.All
+            .Where(b => !b.IsVariant) // generated enhancement combinations: spawn them by exact id (console)
             .GroupBy(GroupOf)
             .OrderBy(g => g.Key.order)
             .Select(g => (g.Key.name, g.OrderBy(b => b.Has(UnitCategory.Engineer) ? 0 : 1).ThenBy(b => b.Name, StringComparer.OrdinalIgnoreCase).ThenBy(b => b.Id, StringComparer.Ordinal).ToList()))
@@ -39,11 +40,12 @@ public sealed class SandboxPanel
     }
 
     /// <summary>List group of a blueprint: commanders, then land / air / naval per tech level, strategic (shields,
-    /// silos, missile defense, artillery installations), structures per tech level.</summary>
+    /// silos, missile defense, artillery installations), experimentals, structures per tech level.</summary>
     public static (int order, string name) GroupOf(UnitBlueprint b)
     {
         string tech = b.Tech >= 4 ? "Experimental" : $"T{b.Tech}";
         if (b.Has(UnitCategory.Commander)) return (0, "Commanders");
+        if (b.Tech >= 4) return (380, "Experimental");
         if (IsStrategic(b)) return (390, "Strategic & shields");
         if (b.IsStructure) return (400 + b.Tech, $"Structures {tech}");
         if (b.Has(UnitCategory.Air)) return (200 + b.Tech, $"Air {tech}");

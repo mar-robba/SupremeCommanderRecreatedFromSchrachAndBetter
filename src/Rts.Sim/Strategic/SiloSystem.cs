@@ -50,9 +50,12 @@ public static class SiloSystem
             if (sb == null) continue;
             ref var st = ref s.Silo[i];
             ref var e = ref u.Econ[i];
+            // Mobile builders (commander with a missile pack): ConstructionSystem resets their requests every tick,
+            // so the silo adds to them instead of owning them.
+            bool builder = bp.IsMobile && bp.Economy.BuildRate > 0;
 
             // 1) Apply the work paid this tick (requests may have been cleared by a Stop: then nothing was paid).
-            if (st.PendingWork > 0 && (e.MassRequest > 0 || e.EnergyRequest > 0 || (sb.MissileCostMass <= 0 && sb.MissileCostEnergy <= 0)))
+            if (st.PendingWork > 0 && (builder || e.MassRequest > 0 || e.EnergyRequest > 0 || (sb.MissileCostMass <= 0 && sb.MissileCostEnergy <= 0)))
             {
                 st.Progress += st.PendingWork * e.Efficiency;
                 if (st.Progress >= 1f - CompleteEps)
@@ -69,10 +72,18 @@ public static class SiloSystem
             {
                 float work = MathF.Min(dt / MathF.Max(0.1f, sb.MissileBuildTime), 1f - st.Progress);
                 st.PendingWork = work;
-                e.MassRequest = sb.MissileCostMass * work / dt;
-                e.EnergyRequest = sb.MissileCostEnergy * work / dt;
+                if (builder)
+                {
+                    e.MassRequest += sb.MissileCostMass * work / dt;
+                    e.EnergyRequest += sb.MissileCostEnergy * work / dt;
+                }
+                else
+                {
+                    e.MassRequest = sb.MissileCostMass * work / dt;
+                    e.EnergyRequest = sb.MissileCostEnergy * work / dt;
+                }
             }
-            else
+            else if (!builder)
             {
                 e.MassRequest = 0;
                 e.EnergyRequest = 0;

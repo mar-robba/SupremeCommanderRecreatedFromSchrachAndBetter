@@ -32,6 +32,8 @@ public static class CommandSystem
                 case CancelUpgradeCommand cu: UpgradeSystem.Apply(w, cu); break;
                 case SetPausedCommand sp: PauseSystem.Apply(w, sp); break;
                 case SetSubmergedCommand ss: Naval.Submarines.Apply(w, ss); break;
+                case EnhanceCommand en: Commander.EnhancementSystem.Apply(w, en); break;
+                case RemoveEnhancementCommand re: Commander.EnhancementSystem.Apply(w, re); break;
                 case SelfDestructCommand sd:
                     foreach (var h in sd.Units)
                         if (Owns(w, c.Army, h)) w.KillUnit(h.Index, UnitHandle.None);

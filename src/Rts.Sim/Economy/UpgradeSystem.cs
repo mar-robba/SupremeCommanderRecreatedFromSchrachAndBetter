@@ -32,6 +32,15 @@ public static class UpgradeSystem
 
     public static bool IsUpgrading(SimWorld w, int i) => w.Units.Upgrade[i].Active;
 
+    /// <summary>Cost and build time of turning unit i into <paramref name="target"/>: the enhancement's own cost when the
+    /// target is an enhancement variant of i's blueprint (Commander/EnhancementCatalog), else the target blueprint's.</summary>
+    public static (float Mass, float Energy, float Time) Cost(SimWorld w, int i, int target)
+    {
+        if (Commander.EnhancementCatalog.TryGetCost(w.Blueprints, w.Units.Bp[i], target, out var c)) return c;
+        var e = w.Blueprints[target].Economy;
+        return (e.BuildCostMass, e.BuildCostEnergy, e.BuildTime);
+    }
+
     /// <summary>Build power a structure applies to its own upgrade.</summary>
     public static float SelfRate(UnitBlueprint bp) =>
         bp.Economy.BuildRate > 0 ? bp.Economy.BuildRate : DefaultRatePerTech * Math.Max(1, bp.Tech);
@@ -89,10 +98,10 @@ public static class UpgradeSystem
         var u = w.Units;
         ref var up = ref u.Upgrade[i];
         if (!up.Active) return;
-        var tbp = w.Blueprints[up.TargetBp];
+        var cost = Cost(w, i, up.TargetBp);
         var eco = w.Armies[u.Army[i]].Eco;
-        eco.Mass = MathF.Min(eco.MassMax, eco.Mass + tbp.Economy.BuildCostMass * up.Fraction);
-        eco.Energy = MathF.Min(eco.EnergyMax, eco.Energy + tbp.Economy.BuildCostEnergy * up.Fraction);
+        eco.Mass = MathF.Min(eco.MassMax, eco.Mass + cost.Mass * up.Fraction);
+        eco.Energy = MathF.Min(eco.EnergyMax, eco.Energy + cost.Energy * up.Fraction);
         up = default;
         // Drop the upgrade work requested last tick (the structure's and its assistants'), so nothing more is paid.
         for (int k = 0; k < u.AliveCount; k++)
@@ -111,8 +120,8 @@ public static class UpgradeSystem
         var u = w.Units;
         ref var up = ref u.Upgrade[t];
         if (!up.Active) return;
-        var tbp = w.Blueprints[up.TargetBp];
-        float step = BuildPower(w, i, t) / tbp.Economy.BuildTime * SimWorld.Dt;
+        var cost = Cost(w, t, up.TargetBp);
+        float step = BuildPower(w, i, t) / cost.Time * SimWorld.Dt;
         float reserved = up.ReservedTick == w.Tick ? up.ReservedWork : 0;
         float work = MathF.Min(step, 1f - up.Fraction - reserved);
         if (work <= 0) return;
@@ -120,8 +129,8 @@ public static class UpgradeSystem
         up.ReservedWork = reserved + work;
         up.ReservedTick = w.Tick;
         ref var e = ref u.Econ[i];
-        e.MassRequest += tbp.Economy.BuildCostMass * work / SimWorld.Dt;
-        e.EnergyRequest += tbp.Economy.BuildCostEnergy * work / SimWorld.Dt;
+        e.MassRequest += cost.Mass * work / SimWorld.Dt;
+        e.EnergyRequest += cost.Energy * work / SimWorld.Dt;
     }
 
     /// <summary>Paid upgrade work arrives (from ConstructionSystem's apply phase); completes the upgrade at 100%.</summary>
@@ -179,7 +188,10 @@ public static class UpgradeSystem
         {
             int i = u.AliveList[k];
             if (!u.Upgrade[i].Active || !u.IsActive(i)) continue;
-            if (w.BpOf(i).Has(UnitCategory.Factory)) continue;
+            var bp = w.BpOf(i);
+            // A unit enhancing itself (commander/SCU) is interrupted by any new order: cancelled with refund (SupCom).
+            if (bp.IsEnhanceable && u.Orders[i].Count > 0) { Cancel(w, i); continue; }
+            if (bp.Has(UnitCategory.Factory)) continue;
             WorkOnSelf(w, i);
         }
     }

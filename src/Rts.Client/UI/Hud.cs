@@ -25,6 +25,7 @@ public sealed class Hud : IDisposable
     private readonly BuildMenu _build;
     private readonly FactoryPanel _factory;
     private readonly UpgradePanel _upgrade;
+    private readonly EnhancementPanel _enh;
     private UiStartup? _startup;
     private TechDemo? _techDemo;
 
@@ -44,6 +45,7 @@ public sealed class Hud : IDisposable
         _build = new BuildMenu(ctx, sel);
         _factory = new FactoryPanel(ctx, sel);
         _upgrade = new UpgradePanel(ctx, sel);
+        _enh = new EnhancementPanel(ctx, sel);
     }
 
     public Rectangle TopBarRect => _top;
@@ -70,6 +72,7 @@ public sealed class Hud : IDisposable
         bool Hit(Rectangle r) => r.Width > 0 && Raylib.CheckCollisionPointRec(m, r);
         if (Hit(_top) || Hit(_mini)) return true;
         if (_showSelectionPanels && (Hit(_infoR) || Hit(_ordersR))) return true;
+        if (_enh.Hit(m)) return true;
         return _buildKind != BuildKind.None && Hit(_buildR);
     }
 
@@ -108,6 +111,7 @@ public sealed class Hud : IDisposable
             else if (_factory.Refresh(snap)) { _buildKind = BuildKind.Factory; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _factory.DesiredWidth())), H); }
             else if (_upgrade.Refresh(snap)) { _buildKind = BuildKind.Upgrade; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _upgrade.DesiredWidth())), H); }
         }
+        _enh.Layout(snap, _showSelectionPanels, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
     }
 
     public void Draw()
@@ -144,6 +148,7 @@ public sealed class Hud : IDisposable
         if (_buildKind == BuildKind.Engineer) _build.Draw(_buildR, snap);
         else if (_buildKind == BuildKind.Factory) _factory.Draw(_buildR, snap);
         else if (_buildKind == BuildKind.Upgrade) _upgrade.Draw(_buildR, snap);
+        _enh.Draw(snap);
 
         DrawModeHints();
         DrawEndOfGame(snap);
@@ -254,7 +259,7 @@ public sealed class Hud : IDisposable
         var m = Ui.Mouse;
         return Raylib.CheckCollisionPointRec(m, _mini) || Raylib.CheckCollisionPointRec(m, _top)
             || (_showSelectionPanels && (Raylib.CheckCollisionPointRec(m, _infoR) || Raylib.CheckCollisionPointRec(m, _ordersR)))
-            || (_buildKind != BuildKind.None && Raylib.CheckCollisionPointRec(m, _buildR));
+            || (_buildKind != BuildKind.None && Raylib.CheckCollisionPointRec(m, _buildR)) || _enh.Hit(m);
     }
 
     // ------------------------------------------------------------------ self-destruct confirmation
