@@ -6,7 +6,8 @@ namespace Rts.Client.Sandbox;
 /// Fuzzy lookup of a unit blueprint from what the player typed (case-insensitive). Rank, best first:
 /// exact id, exact name, id ends with "_"+query, id starts with query, id contains query, name contains query;
 /// ties go to the shortest id, then id ordinal. '_' and ' ' are equivalent (so "t1 tank", "ma12_striker" and
-/// "ma12 striker" all work). Works on whatever is in the BlueprintDb: no ids are hardcoded.
+/// "ma12 striker" all work). Works on whatever is in the BlueprintDb: no ids are hardcoded. Generated enhancement
+/// variants (<see cref="UnitBlueprint.IsVariant"/>) only match their exact id.
 /// </summary>
 public static class BlueprintMatcher
 {
@@ -70,6 +71,7 @@ public static class BlueprintMatcher
         string id = bp.Id.ToLowerInvariant().Replace(' ', '_');
         string name = Normalize(bp.Name);
         if (id == q) return 0;
+        if (bp.IsVariant) return NoMatch; // enhancement variants ("uef_commander+X+Y"): exact id only
         if (name.Length > 0 && name == q) return 1;
         if (id.EndsWith("_" + q, StringComparison.Ordinal)) return 2;
         if (id.StartsWith(q, StringComparison.Ordinal)) return 3;

@@ -27,7 +27,7 @@ public sealed class ClientOptions
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     public bool Demo;
-    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene) or "naval" (NavalScene).</summary>
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene) or "experimental[:mavor|:fog]" (ExperimentalScene).</summary>
     public string? Scene;
     public int Width = 1600;
     public int Height = 900;
@@ -146,6 +146,7 @@ public sealed class ClientOptions
         }
         o.StartScreen = screen ?? (gameArg ? StartScreen.Game : StartScreen.MainMenu);
         if (o.Scene == NavalScene.Name) NavalScene.ApplyDefaults(o);
+        else if (o.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.ApplyDefaults(o);
         return o;
     }
 }

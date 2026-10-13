@@ -41,10 +41,11 @@ public static unsafe class IconRenderer
             _kind[i] = IconAtlas.KindOf(bp.Visual.Icon);
             float s = bp.Has(UnitCategory.Experimental) ? 54
                 : bp.Has(UnitCategory.Commander) ? 40
+                : bp.Visual.Icon == "scu" ? 35
                 : bp.IsStructure ? (bp.Has(UnitCategory.Factory) ? 34 : 28)
                 : 23 + (bp.Tech - 1) * 4;
             _size[i] = s;
-            _layer[i] = bp.Has(UnitCategory.Commander) || bp.Has(UnitCategory.Experimental) ? 3
+            _layer[i] = bp.Has(UnitCategory.Commander) || bp.Has(UnitCategory.Experimental) || bp.Visual.Icon == "scu" ? 3
                 : bp.IsStructure ? 0
                 : bp.Movement.Layer == MotionLayer.Air ? 2 : 1;
         }
