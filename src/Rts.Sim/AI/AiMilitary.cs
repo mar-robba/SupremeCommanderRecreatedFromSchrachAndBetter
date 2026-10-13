@@ -816,7 +816,7 @@ public sealed class AiMilitary
             if (p.CommanderAge(a) > 0 || p.EnemyCommanderPos[a] is not Vector2 cp) continue;
             var h = p.EnemyCommanderHandle[a];
             if (!u.IsActive(h)) continue;
-            if (Vector2.Distance(cp, g.Centroid) > 40f) continue;
+            if (Vector2.Distance(cp, g.Anchor) > Cfg.SnipeRadius) continue;
             float hp = u.Health[h.Index] / MathF.Max(1f, W.BpOf(h.Index).MaxHealth);
             float defense = V.ThreatNowAt(cp, 20f);
             if (g.Strength < defense * 0.7f && hp > 0.5f) continue;
@@ -825,7 +825,7 @@ public sealed class AiMilitary
             {
                 var bp = W.BpOf(i);
                 if (bp.HasAny(UnitCategory.IndirectFire | UnitCategory.AntiAir) || bp.Weapons.Length == 0) continue;
-                if (Vector2.Distance(u.Pos[i], cp) < 45f) _tmp.Add(i);
+                if (Vector2.Distance(u.Pos[i], cp) < Cfg.SnipeRadius + 5f) _tmp.Add(i);
             }
             if (_tmp.Count < 3) continue;
             g.SnipeTick = W.Tick;

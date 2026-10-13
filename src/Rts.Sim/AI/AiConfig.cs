@@ -103,6 +103,8 @@ public sealed class AiConfig
     public int MaxRaids = 0;
     /// <summary>Attack the enemy commander directly when it is seen near the army and the army can take it.</summary>
     public bool CommanderSnipe;
+    /// <summary>Snipes look for the enemy commander this far from the army.</summary>
+    public float SnipeRadius = 40f;
     /// <summary>Micro: direct-fire units of a fighting group spread their fire over the weakest enemies in range
     /// (enough damage on each to kill it, then the next) instead of each shooting the nearest one.</summary>
     public bool FocusFire;

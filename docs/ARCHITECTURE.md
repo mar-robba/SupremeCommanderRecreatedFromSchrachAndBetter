@@ -124,6 +124,12 @@ interpolates prev/cur by time
 - Projectiles: straight shots hit the first enemy collision sphere on their path, shells/bombs explode on the
   ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
   `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
+- Line of fire (`Combat/LineOfFire.cs`, used by `TargetingSystem`): a NON-forced target is only acquired/kept if the
+  weapon can hit it from where the unit stands: straight shots and beams need a clear muzzle→target line over the
+  terrain/water surface (same grazing tolerance as projectiles), shells need an arc solution (`Ballistics.SolveArc`,
+  as `WeaponSystem` uses). Homing/missiles, bombs, flak, torpedoes and silo weapons are not restricted; forced
+  targets (Attack orders, TML/nukes, attack-ground) skip the check. Effect: units below a cliff no longer stop
+  on attack-move to shoot into the rock; they walk up the ramp.
 
 ## Shields & strategic weapons (`Rts.Sim/Strategic`)
 - `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
@@ -201,22 +207,49 @@ interpolates prev/cur by time
   State per world via ConditionalWeakTable (`AiSystem.StateOf(w)`): one `AiBrain` per army + per-unit-slot
   `AiUnitInfo` (role/task, generation-checked).
 - `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
-  offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig` (think speed,
-  caps, opening, wave timing/size, retreat/pull-back micro, reinforcement). Cost ≈ 0.01 ms/tick per AI.
-- `AiPerception`: the only window on enemies (scan → `AiView` lists, surface/anti-air threat maps, remembered enemy
-  structures). `RespectIntel=false` = omniscient for now; set true to obey `IntelService` (fog of war).
+  offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig`. No difficulty
+  cheats (no resource bonus, no map vision): Hard is better through faster reactions, a stronger opening (5 early
+  engineers, mex chains), raids, commander snipes and micro (damaged units pulled back for repair, focus fire).
+  Cost ≈ 0.02-0.03 ms/tick per AI (worst game ≈ 0.05).
+- `AiPerception` (fog-fair, `RespectIntel=true`): the only window on enemies. Enemy units count only while seen or on
+  radar (radar blips = anonymous, assumed one tank), structures are remembered as ghosts until seen dead, threat maps
+  = current threat + decaying memory, per-area staleness (when did we last look), enemy commander last seen (only
+  when actually visible). `AiScouting`: land/air scouts to stale areas, radar at base then expansions.
 - `AiEconomy`: commander opening (factory, mexes, pgens, hydro), engineer jobs (finish orphan sites, power when
   income < max(smoothed demand, projected spending), mexes nearest the base first + chains, hydro, factories when
-  mass income/floating allows, air factory mid-game, PD/AA, storage/radar, repair, reclaim, assist factories),
-  task deadlines (stuck → reassign, deposit blacklist), engineers flee threats; factory queues (engineer target,
-  scouts, tank/artillery/mobile-AA mix by enemy air; interceptors/bombers).
+  mass income/floating allows (more land factories while floating), air factory mid-game, PD/AA, storage/radar,
+  repair, reclaim, assist factories), task deadlines (stuck → reassign, deposit blacklist), engineers flee
+  threats; factory queues (engineer target, scouts, tank/artillery/mobile-AA mix by enemy air; interceptors/bombers).
 - `AiPlacement`: spiral search with `OccupancyGrid.CanPlace` + free margin (3 factories / 2 others, relaxed pass),
   keeps deposits and the rally point clear, land-reachability for factories, reservations, failure cooldown.
-- `AiMilitary`: rally pool → attack waves (growing size) to the best reachable known enemy structure
-  (`PathService.CanReach`), retarget/stuck handling, retreat when beaten, base/expansion defense pulls nearby units,
-  clearing enemies off our deposits, commander retreats when hurt, interceptor patrols, bomber raids, scouts.
-- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1] [threads] [players]`
-  (`aipassive` = army 0 idle; env `AI_STATUS_SECONDS`, `AI_GROUPS=1` for more output).
+- `AiMilitary`:
+  - Pool at the rally point → one main army (`AiGroup`, Assemble/Attack/Retreat). Objective = best reachable known
+    enemy structure (value by type − distance, outgunning defenses avoided, enemy base avoided before `PushTime`,
+    base/clusters preferred when pushing), else the enemy commander's last known position, else stale enemy starts;
+    unreachable/stuck targets blacklisted 150 s.
+  - Staging point `StageDistance` short of the objective along the walking route (`AiBrain.SolveRoute`), outside
+    known defenses. Launch when gathered and strength ≥ `RequiredStrength` (AttackMargin × (defenses at the target +
+    EnemyArmyShare × rest of the estimated enemy army)), or when at `MaxArmy`, or after `AssembleTimeout`.
+  - Attacking: reinforcements walk in batches to fixed points (staging, then the target) and merge near the army
+    anchor; strung-out armies regroup; idle members engage the nearest known enemy; position targets end after
+    `PositionTargetTime` when dominating; next objective nearby → keep going, far → stage again. No difficulty
+    retreats a beaten army (matrix: retreating lost more games than fighting on); the army is recalled when the base
+    is losing (not when finishing the enemy). Late game (`LateGameTime`): looser launch rule, snipes for everyone.
+  - Defense: pool + defenders vs base/expansion threats, nearby army members help vs real base attacks; sorties to
+    an attacked expansion; clearing groups for enemies on our deposits; commander retreats when hurt.
+  - Hard: raids on weakly defended enemy extractors, commander snipe (direct-fire members focus a visible enemy
+    commander near the army), pull-back of units under 25 % health, focus fire (`PickFocusTarget`: each direct-fire
+    member takes the weakest identified enemy in range after the damage already assigned, FocusHorizon = 3 s).
+  - Air: interceptor patrols, bomber groups on raid targets; air scouts.
+  - Navy/T2/T3/strategic weapons are not used yet (wave 4); on Archipelago the AI builds land units that stay on
+    their island (no crash, no command spam).
+- Results (bench, 30 min, 256 maps, 4 land presets): Normal vs Normal ends by commander kill in ~86 % of games
+  (mean ≈ 18.6 min); Hard beats Normal ≈ 57 % of games (65 % of decided ones), Easy loses to Normal ≈ 96 %.
+  Stalemates are equal armies trading in the middle of Highlands/Canyon maps.
+- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset]`
+  (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
+  `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`
+  (override `AiConfig` fields for sweeps; bench only, the sim never reads the environment).
 
 ## Client (`Rts.Client`)
 - `GameApp`: options + window + screen loop (`Menus/AppHost`, `IScreen`): `MainMenuScreen` → `SettingsScreen` /
