@@ -71,6 +71,7 @@ public sealed class StrategicState
     private static readonly ConditionalWeakTable<SimWorld, StrategicState> Table = new();
 
     public static StrategicState Of(SimWorld w) => Table.GetValue(w, static x => new StrategicState(x));
+    internal static bool TryGet(SimWorld w, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out StrategicState? s) => Table.TryGetValue(w, out s);
 
     /// <summary>Strategic units (any module) in spawn order; dead entries are pruned each tick.</summary>
     public readonly List<UnitHandle> Units = new();
