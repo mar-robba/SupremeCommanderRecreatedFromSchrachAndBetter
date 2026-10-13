@@ -234,6 +234,7 @@ public class TransportTests
         w.Units.Health[fighter.Index] = bp.MaxHealth * 0.6f;
         w.Cargo.Fuel[fighter.Index] = 0;
         Assert.Equal(TransportSystem.OutOfFuelSpeed, TransportSystem.AirSpeedFactor(w, fighter.Index, bp));
+        sim.Step(); // fresh spawns join the alive list (the nearest-carrier search uses it) on the next tick
         sim.Step([new IssueOrderCommand(0, [fighter], TransportOrders.Dock(UnitHandle.None), false)]);
         Assert.Equal(pad, w.Units.Orders[fighter.Index].Current.Target);
         Assert.True(RunUntil(sim, () => Carried(w, fighter), 400), "docks");

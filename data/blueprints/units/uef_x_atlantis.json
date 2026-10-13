@@ -2,7 +2,7 @@
   "Id": "uef_x_atlantis",
   "Name": "Atlantis",
   "Description": "Experimental aircraft carrier: builds aircraft like an air factory, carries and repairs up to 24 slots of aircraft (Dock) and launches them (Unload). Torpedoes and SAMs.",
-  "Tech": 3,
+  "Tech": 4,
   "Categories": ["Mobile", "Naval", "Factory", "Experimental", "AntiAir", "AntiNaval"],
   "MaxHealth": 26000,
   "Radius": 3.0,

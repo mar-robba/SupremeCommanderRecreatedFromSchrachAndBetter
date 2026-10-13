@@ -86,6 +86,7 @@ public static class TransportSystem
         {
             int i = u.AliveList[k];
             if (!u.IsActive(i) || (u.Flags[i] & UnitFlags.Carried) != 0 || !u.IsComplete(i)) continue;
+            DropAttackOnCarried(u, i);
             var bp = w.BpOf(i);
             if (bp.Cargo == null && !bp.IsMobile) continue; // ordinary structures
             if (c.Fuel[i] > 0 && bp.Movement.Layer == MotionLayer.Air) c.Fuel[i] = MathF.Max(0f, c.Fuel[i] - SimWorld.Dt);
@@ -539,6 +540,20 @@ public static class TransportSystem
                 u.Move[i].HasGoal = false;
             }
         }
+    }
+
+    /// <summary>An Attack order issued at a unit that is already aboard a transport (e.g. ordered after boarding)
+    /// would keep forcing weapons onto it: drop the order and the weapon locks on that unit. O(1) unless it hits.</summary>
+    private static void DropAttackOnCarried(UnitStore u, int i)
+    {
+        var q = u.Orders[i];
+        if (q.IsEmpty || q.Current.Type != OrderType.Attack || q.Current.Target.IsNone) return;
+        var t = q.Current.Target;
+        if (!IsCarried(u, t)) return;
+        foreach (ref var ws in u.WeaponsOf(i))
+            if (ws.Target == t) ws.Target = UnitHandle.None;
+        q.Pop();
+        u.Move[i].HasGoal = false;
     }
 
     private static bool IsCarried(UnitStore u, UnitHandle h) =>
