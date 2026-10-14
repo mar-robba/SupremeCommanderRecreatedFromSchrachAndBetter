@@ -1,4 +1,5 @@
 using Rts.Sim;
+using Rts.Sim.Data;
 using Rts.Sim.Map;
 using Rts.Sim.World;
 
@@ -15,6 +16,8 @@ public sealed class PlayerSlot
     public int Team;
     /// <summary>Index into <see cref="GameSetup.ArmyColors"/>.</summary>
     public int ColorIndex;
+    /// <summary>Faction id (data/factions) or <see cref="FactionDb.Random"/> (resolved from the seed at game start).</summary>
+    public string Faction = FactionDb.DefaultFaction;
 
     public PlayerSlot Clone() => (PlayerSlot)MemberwiseClone();
 }
@@ -97,6 +100,7 @@ public sealed class GameConfig
             MapSize = MapSize, Seed = Seed, Players = n, MapPreset = Preset, WaterAmount = WaterAmount,
             AiPlayers = open.Select(s => s.Kind == SlotKind.AI).ToArray(),
             AiDifficulties = open.Select(s => s.Difficulty).ToArray(),
+            Factions = open.Select(s => s.Faction).ToArray(),
             // Free-for-all slots get a unique team id; numbered teams share theirs.
             Teams = open.Select((s, a) => s.Team > 0 ? s.Team : 100 + a).ToArray(),
             Colors = open.Select(s => GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length]).ToArray(),
@@ -111,6 +115,23 @@ public sealed class GameConfig
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;
+        c.ApplyFactionOptions(o);
         return c;
+    }
+
+    /// <summary>
+    /// CLI factions: <c>--factions a,b,...</c> sets slot i to the i-th id (in slot order, "random" allowed),
+    /// <c>--faction X</c> then sets the human slot. Unknown ids are reported when the game starts.
+    /// </summary>
+    public void ApplyFactionOptions(ClientOptions o)
+    {
+        if (o.Factions != null)
+            for (int i = 0; i < Math.Min(o.Factions.Length, MaxSlots); i++)
+                if (!string.IsNullOrWhiteSpace(o.Factions[i])) Slots[i].Faction = o.Factions[i].Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(o.Faction))
+        {
+            int human = Slots.FindIndex(s => s.Kind == SlotKind.Human);
+            Slots[human >= 0 ? human : 0].Faction = o.Faction.Trim().ToLowerInvariant();
+        }
     }
 }

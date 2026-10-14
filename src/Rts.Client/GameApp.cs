@@ -26,6 +26,9 @@ public sealed class ClientOptions
     /// <summary>0..1, negative = preset default.</summary>
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
+    /// <summary>--faction ID: the local player's faction; --factions a,b,...: every slot in order ("random" allowed).</summary>
+    public string? Faction;
+    public string[]? Factions;
     public bool Demo;
     /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) or "transport" (TransportScene).</summary>
     public string? Scene;
@@ -101,6 +104,8 @@ public sealed class ClientOptions
                 case "--seed": o.Seed = int.Parse(Next()); break;
                 case "--map": o.MapSize = int.Parse(Next()); o.MapSizeGiven = true; break;
                 case "--players": o.Players = int.Parse(Next()); o.PlayersGiven = true; break;
+                case "--faction": o.Faction = Next(); break;
+                case "--factions": o.Factions = Next().Split(','); break;
                 case "--preset":
                     string pn = Next();
                     if (!MapPresets.TryParse(pn, out o.Preset)) throw new ArgumentException("unknown preset " + pn + " (plains, lakes, highlands, canyon, archipelago)");

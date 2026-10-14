@@ -93,11 +93,15 @@ public sealed class FactionBlueprint
     [JsonIgnore] public int CommanderIndex = -1;
     /// <summary><see cref="Color"/> as 0xRRGGBBAA (0 = no accent color).</summary>
     [JsonIgnore] public uint ColorRgba;
-    [JsonIgnore] internal Dictionary<string, int> RoleIndices = new(StringComparer.Ordinal);
+    private Dictionary<string, int> _roleIndices = new(StringComparer.Ordinal);
+    /// <summary>Resolved <see cref="Roles"/>: role → blueprint index.</summary>
+    [JsonIgnore] public IReadOnlyDictionary<string, int> RoleIndices => _roleIndices;
 
     /// <summary>Blueprint index of a role, -1 if this faction has none.</summary>
-    public int Role(string role) => RoleIndices.TryGetValue(role, out int i) ? i : -1;
-    public bool HasRole(string role) => RoleIndices.ContainsKey(role);
+    public int Role(string role) => _roleIndices.TryGetValue(role, out int i) ? i : -1;
+    public bool HasRole(string role) => _roleIndices.ContainsKey(role);
+
+    internal void SetRoleIndices(Dictionary<string, int> roles) => _roleIndices = roles;
 }
 
 /// <summary>
@@ -190,15 +194,16 @@ public sealed class FactionDb
         if (string.IsNullOrEmpty(f.Name)) f.Name = f.Id.ToUpperInvariant();
         f.CommanderIndex = bps.IndexOf(f.Commander);
         if (f.CommanderIndex < 0) throw new InvalidDataException($"Faction '{f.Id}': Commander references unknown blueprint '{f.Commander}'");
-        f.RoleIndices = new Dictionary<string, int>(StringComparer.Ordinal);
+        var roles = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var (role, id) in f.Roles)
         {
             if (!FactionRoles.IsKnown(role))
                 throw new InvalidDataException($"Faction '{f.Id}': unknown role '{role}' (add it to FactionRoles and the docs table)");
             int bp = bps.IndexOf(id);
             if (bp < 0) throw new InvalidDataException($"Faction '{f.Id}': role '{role}' references unknown blueprint '{id}'");
-            f.RoleIndices[role] = bp;
+            roles[role] = bp;
         }
+        f.SetRoleIndices(roles);
         f.ColorRgba = ParseColor(f);
         f.Index = _all.Count;
         _all.Add(f);
