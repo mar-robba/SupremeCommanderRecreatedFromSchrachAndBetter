@@ -9,9 +9,11 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 - Build all: `dotnet build Rts.slnx`
 - Tests: `dotnet test tests/Rts.Sim.Tests` and `dotnet test tests/Rts.Client.Tests` (headless, must stay green)
 - Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads]`
-- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset]`
+- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions]`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
+  (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
+  both also preset `--setup`)
   (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis) (scene positions are printed; aim with `--camera`))
@@ -55,3 +57,5 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 9. **Saveable state** (save/load + replays, see ARCHITECTURE "Save/load & replays"): sim state = plain fields, arrays,
    List/Dictionary/HashSet, per-world `ConditionalWeakTable<SimWorld,T>`; no static mutable state, no stored lambdas/delegates.
    Caches/timings get `[NoSave]` (rebuild lazily or in `IAfterLoad`). `SaveCoverageTests` + `PersistenceTests` must pass.
+10. **Factions**: sim/AI code never hard-codes unit ids (`"uef_..."`); use faction roles
+   (`db.Factions.RoleBlueprint(army.Faction, FactionRoles.X)`, -1 = none). Contract: ARCHITECTURE "Factions".
