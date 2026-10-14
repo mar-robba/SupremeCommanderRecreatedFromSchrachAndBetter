@@ -18,6 +18,9 @@ public enum UnitFlags : ushort
     Paused = 1 << 5,
     /// <summary>Visible to enemies via radar only (set by intel; informational).</summary>
     RadarOnly = 1 << 6,
+    /// <summary>Submarines (MotionLayer.Sub): currently surfaced (Water layer: visible like a ship, hit by surface
+    /// weapons). Cleared = submerged (the default). Toggled by <see cref="Orders.SetSubmergedCommand"/>.</summary>
+    Surfaced = 1 << 7,
     /// <summary>Inside a carrier (transport / air staging / Atlantis): off the map. Not in AliveList (so not in the
     /// spatial grid, untargetable, no weapons/intel/economy); moved with the carrier by Transport.TransportSystem.</summary>
     Carried = 1 << 10,
@@ -67,6 +70,14 @@ public struct MoveState
     /// <summary>Air units: center of the idle orbit (last goal) and orbit direction (+1 CCW, -1 CW).</summary>
     public Vector2 OrbitCenter;
     public float OrbitDir;
+    /// <summary>Idle air units chasing a target their weapons engaged (<see cref="Systems.IdleAirEngage"/>); they
+    /// return to <see cref="IdleHome"/> (the orbit center when the chase began) afterwards.</summary>
+    public bool IdleChase;
+    public Vector2 IdleHome;
+    /// <summary>Surface units just released by a factory: seconds left to drive (through the factory's own
+    /// footprint) to <see cref="FactoryExit"/>; 0 = not leaving (<see cref="Systems.FactoryExitMotion"/>).</summary>
+    public float LeaveTime;
+    public Vector2 FactoryExit;
 }
 
 /// <summary>Per-weapon state; units have up to UnitStore.MaxWeapons weapons (index = unit * MaxWeapons + w).</summary>
@@ -106,6 +117,14 @@ public struct BuilderState
     public float ReservedWork;
     /// <summary>Tick in which <see cref="ReservedWork"/> was accumulated (stale values are ignored).</summary>
     public int ReservedTick;
+    /// <summary>As a TARGET: 0..1 progress of an enemy capture (Economy/CaptureSystem); reset when nobody captured
+    /// it for a while (see <see cref="CaptureTick"/>).</summary>
+    public float CaptureProgress;
+    /// <summary>As a TARGET: last tick capture work was requested on this unit (the progress resets when nobody
+    /// worked on it for <see cref="Systems.CaptureSystem.ResetTicks"/>).</summary>
+    public int CaptureTick;
+    /// <summary>As a TARGET: capture work reserved by captors during <see cref="CaptureTick"/> (no overshoot).</summary>
+    public float CaptureReserved;
 }
 
 /// <summary>Factory production state (owned by FactorySystem).</summary>
@@ -140,4 +159,10 @@ public struct EconState
     /// <summary>Resources gained by reclaiming this tick (per second); credited as income by EconomySystem next tick.</summary>
     public float ReclaimMass;
     public float ReclaimEnergy;
+    /// <summary>Adjacency bonuses (Economy/AdjacencySystem, recomputed when structures are built/die/change owner):
+    /// fractional mass/energy production bonus (+0.25 = +25%) and energy-use reduction (0.25 = -25% on every energy
+    /// request and upkeep of this unit).</summary>
+    public float AdjMassProd;
+    public float AdjEnergyProd;
+    public float AdjEnergyUse;
 }

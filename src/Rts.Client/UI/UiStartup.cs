@@ -12,7 +12,8 @@ namespace Rts.Client.UI;
 /// <c>--select commander|engineer|factory|army</c> selects own units once they appear in a snapshot,
 /// <c>--ui-demo</c> spawns a small base for army 0 (land + air factory, engineers, eco) via DebugSpawnCommand,
 /// queues units in the land factory and selects it, <c>--ui-place &lt;blueprintId&gt;</c> starts structure
-/// placement, <c>--mouse x,y</c> pins the cursor (to show hover tooltips / the placement ghost).
+/// placement (<c>id@x,z</c>: plus a Shift+drag line from world point x,z to the cursor), <c>--mouse x,y</c> pins the
+/// cursor (to show hover tooltips / the placement ghost).
 /// </summary>
 public sealed class UiStartup
 {
@@ -22,6 +23,7 @@ public sealed class UiStartup
     private readonly bool _demo;
     private readonly string? _place;
     private readonly Vector2? _mouse;
+    private readonly Vector2? _lineFrom;
     private int _frames;
     private bool _selectDone, _queued, _placeDone;
 
@@ -32,6 +34,13 @@ public sealed class UiStartup
         _select = o.Select ?? (o.UiDemo ? "factory" : o.UiPlace != null ? "commander" : null);
         _demo = o.UiDemo;
         _place = o.UiPlace;
+        if (_place != null && _place.IndexOf('@') is int at and >= 0)
+        {
+            var xz = _place[(at + 1)..].Split(',');
+            if (xz.Length == 2 && float.TryParse(xz[0], System.Globalization.CultureInfo.InvariantCulture, out float lx)
+                && float.TryParse(xz[1], System.Globalization.CultureInfo.InvariantCulture, out float lz)) _lineFrom = new Vector2(lx, lz);
+            _place = _place[..at];
+        }
         _mouse = o.MousePos;
         _selectDone = _select == null;
         _queued = !_demo;
@@ -95,12 +104,15 @@ public sealed class UiStartup
         if (!_selectDone)
         {
             var picked = new List<UnitHandle>();
+            // "any:<what>": units of every army the player controls (sandbox), e.g. --select any:uef_t1_tank.
+            bool anyArmy = _select!.StartsWith("any:");
+            string what = anyArmy ? _select[4..] : _select;
             for (int k = 0; k < snap.UnitCount; k++)
             {
                 ref var v = ref snap.Units[k];
-                if (v.Army != _ctx.LocalArmy) continue;
+                if (anyArmy ? !_ctx.Controls(v.Army) : v.Army != _ctx.LocalArmy) continue;
                 var bp = _ctx.Db[v.Bp];
-                bool ok = _select switch
+                bool ok = what switch
                 {
                     "commander" or "acu" => bp.Has(UnitCategory.Commander),
                     "engineer" => bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander),
@@ -108,10 +120,10 @@ public sealed class UiStartup
                     "airfactory" or "air_factory" => bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Air),
                     "factories" => bp.Has(UnitCategory.Factory),
                     "army" or "all" => bp.IsMobile,
-                    _ => _ctx.Db[v.Bp].Id == _select,
+                    _ => _ctx.Db[v.Bp].Id == what,
                 };
                 if (ok) picked.Add(new UnitHandle(v.Index, v.Gen));
-                if (ok && _select is "commander" or "acu" or "factory" or "airfactory" or "air_factory") break;
+                if (ok && !anyArmy && what is "commander" or "acu" or "factory" or "airfactory" or "air_factory") break;
             }
             // Wait for the demo factory to exist before giving up on it.
             if (picked.Count > 0 && (!_demo || _queued || _select != "factory"))
@@ -125,6 +137,7 @@ public sealed class UiStartup
         {
             int bp = _ctx.Db.IndexOf(_place!);
             if (bp >= 0) _sel.Placement.Begin(bp);
+            if (bp >= 0 && _lineFrom is Vector2 lf) _sel.Placement.DebugHoldLine(lf);
             _placeDone = true;
         }
     }

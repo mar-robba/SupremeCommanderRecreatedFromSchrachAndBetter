@@ -95,7 +95,7 @@ public sealed partial class EffectsRenderer : IDisposable
                 break;
             }
             case EffectKind.BuildStarted: _ps.BuildStarted(e.Pos, size); break;
-            case EffectKind.BuildComplete: _ps.BuildComplete(e.Pos, size); break;
+            case EffectKind.BuildComplete or EffectKind.Captured: _ps.BuildComplete(e.Pos, size); break; // captured: changes colour
             case EffectKind.Reclaim: _ps.Reclaim(e.Pos, size); break;
         }
     }

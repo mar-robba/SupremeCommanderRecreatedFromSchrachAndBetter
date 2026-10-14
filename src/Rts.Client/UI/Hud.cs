@@ -125,6 +125,7 @@ public sealed class Hud : IDisposable
         Raylib.BeginMode3D(_ctx.Camera.Camera);
         _sel.Placement.Draw3D(_sel.Selected);
         Raylib.EndMode3D();
+        _sel.Placement.DrawOverlay();
 
         bool dialog = _sel.PendingSelfDestruct != null;
         if (dialog) HandleDialogInput();
@@ -195,13 +196,15 @@ public sealed class Hud : IDisposable
             new("Left click / drag: select · double-click or Ctrl+click: all of that type on screen", d, 11.5f),
             new("Right click: move / attack / assist · factory selected: set rally point · Shift: queue", d, 11.5f),
             new("S stop · M move · A attack-move · P patrol · G guard/assist · Ctrl+K self-destruct", d, 11.5f),
+            new($"{UnitToggles.CaptureKeyName} capture (engineers / commander; right-click an enemy with only engineers selected) · {UnitToggles.PauseKeyName} pause / resume · {UnitToggles.DiveKeyName} dive / surface (subs)", d, 11.5f),
+            new("Shared keys: E = transport to when transports are selected, else capture · D = subs dive / surface and aircraft dock (both in a mixed selection)", d, 11.5f),
             new("Build menu: Z X C V B N select · Tab / Shift+Tab category · R rotate · Esc / right click cancel", d, 11.5f),
             new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
             new("T / Shift+T: tech tier filter (build menu, factory) · U: upgrade selected structures (factory, mex, radar) · right-click the upgrade tile: cancel", d, 11.5f),
             new("Transports: U unload (air carrier: launch) · E transport to · F ferry (beacon, then drop point) · D dock aircraft (nearest air staging / carrier)", d, 11.5f),
             new("Right-click: units on a transport = board · transport on a unit = pick up · loaded transport on the ground = unload · aircraft on an air staging = dock", d, 11.5f),
             new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
-            new("WASD / arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
+            new("Arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
             new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
             new("Engineers: right-click wreck = reclaim, damaged / unfinished unit = repair, factory = assist · M (nothing selected) or Ctrl+M mute · Ctrl+Shift+M music", d, 11.5f),
             new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
@@ -218,9 +221,10 @@ public sealed class Hud : IDisposable
         if (_sel.Placement.Active)
         {
             var bp = _sel.Placement.Blueprint!;
-            banner = $"PLACE {bp.Name.ToUpperInvariant()}  ·  LMB place  ·  Shift+LMB queue  ·  R rotate  ·  RMB / Esc cancel";
+            banner = $"PLACE {bp.Name.ToUpperInvariant()}  ·  LMB place  ·  Shift+LMB queue  ·  Shift+drag line  ·  R rotate  ·  RMB / Esc cancel";
             col = new Color(140, 230, 150, 255);
-            if (_sel.Placement.HasPos && _sel.Placement.Error != PlacementError.None)
+            if (_sel.Placement.LineHint() is { } lineHint) cursor = lineHint;
+            else if (_sel.Placement.HasPos && _sel.Placement.Error != PlacementError.None)
                 cursor = PlacementGrid.Describe(_sel.Placement.Error);
         }
         else if (_sel.Mode != Mode.Normal)
@@ -231,6 +235,8 @@ public sealed class Hud : IDisposable
                 Mode.Patrol => ("PATROL: click patrol point (Shift: add points, RMB cancel)", "Patrol", new Color(120, 190, 255, 255)),
                 Mode.Move => ("MOVE: click destination (Shift: queue, RMB cancel)", "Move", new Color(130, 230, 130, 255)),
                 Mode.Guard => ("GUARD / ASSIST: click a friendly unit (RMB cancel)", "Guard / assist", new Color(240, 210, 100, 255)),
+                Mode.Capture => ("CAPTURE: click an enemy unit (Shift: queue, RMB cancel)",
+                                 _sel.HoverAction.Kind == ContextKind.Capture ? null : "Capture: pick an enemy unit", CursorHint.CaptureColor),
                 _ => TransportInput.ModeHint(_ctx, _sel) ?? (null, null, col),
             };
         }
@@ -247,7 +253,7 @@ public sealed class Hud : IDisposable
         {
             int fs = Ui.F(12);
             var m = Ui.Mouse;
-            var tc = _sel.Placement.Active ? Ui.Bad : col;
+            var tc = _sel.Placement.Active && !_sel.Placement.LineActive ? Ui.Bad : col;
             Ui.TextShadow(cursor, m.X + Ui.P(18), m.Y + Ui.P(14), fs, tc, true);
         }
     }

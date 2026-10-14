@@ -46,7 +46,7 @@ public sealed class FactoryPanel
         _options.Clear();
         foreach (var h in _sel.Selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
             if (!bp.Has(UnitCategory.Factory) || bp.BuildIndices.Length == 0) continue; // structures and mobile factories (Fatboy)
             _factories.Add(h);
@@ -92,12 +92,12 @@ public sealed class FactoryPanel
     private void Enqueue(SimSnapshot snap, int bp, int count)
     {
         var f = FactoriesFor(snap, bp);
-        if (f.Length > 0) _ctx.Runner.Enqueue(new FactoryEnqueueCommand(_ctx.LocalArmy, f, bp, count));
+        if (f.Length > 0) ArmyCommands.Send(_ctx, f, (army, units) => new FactoryEnqueueCommand(army, units, bp, count));
     }
 
     private void Dequeue(UnitHandle[] factories, int bp, int count)
     {
-        if (factories.Length > 0) _ctx.Runner.Enqueue(new FactoryDequeueCommand(_ctx.LocalArmy, factories, bp, count));
+        if (factories.Length > 0) ArmyCommands.Send(_ctx, factories, (army, units) => new FactoryDequeueCommand(army, units, bp, count));
     }
 
     private bool AllRepeat(SimSnapshot snap)
@@ -107,8 +107,11 @@ public sealed class FactoryPanel
         return _factories.Count > 0;
     }
 
-    private void ToggleRepeat(SimSnapshot snap) =>
-        _ctx.Runner.Enqueue(new FactoryRepeatCommand(_ctx.LocalArmy, _factories.ToArray(), !AllRepeat(snap)));
+    private void ToggleRepeat(SimSnapshot snap)
+    {
+        bool repeat = !AllRepeat(snap);
+        ArmyCommands.Send(_ctx, _factories, (army, units) => new FactoryRepeatCommand(army, units, repeat));
+    }
 
     public void HandleHotkeys(SimSnapshot snap)
     {

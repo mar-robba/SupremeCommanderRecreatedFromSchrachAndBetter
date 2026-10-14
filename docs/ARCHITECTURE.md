@@ -69,8 +69,26 @@ interpolates prev/cur by time
   already at the site → assist; otherwise invalid placement → order dropped. Own units are pushed out of a new
   footprint. `Order.State/Spawned` hold the site handle (Build) or the prop handle (Reclaim of a prop).
 - **Factories** (`FactorySystem`): front of `Factory.Queue` is spawned inside as `UnderConstruction`; on completion it
-  is moved to the exit (factory heading) and gets a copy of the factory's order queue (rally) or a short move.
-  Repeat re-appends; Dequeue of the item in progress cancels it with a refund; factory death kills the unfinished unit.
+  gets a copy of the factory's order queue (rally) or a short move. Repeat re-appends; Dequeue of the item in progress
+  cancels it with a refund; factory death kills the unfinished unit.
+  **Drive-out** (`FactoryExitMotion`): a finished surface unit starts at the factory center and, while
+  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side)
+  across the factory's own blocked footprint; then it repaths to its rally. Aircraft take off from the pad (spawned
+  at ground height, they climb). Mobile factories (Fatboy) drop units straight at their back (no drive-out, no rally).
+- **Adjacency** (`AdjacencyRules` values, `AdjacencySystem`, sequential, right before EconomySystem): writes
+  `Econ[i].AdjMassProd/AdjEnergyProd/AdjEnergyUse` per structure. Power generators cut the energy use of touching
+  structures (T1 pgen 10% / hydro 12.5% / T2 15% / T3 20% per full side, total cap 75%); mass storage → extractors
+  +12.5% mass, energy storage → pgens +12.5% energy per side; all scaled by shared edge / receiver side length. Recompute
+  only on change: candidate list rebuilt when `OccupancyGrid.Version` changes, a hash of (index, gen, bp, army, active,
+  complete) decides a full recompute (build complete, death, capture, upgrade swap). The per-world state is a pure cache.
+- **Pause** (`SetPausedCommand` → `PauseSystem`, `UnitFlags.Paused`): factories, engineers/ACU (incl. enhancements),
+  upgrades, silos, mass fabricators, shields and radar/sonar stop and request nothing; paused units still move and
+  fight. A paused upgrading structure keeps its old production.
+- **Capture** (`Order.CaptureUnit`, `CaptureSystem`, `UnitTransfer`): an engineer/ACU in build range works for
+  `BuildTime / BuildRate / 2` seconds paying the target's `BuildCostEnergy` (flow economy, `BuilderMode.Capture`).
+  Progress lives on the target (`Builder.CaptureProgress`, several captors add up with a per-tick reservation; reset
+  after 2 s without work). At 100% `UnitTransfer` moves the unit to the captor's army (orders/targets/pause cleared;
+  also used by the sandbox "give") and emits `EffectKind.Captured`. Targets: complete, visible enemy non-commanders.
 - **Wrecks/props** (`World/PropStore`, `SimWorld.Props`): complete units leave a wreck worth
   `BuildCostMass × WreckMassFraction` (unfinished or reclaimed units leave none). Reclaim speed = 2 mass/s per point
   of BuildRate; reclaimed resources arrive as income next tick (`Econ[i].ReclaimMass/Energy`). New structures absorb
@@ -127,6 +145,12 @@ interpolates prev/cur by time
 - Projectiles: straight shots hit the first enemy collision sphere on their path, shells/bombs explode on the
   ground, flak (`ProjectileFlags.ProximityFuse`) bursts near aircraft. Area damage uses
   `AreaDamageEvent.Layers` (= weapon TargetMask) so flak only hurts aircraft and bombs don't hit planes.
+- **Veterancy** (`Combat/Veterancy.cs`, kills counted in `SimWorld` via `Veterancy.AddKill`): a level every
+  3 × tech kills (commanders/experimentals 20), max 5. Each level: +10% max health (healed by that much on level-up)
+  and regen +1/+3/+6 HP/s (T1/T2/T3; commander 10, experimental 25). Always read max health through
+  `Veterancy.MaxHealth(w, i)` (damage, repair, snapshot, upgrade/enhancement swaps keep the health fraction).
+- Attack orders on a target the army no longer detects (lost in fog) are dropped (OrderSystem). Idle aircraft with
+  no orders engage what their weapons acquire (leashed chase) and return to their orbit point.
 - Line of fire (`Combat/LineOfFire.cs`, used by `TargetingSystem`): a NON-forced target is only acquired/kept if the
   weapon can hit it from where the unit stands: straight shots and beams need a clear muzzle→target line over the
   terrain/water surface (same grazing tolerance as projectiles), shells need an arc solution (`Ballistics.SolveArc`,
@@ -144,7 +168,10 @@ interpolates prev/cur by time
   collapses them. `ShieldIndex` (32-unit grid, army mask per cell) is read in the parallel projectile phase: a
   projectile segment entering an enemy dome from OUTSIDE is absorbed at the surface and damages the shield; shots
   fired from inside pass out; area blasts outside a dome don't hurt units inside; beams are blocked on the
-  muzzle→target line. Nukes ignore domes and knock every shield in their outer ring down.
+  muzzle→target line. Nukes ignore domes and knock every shield in their outer ring down. Bombs and shells falling
+  onto a dome from above are absorbed too, and a bomb released by an enemy bomber INSIDE a dome hits the shield.
+  Collapsed or paused shields pay no upkeep (EconomySystem); recharge only starts while the army's energy efficiency
+  is >= 0.95.
 - **Silos** (TML, nuke, anti-nuke): stockpile built pay-first like construction (MissileCost × dt/BuildTime per tick,
   scaled by efficiency, up to MaxStorage). `OrderType.Launch` (`Order.LaunchAt(pos)`) at the queue front fires one
   missile when stocked (TML: only within [MinRange, Range], else dropped); with an empty stockpile it waits.
@@ -231,6 +258,11 @@ interpolates prev/cur by time
   destroys one torpedo in range per weapon cooldown.
 - Subs (`MotionLayer.Sub`, layer `LayerMask.Sub`) are visible only with sonar/omni coverage (`IntelService`), and
   only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
+- Dive/surface (`SetSubmergedCommand` → `Naval/Submarines.cs`, `UnitFlags.Surfaced`): depth changes smoothly;
+  the layer (`OrderSystem.LayerOf`) switches halfway. A surfaced sub is a Water-layer unit: seen by vision/radar,
+  hit by surface guns, collides with ships.
+- Ship separation (`Naval/NavalMotion.cs`): hulls are capsules along the heading, pushed apart for all armies;
+  submerged subs only collide with subs, surfaced subs with ships.
 - Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
   bubble trail, splash/hit/interception bursts, ship wakes scaled by speed and hull), `UnitRenderer.Submerged.cs`
   (submerged units drawn after the water, see-through and blue-tinted), `PropRenderer.Naval.cs` (wrecks on deep
@@ -262,7 +294,10 @@ interpolates prev/cur by time
   Air Staging repairs/refuels for free and releases aircraft when full; `KeepDocked` carriers (the Atlantis) keep
   them until Unload (Launch) or until the aircraft gets new queued orders.
 - Mobile factory (Atlantis): builds aircraft on deck (`SyncFactoryUnit` keeps the unit being built on the carrier)
-  and carries them.
+  and carries them. Pausable like any factory (H). It can't dive yet (it is a Water-layer unit).
+- Capture (`UnitTransfer`): a captured carrier's cargo changes army with it (hold order, recursive); carried units
+  can't be captured and a carrier holding a commander can't be captured. Boarding ends a factory roll-out
+  (`MoveState.LeaveTime = 0`). Air staging repairs veterans to their raised max health.
 - Assist chains (`Economy/AssistChain.cs`): an engineer guarding an engineer that guards a builder… helps the root
   builder (depth 8, cycle-safe); a guard repairs its damaged guarded unit first.
 - Snapshot (`Snapshot/TransportViews.cs`, written by `TransportSnapshotWriter`): `CargoViews` (carrier, used/capacity
@@ -362,6 +397,16 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+- Gameplay toggles (unit panel buttons + hotkeys): pause H (`SetPausedCommand`), dive/surface D (subs), capture E
+  (then click an enemy; engineers also capture with a context right-click on enemies, `CursorHint` shows it).
+  D and E are shared with the transport orders (`Input/SharedHotkeys.cs`, pure): E = transport-to when transports are
+  selected, else capture; D = subs dive/surface AND aircraft dock (a mixed selection does both); the Capture button
+  shows no key while E means transport-to. Right-click priority (`ContextOrders.Evaluate`): enemy → capture (only
+  engineers/commanders selected) or attack; own finished unit → Load / Pick up / Dock (transport rules, local army
+  only) before the builder actions; ground → reclaim a wreck, else Unload (loaded transports), else move. The unit
+  panel shows veterancy and adjacency bonuses and capture bars; `Input/AdjacencyPreview` draws lines to neighbours
+  that would give/receive a bonus while placing a structure; `Input/PlacementLine`: Shift+drag lays a line of
+  structures (`--ui-place id@x,z` for screenshots).
 
 ## Sandbox mode (`Rts.Sim/Systems/SandboxSystem`, `Rts.Client/Sandbox`)
 - Sim: `SandboxSystem.Enable(world)` (called by `GameSession.CreateSimulation` when `GameConfig.Sandbox`) turns the
@@ -380,6 +425,10 @@ interpolates prev/cur by time
   blueprint grouped by category/tech — shields, silos, missile defense and artillery installations in a "Strategic &
   shields" group — with search) + console (`SandboxConsole`, F10 or the key left of 1) + map tools + `--exec` script.
   Panel and console both produce `ConsoleAction`s (`ConsoleActions.cs`) run by `SandboxController.Execute`.
+- Any-army control: in sandbox the player can select and order units of every army (`Input/ArmyCommands.cs` splits
+  each command into one per owning army, since the sim checks every unit against the command's Army). Panel
+  actions work on enemy selections; `--select any:<id>` selects another army's unit at start. Change owner uses
+  `UnitTransfer` (same as capture).
   `SandboxConsoleParser` / `BlueprintMatcher` are pure (no raylib) and unit-tested in `Rts.Client.Tests`.
   While a sandbox text field has focus: `SelectionController.InputBlocked`, camera input off, debug/fog/build hotkeys
   skipped; F9/F10 effect debug keys are disabled in sandbox (`EffectsRenderer.DebugKeysEnabled`).

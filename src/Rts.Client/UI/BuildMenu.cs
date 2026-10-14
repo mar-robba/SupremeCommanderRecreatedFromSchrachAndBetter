@@ -50,7 +50,7 @@ public sealed class BuildMenu
         _tiers.Clear();
         foreach (var h in _sel.Selected)
         {
-            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) continue;
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || !_ctx.Controls(v.Army)) continue;
             var bp = _ctx.Db[v.Bp];
             // Mobile factories (Fatboy) use the factory panel; everything else they list is a unit, not a placement.
             if (!bp.IsMobile || bp.BuildIndices.Length == 0 || bp.Has(UnitCategory.Factory)) continue;
@@ -212,7 +212,7 @@ public sealed class BuildMenu
             {
                 var (rate, n) = BuildRate(snap, bpi);
                 Ui.Tooltip(br, UnitIcons.BuildTooltip(bp, key, rate, n,
-                    "Click to place · Shift+click on the map queues more · R rotates · right-click / Esc cancels"));
+                    "Click to place · Shift+click on the map queues more · Shift+drag lays a line · R rotates · right-click / Esc cancels"));
             }
         }
     }

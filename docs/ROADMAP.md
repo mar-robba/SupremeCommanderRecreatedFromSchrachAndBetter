@@ -2,59 +2,27 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-12 night — read this first in a new session)
-main has all of wave 3 except the AI. That covers:
-- maps + menus;
-- T2/T3 + upgrades;
-- strategic (shields/TML/nukes/artillery);
-- naval;
-- sandbox.
-Tests: 229 sim + 158 client.
+## ▶ NEXT STEPS (updated 2026-10-14 ~00:50 — read this first in a new session)
+main has waves 1-4 (incl. 4f polish, merged 2026-10-14). Tests: 342 sim + 193 client.
+Agent ids/worktrees: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md`; prompts:
+`common-wave5.md` + `wave5-briefs.md` there. Each agent keeps `<worktree>/.claude/handoff.md` and writes
+`<worktree>/.claude/agent-report.md` when done (copy it to `orchestrator/report-<x>.md` before removing the worktree).
 
-**Wave 4 status (2026-10-14 ~01:00) — the orchestrator was restarted here. ON RESUME, do this:**
-- ✅ (g) experimentals, (i) save/replays, (h) transports and (d) AI are MERGED (main: 282 sim + 177 client tests).
-  The reports are in `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/report-<x>.md`. Follow-ups:
-  - AI: Highlands/Canyon NvN games sometimes stalemate; T1 mobile artillery is too cost-efficient (balance).
-  - Transports:
-    - the Atlantis can't dive yet;
-    - the order buttons are cramped with a loaded transport selected;
-    - the cargo/fuel rows cut off the unit panel;
-    - minimap clicks don't work with the new order modes.
-  - Experimentals:
-    - Mavor low arc hits hills;
-    - Stop doesn't cancel an enhancement;
-    - shield HP refills on enhancement change.
-  - Save/replays:
-    - no save migrations;
-    - no Load in the pause menu;
-    - in the viewer, F7 doesn't update the view selector.
-  - Polish:
-    - units leaving a factory don't avoid parked units;
-    - no hold-fire state while capturing.
-- ⏳ **(f) polish**: worktree `.claude/worktrees/agent-a768b24833017f018`. The branch is finished (report-f.md). A
-  merge agent (id a37f5f24cbd4c08cb) is merging main (h+d) into it.
-  - It resolves the hotkey clash (D dive/dock, E capture/transport-to → context-dependent), then runs the tests.
-  - Its report goes to `<worktree>/.claude/agent-report.md`.
-  - When it's done (commit on top of 247f6e3, clean tree): `git merge --no-ff worktree-agent-a768b24833017f018` in
-    main, build, both tests, `--scene transport` screenshot. Then `git worktree remove` + `git branch -d`.
-  - If it got interrupted: commit WIP there and start a fresh merge agent with the same brief (see this list).
-- ⏳ **(j) faction infrastructure** (pre-wave 5): worktree `.claude/worktrees/agent-af56bf7a6ab6077e6` (locked; run
-  `git worktree unlock` before removing). Agent id af56bf7a6ab6077e6.
-  - Scope:
-    - `data/factions/<id>.json` with `Roles` (role → blueprint id), FactionDb, `UnitBlueprint.Faction`, Army.Faction;
-    - the AI and StrategicApi use roles instead of `uef_*` ids (AI match hash identical to main);
-    - a faction selector in setup + `--faction` / `--factions`; a sandbox faction filter;
-    - an ARCHITECTURE "Factions" contract and a CLAUDE.md rule.
-  - Report: `<worktree>/.claude/agent-report.md`, progress in `.claude/handoff.md`.
-  - Merge it after (f), then verify, e.g. `Rts.Bench -- ai 30 256 42 hard,normal` → "WINNER: Player (Hard) after
-    14:44" on main e954f07.
-- Then start **wave 5** (below). Write each prompt with the common rules in `orchestrator/common.md`, adapted.
-  Give the AI and Cybran agents the faction/roles contract from the ARCHITECTURE "Factions" section.
-- Housekeeping notes:
-  - Agents use a build lock wrapper `dn.sh` in an old scratchpad.
-  - A stray rewrite of main's `.gitignore` (unknown sub-agent) was reverted; the patch is in
-    `orchestrator/stray-main-gitignore.patch`.
-  - Sub-agents can't write files in `orchestrator/`: save their final message as `report-<x>.md` yourself.
+**ON RESUME:**
+- Running: (j) faction infrastructure; wave 5 (m) scale/perf, (n) UX polish, (o) lockstep MP.
+  Worktrees are created from the stale `origin/main`; every prompt says "first `git merge main`" (local main).
+- When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
+  a screenshot, then `git worktree unlock` + `git worktree remove` + `git branch -d`.
+- (j) check after merge: `Rts.Bench -- ai 30 256 42 hard,normal` result must equal main's ("WINNER: Player (Hard) after
+  14:44" on e954f07).
+- After (j) merges: start (k) AI uses everything and (l) Cybran (briefs ready), giving them the ARCHITECTURE
+  "Factions" contract.
+- If an agent got cut off by a usage limit: commit its WIP in its worktree, then start a fresh agent in the same
+  worktree (absolute path, no isolation) with the same brief + "continue from .claude/handoff.md".
+- Open follow-ups not yet assigned: AI Highlands/Canyon stalemates + T1 artillery balance (→ k); everything else from
+  wave 4 is in (n)'s brief.
+- Housekeeping: sub-agents can't write `orchestrator/` files; agents use a build lock wrapper `dn.sh` in an old
+  scratchpad; a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
 
 **Next waves (owner: "everything must be done"):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
@@ -88,10 +56,10 @@ Shared contracts (still valid):
 ## Phase 1 — Core gameplay (wave 1, parallel agents) ✅ merged 2026-10-10
 - [x] **Combat** (merged 2026-10-10): targeting with priorities/layers/staggered scans, turrets, lead aiming,
       ballistic artillery, bombs, beams, homing missiles, flak, layer-filtered area damage (bench 6k units ≈ 3 ms/tick)
-      - [ ] later: EnergyPerShot, veterancy bonuses, idle aircraft engaging, terrain blocking direct fire
+      - [ ] later: terrain blocking direct fire (EnergyPerShot: wave 4g; veterancy, idle aircraft engage: wave 4f)
 - [x] **Economy & construction** (merged 2026-10-10): flow economy with efficiency/stall, engineers
       build/assist/repair/reclaim, factories with queue/repeat/rally/refund, deposits, storage, wrecks (PropStore)
-      - [ ] later: Capture, pause toggle, adjacency bonus, units drive out of the factory, reclaim energy from units
+      - [ ] later: reclaim energy from units (capture, pause, adjacency, factory drive-out: wave 4f)
 - [x] **Pathfinding & movement** (merged 2026-10-10): HPA*-style sector regions + portals, cached goal fields,
       corridor A* + string pulling, formation path sharing, per-tick solve cap, air orbit, naval/hover/amphibious,
       priority separation, stuck → repath (1024 map, 6k units ≈ 2.5 ms/tick)
@@ -128,7 +96,7 @@ Shared contracts (still valid):
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
-      - [ ] later: a human listening pass on the sounds, veterancy bonuses in the sim (volume settings: menus branch)
+      - [ ] later: a human listening pass on the sounds (volume settings: menus branch)
 
 - [x] Sandbox mode (agent e, wave 3): main menu "Sandbox" / `--sandbox` / `--exec "cmds"`; side panel (F9) with every
       blueprint (grouped, searchable, 1/10/50/100 per click, any army, construction sites), cheats (infinite resources,
@@ -157,15 +125,15 @@ Shared contracts (still valid):
       T2/T3 artillery), `StrategicApi.LaunchNuke` (used by the sandbox nuke), dome shader + ripples, missile trails,
       nuke explosion (`NukeFx`, shared with the sandbox) + flash + sound, launch mode (L), global launch warning,
       `--scene strategic`
-      - [ ] later: collapsed shields still pay upkeep; AI builds/uses shields, TML, nukes (wave 4); bombers fly over domes
+      - [ ] later: AI builds/uses shields, TML, nukes (wave 4)
 - [x] Naval (wave 3, agent c, 2026-10-12): naval factories T1→T2→T3 (in-place upgrades), frigate, attack sub,
       destroyer (guns + torpedoes + torpedo defense), cruiser (AA + missiles), battleship, T2 torpedo bomber, T1/T2
       sonar, torpedo launcher; water placement (`NavalRules`, client ghost), torpedoes (run under water, home, die on
       shore), rate-limited torpedo defense, subs only seen by sonar/omni and only hit by torpedoes; Archipelago sea
       lanes + harbor beaches (playable: coast reachable, battleship lanes between starts); client: ship models, wakes,
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
-      - [ ] later: AI builds and uses navy (wave 4), naval adjacency, sub surfacing toggle, ship-to-ship collision
-            avoidance in narrow channels
+      - [ ] later: AI builds and uses navy (wave 4), ships steering around each other in narrow channels
+            (they only push apart now)
 - [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
       build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
       **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
@@ -187,10 +155,24 @@ Shared contracts (still valid):
       aircraft); engineer assist chains (guard a guard → helps the root builder; guards repair first); client:
       models, cargo hanging under transports, context clicks, order buttons, cargo counter, fuel bar, ferry lines,
       `--scene transport`
-      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (needs the sub dive toggle), staging
-            repair cost, T3 heavy transport, emergency drop, gunship VTOL hover
+      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (the sub toggle exists now: needs
+            Sub layer + surfaced by default + no dock/launch/SAM while submerged), staging repair cost, T3 heavy
+            transport, emergency drop, gunship VTOL hover
+      - [x] merged with wave 4f polish (2026-10-14): shared hotkeys E (transport-to with transports selected, else
+            capture) and D (subs dive + aircraft dock); captured carriers take their cargo along (not when carrying a
+            commander); pausable Atlantis factory; boarding ends the factory roll-out
 - [ ] Second faction (Cybran-like) with distinct visuals and units
-- [ ] Mass fabricators, adjacency bonus
+- [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
+      absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs
+      ships); sub dive/surface (D); adjacency bonus (pgens cut energy use, storages boost mex/pgens; placement lines);
+      veterancy (+10% HP and regen per level); pause (H: factories, engineers, upgrades, enhancements, silos, fabs,
+      shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
+      from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
+      lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
+      - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
+        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out; nearby own units keep
+        shooting a unit being captured (no hold-fire state yet)
+- [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
 - [ ] 1024 maps with 4–8 players, 5k+ units at 60 FPS (instancing, LOD, culling)

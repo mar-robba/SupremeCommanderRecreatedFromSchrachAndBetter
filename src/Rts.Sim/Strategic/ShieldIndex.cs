@@ -157,6 +157,36 @@ public sealed class ShieldIndex
     }
 
     /// <summary>
+    /// First (lowest entry index) up dome of an army in <paramref name="enemies"/> that contains point
+    /// <paramref name="p"/>, or -1. Used for bombs released by an aircraft flying inside an enemy dome.
+    /// </summary>
+    public int FirstContaining(ulong enemies, Vector3 p, ShieldState[] states)
+    {
+        if (Count == 0 || enemies == 0) return -1;
+        int cx = Math.Clamp((int)(p.X * Inv), 0, Cols - 1);
+        int cz = Math.Clamp((int)(p.Z * Inv), 0, Rows - 1);
+        int c = cz * Cols + cx;
+        if ((_cellArmies[c] & enemies) == 0) return -1;
+        int best = -1;
+        for (int k = _cellStart[c]; k < _cellStart[c + 1]; k++)
+        {
+            int ei = _items[k];
+            ref var e = ref Entries[ei];
+            if (((enemies >> e.Army) & 1) == 0 || !states[e.Unit].Up || (best >= 0 && ei > best)) continue;
+            if (Contains(e, p)) best = ei;
+        }
+        return best;
+    }
+
+    /// <summary>Point of the dome surface straight above <paramref name="p"/> (p inside the dome footprint).</summary>
+    public static Vector3 SurfaceAbove(in ShieldEntry e, Vector3 p)
+    {
+        float dx = p.X - e.Center.X, dz = p.Z - e.Center.Z;
+        float h = MathF.Sqrt(MathF.Max(0, e.Radius * e.Radius - dx * dx - dz * dz)) / e.InvHeightScale;
+        return new Vector3(p.X, MathF.Max(p.Y, e.Center.Y + h), p.Z);
+    }
+
+    /// <summary>
     /// True if the point <paramref name="victim"/> is inside a dome of an army in <paramref name="enemies"/> whose
     /// footprint does not contain <paramref name="blast"/> (area damage from outside doesn't leak in).
     /// </summary>

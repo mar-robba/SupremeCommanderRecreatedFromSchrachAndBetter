@@ -38,11 +38,20 @@ public static class SnapshotWriter
             v.Pos = DMath.To3(u.Pos[i], u.Elevation[i]);
             v.Heading = u.Heading[i];
             v.TurretHeading = bp.Weapons.Length > 0 ? u.Weapons[i * UnitStore.MaxWeapons].TurretHeading : u.Heading[i];
-            v.HealthFrac = bp.MaxHealth > 0 ? u.Health[i] / bp.MaxHealth : 1;
+            float maxHp = Combat.Veterancy.MaxHealth(bp, u.Kills[i]); // veterancy-effective max health
+            v.MaxHealth = maxHp;
+            v.HealthFrac = maxHp > 0 ? u.Health[i] / maxHp : 1;
             v.BuildFrac = u.BuildFraction[i];
             v.Flags = u.Flags[i];
             v.FactoryRepeat = u.Factory[i].Repeat;
             v.Kills = u.Kills[i];
+            ref readonly var econ = ref u.Econ[i];
+            v.AdjMassProd = econ.AdjMassProd;
+            v.AdjEnergyProd = econ.AdjEnergyProd;
+            v.AdjEnergyUse = econ.AdjEnergyUse;
+            ref readonly var bs = ref u.Builder[i];
+            v.WorkMode = bs.Mode;
+            v.CaptureFrac = Systems.CaptureSystem.Progress(w, i); // an enemy is capturing this unit
             v.WorkProgress = -1;
             var building = u.Factory[i].Current.IsNone ? u.Builder[i].Target : u.Factory[i].Current;
             if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
@@ -52,6 +61,8 @@ public static class SnapshotWriter
             if (up.Active) v.WorkProgress = up.Fraction; // an upgrading structure works on its upgrade
             else if (u.Builder[i].Mode == BuilderMode.Upgrade && u.IsActive(building) && u.Upgrade[building.Index].Active)
                 v.WorkProgress = u.Upgrade[building.Index].Fraction; // engineer assisting an upgrade
+            else if (bs.Mode == BuilderMode.Capture && u.IsActive(building))
+                v.WorkProgress = Systems.CaptureSystem.Progress(w, building.Index); // captor: the target's capture progress
 
             // Orders.
             var orders = view != null && w.IsEnemy(viewArmy, u.Army[i]) ? default : u.Orders[i].AsSpan();

@@ -97,11 +97,19 @@ public static class ConstructionSystem
             var tbp = w.BpOf(t);
             if (b.Mode == BuilderMode.Repair)
             {
-                if (u.IsComplete(t)) u.Health[t] = MathF.Min(tbp.MaxHealth, u.Health[t] + delta * tbp.MaxHealth);
+                if (u.IsComplete(t))
+                {
+                    float max = Combat.Veterancy.MaxHealth(w, t); // veterancy raises the max health
+                    u.Health[t] = MathF.Min(max, u.Health[t] + delta * max);
+                }
             }
             else if (b.Mode == BuilderMode.Upgrade)
             {
                 UpgradeSystem.AddProgress(w, t, delta);
+            }
+            else if (b.Mode == BuilderMode.Capture)
+            {
+                CaptureSystem.AddProgress(w, i, t, delta);
             }
             else if (!u.IsComplete(t))
             {
@@ -182,7 +190,7 @@ public static class ConstructionSystem
                 case OrderType.Repair: ExecRepair(w, i, bp, q, ref o); break;
                 case OrderType.Reclaim: ExecReclaim(w, i, bp, q, ref o); break;
                 case OrderType.Guard: ExecGuardAssist(w, i, bp, ref o); break;
-                case OrderType.Capture: Finish(w, i, q); break; // not implemented yet
+                case OrderType.Capture: ExecCapture(w, i, bp, q, ref o); break;
                 default: Idle(w, i); break;
             }
         }
@@ -268,8 +276,13 @@ public static class ConstructionSystem
         var tbp = w.BpOf(t);
         var mode = u.IsComplete(t) ? BuilderMode.Repair : BuilderMode.Build; // repairing a site finishes it
         // At full health, "repairing" an upgrading structure assists its upgrade.
-        if (mode == BuilderMode.Repair && u.Health[t] >= tbp.MaxHealth && u.Upgrade[t].Active) mode = BuilderMode.Upgrade;
-        if (mode == BuilderMode.Repair && u.Health[t] >= tbp.MaxHealth) { Finish(w, i, q); return; }
+        float maxHp = Combat.Veterancy.MaxHealth(w, t);
+        if (mode == BuilderMode.Repair && u.Health[t] >= maxHp && u.Upgrade[t].Active)
+        {
+            if ((u.Flags[t] & UnitFlags.Paused) != 0) { Idle(w, i); return; } // paused upgrade: wait
+            mode = BuilderMode.Upgrade;
+        }
+        if (mode == BuilderMode.Repair && u.Health[t] >= maxHp) { Finish(w, i, q); return; }
         if (!MoveIntoRange(w, i, BuildRange(bp, tbp), u.Pos[t])) { Idle(w, i); return; }
         Work(w, i, target, mode);
     }
@@ -289,9 +302,10 @@ public static class ConstructionSystem
             var tbp = w.BpOf(t);
             if (tbp.Has(UnitCategory.Commander)) { Finish(w, i, q); return; }
             if (!MoveIntoRange(w, i, BuildRange(bp, tbp), u.Pos[t])) { Idle(w, i); return; }
-            float hp = MathF.Min(u.Health[t], rate * UnitReclaimSpeed / tbp.Economy.BuildTime * dt * tbp.MaxHealth);
+            float maxHp = Combat.Veterancy.MaxHealth(w, t);
+            float hp = MathF.Min(u.Health[t], rate * UnitReclaimSpeed / tbp.Economy.BuildTime * dt * maxHp);
             u.Health[t] -= hp;
-            e.ReclaimMass += tbp.Economy.BuildCostMass * (hp / tbp.MaxHealth) / dt;
+            e.ReclaimMass += tbp.Economy.BuildCostMass * (hp / maxHp) / dt;
             SetReclaiming(w, i, o.Target, rate);
             if (u.Health[t] <= 1e-3f)
             {
@@ -335,6 +349,17 @@ public static class ConstructionSystem
         }
     }
 
+    /// <summary>Capture the enemy unit o.Target (see <see cref="CaptureSystem"/>): move into build range, then
+    /// spend energy on capture progress; the order completes when the unit is ours (or can't be captured).</summary>
+    private static void ExecCapture(SimWorld w, int i, UnitBlueprint bp, OrderQueue q, ref Order o)
+    {
+        var u = w.Units;
+        if (!u.IsActive(o.Target) || !CaptureSystem.CanCapture(w, i, o.Target.Index)) { Finish(w, i, q); return; }
+        int t = o.Target.Index;
+        if (!MoveIntoRange(w, i, BuildRange(bp, w.BpOf(t)), u.Pos[t])) { Idle(w, i); return; }
+        Work(w, i, o.Target, BuilderMode.Capture);
+    }
+
     /// <summary>
     /// Engineers guarding a unit assist it: help build what it is building (factory queue, engineer site),
     /// finish it if it is itself a site, or repair it when damaged. Following is done by OrderSystem.
@@ -351,7 +376,8 @@ public static class ConstructionSystem
         var mode = BuilderMode.None;
         int anchor = t; // unit we must be in range of
         ref var tb = ref u.Builder[t];
-        if (u.IsComplete(t) && u.Health[t] < tbp.MaxHealth && !u.Upgrade[t].Active)
+        bool paused = (u.Flags[t] & UnitFlags.Paused) != 0; // a paused factory/upgrade: assistants wait too
+        if (u.IsComplete(t) && u.Health[t] < Combat.Veterancy.MaxHealth(w, t) && !u.Upgrade[t].Active)
         {
             work = g; mode = BuilderMode.Repair; // a damaged assisted unit (e.g. the factory) is repaired first
         }
@@ -361,20 +387,23 @@ public static class ConstructionSystem
         }
         else if (u.Upgrade[t].Active)
         {
-            work = g; mode = BuilderMode.Upgrade; // assist an in-place upgrade (factory production is paused meanwhile)
+            if (!paused) { work = g; mode = BuilderMode.Upgrade; } // assist an in-place upgrade (factory production is paused meanwhile)
         }
+        else if (paused) { } // nothing to assist (repair below)
         else if (tbp.Has(UnitCategory.Factory) && u.IsActive(u.Factory[t].Current) && !u.IsComplete(u.Factory[t].Current.Index))
         {
             work = u.Factory[t].Current; mode = BuilderMode.Assist; // the unit is inside the factory: range to the factory
         }
-        else if (tb.Mode is BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair or BuilderMode.Upgrade && u.IsActive(tb.Target) && tb.Target.Index != i)
+        else if (tb.Mode is BuilderMode.Build or BuilderMode.Assist or BuilderMode.Repair or BuilderMode.Upgrade or BuilderMode.Capture
+                 && u.IsActive(tb.Target) && tb.Target.Index != i)
         {
             int bt = tb.Target.Index;
-            if (tb.Mode == BuilderMode.Upgrade) { if (u.Upgrade[bt].Active) { work = tb.Target; mode = BuilderMode.Upgrade; anchor = bt; } }
+            if (tb.Mode == BuilderMode.Upgrade) { if (u.Upgrade[bt].Active && (u.Flags[bt] & UnitFlags.Paused) == 0) { work = tb.Target; mode = BuilderMode.Upgrade; anchor = bt; } }
+            else if (tb.Mode == BuilderMode.Capture) { if (CaptureSystem.CanCapture(w, i, bt)) { work = tb.Target; mode = BuilderMode.Capture; anchor = bt; } }
             else if (!u.IsComplete(bt)) { work = tb.Target; mode = BuilderMode.Assist; anchor = bt; }
-            else if (tb.Mode == BuilderMode.Repair && u.Health[bt] < w.BpOf(bt).MaxHealth) { work = tb.Target; mode = BuilderMode.Repair; anchor = bt; }
+            else if (tb.Mode == BuilderMode.Repair && u.Health[bt] < Combat.Veterancy.MaxHealth(w, bt)) { work = tb.Target; mode = BuilderMode.Repair; anchor = bt; }
         }
-        if (work.IsNone && u.IsComplete(t) && u.Health[t] < tbp.MaxHealth)
+        if (work.IsNone && u.IsComplete(t) && u.Health[t] < Combat.Veterancy.MaxHealth(w, t))
         {
             work = g; mode = BuilderMode.Repair;
         }
@@ -400,6 +429,7 @@ public static class ConstructionSystem
         u.Flags[i] |= UnitFlags.Building;
         int t = target.Index;
         if (mode == BuilderMode.Upgrade) { UpgradeSystem.RequestWork(w, i, t, ref b); return; }
+        if (mode == BuilderMode.Capture) { CaptureSystem.RequestWork(w, i, t, ref b); return; }
         var tbp = w.BpOf(t);
         float step = w.BpOf(i).Economy.BuildRate / tbp.Economy.BuildTime * SimWorld.Dt;
         ref var tb = ref u.Builder[t];
@@ -407,7 +437,8 @@ public static class ConstructionSystem
         float remaining, costScale;
         if (mode == BuilderMode.Repair)
         {
-            remaining = (tbp.MaxHealth - u.Health[t]) / tbp.MaxHealth - reserved;
+            float max = Combat.Veterancy.MaxHealth(w, t);
+            remaining = (max - u.Health[t]) / max - reserved;
             costScale = RepairCostFraction;
         }
         else

@@ -33,6 +33,9 @@ public static partial class MovementSystem
         mv.HasGoal = false;
         mv.OrbitCenter = w.Units.Pos[i];
         mv.OrbitDir = (i & 1) == 0 ? 1f : -1f;
+        // Subs start submerged (spawn and factory release put them at their running depth).
+        if (bp.Movement.Layer == MotionLayer.Sub && bp.IsMobile)
+            w.Units.Elevation[i] = w.Terrain.WaterLevel - Naval.NavalMotion.SubDepth;
     }
 
     /// <summary>
@@ -69,6 +72,7 @@ public static partial class MovementSystem
         var paths = w.Paths;
         paths.EnsureGrids();
         var sep = paths.Sep;
+        var navHeading = Naval.NavalMotion.HeadingSnapshot(w);
         for (int k = 0; k < u.AliveCount; k++)
         {
             int i = u.AliveList[k];
@@ -79,9 +83,10 @@ public static partial class MovementSystem
             s.Vel = mv.Velocity;
             s.Radius = bp.Radius;
             s.Team = w.Armies[u.Army[i]].Team;
-            s.Kind = bp.IsStructure || !u.IsComplete(i) || bp.Movement.Layer == MotionLayer.None ? (byte)0
-                : bp.Movement.Layer == MotionLayer.Air ? (byte)2 : (byte)1;
+            s.Kind = bp.IsStructure || !u.IsComplete(i) || bp.Movement.Layer == MotionLayer.None ? Naval.NavalMotion.KindNone
+                : Naval.NavalMotion.KindOf(u, i, bp);
             s.Moving = mv.HasGoal ? (byte)1 : (byte)0;
+            if (s.Kind >= Naval.NavalMotion.KindShip) navHeading[i] = u.Heading[i];
         }
         ComputeGroupPace(w);
 
@@ -209,6 +214,8 @@ public static partial class MovementSystem
             }
         }
 
+        if (mv.LeaveTime > 0) FactoryExitMotion.Steer(w, i, bp, ref mv, pos, onBlocked, dt, ref desiredHeading, ref desiredSpeed, ref wantsMove);
+
         // Turn; vehicles must roughly face the direction before driving at full speed.
         float maxTurn = mb.TurnRate * DMath.Deg2Rad * dt;
         heading = DMath.RotateTowards(heading, desiredHeading, maxTurn);
@@ -222,7 +229,10 @@ public static partial class MovementSystem
         mv.Speed = speed;
 
         var vel = DMath.Dir(heading) * speed;
-        vel += Separation(w, i, bp, pos, mv.HasGoal) * MathF.Max(1f, mb.MaxSpeed * 0.5f);
+        var push = paths.Sep[i].Kind >= Naval.NavalMotion.KindShip
+            ? Naval.NavalMotion.Separation(w, i, bp, pos, mv.HasGoal)
+            : Separation(w, i, bp, pos, mv.HasGoal);
+        vel += push * MathF.Max(1f, mb.MaxSpeed * 0.5f);
         var newPos = pos + vel * dt;
 
         bool blocked = false;
@@ -252,7 +262,8 @@ public static partial class MovementSystem
             if (mv.StuckTime > 3f)
             {
                 mv.StuckTime = 0;
-                if (remaining < mv.ArriveRadius + 4f + 2f * bp.Radius) Arrive(ref mv); // crowded destination: good enough
+                float crowdR = mb.Layer is MotionLayer.Water or MotionLayer.Sub ? Naval.NavalMotion.CrowdRadius(bp) : bp.Radius;
+                if (remaining < mv.ArriveRadius + 4f + 2f * crowdR) Arrive(ref mv); // crowded destination: good enough
                 else if (mv.StuckRepaths < 8) { mv.RepathRequested = true; mv.StuckRepaths++; }
             }
         }
@@ -270,7 +281,7 @@ public static partial class MovementSystem
         u.Elevation[i] = mb.Layer switch
         {
             MotionLayer.Land or MotionLayer.Amphibious => w.Terrain.GetHeight(newPos),
-            MotionLayer.Sub => w.Terrain.WaterLevel - 1.5f,
+            MotionLayer.Sub => Naval.NavalMotion.SubElevation(w, i, u.Elevation[i]),
             _ => w.Terrain.GetSurfaceHeight(newPos),
         };
     }
@@ -358,7 +369,9 @@ public static partial class MovementSystem
             ref var o = ref Sep[j];
             var d = Pos - o.Pos;
             float d2 = d.LengthSquared();
-            if (d2 >= MaxReach2 || o.Kind != Kind || j == Self) return true; // cheap rejects first
+            if (d2 >= MaxReach2 || j == Self) return true; // cheap rejects first
+            // Land-kind units also collide with ships (circle model); ships/subs use NavalMotion.Separation.
+            if (o.Kind != Kind && !(Kind == Naval.NavalMotion.KindSurface && o.Kind == Naval.NavalMotion.KindShip)) return true;
             bool air = Kind == 2;
             bool jMoving = o.Moving != 0;
             bool friendly = o.Team == Team;
@@ -380,27 +393,38 @@ public static partial class MovementSystem
                 n = d / dist;
             }
             float overlap = (reach - dist) / reach;
-            float weight = air ? 0.5f : 1f;
-            if (friendly && !air)
-            {
-                if (SelfMoving && !jMoving) weight = 0.25f; // push through idle friends; they step aside
-                else if (SelfMoving && jMoving) weight = 0.6f;
-                else if (!SelfMoving && jMoving)
-                {
-                    weight = 1.6f;
-                    var v = o.Vel;
-                    float vl = v.Length();
-                    if (vl > 0.1f)
-                    {
-                        var side = new Vector2(-v.Y, v.X) / vl;
-                        if (Vector2.Dot(side, d) < 0) side = -side;
-                        Push += side * (overlap * 1.2f);
-                    }
-                }
-            }
-            Push += n * (overlap * weight);
+            if (air) Push += n * (overlap * 0.5f);
+            else AddSurfacePush(ref Push, n, d, overlap, friendly, SelfMoving, jMoving, o.Vel);
             return true;
         }
+    }
+
+    /// <summary>
+    /// Surface separation weighting (priorities): movers push through idle friends (0.25), friends both moving 0.6,
+    /// idle units yield strongly (1.6) and sideways out of a moving friend's way; enemies push 1:1.
+    /// <paramref name="d"/> = self − neighbour center offset (side choice).
+    /// </summary>
+    internal static void AddSurfacePush(ref Vector2 push, Vector2 n, Vector2 d, float overlap, bool friendly,
+        bool selfMoving, bool jMoving, Vector2 jVel)
+    {
+        float weight = 1f;
+        if (friendly)
+        {
+            if (selfMoving && !jMoving) weight = 0.25f; // push through idle friends; they step aside
+            else if (selfMoving && jMoving) weight = 0.6f;
+            else if (!selfMoving && jMoving)
+            {
+                weight = 1.6f;
+                float vl = jVel.Length();
+                if (vl > 0.1f)
+                {
+                    var side = new Vector2(-jVel.Y, jVel.X) / vl;
+                    if (Vector2.Dot(side, d) < 0) side = -side;
+                    push += side * (overlap * 1.2f);
+                }
+            }
+        }
+        push += n * (overlap * weight);
     }
 
     private static Vector2 Separation(SimWorld w, int i, UnitBlueprint bp, Vector2 pos, bool selfMoving)

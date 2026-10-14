@@ -10,6 +10,8 @@ namespace Rts.Client.Rendering;
 /// along its view ray until the whole model is just above the water plane: the projection is unchanged, the
 /// depth test against the water passes, nearer geometry (ships, land) still hides it, and the order of the
 /// model's own faces is kept (the same shift per instance). No shadows.
+/// Submarines with <c>UnitFlags.Surfaced</c> (dive toggle) ride at the water surface (the sim eases their
+/// elevation, <c>NavalMotion.SubElevation</c>) and so are drawn like ships: opaque, with shadows.
 /// </summary>
 public sealed unsafe partial class UnitRenderer
 {

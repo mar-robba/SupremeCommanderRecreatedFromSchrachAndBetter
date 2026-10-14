@@ -66,7 +66,8 @@ public enum TransportButtons : byte { None = 0, Unload = 1, Launch = 2, Transpor
 /// (<see cref="TargetContext"/> / <see cref="GroundContext"/>): land units on an own transport = Load (board),
 /// a transport on an own land unit = Load (pick up), aircraft on an own air carrier = Dock, a transport with cargo on
 /// the ground = Unload there. Order modes / hotkeys: U unload (air carriers: launch), E transport-to, F ferry
-/// (transports: pickup beacon then drop point; land units: a beacon), D dock at the nearest air carrier.
+/// (transports: pickup beacon then drop point; land units: a beacon), D dock at the nearest air carrier
+/// (E and D are shared with capture / dive, see <see cref="SharedHotkeys"/>).
 /// Only sends <see cref="IssueOrderCommand"/>s; the sim gives each unit the part of the order that applies to it.
 /// </summary>
 public static class TransportInput
@@ -175,6 +176,8 @@ public static class TransportInput
         bool queue = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         // U also upgrades selected structures (UpgradeUi): leave it to the upgrade when one can start.
         if (u && (b & (TransportButtons.Unload | TransportButtons.Launch)) != 0 && !UpgradeWantsU(ctx, sel, snap)) StartUnload(ctx, sel, queue);
+        // E / D are shared with capture / dive (SharedHotkeys): transports win E; D docks the aircraft while
+        // UnitToggles dives the subs of the same selection.
         if (e && (b & TransportButtons.TransportTo) != 0) StartMode(sel, Mode.TransportTo);
         if (f && (b & TransportButtons.Ferry) != 0) StartMode(sel, Mode.Ferry);
         if (d && (b & TransportButtons.Dock) != 0) DockNow(ctx, sel, queue);

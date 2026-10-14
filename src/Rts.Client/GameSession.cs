@@ -70,7 +70,7 @@ public sealed class GameSession : IDisposable
             GameApp.SpawnDemo(sim, cfg.Stress);
             FogRenderer.SpawnDemoRadars(sim);
         }
-        if (cfg.Scene?.StartsWith("strategic") == true) StrategicScene.Setup(sim, cfg.Scene);
+        if (cfg.Scene?.StartsWith("strategic") == true) cfg.SceneCamera = StrategicScene.Setup(sim, cfg.Scene);
         else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
         else if (cfg.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.Setup(sim, cfg);
         else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);

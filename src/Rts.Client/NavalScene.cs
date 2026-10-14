@@ -134,6 +134,17 @@ public static class NavalScene
             var h = w.SpawnUnit(subBp, 0, subPos, DMath.HeadingOf(perp));
             if (!h.IsNone) cmds.Add(new IssueOrderCommand(0, [h], Order.MoveTo(subPos + perp * 4f), false));
             Console.WriteLine($"naval scene: close-up sub at {subPos.X:0},{subPos.Y:0} (e.g. --camera {subPos.X:0},{subPos.Y + 2:0},16)");
+            // A second, surfaced sub beside it (dive toggle): drawn at the surface like a ship.
+            if (FindFree(t, subPos - perp * 7f, db[subBp], placed) is Vector2 surfPos)
+            {
+                var hs = w.SpawnUnit(subBp, 0, surfPos, DMath.HeadingOf(perp));
+                if (!hs.IsNone)
+                {
+                    cmds.Add(new SetSubmergedCommand(0, [hs], false));
+                    cmds.Add(new IssueOrderCommand(0, [hs], Order.MoveTo(surfPos + perp * 4f), false));
+                    Console.WriteLine($"naval scene: surfaced sub at {surfPos.X:0},{surfPos.Y:0}");
+                }
+            }
         }
         cfg.SceneCamera = new Vector3(center.X, center.Y + 3f, 58f);
         Console.WriteLine($"naval scene: battle at {center.X:0},{center.Y:0} (default camera {center.X:0},{center.Y + 3:0},58)");

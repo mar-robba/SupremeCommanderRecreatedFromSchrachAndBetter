@@ -25,10 +25,20 @@ public sealed class GameContext
     /// <summary>Watching a replay: no orders (selection and info panels only), see Rts.Client/Persistence.</summary>
     public bool ReadOnly;
 
-    public bool IsEnemy(int army)
+    /// <summary>Sandbox: units of every army can be selected and ordered (commands are split per army,
+    /// see <see cref="Input.ArmyCommands"/>). False in normal games.</summary>
+    public bool ControlAnyArmy;
+
+    /// <summary>Can the player select / order units of this army?</summary>
+    public bool Controls(int army) => army == LocalArmy || ControlAnyArmy;
+
+    public bool IsEnemy(int army) => AreEnemies(LocalArmy, army);
+
+    /// <summary>True if armies a and b are on different teams.</summary>
+    public bool AreEnemies(int a, int b)
     {
         var armies = Snapshots.Current.Armies;
-        return army != LocalArmy && armies[army].Team != armies[LocalArmy].Team;
+        return a != b && (uint)a < (uint)armies.Length && (uint)b < (uint)armies.Length && armies[b].Team != armies[a].Team;
     }
 
     public Vector3? PickGround(Vector2 screen)

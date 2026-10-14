@@ -18,6 +18,7 @@ public static class OrderSystem
     public static void Run(SimWorld w)
     {
         var u = w.Units;
+        Combat.CombatState.Of(w); // create the combat cache before the parallel loop (idle air engage reads its catalog)
         Par.For(u.AliveCount, 256, (_, start, end) =>
         {
             for (int k = start; k < end; k++)
@@ -43,9 +44,11 @@ public static class OrderSystem
 
         if (q.IsEmpty)
         {
+            if (IdleAirEngage.Update(w, i, bp, ref mv)) return;
             mv.HasGoal = false;
             return;
         }
+        mv.IdleChase = false;
 
         ref var o = ref q.Current;
         switch (o.Type)
@@ -91,6 +94,22 @@ public static class OrderSystem
                 if (!o.Target.IsNone)
                 {
                     if (!u.IsActive(o.Target)) { q.Pop(); mv.HasGoal = false; return; }
+                    // Target lost in the fog (not seen, not on radar/sonar): go to its last known position (o.Pos,
+                    // State 1 = recorded) and drop the order there if it is still not found (SupCom).
+                    if (o.State == 0 || Combat.CombatState.CanSee(w, u.Army[i], o.Target.Index))
+                    {
+                        o.Pos = u.Pos[o.Target.Index];
+                        o.State = 1;
+                    }
+                    else
+                    {
+                        float near = MathF.Max(3f, bp.Radius * 2f);
+                        bool there = Vector2.DistanceSquared(u.Pos[i], o.Pos) <= near * near
+                                     || mv.Arrived && Vector2.DistanceSquared(mv.Goal, o.Pos) < 0.01f; // unreachable: nearest point
+                        if (there) { q.Pop(); mv.HasGoal = false; return; }
+                        SetGoal(ref mv, o.Pos, near * 0.5f);
+                        return;
+                    }
                     targetPos = u.Pos[o.Target.Index];
                     for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
                         if (CanTargetLayer(w, bp.Weapons[wi], o.Target.Index)) weapons[wi].Target = o.Target;
@@ -132,7 +151,7 @@ public static class OrderSystem
 
     public static float ArriveRadius(UnitBlueprint bp) => MathF.Max(DefaultArriveRadius, bp.Radius);
 
-    private static bool AnyWeaponEngaged(UnitStore u, int i, UnitBlueprint bp)
+    internal static bool AnyWeaponEngaged(UnitStore u, int i, UnitBlueprint bp)
     {
         var ws = u.WeaponsOf(i);
         for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
@@ -173,7 +192,7 @@ public static class OrderSystem
         {
             MotionLayer.Air => w.Units.IsComplete(i) && w.Units.Elevation[i] > w.Terrain.GetSurfaceHeight(w.Units.Pos[i]) + 1f ? LayerMask.Air : LayerMask.Land,
             MotionLayer.Water => LayerMask.Water,
-            MotionLayer.Sub => LayerMask.Sub,
+            MotionLayer.Sub => Naval.Submarines.LayerOf(w, i), // dive toggle (by depth: halfway up = surface layer)
             MotionLayer.Hover => w.Terrain.IsUnderwater(w.Units.Pos[i]) ? LayerMask.Water : LayerMask.Land,
             MotionLayer.Amphibious => w.Terrain.IsUnderwater(w.Units.Pos[i]) ? LayerMask.Sub : LayerMask.Land,
             _ => bp.HasAny(UnitCategory.Naval) ? LayerMask.Water : LayerMask.Land,
