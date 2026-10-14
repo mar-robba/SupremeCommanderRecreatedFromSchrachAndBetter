@@ -2,6 +2,8 @@
 
 The owner does not write code: AI agents build everything. Talk to the owner in **Italian**.
 Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to see what is done / in progress.
+Docs index: `docs/README.md` (orchestrators: `docs/WORKFLOW.md`). All durable knowledge (design, decisions, lessons,
+numbers, plans) goes in `docs/`, organized as that index says, never only in private agent memory or scratch files.
 
 ## Commands (run from repo root)
 - Build all: `dotnet build Rts.slnx`
