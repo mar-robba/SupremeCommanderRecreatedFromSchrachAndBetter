@@ -5,6 +5,8 @@ using Rts.Client;
 //                   [--autostart] (setup: start as soon as the preview is ready) [--flow-test] (scripted menu flow)
 //        Rts.Client [--seed N] [--map 256|512|1024] [--players N] [--preset plains|lakes|highlands|canyon|archipelago]
 //                   [--water 0..1] [--demo] [--size 1600x900] [--pause-menu] [--endscreen]   -> straight into a game
+//                   [--faction ID] (local player's faction) [--factions a,b,...] (per slot in order; "random" allowed;
+//                   ids = data/factions/*.json; also preset the --setup screen)
 //                   [--screenshot out.png --frames 120] [--camera x,z,distance]
 //                   [--stress N] [--fxtest] [--gallery] [--novsync] [--debugwater H] [--nofog]
 //                   [--nosound] [--sound] [--volume F] [--sfx-volume F] [--music-volume F] [--nomusic]

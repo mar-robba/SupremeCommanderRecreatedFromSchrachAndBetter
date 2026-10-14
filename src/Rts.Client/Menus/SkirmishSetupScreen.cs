@@ -90,7 +90,7 @@ public sealed class SkirmishSetupScreen : IScreen
 
             var (facName, facColor) = FactionLabel(s.Faction);
             d = MenuUi.Cycle(Ui.R(cxF, y, wFac, rowH), open ? facName : "—", open, facColor);
-            if (d != 0) s.Faction = NextFaction(s.Faction, d);
+            if (d != 0) s.Faction = GameConfig.NextFaction(_app.Db.Factions, s.Faction, d);
 
             bool ai = s.Kind == SlotKind.AI;
             d = MenuUi.Cycle(Ui.R(cx2, y, wDiff, rowH), ai ? s.Difficulty.ToString() : "—", ai,
@@ -111,20 +111,6 @@ public sealed class SkirmishSetupScreen : IScreen
         }
         Ui.Text("Left click: next · right click: previous. Teams share victory; \"None\" = free for all.",
             p.X + Ui.P(12), p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
-    }
-
-    /// <summary>Faction choices: every faction of data/factions, then "Random" (resolved from the seed at start).</summary>
-    private IReadOnlyList<string> FactionChoices() =>
-        [.. _app.Db.Factions.All.Select(f => f.Id), FactionDb.Random];
-
-    private string NextFaction(string current, int dir)
-    {
-        var choices = FactionChoices();
-        int i = -1;
-        for (int k = 0; k < choices.Count; k++)
-            if (string.Equals(choices[k], current, StringComparison.OrdinalIgnoreCase)) i = k;
-        int n = choices.Count;
-        return choices[i < 0 ? 0 : ((i + dir) % n + n) % n];
     }
 
     private (string Name, Color Color) FactionLabel(string id)
@@ -231,7 +217,7 @@ public sealed class SkirmishSetupScreen : IScreen
             _app.ToMainMenu();
             return;
         }
-        string? problem = _cfg.Problem();
+        string? problem = _cfg.Problem(_app.Db.Factions);
         var start = Ui.R(right - Ui.P(220), y, Ui.P(220), bh);
         if (problem != null)
             Ui.TextRight(problem, start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.Warn, true);

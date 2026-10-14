@@ -195,6 +195,7 @@ public static class GameApp
         if (opt.StartScreen == StartScreen.Game)
         {
             directCfg = GameConfig.FromOptions(opt);
+            if (directCfg.FactionProblem(db.Factions) is string bad) throw new ArgumentException(bad);
             directSim = GameSession.CreateSimulation(db, directCfg, out directLocal);
         }
 

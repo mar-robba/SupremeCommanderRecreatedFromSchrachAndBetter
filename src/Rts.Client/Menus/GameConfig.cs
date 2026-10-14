@@ -66,8 +66,8 @@ public sealed class GameConfig
     public IEnumerable<PlayerSlot> OpenSlots => Slots.Where(s => s.Kind != SlotKind.Closed);
     public int Players => OpenSlots.Count();
 
-    /// <summary>Why the game can't start (null if it can).</summary>
-    public string? Problem()
+    /// <summary>Why the game can't start (null if it can). With <paramref name="factions"/>: also unknown slot factions.</summary>
+    public string? Problem(FactionDb? factions = null)
     {
         if (Players < 2) return "At least two players are needed";
         int humans = OpenSlots.Count(s => s.Kind == SlotKind.Human);
@@ -75,6 +75,29 @@ public sealed class GameConfig
         var open = OpenSlots.ToList();
         bool allSameTeam = open.All(s => s.Team > 0 && s.Team == open[0].Team);
         if (allSameTeam) return "Everybody is on the same team";
+        return factions == null ? null : FactionProblem(factions);
+    }
+
+    /// <summary>Faction choices of a slot: every faction of data/factions (file order), then "random" (picked from the seed).</summary>
+    public static IReadOnlyList<string> FactionChoices(FactionDb factions) => [.. factions.All.Select(f => f.Id), FactionDb.Random];
+
+    /// <summary>The faction choice <paramref name="dir"/> steps after <paramref name="current"/> (wrapping; unknown → the first).</summary>
+    public static string NextFaction(FactionDb factions, string current, int dir)
+    {
+        var choices = FactionChoices(factions);
+        int i = -1;
+        for (int k = 0; k < choices.Count; k++)
+            if (string.Equals(choices[k], current, StringComparison.OrdinalIgnoreCase)) i = k;
+        int n = choices.Count;
+        return choices[i < 0 ? 0 : ((i + dir) % n + n) % n];
+    }
+
+    /// <summary>The first open slot whose faction is neither "random" nor in data/factions (null = all fine).</summary>
+    public string? FactionProblem(FactionDb factions)
+    {
+        foreach (var s in OpenSlots)
+            if (!string.Equals(s.Faction, FactionDb.Random, StringComparison.OrdinalIgnoreCase) && factions.Get(s.Faction) == null)
+                return $"Unknown faction '{s.Faction}' (known: {string.Join(", ", factions.All.Select(f => f.Id))}, random)";
         return null;
     }
 
