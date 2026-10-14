@@ -6,9 +6,12 @@ namespace Rts.Sim.Data;
 
 /// <summary>
 /// The role names a faction file (<c>data/factions/&lt;id&gt;.json</c>, "Roles") may map to blueprint ids. Sim/AI code
-/// never hardcodes faction blueprint ids: it asks <see cref="FactionDb.RoleBlueprint"/> for the army's faction's role
-/// (-1 = the faction has no unit for that role; consumers must handle it). Loading rejects role names not listed here
-/// (typo protection): a new role = a new constant here + a row in the docs/ARCHITECTURE.md "Factions" table.
+/// never hardcodes faction blueprint ids: it asks <see cref="FactionDb.RoleBlueprint"/> for the army's faction's role.
+/// Every shipped faction fills every <see cref="Required"/> role (test <c>FactionTests</c>); <see cref="Optional"/> roles
+/// are faction-specific units (-1 = the faction has none; consumers must handle it). Loading rejects role names not
+/// listed here (typo protection). A new role = a constant here + an entry in <see cref="All"/> (and in
+/// <see cref="Optional"/> if not every faction has one) + the role in every data/factions json + docs/ARCHITECTURE.md
+/// "Factions".
 /// </summary>
 public static class FactionRoles
 {
@@ -22,7 +25,7 @@ public static class FactionRoles
     // Air units
     public const string AirScoutT1 = "air_scout_t1", InterceptorT1 = "interceptor_t1", BomberT1 = "bomber_t1", TransportT1 = "transport_t1";
     public const string FighterBomberT2 = "fighter_bomber_t2", GunshipT2 = "gunship_t2", TorpedoBomberT2 = "torpedo_bomber_t2",
-        TransportT2 = "transport_t2";
+        TransportT2 = "transport_t2", AirStaging = "air_staging";
     public const string AirSuperiorityT3 = "air_superiority_t3", SpyPlaneT3 = "spy_plane_t3", StratBomberT3 = "strat_bomber_t3",
         GunshipT3 = "gunship_t3";
     // Naval units
@@ -55,7 +58,7 @@ public static class FactionRoles
         EngineerT1, EngineerT2, EngineerT3, Scu,
         ScoutT1, TankT1, ArtilleryT1, MobileAaT1, AmphibiousT2, HeavyTankT2, MmlT2, MobileAaT2, MobileShieldT2, MobileStealthT2,
         AssaultT3, SiegeT3, SniperT3, ArtilleryT3,
-        AirScoutT1, InterceptorT1, BomberT1, TransportT1, FighterBomberT2, GunshipT2, TorpedoBomberT2, TransportT2,
+        AirScoutT1, InterceptorT1, BomberT1, TransportT1, FighterBomberT2, GunshipT2, TorpedoBomberT2, TransportT2, AirStaging,
         AirSuperiorityT3, SpyPlaneT3, StratBomberT3, GunshipT3,
         FrigateT1, SubT1, DestroyerT2, CruiserT2, BattleshipT3, CarrierT3,
         LandFactoryT1, LandFactoryT2, LandFactoryT3, AirFactoryT1, AirFactoryT2, AirFactoryT3,
@@ -67,8 +70,25 @@ public static class FactionRoles
         ExpLand, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
     ];
 
+    /// <summary>
+    /// Faction-specific roles: a faction may leave these out (SupCom factions differ here: mobile stealth vs mobile
+    /// shield, carriers, T3 point defense, the second/air/naval experimental...). Code using them must handle -1.
+    /// </summary>
+    public static readonly string[] Optional =
+    [
+        MobileShieldT2, MobileStealthT2, SiegeT3, SniperT3, FighterBomberT2, GunshipT3, CarrierT3,
+        PdT3, TorpedoT2, ShieldT3, StealthFieldT2, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
+    ];
+
+    /// <summary>Roles every faction must fill (<see cref="All"/> minus <see cref="Optional"/>): AI/sim code may rely on them.</summary>
+    public static readonly string[] Required = All.Where(r => Array.IndexOf(Optional, r) < 0).ToArray();
+
     private static readonly HashSet<string> Known = new(All, StringComparer.Ordinal);
+    private static readonly HashSet<string> OptionalSet = new(Optional, StringComparer.Ordinal);
+
     public static bool IsKnown(string role) => Known.Contains(role);
+    /// <summary>True for a known role every faction must fill.</summary>
+    public static bool IsRequired(string role) => Known.Contains(role) && !OptionalSet.Contains(role);
 }
 
 /// <summary>

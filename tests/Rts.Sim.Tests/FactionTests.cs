@@ -56,18 +56,48 @@ public class FactionTests
     }
 
     [Fact]
-    public void UefJsonMapsEveryUefBlueprint()
+    public void EveryFactionFillsEveryRequiredRole()
     {
-        var uef = Db.Factions.Get("uef")!;
-        var mapped = new HashSet<int>(uef.RoleIndices.Values) { uef.CommanderIndex };
-        var missing = Db.All.Where(b => !b.IsVariant && b.Faction == "uef" && !mapped.Contains(b.Index)).Select(b => b.Id).ToList();
-        Assert.True(missing.Count == 0, "UEF blueprints without a role in data/factions/uef.json: " + string.Join(", ", missing));
-        foreach (var (role, id) in uef.Roles)
+        Assert.NotEmpty(Db.Factions.All);
+        foreach (var f in Db.Factions.All)
         {
-            Assert.True(FactionRoles.IsKnown(role), role);
-            Assert.Equal("uef", Db[id].Faction);
+            var missing = FactionRoles.Required.Where(r => !f.HasRole(r)).ToList();
+            Assert.True(missing.Count == 0, $"data/factions/{f.Id}.json misses required roles: " + string.Join(", ", missing));
+            foreach (var (role, bp) in f.RoleIndices)
+            {
+                Assert.True(FactionRoles.IsKnown(role), role);
+                Assert.True(bp >= 0 && bp < Db.Count, $"{f.Id}.{role}");
+                Assert.Equal(f.Id, Db.All[bp].Faction); // a faction's roles are its own units
+                Assert.False(Db.All[bp].IsVariant, $"{f.Id}.{role} is an enhancement variant");
+            }
+            Assert.Equal(f.Id, Db.All[f.CommanderIndex].Faction);
         }
+    }
+
+    [Fact]
+    public void EveryFactionBlueprintHasARole()
+    {
+        foreach (var f in Db.Factions.All)
+        {
+            var mapped = new HashSet<int>(f.RoleIndices.Values) { f.CommanderIndex };
+            var missing = Db.All.Where(b => !b.IsVariant && b.Faction == f.Id && !mapped.Contains(b.Index)).Select(b => b.Id).ToList();
+            Assert.True(missing.Count == 0, $"{f.Id} blueprints without a role in data/factions/{f.Id}.json: " + string.Join(", ", missing));
+        }
+    }
+
+    [Fact]
+    public void RoleListsAreConsistent()
+    {
         Assert.Equal(FactionRoles.All.Length, FactionRoles.All.Distinct().Count());
+        Assert.All(FactionRoles.Optional, r => Assert.True(FactionRoles.IsKnown(r), r));
+        Assert.Equal(FactionRoles.All.Length, FactionRoles.Required.Length + FactionRoles.Optional.Distinct().Count());
+        Assert.All(FactionRoles.Required, r => Assert.True(FactionRoles.IsRequired(r), r));
+        Assert.All(FactionRoles.Optional, r => Assert.False(FactionRoles.IsRequired(r), r));
+        Assert.False(FactionRoles.IsRequired("no_such_role"));
+        // Roles AI/strategic code relies on without a fallback must stay required.
+        foreach (var r in new[] { FactionRoles.EngineerT1, FactionRoles.TankT1, FactionRoles.LandFactoryT1, FactionRoles.MexT1,
+                     FactionRoles.PgenT1, FactionRoles.AirFactoryT1, FactionRoles.NukeSilo, FactionRoles.TransportT1 })
+            Assert.True(FactionRoles.IsRequired(r), r);
     }
 
     [Fact]

@@ -27,9 +27,12 @@
     "air_scout_t1": "uef_t1_air_scout",
     "interceptor_t1": "uef_t1_interceptor",
     "bomber_t1": "uef_t1_bomber",
+    "transport_t1": "uef_t1_transport",
     "fighter_bomber_t2": "uef_t2_fighter_bomber",
     "gunship_t2": "uef_t2_gunship",
     "torpedo_bomber_t2": "uef_t2_torpedo_bomber",
+    "transport_t2": "uef_t2_transport",
+    "air_staging": "uef_t2_air_staging",
     "air_superiority_t3": "uef_t3_air_superiority",
     "spy_plane_t3": "uef_t3_spy_plane",
     "strat_bomber_t3": "uef_t3_strategic_bomber",
@@ -86,6 +89,7 @@
     "sonar_t2": "uef_t2_sonar",
 
     "exp_land": "uef_x_fatboy",
+    "exp_naval": "uef_x_atlantis",
     "exp_artillery": "uef_x_mavor"
   }
 }
