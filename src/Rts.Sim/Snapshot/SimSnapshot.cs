@@ -39,6 +39,8 @@ public struct UnitView
     public float AdjMassProd, AdjEnergyProd, AdjEnergyUse;
     /// <summary>Aircraft flight fuel 0..1 (-1 = the unit uses no fuel). See Transport/TransportSystem.</summary>
     public float Fuel;
+    /// <summary>Fire state (Combat/FireStates).</summary>
+    public FireState FireState;
 }
 
 public struct OrderView
