@@ -1,4 +1,5 @@
 using Rts.Sim;
+using Rts.Sim.Data;
 using Rts.Sim.Map;
 using Rts.Sim.World;
 
@@ -15,6 +16,8 @@ public sealed class PlayerSlot
     public int Team;
     /// <summary>Index into <see cref="GameSetup.ArmyColors"/>.</summary>
     public int ColorIndex;
+    /// <summary>Faction id (data/factions) or <see cref="FactionDb.Random"/> (resolved from the seed at game start).</summary>
+    public string Faction = FactionDb.DefaultFaction;
 
     public PlayerSlot Clone() => (PlayerSlot)MemberwiseClone();
 }
@@ -63,8 +66,8 @@ public sealed class GameConfig
     public IEnumerable<PlayerSlot> OpenSlots => Slots.Where(s => s.Kind != SlotKind.Closed);
     public int Players => OpenSlots.Count();
 
-    /// <summary>Why the game can't start (null if it can).</summary>
-    public string? Problem()
+    /// <summary>Why the game can't start (null if it can). With <paramref name="factions"/>: also unknown slot factions.</summary>
+    public string? Problem(FactionDb? factions = null)
     {
         if (Players < 2) return "At least two players are needed";
         int humans = OpenSlots.Count(s => s.Kind == SlotKind.Human);
@@ -72,6 +75,29 @@ public sealed class GameConfig
         var open = OpenSlots.ToList();
         bool allSameTeam = open.All(s => s.Team > 0 && s.Team == open[0].Team);
         if (allSameTeam) return "Everybody is on the same team";
+        return factions == null ? null : FactionProblem(factions);
+    }
+
+    /// <summary>Faction choices of a slot: every faction of data/factions (file order), then "random" (picked from the seed).</summary>
+    public static IReadOnlyList<string> FactionChoices(FactionDb factions) => [.. factions.All.Select(f => f.Id), FactionDb.Random];
+
+    /// <summary>The faction choice <paramref name="dir"/> steps after <paramref name="current"/> (wrapping; unknown → the first).</summary>
+    public static string NextFaction(FactionDb factions, string current, int dir)
+    {
+        var choices = FactionChoices(factions);
+        int i = -1;
+        for (int k = 0; k < choices.Count; k++)
+            if (string.Equals(choices[k], current, StringComparison.OrdinalIgnoreCase)) i = k;
+        int n = choices.Count;
+        return choices[i < 0 ? 0 : ((i + dir) % n + n) % n];
+    }
+
+    /// <summary>The first open slot whose faction is neither "random" nor in data/factions (null = all fine).</summary>
+    public string? FactionProblem(FactionDb factions)
+    {
+        foreach (var s in OpenSlots)
+            if (!string.Equals(s.Faction, FactionDb.Random, StringComparison.OrdinalIgnoreCase) && factions.Get(s.Faction) == null)
+                return $"Unknown faction '{s.Faction}' (known: {string.Join(", ", factions.All.Select(f => f.Id))}, random)";
         return null;
     }
 
@@ -97,6 +123,7 @@ public sealed class GameConfig
             MapSize = MapSize, Seed = Seed, Players = n, MapPreset = Preset, WaterAmount = WaterAmount,
             AiPlayers = open.Select(s => s.Kind == SlotKind.AI).ToArray(),
             AiDifficulties = open.Select(s => s.Difficulty).ToArray(),
+            Factions = open.Select(s => s.Faction).ToArray(),
             // Free-for-all slots get a unique team id; numbered teams share theirs.
             Teams = open.Select((s, a) => s.Team > 0 ? s.Team : 100 + a).ToArray(),
             Colors = open.Select(s => GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length]).ToArray(),
@@ -111,6 +138,23 @@ public sealed class GameConfig
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;
+        c.ApplyFactionOptions(o);
         return c;
+    }
+
+    /// <summary>
+    /// CLI factions: <c>--factions a,b,...</c> sets slot i to the i-th id (in slot order, "random" allowed),
+    /// <c>--faction X</c> then sets the human slot. Unknown ids are reported when the game starts.
+    /// </summary>
+    public void ApplyFactionOptions(ClientOptions o)
+    {
+        if (o.Factions != null)
+            for (int i = 0; i < Math.Min(o.Factions.Length, MaxSlots); i++)
+                if (!string.IsNullOrWhiteSpace(o.Factions[i])) Slots[i].Faction = o.Factions[i].Trim().ToLowerInvariant();
+        if (!string.IsNullOrWhiteSpace(o.Faction))
+        {
+            int human = Slots.FindIndex(s => s.Kind == SlotKind.Human);
+            Slots[human >= 0 ? human : 0].Faction = o.Faction.Trim().ToLowerInvariant();
+        }
     }
 }

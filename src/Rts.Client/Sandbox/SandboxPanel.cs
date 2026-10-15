@@ -23,6 +23,8 @@ public sealed class SandboxPanel
     private float _scroll, _contentH;
     private readonly HashSet<string> _collapsed = new();
     private readonly List<(string name, List<UnitBlueprint> items)> _groups;
+    /// <summary>Faction filter of the list (null = every faction).</summary>
+    private string? _faction;
 
     private static readonly int[] Counts = [1, 10, 50, 100];
     private static readonly float[] Speeds = [0.5f, 1f, 2f, 4f, 8f];
@@ -98,12 +100,17 @@ public sealed class SandboxPanel
     private IEnumerable<(string name, List<UnitBlueprint> items)> Filtered()
     {
         string q = _search.Text.Trim();
-        if (q.Length == 0) return _groups;
+        if (q.Length == 0 && _faction == null) return _groups;
         return _groups
-            .Select(g => (g.name, g.items.Where(b => b.Id.Contains(q, StringComparison.OrdinalIgnoreCase)
-                                                     || b.Name.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList()))
+            .Select(g => (g.name, g.items.Where(b => MatchesFaction(b, _faction) && (q.Length == 0
+                                                     || b.Id.Contains(q, StringComparison.OrdinalIgnoreCase)
+                                                     || b.Name.Contains(q, StringComparison.OrdinalIgnoreCase))).ToList()))
             .Where(g => g.Item2.Count > 0);
     }
+
+    /// <summary>Faction filter of the spawn list: null = every blueprint, else the blueprints of that faction.</summary>
+    public static bool MatchesFaction(UnitBlueprint b, string? faction) =>
+        faction == null || string.Equals(b.Faction, faction, StringComparison.OrdinalIgnoreCase);
 
     private void PickBlueprint(UnitBlueprint b)
     {
@@ -284,6 +291,20 @@ public sealed class SandboxPanel
         {
             _c.SpawnSite = !_c.SpawnSite;
             _c.RefreshSpawnTool();
+        }
+        y += rowH + gap * 2;
+
+        // Faction filter (one button per data/factions entry).
+        Label("FACTION");
+        var factions = ctx.Db.Factions.All;
+        int nf = factions.Count + 1;
+        if (Btn(Cell(cx, y, cw, rowH, 0, nf, gap), "All", _faction == null, tip: "Blueprints of every faction")) _faction = null;
+        for (int i = 0; i < factions.Count; i++)
+        {
+            var f = factions[i];
+            Color? tint = f.ColorRgba != 0 ? ColorUtil.Scale(ColorUtil.FromRgba(f.ColorRgba), 0.45f) : null;
+            if (Btn(Cell(cx, y, cw, rowH, i + 1, nf, gap), f.Name, string.Equals(_faction, f.Id, StringComparison.OrdinalIgnoreCase),
+                    tint: tint, tip: $"Only {f.Name} blueprints")) _faction = f.Id;
         }
         y += rowH + gap * 2;
 

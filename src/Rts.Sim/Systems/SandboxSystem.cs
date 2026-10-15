@@ -179,7 +179,7 @@ public static class SandboxSystem
     /// silo nearest to the target (in range), else its commander, else the map edge nearest to its start position (or to
     /// the target on maps without one). Deterministic (spawn order breaks distance ties).
     /// </summary>
-    public static (Vector2 From, string SiloBlueprint) NukeLaunchSite(SimWorld w, int army, Vector2 target)
+    public static (Vector2 From, string? SiloBlueprint) NukeLaunchSite(SimWorld w, int army, Vector2 target)
     {
         var u = w.Units;
         int best = -1;
@@ -196,9 +196,9 @@ public static class SandboxSystem
         }
         if (best >= 0) return (u.Pos[best], w.BpOf(best).Id);
         var cmd = (uint)army < (uint)w.Armies.Length ? w.Armies[army].Commander : UnitHandle.None;
-        if (u.IsActive(cmd)) return (u.Pos[cmd.Index], StrategicApi.DefaultNukeSilo);
+        if (u.IsActive(cmd)) return (u.Pos[cmd.Index], StrategicApi.NukeSiloOf(w, army));
         var starts = w.Terrain.StartPositions;
-        return (MapEdgePoint(w, (uint)army < (uint)starts.Length ? starts[army] : target), StrategicApi.DefaultNukeSilo);
+        return (MapEdgePoint(w, (uint)army < (uint)starts.Length ? starts[army] : target), StrategicApi.NukeSiloOf(w, army));
     }
 
     /// <summary>The point of the map border (1 unit inside) nearest to p.</summary>

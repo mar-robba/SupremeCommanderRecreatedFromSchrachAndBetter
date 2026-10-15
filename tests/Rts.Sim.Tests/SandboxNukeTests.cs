@@ -115,7 +115,8 @@ public class SandboxNukeTests
         var w = sim.World;
         var target = new Vector2(200, 128);
         var (edge, bp0) = SandboxSystem.NukeLaunchSite(w, 0, target);
-        Assert.Equal(StrategicApi.DefaultNukeSilo, bp0);
+        Assert.Equal("uef_t3_strategic_missile_launcher", bp0); // army 0's faction (UEF) nuke_silo role
+        Assert.Equal(bp0, StrategicApi.NukeSiloOf(w, 0));
         Assert.Equal(new Vector2(1, 20), edge); // the border nearest to army 0's start position (20, 20)
 
         var acu = CombatWorld.Spawn(sim, "uef_commander", 0, 40, 60);

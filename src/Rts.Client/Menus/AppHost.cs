@@ -60,6 +60,7 @@ public sealed class AppHost : IDisposable
         if (options.PlayersGiven)
             for (int i = 0; i < GameConfig.MaxSlots; i++)
                 SetupConfig.Slots[i].Kind = i == 0 ? SlotKind.Human : i < options.Players ? SlotKind.AI : SlotKind.Closed;
+        SetupConfig.ApplyFactionOptions(options);
     }
 
     /// <summary>Shared animated menu background (created on first use).</summary>

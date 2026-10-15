@@ -8,7 +8,7 @@ using Rts.Sim.Orders;
 // Headless benchmark: N units per side attack-move across the map.
 // Usage: Rts.Bench [unitsPerSide] [ticks] [threads (0 = default)] [mapSize = 512]
 //        Rts.Bench replay <file> [threads] | savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnits] [threads]  (ReplayBench.cs)
-//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset]  (skirmish AI match, see AiMatch.cs)
+//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset] [factions]  (skirmish AI match, see AiMatch.cs)
 if (args.Length > 0 && args[0] == "replay") { Environment.ExitCode = ReplayBench.Verify(args[1..]); return; }
 if (args.Length > 0 && args[0] == "savebench") { ReplayBench.SaveBench(args[1..]); return; }
 if (args.Length > 0 && args[0] is "ai" or "aipassive")

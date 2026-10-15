@@ -70,7 +70,8 @@ public sealed partial class UnitBlueprint
 
     public string Name = "";
     public string Description = "";
-    public string Faction = "uef";
+    /// <summary>Faction id (data/factions); "" in JSON = derived from the id prefix (<see cref="BlueprintDb.FactionOfId"/>).</summary>
+    public string Faction = "";
     public int Tech = 1;
     public string[] Categories = [];
     [JsonIgnore] public UnitCategory CategoryFlags;
