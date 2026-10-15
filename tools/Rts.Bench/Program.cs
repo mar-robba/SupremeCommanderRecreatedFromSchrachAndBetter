@@ -9,9 +9,13 @@ using Rts.Sim.Orders;
 // Usage: Rts.Bench [unitsPerSide] [ticks] [threads (0 = default)] [mapSize = 512] [armies = 2]
 //        (armies > 2: each army starts at its start position and attack-moves to the opposite one)
 //        Rts.Bench replay <file> [threads] | savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnits] [threads]  (ReplayBench.cs)
+//        Rts.Bench parbench [threads] [calls]  (Par.For overhead per call, ParBench.cs)
 //        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset]  (skirmish AI match, see AiMatch.cs)
+if (int.TryParse(Environment.GetEnvironmentVariable("PAR_SPIN"), out int parSpin)) Par.WorkerSpinMicroseconds = parSpin; // pool worker spin (µs) experiments
+if (Environment.GetEnvironmentVariable("PAR_TASKS") == "1") Par.UseTaskParallel = true; // A/B: the old Parallel.For path
 if (args.Length > 0 && args[0] == "replay") { Environment.ExitCode = ReplayBench.Verify(args[1..]); return; }
 if (args.Length > 0 && args[0] == "savebench") { ReplayBench.SaveBench(args[1..]); return; }
+if (args.Length > 0 && args[0] == "parbench") { ParBench.Run(args[1..]); return; }
 if (args.Length > 0 && args[0] is "ai" or "aipassive")
 {
     AiMatch.Run(args[1..], passive: args[0] == "aipassive");
