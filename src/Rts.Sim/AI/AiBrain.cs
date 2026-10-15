@@ -26,6 +26,10 @@ public sealed class AiBrain
     public readonly AiPlacement Placement;
     public readonly AiStats Stats = new();
     public readonly AiCommands Cmd;
+    /// <summary>Every unit of the army's faction by role (tiers, navy, strategic, experimentals).</summary>
+    public readonly AiRoster R;
+    public readonly AiNavy Navy;
+    public readonly AiTransport Transport;
 
     /// <summary>Base center (commander start), direction toward the nearest enemy start, rally point for new units.</summary>
     public Vector2 BasePos;
@@ -49,10 +53,13 @@ public sealed class AiBrain
         Cfg = AiConfig.For(W.Armies[army].AiDifficulty);
         Perception = new AiPerception(W, army);
         Cmd = new AiCommands(W, army, Stats);
+        R = new AiRoster(W.Blueprints, W.Armies[army].Faction);
         Placement = new AiPlacement(this);
         Economy = new AiEconomy(this);
         Military = new AiMilitary(this);
         Scouting = new AiScouting(this);
+        Navy = new AiNavy(this);
+        Transport = new AiTransport(this);
 
         // Blueprints come from the army faction's roles (never hardcoded ids): -1 = the faction has no such unit.
         var factions = W.Blueprints.Factions;
@@ -101,7 +108,7 @@ public sealed class AiBrain
         long t1 = System.Diagnostics.Stopwatch.GetTimestamp();
         Stats.ScanMs += System.Diagnostics.Stopwatch.GetElapsedTime(t0, t1).TotalMilliseconds;
         if (View.Commander < 0 && View.Engineers.Count == 0 && View.LandFactories.Count == 0 && View.AirFactories.Count == 0
-            && View.LandCombat.Count == 0 && View.AirUnits.Count == 0) return;
+            && View.LandCombat.Count == 0 && View.AirUnits.Count == 0 && View.NavalUnits.Count == 0 && View.NavalFactories.Count == 0) return;
         if (econ) Economy.Think();
         long t2 = System.Diagnostics.Stopwatch.GetTimestamp();
         Stats.EconMs += System.Diagnostics.Stopwatch.GetElapsedTime(t1, t2).TotalMilliseconds;

@@ -86,7 +86,7 @@ public sealed class AiState
 }
 
 /// <summary>What the AI uses a unit for.</summary>
-public enum AiRole : byte { None, Builder, Pool, Attack, Defend, Scout, AirDefense, Bomber, AirScout, Home, Factory }
+public enum AiRole : byte { None, Builder, Pool, Attack, Defend, Scout, AirDefense, Bomber, AirScout, Home, Factory, Transport, Naval, Silo }
 
 /// <summary>Current job of a builder (engineer/commander).</summary>
 public enum AiTask : byte { None, Build, Finish, Reclaim, Assist, Repair, Return }

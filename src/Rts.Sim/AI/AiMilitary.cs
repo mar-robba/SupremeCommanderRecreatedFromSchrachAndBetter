@@ -122,6 +122,8 @@ public sealed class AiMilitary
         ManageSmallGroups();
         ManagePool();
         ManageAir();
+        _b.Navy.Think();
+        _b.Transport.Think();
         _b.Scouting.Think();
     }
 
@@ -134,14 +136,16 @@ public sealed class AiMilitary
             ref var info = ref _b.Info(i);
             if (info.Role != AiRole.None) continue;
             var bp = W.BpOf(i);
-            info.Role = bp.Has(UnitCategory.Scout) || bp.Weapons.Length == 0 ? AiRole.Scout : AiRole.Pool;
+            // Mobile shields (no weapons) march with the army; other unarmed units scout.
+            info.Role = bp.Has(UnitCategory.Scout) || (bp.Weapons.Length == 0 && !bp.Has(UnitCategory.Shield)) ? AiRole.Scout : AiRole.Pool;
         }
         foreach (int i in V.AirUnits)
         {
             ref var info = ref _b.Info(i);
             if (info.Role != AiRole.None) continue;
             var bp = W.BpOf(i);
-            info.Role = bp.Has(UnitCategory.Bomber) ? AiRole.Bomber
+            info.Role = bp.Has(UnitCategory.Transport) ? AiRole.Transport
+                : bp.Has(UnitCategory.Bomber) ? AiRole.Bomber
                 : bp.Weapons.Length == 0 ? AiRole.AirScout
                 : AiRole.AirDefense;
         }

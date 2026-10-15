@@ -13,7 +13,7 @@ namespace Rts.Sim.AI;
 /// finishing orphaned sites, repair, reclaim, assisting factories) and factory production (engineer count target,
 /// scouts, land mix tanks/artillery/AA by enemy air, air factory interceptors/bombers).
 /// </summary>
-public sealed class AiEconomy
+public sealed partial class AiEconomy
 {
     private enum Kind : byte { Mex, Pgen, Hydro, LandFactory, AirFactory }
 
@@ -60,6 +60,7 @@ public sealed class AiEconomy
         UpdateAverages();
         _b.Placement.Cleanup();
         MarkWorkedSites();
+        ManageTech();
         ManageFactories();
         ManageCommander();
         ManageEngineers();
@@ -191,6 +192,8 @@ public sealed class AiEconomy
         if (airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, slot++ < FactoryBudget);
         foreach (int f in V.LandFactories) Factory(f, air: false, slot++ < FactoryBudget);
         if (!airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, slot++ < FactoryBudget);
+        _b.Navy.ManageFactories(ref slot, FactoryBudget);
+        ManageGateways(ref slot);
     }
 
     private void Factory(int f, bool air, bool allowed)
@@ -212,7 +215,7 @@ public sealed class AiEconomy
         if (EnergyStall && EnergyIncome < EnergyDemand * 0.6f && V.Total(_b.BpEngineer) >= 2) return;
         var army = W.Armies[_b.Army];
         if (army.UnitCount + 4 >= army.UnitCap) return;
-        int bp = air ? ChooseAir() : ChooseLand();
+        int bp = air ? ChooseAir(f) : ChooseLand(f);
         if (bp < 0) return;
         _b.Cmd.Enqueue(f, bp);
         V.Queued[bp]++;
@@ -225,9 +228,9 @@ public sealed class AiEconomy
         return Math.Min(Cfg.MaxEngineers + (Floating ? 2 : 0), t + (Floating ? 2 : 0));
     }
 
-    private int ChooseLand()
+    private int ChooseLand(int factory)
     {
-        if (_b.BpEngineer >= 0 && V.Total(_b.BpEngineer) < EngineerTarget()) return _b.BpEngineer;
+        if (_b.BpEngineer >= 0 && TotalEngineers() < EngineerTarget()) return ChooseEngineer(factory);
         if (_b.Scouting.WantLandScout())
         {
             ScoutsOrdered++;
@@ -247,7 +250,7 @@ public sealed class AiEconomy
         return _b.BpTank >= 0 ? _b.BpTank : _b.BpArtillery;
     }
 
-    private int ChooseAir()
+    private int ChooseAir(int factory)
     {
         if (_b.Scouting.WantAirScout())
         {
@@ -255,6 +258,8 @@ public sealed class AiEconomy
             _b.Scouting.AirScoutOrdered();
             return _b.BpAirScout;
         }
+        int transport = _b.Transport.ChooseAir(factory);
+        if (transport >= 0) return transport;
         int inter = V.Total(_b.BpInterceptor), bomb = V.Total(_b.BpBomber);
         int airCount = (int)MathF.Ceiling(_b.Perception.EnemyAirCountMem);
         int wantInter = Math.Min(24, 2 + airCount + (int)(_b.Perception.EnemyAirStrengthMem / 200f));
@@ -430,7 +435,10 @@ public sealed class AiEconomy
         {
             if (WantLandFactory() && TryBuildInBase(unit, _b.BpLandFactory, _b.EnemyDir, 9, isCommander ? Cfg.CommanderRadius : 40, false)) return true;
             if (WantAirFactory() && TryBuildInBase(unit, _b.BpAirFactory, Perp(_b.EnemyDir), 10, isCommander ? Cfg.CommanderRadius : 42, false)) return true;
+            if (_b.Navy.TryBuild(unit, isCommander)) return true;
             if (TryDefense(unit, isCommander)) return true;
+            if (TryProjects(unit, isCommander)) return true;
+            if (_b.Transport.TryBuild(unit, isCommander)) return true;
             if (TryStorageOrRadar(unit, isCommander)) return true;
         }
         if (TryRepair(unit, isCommander)) return true;
