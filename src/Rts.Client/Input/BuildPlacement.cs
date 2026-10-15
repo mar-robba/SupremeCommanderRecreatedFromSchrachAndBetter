@@ -116,7 +116,7 @@ public sealed class BuildPlacement
         if (builders.Length == 0) { Cancel(); return; }
 
         if (Raylib.IsKeyPressed(KeyboardKey.Escape)) { Cancel(); return; }
-        if (Raylib.IsKeyPressed(KeyboardKey.R)) Heading = DMath.WrapAngle(Heading + MathF.PI * 0.5f);
+        if (Raylib.IsKeyPressed(Hotkeys.Rotate90.Key)) Heading = DMath.WrapAngle(Heading + MathF.PI * 0.5f);
         // SupCom: after shift-placing, releasing Shift leaves placement mode.
         if (_placedWithShift && !shift && _lineAnchor == null) { Cancel(); return; }
 

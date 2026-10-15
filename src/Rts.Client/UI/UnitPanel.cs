@@ -61,33 +61,51 @@ public sealed class UnitPanel
         float tx = iconR.X + icon + Ui.P(8);
         float tw = r.X + r.Width - pad - tx;
         int fsName = Ui.F(14), fsDesc = Ui.F(11.5f);
+        bool underConstruction = (v.Flags & UnitFlags.UnderConstruction) != 0;
+        // Compact header when many rows follow (transports, aircraft, shields + silos…): health and order go next to
+        // the icon instead of the description (shown as a tooltip on the icon / name), so nothing is cut off.
+        bool compact = !underConstruction && ExtraRows(snap, v, bp) >= 2;
         Ui.Text(Ui.Fit(bp.Name, tw, fsName, true), tx, r.Y + pad, fsName, Ui.TextColor, true);
         float y = r.Y + pad + fsName + Ui.P(4);
-        var desc = Ui.Wrap(bp.Description, tw, fsDesc);
-        for (int i = 0; i < Math.Min(2, desc.Count); i++)
+        if (Ui.Hover(new Rectangle(iconR.X, iconR.Y, r.Width - 2 * pad, fsName + Ui.P(4) + (compact ? 0 : icon - fsName))))
+            Ui.Tooltip(iconR, bp.Name, string.Join("\n", Ui.Wrap(bp.Description, Ui.P(320), Ui.F(12))));
+        if (!compact)
         {
-            string line = i == 1 && desc.Count > 2 ? Ui.Fit(desc[i] + " …", tw, fsDesc) : desc[i];
-            Ui.Text(line, tx, y, fsDesc, Ui.TextDim);
-            y += fsDesc + Ui.P(2);
+            var desc = Ui.Wrap(bp.Description, tw, fsDesc);
+            for (int i = 0; i < Math.Min(2, desc.Count); i++)
+            {
+                string line = i == 1 && desc.Count > 2 ? Ui.Fit(desc[i] + " …", tw, fsDesc) : desc[i];
+                Ui.Text(line, tx, y, fsDesc, Ui.TextDim);
+                y += fsDesc + Ui.P(2);
+            }
         }
 
-        y = MathF.Max(y, iconR.Y + icon + Ui.P(10));
         float bw = r.Width - 2 * pad;
         float barH = Ui.P(15);
+        int fs = Ui.F(11.5f);
 
         // Health (effective max health: veterancy raises it).
         float maxHp = MaxHealthOf(v, bp);
         float hp = v.HealthFrac * maxHp;
         var hpCol = v.HealthFrac > 0.5f ? new Color(70, 200, 70, 255) : v.HealthFrac > 0.25f ? new Color(230, 190, 40, 255) : new Color(220, 50, 40, 255);
-        Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.HealthFrac, hpCol, $"{hp:0} / {maxHp:0}");
-        y += barH + Ui.P(5);
+        if (compact)
+        {
+            Ui.Bar(new Rectangle(tx, y, tw, barH), v.HealthFrac, hpCol, $"{hp:0} / {maxHp:0}");
+            y += barH + Ui.P(4);
+            DrawOrderLine(snap, v, bp, paused, tx, y, tw, fs);
+        }
+        y = MathF.Max(y, iconR.Y + icon + Ui.P(10));
+        if (!compact)
+        {
+            Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.HealthFrac, hpCol, $"{hp:0} / {maxHp:0}");
+            y += barH + Ui.P(5);
+        }
         if (v.CaptureFrac > 0)
         {
             Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.CaptureFrac, new Color(200, 70, 60, 255), $"Being captured  {v.CaptureFrac * 100:0}%");
             y += barH + Ui.P(5);
         }
 
-        bool underConstruction = (v.Flags & UnitFlags.UnderConstruction) != 0;
         if (underConstruction)
         {
             Ui.Bar(new Rectangle(r.X + pad, y, bw, barH), v.BuildFrac, Ui.BuildBlue, $"Under construction  {v.BuildFrac * 100:0}%");
@@ -117,13 +135,7 @@ public sealed class UnitPanel
 
         if (!underConstruction) y = StrategicHud.DrawUnitPanelBars(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
         if (!underConstruction) y = CargoPanel.DrawSingle(_ctx, snap, v, bp, r.X + pad, y, bw, barH);
-        int fs = Ui.F(11.5f);
-        string order = CurrentOrderText(snap, v, bp);
-        if (Submarines.CanDive(bp)) order = ((v.Flags & UnitFlags.Surfaced) != 0 ? "Surfaced · " : "Submerged · ") + order;
-        if (paused) order = "PAUSED · " + order;
-        Ui.Text("Order:", r.X + pad, y, fs, Ui.TextFaint, true);
-        Ui.Text(Ui.Fit(order, bw - Ui.P(48), fs), r.X + pad + Ui.P(46), y, fs, paused ? Ui.Warn : Ui.TextColor);
-        y += fs + Ui.P(4);
+        if (!compact) y = DrawOrderLine(snap, v, bp, paused, r.X + pad, y, bw, fs);
         if (EnhancementPanel.InstalledSummary(bp) is string enhs)
         {
             // Installed enhancements (top of each slot's chain), e.g. "T3E · HAC · SGF".
@@ -149,6 +161,35 @@ public sealed class UnitPanel
             Ui.Text(stats[i].label, sx, sy, fs, Ui.TextFaint);
             Ui.Text(stats[i].value, sx + Ui.Measure(stats[i].label, fs) + Ui.P(4), sy, fs, stats[i].color, true);
         }
+    }
+
+    /// <summary>"Order:" line with the toggle states (paused, submerged, fire state). Returns the y below it.</summary>
+    private float DrawOrderLine(SimSnapshot snap, in UnitView v, UnitBlueprint bp, bool paused, float x, float y, float w, int fs)
+    {
+        string order = CurrentOrderText(snap, v, bp);
+        if (Submarines.CanDive(bp)) order = ((v.Flags & UnitFlags.Surfaced) != 0 ? "Surfaced · " : "Submerged · ") + order;
+        bool holding = bp.Weapons.Length > 0 && v.FireState != FireState.FireAtWill;
+        if (holding) order = UnitToggles.FireStateName(v.FireState).ToUpperInvariant() + " · " + order;
+        if (paused) order = "PAUSED · " + order;
+        Ui.Text("Order:", x, y, fs, Ui.TextFaint, true);
+        Ui.Text(Ui.Fit(order, w - Ui.P(48), fs), x + Ui.P(46), y, fs, paused || holding ? Ui.Warn : Ui.TextColor);
+        return y + fs + Ui.P(4);
+    }
+
+    /// <summary>Rows the single-unit panel draws below the health bar besides order and stats (bars, cargo icons).</summary>
+    private static int ExtraRows(SimSnapshot snap, in UnitView v, UnitBlueprint bp)
+    {
+        int n = 0;
+        if (v.CaptureFrac > 0) n++;
+        if (v.UpgradeBp >= 0 || v.WorkMode == BuilderMode.Capture || v.WorkProgress >= 0) n++;
+        if (bp.Shield != null) n++;
+        if (bp.Silo != null) n += 2;
+        CargoView cv = default;
+        bool cargo = bp.Cargo != null && TransportInput.TryGetCargo(snap, v.Index, v.Gen, out cv);
+        if (cargo || v.Fuel >= 0) n++;
+        if (cargo && cv.Count > 0) n++;
+        if (bp.Cargo != null) n++; // carriers: their cargo row alone already pushes the stats out
+        return n;
     }
 
     private string WorkTargetName(SimSnapshot snap, in UnitView v)

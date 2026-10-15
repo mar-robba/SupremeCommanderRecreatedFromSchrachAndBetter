@@ -57,7 +57,7 @@ public sealed class FogRenderer : IDisposable
     /// <summary>Call once per frame after the interpolator update (keys = false while a menu overlay is open).</summary>
     public void Update(SnapshotInterpolator interp, bool keys = true)
     {
-        if (keys && Raylib.IsKeyPressed(KeyboardKey.F7)) SetEnabled(!Enabled);
+        if (keys && Raylib.IsKeyPressed(Input.Hotkeys.Fog.Key)) SetEnabled(!Enabled);
         var cur = interp.Current;
         _alpha = interp.Alpha;
         _hasFog = cur.ViewArmy >= 0 && cur.FogCols > 0 && cur.Fog.Length >= cur.FogCols * cur.FogRows;

@@ -18,8 +18,8 @@ namespace Rts.Client.UI;
 /// </summary>
 public static class UpgradeUi
 {
-    public const KeyboardKey Hotkey = KeyboardKey.U;
-    public const string HotkeyName = "U";
+    public static KeyboardKey Hotkey => Hotkeys.Upgrade.Key;
+    public static string HotkeyName => Hotkeys.Upgrade.Label;
     public static readonly Color UpgradeTint = new(56, 82, 60, 255);
     public static readonly Color UpgradeGreen = new(120, 235, 130, 255);
 

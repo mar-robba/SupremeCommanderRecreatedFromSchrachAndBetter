@@ -12,7 +12,7 @@
   "Intel": { "VisionRadius": 30 },
   "Weapons": [
     { "Name": "Mavor Strategic Cannon", "Range": 1500, "MinRange": 100, "Damage": 4000, "DamageRadius": 6.5, "RateOfFire": 0.12, "MuzzleVelocity": 125,
-      "Spread": 25, "Ballistic": true, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 10, "FiringTolerance": 2, "EnergyPerShot": 20000 }
+      "Spread": 25, "Ballistic": true, "HighArcWhenBlocked": true, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 10, "FiringTolerance": 2, "EnergyPerShot": 20000 }
   ],
   "Experimental": { "DeathDamage": 3000, "DeathRadius": 12, "DeathDelay": 1.5 },
   "WreckMassFraction": 0.9,

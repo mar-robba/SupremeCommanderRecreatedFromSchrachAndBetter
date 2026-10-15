@@ -131,10 +131,19 @@ public static class WeaponSystem
             Vector3 aim, launch;
             float flight;
             bool solution = true;
+            bool high = winfo.HighArc;
             switch (winfo.Kind)
             {
                 case WeaponKind.Ballistic:
-                    solution = Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
+                    solution = Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, high, out launch, out flight);
+                    // Mavor: a ridge in the way of the low arc -> lob it over (a pure function of terrain + positions).
+                    if (solution && !high && wbp.HighArcWhenBlocked && !LineOfFire.IsArcClear(w.Terrain, muzzle, launch, flight)
+                        && Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, true, out var hl, out var hf))
+                    {
+                        high = true;
+                        launch = hl;
+                        flight = hf;
+                    }
                     aim = tc;
                     if (tv != Vector2.Zero)
                     {
@@ -143,7 +152,7 @@ public static class WeaponSystem
                         {
                             var pp = Ballistics.PredictPosition(tp, tv, tom, flight);
                             aim = new Vector3(pp.X, tc.Y, pp.Y);
-                            solution = Ballistics.SolveArc(muzzle, aim, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
+                            solution = Ballistics.SolveArc(muzzle, aim, wbp.MuzzleVelocity, Ballistics.Gravity, high, out launch, out flight);
                         }
                     }
                     break;
@@ -193,7 +202,7 @@ public static class WeaponSystem
                     a.Z += MathF.Sin(ang) * r;
                     if (winfo.Kind == WeaponKind.Ballistic)
                     {
-                        if (!Ballistics.SolveArc(muzzle, a, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out vel, out _)) vel = launch;
+                        if (!Ballistics.SolveArc(muzzle, a, wbp.MuzzleVelocity, Ballistics.Gravity, high, out vel, out _)) vel = launch;
                     }
                     else if (winfo.Kind != WeaponKind.Beam)
                     {

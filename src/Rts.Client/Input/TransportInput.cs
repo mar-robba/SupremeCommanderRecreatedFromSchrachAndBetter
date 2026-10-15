@@ -168,8 +168,8 @@ public static class TransportInput
         if (sel.Mode != Mode.Ferry) PendingBeacon = null;
         CurrentMode = sel.Mode;
         if (sel.Selected.Count == 0 || ctrl) return;
-        bool u = Raylib.IsKeyPressed(KeyboardKey.U), e = Raylib.IsKeyPressed(KeyboardKey.E);
-        bool f = Raylib.IsKeyPressed(KeyboardKey.F), d = Raylib.IsKeyPressed(KeyboardKey.D);
+        bool u = Hotkeys.Unload.Pressed(), e = Hotkeys.TransportTo.Pressed();
+        bool f = Hotkeys.Ferry.Pressed(), d = Hotkeys.Dock.Pressed();
         if (!(u || e || f || d)) return;
         var snap = ctx.Snapshots.Current;
         var b = ButtonsFor(CargoSelection.Of(ctx, sel.Selected, snap));
@@ -231,10 +231,12 @@ public static class TransportInput
 
     /// <summary>Click in an Unload / TransportTo / Ferry mode. Returns true when an order was issued (the mode ends
     /// unless Shift); the first ferry click (pickup beacon) returns false and keeps the mode.</summary>
-    public static bool TryIssueMode(GameContext ctx, SelectionController sel, Vector2 mouse, bool queue, Mode mode)
+    public static bool TryIssueMode(GameContext ctx, SelectionController sel, Vector2 mouse, bool queue, Mode mode) =>
+        ctx.PickGround(mouse) is Vector3 g && TryIssueModeAt(ctx, sel, new Vector2(g.X, g.Z), queue, mode);
+
+    /// <summary><see cref="TryIssueMode"/> at a world point (also minimap clicks).</summary>
+    public static bool TryIssueModeAt(GameContext ctx, SelectionController sel, Vector2 p, bool queue, Mode mode)
     {
-        if (ctx.PickGround(mouse) is not Vector3 g) return false;
-        var p = new Vector2(g.X, g.Z);
         var snap = ctx.Snapshots.Current;
         switch (mode)
         {

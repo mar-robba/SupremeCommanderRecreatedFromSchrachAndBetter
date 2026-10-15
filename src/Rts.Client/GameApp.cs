@@ -288,10 +288,11 @@ public static class GameApp
 
     public static void DebugKeys(GameContext ctx)
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.Space)) ctx.Runner.Paused = !ctx.Runner.Paused;
-        if (Raylib.IsKeyPressed(KeyboardKey.Equal) || Raylib.IsKeyPressed(KeyboardKey.KpAdd)) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
-        if (Raylib.IsKeyPressed(KeyboardKey.Minus) || Raylib.IsKeyPressed(KeyboardKey.KpSubtract)) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
-        bool f1 = Raylib.IsKeyPressed(KeyboardKey.F1), f2 = Raylib.IsKeyPressed(KeyboardKey.F2);
+        if (Input.Hotkeys.PauseGame.Pressed()) ctx.Runner.Paused = !ctx.Runner.Paused;
+        if (Input.Hotkeys.SpeedUp.Pressed()) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
+        if (Input.Hotkeys.SpeedDown.Pressed()) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
+        // F1 = help overlay (UI/HelpOverlay); the debug tank spawns are Ctrl+F1 / Ctrl+F2.
+        bool f1 = Input.Hotkeys.DebugSpawnOwn.Pressed(), f2 = Input.Hotkeys.DebugSpawnEnemy.Pressed();
         if ((f1 || f2) && ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
         {
             int army = f1 ? ctx.LocalArmy : (ctx.LocalArmy + 1) % ctx.ArmyColors.Length;

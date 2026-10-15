@@ -116,10 +116,11 @@ public sealed class FactoryPanel
     public void HandleHotkeys(SimSnapshot snap)
     {
         if (Ui.Ctrl || Ui.Alt) return;
-        for (int k = 0; k < BuildMenu.SlotKeys.Length && k < _shown.Count; k++)
-            if (Raylib.IsKeyPressed(BuildMenu.SlotKeys[k])) Enqueue(snap, _shown[k], Ui.Shift ? 5 : 1);
-        if (Raylib.IsKeyPressed(KeyboardKey.R)) ToggleRepeat(snap);
-        if (Raylib.IsKeyPressed(BuildMenu.TierKey) || Raylib.IsKeyPressed(KeyboardKey.Tab)) CycleTier(Ui.Shift ? -1 : 1);
+        var slots = Hotkeys.FactorySlots.Keys;
+        for (int k = 0; k < slots.Length && k < _shown.Count; k++)
+            if (Raylib.IsKeyPressed(slots[k])) Enqueue(snap, _shown[k], Ui.Shift ? 5 : 1);
+        if (Raylib.IsKeyPressed(Hotkeys.FactoryRepeat.Key)) ToggleRepeat(snap);
+        if (Hotkeys.FactoryTier.Keys.Any(k => Raylib.IsKeyPressed(k))) CycleTier(Ui.Shift ? -1 : 1);
     }
 
     public void Draw(Rectangle r, SimSnapshot snap)
