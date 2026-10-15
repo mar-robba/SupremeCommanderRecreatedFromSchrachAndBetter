@@ -48,6 +48,7 @@ public sealed class GameSession : IDisposable
     private readonly ExperimentalAlert _expAlert;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
+    private readonly FrameProfiler _prof = new(); // per-stage CPU ms (screenshot perf line, --perf-log)
     private readonly SelectionController _selection;
     private readonly Hud _hud;
     /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
@@ -161,8 +162,11 @@ public sealed class GameSession : IDisposable
     {
         var ctx = Ctx;
         _perf.BeginFrame();
+        _prof.Begin();
         _interp.Update();
+        _prof.Lap("interp");
         _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true);
+        _prof.Lap("fog");
         bool overUi = interactive && (_hud.MouseOverUi() | MouseOverExtraUi?.Invoke() == true);
         if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
         if (interactive)
@@ -172,6 +176,7 @@ public sealed class GameSession : IDisposable
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
         if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly) GameApp.DebugKeys(ctx);
+        _prof.Lap("input+audio");
 
         var cur = _interp.Current;
         var prev = _interp.Prev;
@@ -183,25 +188,32 @@ public sealed class GameSession : IDisposable
         Raylib.BeginMode3D(_camera.Camera);
         _terrainR.Draw(_camera.Camera);
         _terrainR.DrawDeposits();
+        _prof.Lap("terrain");
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
+        _prof.Lap("units");
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
+        _prof.Lap("props+sel3d");
         _terrainR.DrawWater();
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.DrawSubmerged(); // subs seen through the water
+        _prof.Lap("water+subs");
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
         _fx.DrawOverlay(); // nuke screen flash (NukeFx)
+        _prof.Lap("effects");
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
+        _prof.Lap("icons");
         _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
         _shields.DrawBars(cur, prev, alpha, _selectedSet);
         UpgradeOverlay.Draw(ctx, cur, prev, alpha);
+        _prof.Lap("overlays2d");
         if (interactive)
         {
             if (_selection.IsDragging)
@@ -211,13 +223,19 @@ public sealed class GameSession : IDisposable
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             _hud.Draw();
+            _prof.Lap("hud");
             _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
         }
+        _prof.Lap("cursor");
         _stratHud.Draw2D(cur, dt);
+        _prof.Lap("strathud2d");
         _expAlert.Draw2D(cur, dt);
         _audio.DrawOverlay();
+        _prof.Lap("alerts");
         _perf.Draw(_unitR, _fx);
+        _prof.End();
+        PerfLog.Tick(_prof, _perf, cur);
     }
 
     /// <summary>Game over for the local player: (true, won) once the game has a winner or the local army is defeated.</summary>
@@ -235,7 +253,7 @@ public sealed class GameSession : IDisposable
     public string ScreenshotInfo()
     {
         var cur = _interp.Current;
-        var s = $"(tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)\n{_perf.Summary()}";
+        var s = $"(tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)\n{_perf.Summary()}\n{_prof.Summary()}";
         if (Runner.Fault != null) s += "\nSIM FAULT: " + Runner.Fault;
         return s;
     }
