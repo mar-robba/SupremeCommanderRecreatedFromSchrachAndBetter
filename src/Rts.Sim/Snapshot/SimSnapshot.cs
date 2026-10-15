@@ -83,6 +83,8 @@ public struct ArmyView
     public int Index;
     public int Team;
     public uint Color;
+    /// <summary>Faction id (BlueprintDb.Factions).</summary>
+    public string Faction;
     public bool Defeated;
     public int UnitCount;
     public float Mass, MassMax, MassIncome, MassDemand, MassEfficiency;

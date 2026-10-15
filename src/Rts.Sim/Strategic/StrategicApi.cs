@@ -11,20 +11,36 @@ namespace Rts.Sim.Strategic;
 /// </summary>
 public static class StrategicApi
 {
-    /// <summary>Blueprint whose missile (damage, rings, visuals) a launcher-less nuke uses by default.</summary>
-    public const string DefaultNukeSilo = "uef_t3_strategic_missile_launcher";
+    /// <summary>
+    /// Blueprint id whose missile (damage, rings, visuals) a launcher-less nuke of this faction uses: the faction's
+    /// <see cref="Data.FactionRoles.NukeSilo"/>, else the first faction (FactionDb order) that has one; null = none.
+    /// </summary>
+    public static string? NukeSiloOf(Data.BlueprintDb db, string? faction)
+    {
+        int i = db.Factions.RoleBlueprint(faction, Data.FactionRoles.NukeSilo);
+        if (i < 0)
+            foreach (var f in db.Factions.All)
+                if ((i = f.Role(Data.FactionRoles.NukeSilo)) >= 0) break;
+        return i >= 0 ? db[i].Id : null;
+    }
+
+    /// <summary><see cref="NukeSiloOf(Data.BlueprintDb,string)"/> for an army's faction (null for a bad army).</summary>
+    public static string? NukeSiloOf(SimWorld w, int army) =>
+        (uint)army < (uint)w.Armies.Length ? NukeSiloOf(w.Blueprints, w.Armies[army].Faction) : null;
 
     /// <summary>
     /// Launches a strategic missile (nuke) owned by <paramref name="army"/> from ground point <paramref name="from"/> to
     /// <paramref name="target"/>, without needing a silo unit or stockpile. It behaves exactly like a silo launch: high arc,
     /// global "strategic launch" warning (<c>SimSnapshot.Launches</c>), interceptable by enemy anti-nukes, two-ring blast
     /// that ignores and knocks down shields. Damage/rings come from <paramref name="siloBlueprint"/> (must have a
-    /// <c>Silo</c> of kind Strategic). Returns the projectile slot, or -1 (bad army/blueprint, projectile pool full).
+    /// <c>Silo</c> of kind Strategic; null = the army faction's, <see cref="NukeSiloOf(SimWorld,int)"/>). Returns the
+    /// projectile slot, or -1 (bad army/blueprint, projectile pool full).
     /// </summary>
-    public static int LaunchNuke(SimWorld w, int army, Vector2 from, Vector2 target, string siloBlueprint = DefaultNukeSilo)
+    public static int LaunchNuke(SimWorld w, int army, Vector2 from, Vector2 target, string? siloBlueprint = null)
     {
         if ((uint)army >= (uint)w.Armies.Length) return -1;
-        if (!w.Blueprints.TryGet(siloBlueprint, out var bp) || bp.Silo is not { Kind: Data.SiloKind.Strategic }) return -1;
+        siloBlueprint ??= NukeSiloOf(w, army);
+        if (siloBlueprint == null || !w.Blueprints.TryGet(siloBlueprint, out var bp) || bp.Silo is not { Kind: Data.SiloKind.Strategic }) return -1;
         var terrain = w.Terrain;
         from = terrain.Clamp(from);
         target = terrain.Clamp(target);
@@ -33,7 +49,7 @@ public static class StrategicApi
     }
 
     /// <summary>
-    /// <see cref="LaunchNuke(SimWorld,int,Vector2,Vector2,string)"/> launched from the army's commander (if alive), else
+    /// <see cref="LaunchNuke(SimWorld,int,Vector2,Vector2,string?)"/> launched from the army's commander (if alive), else
     /// from the map center.
     /// </summary>
     public static int LaunchNuke(SimWorld w, int army, Vector2 target)
@@ -57,9 +73,9 @@ public static class StrategicApi
     }
 
     /// <summary>Blast rings of a strategic silo blueprint's missile (0, 0 if it is not a strategic silo).</summary>
-    public static (float Inner, float Outer) NukeRings(Data.BlueprintDb db, string siloBlueprint = DefaultNukeSilo)
+    public static (float Inner, float Outer) NukeRings(Data.BlueprintDb db, string? siloBlueprint)
     {
-        if (!db.TryGet(siloBlueprint, out var bp) || bp.Silo is not { Kind: Data.SiloKind.Strategic } sb) return (0, 0);
+        if (siloBlueprint == null || !db.TryGet(siloBlueprint, out var bp) || bp.Silo is not { Kind: Data.SiloKind.Strategic } sb) return (0, 0);
         float inner = bp.Weapons[sb.WeaponIndex].DamageRadius;
         return (inner, MathF.Max(inner, sb.OuterRadius));
     }

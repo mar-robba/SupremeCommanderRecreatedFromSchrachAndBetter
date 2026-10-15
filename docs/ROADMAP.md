@@ -161,6 +161,11 @@ Shared contracts (still valid):
       - [x] merged with wave 4f polish (2026-10-14): shared hotkeys E (transport-to with transports selected, else
             capture) and D (subs dive + aircraft dock); captured carriers take their cargo along (not when carrying a
             commander); pausable Atlantis factory; boarding ends the factory roll-out
+- [x] Faction infrastructure (2026-10-14, agent j): `data/factions/<id>.json` (commander, color, roles → blueprint ids,
+      70 required + 15 optional roles), `FactionDb` on `BlueprintDb.Factions`, `UnitBlueprint.Faction`, per-army
+      `Army.Faction` from the setup (random = from the seed), faction commander; AI + strategic code use roles (no
+      `uef_*` ids in the sim); client: FACTION column in the skirmish setup, `--faction`/`--factions`, sandbox FACTION
+      filter, saved in client data/save headers; bench `[factions]` arg; ARCHITECTURE "Factions" contract
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs

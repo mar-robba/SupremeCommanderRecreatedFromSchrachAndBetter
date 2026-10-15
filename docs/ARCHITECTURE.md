@@ -51,6 +51,52 @@ interpolates prev/cur by time
 - New per-unit state: add a field to the module struct in `World/Components.cs` and initialize it in your
   system's `InitUnit` (called from `UnitLifecycle.OnSpawn`).
 
+## Factions (`Rts.Sim/Data/FactionDb.cs`, `data/factions/*.json`) — contract for faction/AI agents
+- A faction = `data/factions/<id>.json`: `Id` (lowercase, = file name = the blueprint id prefix of its units, e.g.
+  `cybran` → `cybran_t1_tank`), `Name`, `Commander` (blueprint id of the starting commander), `Color` ("#RRGGBB" UI
+  accent), `Description`, `Roles` {role → blueprint id}. Loaded with the blueprints into `BlueprintDb.Factions`
+  (`FactionDb`: file order = ordinal id order, ids case-insensitive, immutable, readable from any thread). Loading
+  throws `InvalidDataException` for an unknown role name, a role/commander pointing to a missing blueprint, a bad
+  color, duplicate ids or the reserved id `random`. `uef.json` is the reference file.
+- `UnitBlueprint.Faction` = JSON `"Faction"`, else the id prefix before the first `_` (`BlueprintDb.FactionOfId`).
+- `SkirmishSettings.Factions[army]` (null/"" = `uef`, `random` = `FactionDb.Resolve(choice, seed, army)`, the same on
+  every machine; unknown id → `InvalidOperationException`) → `Army.Faction` (saved with the game, so loads and replays
+  keep it) → the army starts with its faction's `Commander`. Exposed as `ArmyView.Faction` (snapshot) and
+  `PlayerInfo.Faction` (save/replay header).
+- **Rule: sim/AI code never hard-codes unit ids** (`"uef_..."`): it asks a role of the army's faction:
+  `w.Blueprints.Factions.RoleBlueprint(w.Armies[a].Faction, FactionRoles.TankT1)` → blueprint index, -1 = none
+  (`FactionBlueprint.Role(role)` on a resolved faction). `grep -rn '"uef_' src/Rts.Sim` must only find doc comments.
+  Tests, client visual scenes (`--scene ...`) and data files may use ids. Example: `AiBrain` resolves its `Bp*` fields
+  from roles once per brain; `StrategicApi.NukeSiloOf(w, army)` = the faction's `nuke_silo` (else the first faction
+  that has one).
+- Roles are `FactionRoles` constants. **Required** roles must be filled by every shipped faction (AI/sim code may rely
+  on them); **Optional** roles (`FactionRoles.Optional`) are faction-specific units, code using them must handle -1.
+  Tests (`FactionTests`): `EveryFactionFillsEveryRequiredRole`, `EveryFactionBlueprintHasARole` (every non-variant
+  blueprint of a faction is its commander or some role, so the AI can find it), `RoleListsAreConsistent`.
+  - Required: engineer_t1, engineer_t2, engineer_t3, scu, scout_t1, tank_t1, artillery_t1, mobile_aa_t1,
+    amphibious_t2, heavy_tank_t2, mml_t2, mobile_aa_t2, assault_t3, artillery_t3, air_scout_t1, interceptor_t1,
+    bomber_t1, transport_t1, gunship_t2, torpedo_bomber_t2, transport_t2, air_staging, air_superiority_t3,
+    spy_plane_t3, strat_bomber_t3, frigate_t1, sub_t1, destroyer_t2, cruiser_t2, battleship_t3, land_factory_t1,
+    land_factory_t2, land_factory_t3, air_factory_t1, air_factory_t2, air_factory_t3, naval_factory_t1,
+    naval_factory_t2, naval_factory_t3, quantum_gateway, mex_t1, mex_t2, mex_t3, pgen_t1, pgen_t2, pgen_t3, hydro,
+    mass_fab_t2, mass_fab_t3, mass_storage, energy_storage, pd_t1, pd_t2, aa_t1, aa_t2, aa_t3, torpedo_t1, shield_t2,
+    tml, tmd, artillery_installation_t2, artillery_installation_t3, nuke_silo, anti_nuke, radar_t1, radar_t2, omni_t3,
+    sonar_t1, sonar_t2, exp_land.
+  - Optional: mobile_shield_t2, mobile_stealth_t2, siege_t3, sniper_t3, fighter_bomber_t2, gunship_t3, carrier_t3,
+    pd_t3, torpedo_t2, shield_t3, stealth_field_t2, exp_land_2, exp_air, exp_naval, exp_artillery.
+- **New faction** (e.g. Cybran): add `data/factions/cybran.json` + `cybran_*` blueprints in `data/blueprints/units`
+  (build lists via `Builds`/`BuiltBy` inside the faction); fill every required role and the optional ones it has; a
+  unit that fits no role gets a new (optional) role. Nothing else: the client lists it automatically (setup FACTION
+  column, sandbox FACTION filter, `--faction cybran`), the AI plays it through roles.
+- **AI agents** ask roles, never ids; prefer required roles, fall back when an optional role is -1 (e.g. no mobile
+  shield → skip it, no `exp_air` → build `exp_land`).
+- **New role**: a constant in `FactionRoles` + an entry in `FactionRoles.All` (+ `Optional` if not every faction has
+  one) + the role in every `data/factions/*.json` + the lists above. Role names are lowercase `<kind>_t<tier>`.
+- Client: setup screen FACTION column per slot (`GameConfig.FactionChoices` = every faction, then Random; unknown ids
+  block the start via `GameConfig.Problem(factions)`), `--faction ID` (local player) / `--factions a,b,...` (slots in
+  order), sandbox spawn panel FACTION filter (`SandboxPanel.MatchesFaction`), slot factions kept in `ClientGameData`
+  and rebuilt from save headers.
+
 ## Economy model (SupCom flow economy) — `Rts.Sim/Economy/`
 - **Production/upkeep** come from blueprints: complete, non-`Paused` units produce `ProductionMass/Energy` and pay
   `MaintenanceEnergy`. Units with upkeep (mass extractors) have their production scaled by energy efficiency.
@@ -356,7 +402,7 @@ interpolates prev/cur by time
   (mean ≈ 18.6 min); Hard beats Normal in 86 % of games (166 won / 8 lost / 18 undecided of 192), Easy loses to
   Normal in 23 of 24; Hard vs Hard ends in ~69 %; 4-player FFAs on 512 end by ~30 min. Stalemates are equal armies
   trading in the middle of Highlands/Canyon maps. T1 mobile artillery is very cost-efficient (balance pass later).
-- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset]`
+- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset] [factions]`
   (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
   `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`
   (override `AiConfig` fields for sweeps; bench only, the sim never reads the environment).
