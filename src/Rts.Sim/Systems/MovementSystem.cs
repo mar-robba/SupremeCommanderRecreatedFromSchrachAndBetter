@@ -33,9 +33,14 @@ public static partial class MovementSystem
         mv.HasGoal = false;
         mv.OrbitCenter = w.Units.Pos[i];
         mv.OrbitDir = (i & 1) == 0 ? 1f : -1f;
-        // Subs start submerged (spawn and factory release put them at their running depth).
+        // Subs start submerged (spawn and factory release put them at their running depth); StartSurfaced divers
+        // (Atlantis) start at the surface (a blueprint swap re-init would surface them again: none has enhancements).
         if (bp.Movement.Layer == MotionLayer.Sub && bp.IsMobile)
-            w.Units.Elevation[i] = w.Terrain.WaterLevel - Naval.NavalMotion.SubDepth;
+        {
+            if (Naval.Submarines.StartsSurfaced(bp)) w.Units.Flags[i] |= UnitFlags.Surfaced;
+            w.Units.Elevation[i] = (w.Units.Flags[i] & UnitFlags.Surfaced) != 0
+                ? w.Terrain.WaterLevel : w.Terrain.WaterLevel - Naval.NavalMotion.SubDepth;
+        }
     }
 
     /// <summary>

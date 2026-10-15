@@ -111,7 +111,7 @@ public static class FactorySystem
                 {
                     f.Current = UnitHandle.None; // destroyed inside the factory: the queue front is restarted
                 }
-                else if (u.IsComplete(f.Current.Index))
+                else if (u.IsComplete(f.Current.Index) && !Transport.TransportSystem.HoldFinished(w, i, bp, f.Current.Index))
                 {
                     Release(w, i, bp, f.Current.Index);
                     f.Current = UnitHandle.None;
@@ -129,8 +129,8 @@ public static class FactorySystem
 
             if (f.Current.IsNone && f.Queue is { Count: > 0 }) StartNext(w, i, bp, ref f);
 
-            if (!f.Current.IsNone) ConstructionSystem.Work(w, i, f.Current, BuilderMode.Build);
-            else ConstructionSystem.Idle(w, i);
+            if (!f.Current.IsNone && !u.IsComplete(f.Current.Index)) ConstructionSystem.Work(w, i, f.Current, BuilderMode.Build);
+            else ConstructionSystem.Idle(w, i); // also a finished unit held inside (TransportSystem.HoldFinished)
         }
     }
 
@@ -229,5 +229,6 @@ public static class FactorySystem
             float jitter = w.RandomFor(unit, 0xFAC).Range(-2.5f, 2.5f);
             q.Enqueue(Order.MoveTo(w.Terrain.Clamp(exit + dir * ExitMoveDistance + side * jitter)));
         }
+        Transport.TransportSystem.DockFinished(w, f, fbp, unit); // dived Atlantis: aboard until it surfaces
     }
 }

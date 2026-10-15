@@ -76,6 +76,7 @@ public static class WeaponSystem
         var pos = u.Pos[i];
         float elev = u.Elevation[i];
         bool engaged = false;
+        bool submerged = Naval.Submarines.IsSubmerged(w, i); // divers (Atlantis): only torpedoes work under water
 
         for (int wi = 0; wi < info.Weapons.Length; wi++)
         {
@@ -86,6 +87,13 @@ public static class WeaponSystem
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
             if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind))
+            {
+                ws.Target = UnitHandle.None; // own slot (parallel-safe); re-acquired after surfacing
+                ws.TurretHeading = DMath.RotateTowards(ws.TurretHeading, u.Heading[i], winfo.TurnRate * dt);
+                ws.TurretPitch = 0;
+                continue;
+            }
 
             // What are we shooting at?
             int tj = -1;

@@ -148,6 +148,8 @@ public sealed class MovementBlueprint
     public float Altitude;
     /// <summary>Max terrain slope (rise/run) this unit can climb.</summary>
     public float MaxSlope = 0.75f;
+    /// <summary>Divers (Layer Sub) only: spawn surfaced instead of submerged (Atlantis). See Naval/Submarines.</summary>
+    public bool StartSurfaced;
 }
 
 public sealed class IntelBlueprint
