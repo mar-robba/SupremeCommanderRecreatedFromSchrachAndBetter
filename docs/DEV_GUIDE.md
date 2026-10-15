@@ -8,7 +8,7 @@ Things learned while building the project that are not about how a system works 
 
 - **Only one `dotnet build`/`dotnet test` at a time per worktree.** Two builds in the same folder corrupt each
   other's `obj/` output. When several agents share a worktree, everyone runs dotnet through the lock wrapper:
-  `tools/agents/dn.sh build Rts.slnx`, `tools/agents/dn.sh test tests/Rts.Sim.Tests --filter "..."`.
+  `bash tools/agents/dn.sh build Rts.slnx`, `bash tools/agents/dn.sh test tests/Rts.Sim.Tests --filter "..."` (always through `bash`: in worktrees the file may not be executable).
   Run it from inside the worktree; the lock is `<worktree>/.claude/build.lock`.
 - **Why the wrapper uses `flock -o` and turns MSBuild node reuse off:** with a plain `flock`, the reused MSBuild
   nodes and the compiler server inherited the lock's file descriptor and kept the lock held forever after the build
