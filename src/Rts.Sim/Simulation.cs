@@ -25,7 +25,7 @@ public sealed class Simulation
 
     public void Step(IReadOnlyList<Command> commands)
     {
-        var sw = Stopwatch.StartNew();
+        long sw = Stopwatch.GetTimestamp(); // (no Stopwatch object per tick)
         var w = World;
         var pf = Profile;
         pf.Begin();
@@ -73,7 +73,7 @@ public sealed class Simulation
         CleanupSystem.Run(w);
         pf.Lap(SimProfile.Stage.Cleanup);
 
-        LastTickMs = sw.Elapsed.TotalMilliseconds;
+        LastTickMs = Stopwatch.GetElapsedTime(sw).TotalMilliseconds;
     }
 
     public void Step() => Step(Array.Empty<Command>());

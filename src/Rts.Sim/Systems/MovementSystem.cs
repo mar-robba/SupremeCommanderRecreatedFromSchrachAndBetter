@@ -67,7 +67,7 @@ public static partial class MovementSystem
 
     public static void Run(SimWorld w)
     {
-        var sw = Stopwatch.StartNew();
+        long sw = Stopwatch.GetTimestamp(); // (no Stopwatch object per tick)
         var u = w.Units;
         var paths = w.Paths;
         paths.EnsureGrids();
@@ -90,9 +90,10 @@ public static partial class MovementSystem
         }
         ComputeGroupPace(w);
 
-        float dt = SimWorld.Dt;
-        Par.For(u.AliveCount, 256, (_, start, end) =>
+        Par.For(u.AliveCount, 256, w, static (w, _, start, end) =>
         {
+            var u = w.Units;
+            const float dt = SimWorld.Dt;
             for (int k = start; k < end; k++)
             {
                 int i = u.AliveList[k];
@@ -111,7 +112,7 @@ public static partial class MovementSystem
             int i = u.AliveList[k];
             u.Pos[i] = u.ScratchPos[i];
         }
-        paths.Stats.LastMoveMs = sw.Elapsed.TotalMilliseconds;
+        paths.Stats.LastMoveMs = Stopwatch.GetElapsedTime(sw).TotalMilliseconds;
         paths.Stats.TotalMoveMs += paths.Stats.LastMoveMs;
         paths.Stats.Ticks++;
     }

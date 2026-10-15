@@ -42,8 +42,10 @@ public static class WeaponSystem
         var u = w.Units;
         int n = u.AliveCount;
         s.Shots.Reset(Par.ChunkCount(n, Chunk));
-        Par.For(n, Chunk, (c, start, end) =>
+        Par.For(n, Chunk, w, static (w, c, start, end) =>
         {
+            var s = CombatState.Of(w);
+            var u = w.Units;
             var shots = s.Shots[c];
             for (int k = start; k < end; k++) UpdateUnit(w, s, u.AliveList[k], shots);
         });

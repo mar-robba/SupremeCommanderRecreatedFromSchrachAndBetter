@@ -46,21 +46,22 @@ public sealed class SpatialGrid
         Array.Clear(_cellStart);
         int n = units.AliveCount;
         var list = units.AliveList;
+        int cells = Cols * Rows;
         for (int k = 0; k < n; k++)
         {
             int i = list[k];
             int c = CellIndexOf(units.Pos[i]);
             _cellOfUnit[i] = c;
-            _cellStart[c + 1]++;
+            _cellStart[c]++;
         }
-        for (int c = 0; c < Cols * Rows; c++) _cellStart[c + 1] += _cellStart[c];
-        // Stable placement in ascending unit order (AliveList is ascending) -> deterministic.
-        Span<int> cursor = _cellStart.Length <= 4096 ? stackalloc int[_cellStart.Length] : new int[_cellStart.Length];
-        _cellStart.AsSpan().CopyTo(cursor);
-        for (int k = 0; k < n; k++)
+        // _cellStart[c] = end of cell c (inclusive prefix sum); placing units in DESCENDING order at --end leaves
+        // _cellStart[c] = start of cell c, with each cell in ascending unit order (deterministic; no cursor array).
+        for (int c = 1; c < cells; c++) _cellStart[c] += _cellStart[c - 1];
+        _cellStart[cells] = n;
+        for (int k = n - 1; k >= 0; k--)
         {
             int i = list[k];
-            _entries[cursor[_cellOfUnit[i]]++] = i;
+            _entries[--_cellStart[_cellOfUnit[i]]] = i;
         }
     }
 

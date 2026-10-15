@@ -31,8 +31,10 @@ public static class TargetingSystem
         var s = CombatState.Of(w);
         s.Prepare(w);
         var u = w.Units;
-        Par.For(u.AliveCount, Chunk, (_, start, end) =>
+        Par.For(u.AliveCount, Chunk, w, static (w, _, start, end) =>
         {
+            var s = CombatState.Of(w);
+            var u = w.Units;
             for (int k = start; k < end; k++) UpdateUnit(w, s, u.AliveList[k]);
         });
     }

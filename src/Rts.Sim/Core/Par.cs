@@ -1,3 +1,5 @@
+using Rts.Sim.World;
+
 namespace Rts.Sim.Core;
 
 /// <summary>
@@ -53,7 +55,21 @@ public static class Par
     public static int ChunkCount(int count, int chunkSize) => count <= 0 ? 0 : (count + chunkSize - 1) / chunkSize;
 
     /// <summary>Runs body(chunkIndex, start, endExclusive) for every chunk of [0, count).</summary>
-    public static void For(int count, int chunkSize, Action<int, int, int> body)
+    public static void For(int count, int chunkSize, Action<int, int, int> body) => Run(new ParBody(body), count, chunkSize);
+
+    /// <summary>Runs body(i) for i in [0, count) in parallel; use only when each i writes only its own data.</summary>
+    public static void ForEach(int count, Action<int> body) => Run(new ParBody(body), count, 1);
+
+    /// <summary>
+    /// <see cref="For(int, int, Action{int, int, int})"/> with the world passed to the body: call sites can use a
+    /// <c>static</c> lambda (cached by the compiler, no allocation per call) instead of a capturing one.
+    /// </summary>
+    public static void For(int count, int chunkSize, SimWorld w, Action<SimWorld, int, int, int> body) => Run(new ParBody(w, body), count, chunkSize);
+
+    /// <summary><see cref="ForEach(int, Action{int})"/> with the world passed to the body (use a <c>static</c> lambda).</summary>
+    public static void ForEach(int count, SimWorld w, Action<SimWorld, int> body) => Run(new ParBody(w, body), count, 1);
+
+    private static void Run(in ParBody body, int count, int chunkSize)
     {
         int chunks = ChunkCount(count, chunkSize);
         if (chunks == 0) return;
@@ -61,28 +77,13 @@ public static class Par
         {
             if (UseTaskParallel)
             {
-                Parallel.For(0, chunks, new ParallelOptions { MaxDegreeOfParallelism = _maxThreads }, c => body(c, c * chunkSize, Math.Min(count, (c + 1) * chunkSize)));
+                var b = body;
+                Parallel.For(0, chunks, new ParallelOptions { MaxDegreeOfParallelism = _maxThreads }, c => b.Invoke(c, c * chunkSize, Math.Min(count, (c + 1) * chunkSize)));
                 return;
             }
-            if (Pool().TryRun(body, null, count, chunkSize, chunks)) return;
+            if (Pool().TryRun(body, count, chunkSize, chunks)) return;
         }
-        for (int c = 0; c < chunks; c++) body(c, c * chunkSize, Math.Min(count, (c + 1) * chunkSize));
-    }
-
-    /// <summary>Runs body(i) for i in [0, count) in parallel; use only when each i writes only its own data.</summary>
-    public static void ForEach(int count, Action<int> body)
-    {
-        if (count <= 0) return;
-        if (count > 1 && _maxThreads > 1)
-        {
-            if (UseTaskParallel)
-            {
-                Parallel.For(0, count, new ParallelOptions { MaxDegreeOfParallelism = _maxThreads }, body);
-                return;
-            }
-            if (Pool().TryRun(null, body, count, 1, count)) return;
-        }
-        for (int i = 0; i < count; i++) body(i);
+        for (int c = 0; c < chunks; c++) body.Invoke(c, c * chunkSize, Math.Min(count, (c + 1) * chunkSize));
     }
 
     private static ParPool Pool()
@@ -90,6 +91,30 @@ public static class Par
         var p = _pool;
         if (p != null) return p;
         lock (PoolLock) return _pool ??= new ParPool(_maxThreads - 1);
+    }
+}
+
+/// <summary>The body of one <see cref="Par"/> call: exactly one of the delegates is set.</summary>
+internal readonly struct ParBody
+{
+    private readonly Action<int, int, int>? _range;
+    private readonly Action<int>? _item;
+    private readonly Action<SimWorld, int, int, int>? _worldRange;
+    private readonly Action<SimWorld, int>? _worldItem;
+    private readonly SimWorld? _world;
+
+    public ParBody(Action<int, int, int> range) => _range = range;
+    public ParBody(Action<int> item) => _item = item;
+    public ParBody(SimWorld w, Action<SimWorld, int, int, int> range) { _world = w; _worldRange = range; }
+    public ParBody(SimWorld w, Action<SimWorld, int> item) { _world = w; _worldItem = item; }
+
+    /// <summary>Runs chunk c = [start, end) (item bodies: chunk c is item c).</summary>
+    public void Invoke(int c, int start, int end)
+    {
+        if (_range != null) _range(c, start, end);
+        else if (_worldRange != null) _worldRange(_world!, c, start, end);
+        else if (_item != null) _item(c);
+        else _worldItem!(_world!, c);
     }
 }
 

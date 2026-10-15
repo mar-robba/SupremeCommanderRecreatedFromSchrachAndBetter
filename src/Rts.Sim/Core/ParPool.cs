@@ -27,8 +27,7 @@ internal sealed class ParPool
     private int _busy; // 1 while a caller owns the pool
 
     // The current job: written by the owner while _open == 0, read by workers after they saw _open == 1.
-    private Action<int, int, int>? _body;
-    private Action<int>? _each;
+    private ParBody _body;
     private int _count, _chunkSize, _chunks;
     private int _next;
     private int _open;
@@ -59,11 +58,10 @@ internal sealed class ParPool
     public int Workers => _workers.Length;
 
     /// <summary>Runs every chunk (on the workers and the calling thread); false (nothing run) if the pool is busy.</summary>
-    public bool TryRun(Action<int, int, int>? body, Action<int>? each, int count, int chunkSize, int chunks)
+    public bool TryRun(in ParBody body, int count, int chunkSize, int chunks)
     {
         if (_shutdown || _workers.Length == 0 || Interlocked.CompareExchange(ref _busy, 1, 0) != 0) return false;
         _body = body;
-        _each = each;
         _count = count;
         _chunkSize = chunkSize;
         _chunks = chunks;
@@ -87,8 +85,7 @@ internal sealed class ParPool
         var spin = new SpinWait();
         while (Volatile.Read(ref _inFlight) != 0) spin.SpinOnce(sleep1Threshold: -1);
         var errors = _errors;
-        _body = null;
-        _each = null;
+        _body = default;
         Volatile.Write(ref _busy, 0);
         if (errors != null) throw new AggregateException(errors);
         return true;
@@ -97,15 +94,13 @@ internal sealed class ParPool
     private void RunChunks()
     {
         var body = _body;
-        var each = _each;
         int count = _count, size = _chunkSize, chunks = _chunks;
         int c;
         while ((c = Interlocked.Increment(ref _next) - 1) < chunks)
         {
             try
             {
-                if (body != null) body(c, c * size, Math.Min(count, (c + 1) * size));
-                else each!(c);
+                body.Invoke(c, c * size, Math.Min(count, (c + 1) * size));
             }
             catch (Exception e)
             {

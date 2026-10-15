@@ -29,7 +29,7 @@ public static class IntelSystem
     {
         var intel = w.Intel;
         if (!intel.Enabled) return;
-        var sw = Stopwatch.StartNew();
+        long sw = Stopwatch.GetTimestamp(); // (no Stopwatch object per tick)
         var state = IntelUpdate.Of(w);
         state.Gather();
         Par.For(state.Items, 1, state.BandBody);
@@ -41,7 +41,7 @@ public static class IntelSystem
         }
         Par.ForEach(intel.TeamCount, state.GhostBody);
         intel.Version++;
-        intel.LastUpdateMs = sw.Elapsed.TotalMilliseconds;
+        intel.LastUpdateMs = Stopwatch.GetElapsedTime(sw).TotalMilliseconds;
     }
 
     /// <summary>
