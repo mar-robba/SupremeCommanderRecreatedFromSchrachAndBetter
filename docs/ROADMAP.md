@@ -11,9 +11,11 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-14 08:14 the weekly usage limit stopped every agent. 2026-10-15: WIP committed, fresh agents restarted in
-  the same worktrees: (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish `agent-a141a5d33496dd4c3`,
-  (o) lockstep MP `agent-a4a312626d7228fe6`; and new: (k) AI uses everything, (l) Cybran (new worktrees).
+- Running (worktrees under `.claude/worktrees/`): (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish
+  `agent-a141a5d33496dd4c3` (3rd agent), (o) lockstep MP `agent-a4a312626d7228fe6`, (k) AI uses everything
+  `agent-ac4c927c54a66ca1d` (2nd agent), (l) Cybran `agent-a9df3acf3524c656f`. History: the weekly limit stopped
+  everything on 2026-10-14 08:14 and the session limit on 2026-10-15 11:21; each time WIP was kept and agents
+  resumed (SendMessage under 200k context, else handoff note + CHECKPOINT + a fresh agent in the same worktree).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
