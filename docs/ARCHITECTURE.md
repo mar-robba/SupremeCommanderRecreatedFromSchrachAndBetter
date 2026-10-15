@@ -260,7 +260,9 @@ interpolates prev/cur by time
   only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
 - Dive/surface (`SetSubmergedCommand` → `Naval/Submarines.cs`, `UnitFlags.Surfaced`): depth changes smoothly;
   the layer (`OrderSystem.LayerOf`) switches halfway. A surfaced sub is a Water-layer unit: seen by vision/radar,
-  hit by surface guns, collides with ships.
+  hit by surface guns, collides with ships. Every `Movement.Layer: "Sub"` unit can dive; `StartSurfaced` divers
+  (the Atlantis) spawn at the surface. Submerged, only torpedo weapons work (`Submarines.FiresSubmerged`: Targeting
+  and WeaponSystem hold the SAMs/guns). A blueprint swap (InitUnit re-run) keeps the dive state and depth.
 - Ship separation (`Naval/NavalMotion.cs`): hulls are capsules along the heading, pushed apart for all armies;
   submerged subs only collide with subs, surfaced subs with ships.
 - Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
@@ -294,7 +296,11 @@ interpolates prev/cur by time
   Air Staging repairs/refuels for free and releases aircraft when full; `KeepDocked` carriers (the Atlantis) keep
   them until Unload (Launch) or until the aircraft gets new queued orders.
 - Mobile factory (Atlantis): builds aircraft on deck (`SyncFactoryUnit` keeps the unit being built on the carrier)
-  and carries them. Pausable like any factory (H). It can't dive yet (it is a Water-layer unit).
+  and carries them. Pausable like any factory (H). It can dive (`Movement.Layer: "Sub"` + `StartSurfaced`, see Naval):
+  while submerged (`Submarines.IsSubmerged`) the deck is closed: no docking (aircraft wait above it; `FindAirCarrier`
+  skips it), no launching (Unload waits, docked aircraft stay aboard), a finished aircraft goes straight into the hold
+  with a Dock order in front of its orders (`TransportSystem.DockFinished`) and takes off after surfacing; with a
+  full hold production waits (`WaitsForRoom`).
 - Capture (`UnitTransfer`): a captured carrier's cargo changes army with it (hold order, recursive); carried units
   can't be captured and a carrier holding a commander can't be captured. Boarding ends a factory roll-out
   (`MoveState.LeaveTime = 0`). Air staging repairs veterans to their raised max health.

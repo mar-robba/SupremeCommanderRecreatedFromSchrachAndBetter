@@ -29,13 +29,14 @@ public static partial class MovementSystem
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
         ref var mv = ref w.Units.Move[i];
+        bool fresh = mv.OrbitDir == 0f; // UnitStore.Allocate zeroes Move; a blueprint swap re-runs this (OrbitDir = ±1)
         mv.PathId = -1;
         mv.HasGoal = false;
         mv.OrbitCenter = w.Units.Pos[i];
         mv.OrbitDir = (i & 1) == 0 ? 1f : -1f;
         // Subs start submerged (spawn and factory release put them at their running depth); StartSurfaced divers
-        // (Atlantis) start at the surface (a blueprint swap re-init would surface them again: none has enhancements).
-        if (bp.Movement.Layer == MotionLayer.Sub && bp.IsMobile)
+        // (Atlantis) start at the surface. A blueprint swap keeps the dive state and the current depth.
+        if (fresh && bp.Movement.Layer == MotionLayer.Sub && bp.IsMobile)
         {
             if (Naval.Submarines.StartsSurfaced(bp)) w.Units.Flags[i] |= UnitFlags.Surfaced;
             w.Units.Elevation[i] = (w.Units.Flags[i] & UnitFlags.Surfaced) != 0

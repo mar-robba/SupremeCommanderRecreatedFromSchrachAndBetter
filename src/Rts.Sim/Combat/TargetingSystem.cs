@@ -43,9 +43,11 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!u.IsActive(i) || !u.IsComplete(i)) return;
+        if ((u.Flags[i] & UnitFlags.Carried) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];
+        bool submerged = Naval.Submarines.IsSubmerged(w, i); // dived Atlantis: only torpedoes (WeaponSystem holds the rest)
 
         var forced = UnitHandle.None;
         var q = u.Orders[i];
@@ -65,6 +67,7 @@ public static class TargetingSystem
             if (winfo.Kind == WeaponKind.Manual) continue; // silo / missile defense (Strategic module)
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
             if (winfo.Kind == WeaponKind.AntiTorpedo) { ws.Target = UnitHandle.None; continue; } // torpedo defense: never targets units
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind)) { ws.Target = UnitHandle.None; continue; }
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
             // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.
@@ -104,6 +107,7 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!s.IsEnemyArmy(army, u.Army[j])) return false;
+        if ((u.Flags[j] & UnitFlags.Carried) != 0) return false; // inside a carrier: off the map
         if ((s.Layer[j] & mask) == 0) return false;
         if (FireStates.CapturedByFriend(w, army, j)) return false; // we are capturing it: hold fire
         float d2 = Vector2.DistanceSquared(pos, u.Pos[j]);
@@ -185,7 +189,7 @@ public static class TargetingSystem
             var u = W.Units;
             if (!S.IsEnemyArmy(Army, u.Army[j]) || j == Skip) return true;
             if ((S.Layer[j] & Mask) == 0) return true;
-            if (!u.IsActive(j)) return true;
+            if (!u.IsActive(j) || (u.Flags[j] & UnitFlags.Carried) != 0) return true; // boarded this tick: off the map
             float d2 = Vector2.DistanceSquared(u.Pos[j], Pos);
             float r = Range + S.Catalog.Units[u.Bp[j]].TargetRadius;
             if (d2 > r * r || d2 < MinRange2) return true;

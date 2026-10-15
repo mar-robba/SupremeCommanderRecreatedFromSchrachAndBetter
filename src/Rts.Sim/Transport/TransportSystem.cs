@@ -462,17 +462,21 @@ public static class TransportSystem
     }
 
     /// <summary>
-    /// Mobile factory that is also a submerged air carrier (dived Atlantis) and can't take its finished unit aboard:
-    /// FactorySystem keeps the unit inside until the carrier surfaces or makes room. SEQUENTIAL.
+    /// A mobile factory that is also a submerged air carrier (dived Atlantis) takes its finished aircraft aboard
+    /// (<see cref="DockFinished"/>), so it only builds while the hold has room for the unit: true = production waits
+    /// (FactorySystem idles) until the carrier surfaces or launches aircraft. SEQUENTIAL.
     /// </summary>
-    public static bool HoldFinished(SimWorld w, int factory, UnitBlueprint fbp, int unit) =>
-        fbp.Cargo is { Layer: CargoLayer.Air } && Naval.Submarines.IsSubmerged(w, factory) && !CanCarry(w, factory, unit);
+    public static bool WaitsForRoom(SimWorld w, int factory, UnitBlueprint fbp, int unit) =>
+        fbp.Cargo is { Layer: CargoLayer.Air } cb && Naval.Submarines.IsSubmerged(w, factory)
+        && w.Cargo.UsedSlots(w, factory) + w.BpOf(unit).CargoSize > cb.Capacity;
 
     /// <summary>
     /// Called by <c>FactorySystem.Release</c> after the finished unit got its orders: a submerged air carrier (dived
     /// Atlantis) docks it instead of launching it. A Dock order goes in front of its orders, so it takes off by
     /// itself once the carrier is up (<see cref="UpdateCarrier"/>: a docked aircraft with queued orders undocks when
-    /// repaired/refuelled). SEQUENTIAL.
+    /// repaired/refuelled). It boards mid-tick (after the AliveList rebuild): TargetingSystem ignores carried units,
+    /// and its old locks are purged here. No room (only if the carrier dived right as the unit completed): it is
+    /// launched as usual. SEQUENTIAL.
     /// </summary>
     public static void DockFinished(SimWorld w, int factory, UnitBlueprint fbp, int unit)
     {

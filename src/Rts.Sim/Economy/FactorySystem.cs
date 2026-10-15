@@ -111,7 +111,7 @@ public static class FactorySystem
                 {
                     f.Current = UnitHandle.None; // destroyed inside the factory: the queue front is restarted
                 }
-                else if (u.IsComplete(f.Current.Index) && !Transport.TransportSystem.HoldFinished(w, i, bp, f.Current.Index))
+                else if (u.IsComplete(f.Current.Index))
                 {
                     Release(w, i, bp, f.Current.Index);
                     f.Current = UnitHandle.None;
@@ -129,8 +129,10 @@ public static class FactorySystem
 
             if (f.Current.IsNone && f.Queue is { Count: > 0 }) StartNext(w, i, bp, ref f);
 
-            if (!f.Current.IsNone && !u.IsComplete(f.Current.Index)) ConstructionSystem.Work(w, i, f.Current, BuilderMode.Build);
-            else ConstructionSystem.Idle(w, i); // also a finished unit held inside (TransportSystem.HoldFinished)
+            // A dived Atlantis whose hold is full waits (TransportSystem.WaitsForRoom): finished aircraft go aboard.
+            if (!f.Current.IsNone && !Transport.TransportSystem.WaitsForRoom(w, i, bp, f.Current.Index))
+                ConstructionSystem.Work(w, i, f.Current, BuilderMode.Build);
+            else ConstructionSystem.Idle(w, i);
         }
     }
 
