@@ -288,7 +288,7 @@ client tests.
 ## Pre-wave 5
 
 ### (j) Faction infrastructure
-*in progress (2026-10-14)*
+*merged 2026-10-15*
 
 Goal: make a second faction possible:
 - `data/factions/<id>.json` with `Roles` (role → blueprint id), a `FactionDb`, `UnitBlueprint.Faction`,
@@ -296,7 +296,22 @@ Goal: make a second faction possible:
 - the AI and `StrategicApi` ask for roles instead of hard-coded `uef_*` ids;
 - a faction selector in setup + `--faction` / `--factions`; a faction filter in the sandbox;
 - an ARCHITECTURE "Factions" contract.
-Its report goes here when it is merged.
+
+**Delivered** (merged 2026-10-15; two agents, the second cut by the weekly usage limit before its report, so the
+orchestrator finished the checks):
+- `FactionDb` + `data/factions/uef.json`: 70 required + 15 optional roles (`FactionRoles`), every UEF unit mapped
+  (incl. transports, air staging, Atlantis); loading rejects unknown roles, missing blueprints, bad colors, duplicate
+  ids and the reserved id `random`.
+- `SkirmishSettings.Factions` → `Army.Faction` (saved; `random` resolved from the seed, the same on every machine);
+  `ArmyView.Faction`, `PlayerInfo.Faction`; the army starts with its faction's `Commander`.
+- The AI (`AiBrain` `Bp*` fields) and `StrategicApi.NukeSiloOf` resolve units by role; `"uef_` no longer appears in
+  sim code.
+- Client: FACTION column in the setup screen (validated in `GameConfig`), `--faction ID` / `--factions a,b,...`,
+  sandbox FACTION filter, `ClientGameData`; `Rts.Bench ai ... [factions]`.
+- Docs: ARCHITECTURE "Factions" (the contract for (k) and (l)), CLAUDE.md rule 10 + CLI lines.
+- Tests: `FactionTests` (sim), `FactionSetupTests` (client). At merge: 355 sim + 199 client tests green.
+- Check: `Rts.Bench -- ai 30 256 42 hard,normal` = main exactly (WINNER Hard after 11:30, hash EDCA8A729F29736E).
+- Known: only UEF exists, so the selector offers UEF / Random until (l) adds Cybran.
 
 ## Wave 5 (in progress)
 
