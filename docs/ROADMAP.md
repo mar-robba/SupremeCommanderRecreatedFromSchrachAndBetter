@@ -19,9 +19,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
 - If an agent got cut off by a usage limit: commit its WIP in its worktree, then start a fresh agent in the same
   worktree (absolute path, no isolation) with its brief + "continue from .claude/handoff.md".
-- Owner question pending (2026-10-15): "would Rust have been better than .NET?" (note at the top of
-  ARCHITECTURE.md, uncommitted: the owner's text, don't commit or delete it without asking; stash it around merges
-  that touch ARCHITECTURE.md). Answer given: stay on .NET (WORKFLOW "Owner decisions").
+- Owner question (2026-10-15) "would Rust have been better than .NET?": answered, stay on .NET (WORKFLOW "Owner decisions").
 - Housekeeping: a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
 
 **Next waves (owner: "everything must be done"):**
