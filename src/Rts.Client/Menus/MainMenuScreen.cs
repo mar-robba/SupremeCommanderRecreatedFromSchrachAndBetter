@@ -16,9 +16,10 @@ public sealed class MainMenuScreen : IScreen
     {
         _app.Backdrop.Draw(dt);
         MenuUi.BeginFrame();
-        float x = Ui.P(80), y = Ui.Sh * 0.17f;
-
         int big = Ui.F(54);
+        // Start higher on short windows so the last entry stays above the footer line (7 entries).
+        float x = Ui.P(80), y = MathF.Min(Ui.Sh * 0.17f, Ui.Sh - Ui.P(44) - big - Ui.P(70) - 7 * Ui.P(66));
+
         Ui.TextShadow("RTS", x, y, big, Ui.TextColor, true);
         float tw = Ui.Measure("RTS", big, true);
         Raylib.DrawRectangle((int)x, (int)(y + big + Ui.P(4)), (int)(tw + Ui.P(150)), (int)Ui.P(3), Ui.Accent);
