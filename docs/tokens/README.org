@@ -1,0 +1,54 @@
+#+TITLE: Registro dei token
+#+LANGUAGE: it
+#+STARTUP: showall
+
+La memoria del progetto su quanti token sono stati usati e per quale scopo. Ogni sessione di Claude Code e ogni
+agente diventa una riga per giorno, con lo scopo che serviva. Il riepilogo è in [[file:summary.org][summary.org]]; l'analisi
+e le lezioni sui costi sono nel capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
+
+* File
+| File             | Contenuto                                                                                | Chi lo scrive      |
+|------------------+------------------------------------------------------------------------------------------+--------------------|
+| ~ledger.csv~     | Una riga per sessione o agente e per giorno: scopo, area, token, output, dollari.        | ~ledger.py~        |
+| ~summary.org~    | Totali per area, per scopo, per giorno; ultime attività; righe da classificare.          | ~ledger.py~        |
+| ~counters.jsonl~ | Il contatore esatto di Claude Code, una riga per sessione. Non si può ricostruire dopo.  | ~ledger.py~        |
+| ~tags.csv~       | Lo scopo assegnato a mano a una sessione o a un agente.                                  | ~ledger.py tag~    |
+
+Lo strumento è ~tools/token-ledger/ledger.py~ (solo libreria standard di Python); le regole che assegnano lo scopo
+agli agenti sono in ~tools/token-ledger/purposes.json~.
+
+* Come si riempie da solo
+Gli hook di Claude Code di questo progetto (~.claude/settings.json~, solo su questa macchina) lanciano lo strumento:
+- a inizio sessione: dicono al modello l'id della sessione e come registrarne lo scopo, poi aggiornano il registro
+  in background;
+- alla fine di ogni agente: aggiornano il registro in background;
+- a fine sessione: copiano il contatore esatto della sessione, poi aggiornano il registro in un processo staccato
+  che sopravvive alla chiusura.
+I file cambiano quindi da soli: l'orchestratore li committa insieme agli aggiornamenti dei docs.
+
+* Da dove vengono i numeri
+- Token di input (scritture in cache, letture dalla cache, input normale): esatti, dalle trascrizioni in
+  =~/.claude/projects/-run-media-marco-Volume-D-RTS/=.
+- Token di output: esatti quando la trascrizione ha il conteggio finale (~output_fonte~ = ~esatto~). Altrimenti
+  stimati dal testo visibile (~stimato~), oppure stimati e poi corretti con il contatore esatto della sessione
+  (~calibrato~). Il contatore di Claude Code conserva solo l'ultima sessione chiusa: con più sessioni in parallelo
+  si salva quella che chiude per ultima.
+- Dollari: equivalente a listino API (prezzi in ~ledger.py~). L'abbonamento non paga questa cifra; i dollari servono
+  a confrontare gli scopi tra loro.
+- Le trascrizioni vengono cancellate da Claude Code dopo 30 giorni; le righe già nel registro restano.
+
+* Come si assegna lo scopo
+In ordine di priorità:
+1. un'etichetta in ~tags.csv~: ~python3 tools/token-ledger/ledger.py tag ID "SCOPO" --area AREA~ (ID = l'inizio
+   dell'id della sessione o dell'agente);
+2. per un agente, una descrizione che inizia con ~[SCOPO]~, per esempio ~[Fazione Cybran (5l)] client models~;
+3. la prima regola di ~purposes.json~ che compare nella descrizione dell'agente;
+4. altrimenti ~Orchestrazione (sessioni principali)~ per le sessioni e ~Da classificare~ per gli agenti.
+L'area viene da ~--area~, altrimenti dalla tabella ~aree~ di ~purposes.json~. Aree in uso: Gameplay SupCom,
+Esperienza client, Avversario IA, Infrastruttura tecnica, Coordinamento, Documentazione.
+
+* Come si usa
+- Riepilogo: [[file:summary.org][summary.org]], oppure ~python3 tools/token-ledger/ledger.py report [--days N]~.
+- Prima di pianificare un'onda: guardare quanto sono costati scopi simili e dimensionare i brief di conseguenza.
+- Dopo il merge di un'onda: aggiornare il capitolo "Costi" di LESSONS.org con i numeri del registro.
+- Ricalcolo a mano: ~python3 tools/token-ledger/ledger.py update~.

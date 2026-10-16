@@ -132,3 +132,4 @@ integrated GPU.
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert (WORKFLOW "Context limits and handoffs"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
+| `tools/token-ledger/` | Token ledger: tokens per session/agent and purpose, kept up to date by project hooks ([tokens/README.org](tokens/README.org)); `windows.py`: tokens used in each usage-limit window ([WORKFLOW.md](WORKFLOW.md) "Usage limits"). |
