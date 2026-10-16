@@ -1,0 +1,40 @@
+{
+  "Id": "cybran_t1_air_scout",
+  "Name": "Hummingbird",
+  "Description": "Fast scout plane.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Scout",
+    "Intel",
+    "Tech1"
+  ],
+  "MaxHealth": 60,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 40,
+    "BuildCostEnergy": 400,
+    "BuildTime": 100
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 16.5,
+    "Acceleration": 8,
+    "TurnRate": 120,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 42,
+    "RadarRadius": 60
+  },
+  "Visual": {
+    "Shape": "cy_air_scout",
+    "Size": [
+      1.2,
+      0.4,
+      1.4
+    ],
+    "Icon": "air_fighter"
+  }
+}

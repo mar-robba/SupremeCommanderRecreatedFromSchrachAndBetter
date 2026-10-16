@@ -1,0 +1,36 @@
+{
+  "Id": "cybran_t1_hydrocarbon",
+  "Name": "Hydrocarbon Power Plant",
+  "Description": "Produces energy; must be built on a hydrocarbon deposit.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "PowerGenerator",
+    "HydroCarbon",
+    "Tech1"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 2.0,
+  "FootprintX": 4,
+  "FootprintZ": 4,
+  "Economy": {
+    "BuildCostMass": 160,
+    "BuildCostEnergy": 800,
+    "BuildTime": 400,
+    "ProductionEnergy": 100,
+    "RequiresHydroDeposit": true
+  },
+  "Intel": {
+    "VisionRadius": 10
+  },
+  "Visual": {
+    "Shape": "cy_hydro",
+    "Size": [
+      3.6,
+      2.4,
+      3.6
+    ],
+    "Icon": "eco_energy"
+  }
+}

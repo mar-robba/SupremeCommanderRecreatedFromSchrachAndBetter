@@ -1,0 +1,96 @@
+{
+  "Id": "cybran_x_soul_ripper",
+  "Name": "Soul Ripper",
+  "Description": "Experimental gunship: hovers over its targets with heavy electron bolters and iridium rocket packs, plus anti-air. Crashes with a blast.",
+  "Tech": 4,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Gunship",
+    "Experimental",
+    "DirectFire",
+    "AntiAir"
+  ],
+  "MaxHealth": 24000,
+  "Radius": 3.0,
+  "Economy": {
+    "BuildCostMass": 24000,
+    "BuildCostEnergy": 360000,
+    "BuildTime": 40000
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 8,
+    "Acceleration": 3,
+    "TurnRate": 50,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 44,
+    "RadarRadius": 60
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Electron Bolter",
+      "Range": 30,
+      "Damage": 300,
+      "ProjectilesPerShot": 2,
+      "RateOfFire": 0.75,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 120,
+      "FiringTolerance": 40,
+      "ProjectileVisual": "laser"
+    },
+    {
+      "Name": "Iridium Rocket Packs",
+      "Range": 26,
+      "Damage": 60,
+      "ProjectilesPerShot": 4,
+      "Spread": 1.5,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 35,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 360,
+      "FiringTolerance": 40,
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Nanodart Launcher",
+      "Range": 30,
+      "Damage": 30,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "TurretTurnRate": 360,
+      "FiringTolerance": 40,
+      "ProjectileVisual": "missile"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_soul_ripper",
+    "Size": [
+      8.0,
+      2.4,
+      9.0
+    ],
+    "Icon": "experimental"
+  },
+  "Experimental": {
+    "DeathDamage": 3000,
+    "DeathRadius": 10,
+    "DeathDelay": 1.5
+  },
+  "WreckMassFraction": 0.9,
+  "BuiltBy": [
+    "cybran_t3_engineer"
+  ]
+}

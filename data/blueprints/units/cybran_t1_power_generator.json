@@ -1,0 +1,34 @@
+{
+  "Id": "cybran_t1_power_generator",
+  "Name": "T1 Power Generator",
+  "Description": "Produces energy.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "PowerGenerator",
+    "Tech1"
+  ],
+  "MaxHealth": 380,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 75,
+    "BuildCostEnergy": 750,
+    "BuildTime": 125,
+    "ProductionEnergy": 20
+  },
+  "Intel": {
+    "VisionRadius": 8
+  },
+  "Visual": {
+    "Shape": "cy_pgen",
+    "Size": [
+      1.8,
+      1.6,
+      1.8
+    ],
+    "Icon": "eco_energy"
+  }
+}

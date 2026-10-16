@@ -1,0 +1,41 @@
+{
+  "Id": "cybran_t2_air_factory",
+  "Name": "T2 Air Factory",
+  "Description": "Builds T1 and T2 aircraft. Upgrade of the T1 air factory.",
+  "Tech": 2,
+  "UpgradesTo": "cybran_t3_air_factory",
+  "Categories": [
+    "Structure",
+    "Air",
+    "Factory",
+    "Tech2"
+  ],
+  "MaxHealth": 3800,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 1000,
+    "BuildCostEnergy": 7500,
+    "BuildTime": 1800,
+    "BuildRate": 40
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Visual": {
+    "Shape": "cy_factory2",
+    "Size": [
+      6,
+      2.3,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "cybran_t1_air_scout",
+    "cybran_t1_interceptor",
+    "cybran_t1_bomber",
+    "cybran_t2_gunship"
+  ]
+}

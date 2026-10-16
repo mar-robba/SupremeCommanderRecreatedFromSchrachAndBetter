@@ -1,0 +1,50 @@
+{
+  "Id": "cybran_t1_engineer",
+  "Name": "T1 Engineer",
+  "Description": "Builds structures, repairs and reclaims. Amphibious.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "Tech1"
+  ],
+  "MaxHealth": 150,
+  "Radius": 0.5,
+  "Economy": {
+    "BuildCostMass": 52,
+    "BuildCostEnergy": 260,
+    "BuildTime": 260,
+    "BuildRate": 5
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 2.0,
+    "Acceleration": 2,
+    "TurnRate": 120
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Visual": {
+    "Shape": "cy_engineer",
+    "Size": [
+      0.8,
+      0.6,
+      1.0
+    ],
+    "Icon": "land_engineer"
+  },
+  "Builds": [
+    "cybran_t1_land_factory",
+    "cybran_t1_air_factory",
+    "cybran_t1_mass_extractor",
+    "cybran_t1_power_generator",
+    "cybran_t1_hydrocarbon",
+    "cybran_t1_mass_storage",
+    "cybran_t1_energy_storage",
+    "cybran_t1_point_defense",
+    "cybran_t1_aa_turret",
+    "cybran_t1_radar"
+  ]
+}

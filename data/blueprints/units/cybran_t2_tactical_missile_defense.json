@@ -1,0 +1,57 @@
+{
+  "Id": "cybran_t2_tactical_missile_defense",
+  "Name": "Zapper",
+  "Description": "T2 tactical missile defense: a fast laser that zaps enemy tactical missiles within 25 (one per second).",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "Tech2"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 200,
+    "BuildCostEnergy": 2000,
+    "BuildTime": 650
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Zapper Anti-Missile Laser",
+      "Range": 25,
+      "Damage": 0,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 80,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "interceptor",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    }
+  ],
+  "MissileDefense": {
+    "Intercepts": "Tactical",
+    "Radius": 25,
+    "RateOfFire": 1,
+    "WeaponIndex": 0
+  },
+  "Visual": {
+    "Shape": "cy_tmd",
+    "Size": [
+      1.6,
+      1.8,
+      1.6
+    ],
+    "Icon": "defense"
+  },
+  "BuiltBy": [
+    "cybran_t2_engineer",
+    "cybran_t3_engineer"
+  ]
+}

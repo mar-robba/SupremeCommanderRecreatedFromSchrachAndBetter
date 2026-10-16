@@ -1,0 +1,189 @@
+{
+  "Id": "cybran_scu",
+  "Name": "Cybran Support Armored Command Unit",
+  "Description": "Support commander (SCU): T3 engineer with a disintegrator laser and its own enhancements (EMP array, stealth, cloak). Not an assassination target.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "DirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 6500,
+  "RegenRate": 5,
+  "Radius": 1.0,
+  "Economy": {
+    "BuildCostMass": 1900,
+    "BuildCostEnergy": 35000,
+    "BuildTime": 6000,
+    "BuildRate": 40,
+    "MaintenanceEnergy": 0
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 2.0,
+    "Acceleration": 1.8,
+    "TurnRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 26
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Disintegrator Laser",
+      "Range": 24,
+      "Damage": 120,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 35,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 120,
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_scu",
+    "Size": [
+      1.7,
+      2.3,
+      1.7
+    ],
+    "Icon": "scu"
+  },
+  "BuildListFrom": [
+    "cybran_t3_engineer"
+  ],
+  "Enhancements": [
+    {
+      "Id": "EMPCharge",
+      "Name": "EMP Array",
+      "Description": "Adds an EMP burst (every 5 s, range 22): stuns enemy units within 4 of the impact for 3 s (not commanders, aircraft or experimentals).",
+      "Slot": "RightArm",
+      "BuildCostMass": 600,
+      "BuildCostEnergy": 12000,
+      "BuildTime": 600,
+      "Visual": "emp",
+      "Icon": "EMP",
+      "Effects": {
+        "AddWeapons": [
+          {
+            "Name": "EMP Array",
+            "Range": 22,
+            "Damage": 60,
+            "DamageRadius": 3,
+            "RateOfFire": 0.2,
+            "MuzzleVelocity": 35,
+            "TargetLayers": [
+              "Land",
+              "Water"
+            ],
+            "TurretTurnRate": 120,
+            "ProjectileVisual": "laser",
+            "StunDuration": 3,
+            "StunRadius": 4,
+            "StunMaxTech": 3
+          }
+        ]
+      }
+    },
+    {
+      "Id": "FocusConvertor",
+      "Name": "Disintegrator Amplifier",
+      "Description": "+60% damage and +6 range for the disintegrator laser.",
+      "Slot": "RightArm",
+      "BuildCostMass": 700,
+      "BuildCostEnergy": 14000,
+      "BuildTime": 600,
+      "Visual": "cannon",
+      "Icon": "AMP",
+      "Effects": {
+        "Weapons": [
+          {
+            "Weapon": 0,
+            "DamageMult": 1.6,
+            "RangeAdd": 6
+          }
+        ]
+      }
+    },
+    {
+      "Id": "ResourceAllocation",
+      "Name": "Resource Allocation System",
+      "Description": "+6 mass/s and +500 energy/s.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 1200,
+      "BuildCostEnergy": 24000,
+      "BuildTime": 1000,
+      "Visual": "resource",
+      "Icon": "RAS",
+      "Effects": {
+        "ProductionMassAdd": 6,
+        "ProductionEnergyAdd": 500
+      }
+    },
+    {
+      "Id": "RapidFabricator",
+      "Name": "Rapid Fabricator",
+      "Description": "+60 build rate.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 800,
+      "BuildCostEnergy": 16000,
+      "BuildTime": 700,
+      "Visual": "engineering3",
+      "Icon": "RF",
+      "Effects": {
+        "BuildRateAdd": 60
+      }
+    },
+    {
+      "Id": "StealthGenerator",
+      "Name": "Personal Stealth Generator",
+      "Description": "Hidden from enemy radar and sonar. Upkeep 40 energy/s.",
+      "Slot": "Back",
+      "BuildCostMass": 300,
+      "BuildCostEnergy": 6000,
+      "BuildTime": 400,
+      "Visual": "stealth",
+      "Icon": "STL",
+      "Effects": {
+        "RadarStealth": true,
+        "SonarStealth": true,
+        "MaintenanceEnergyAdd": 40
+      }
+    },
+    {
+      "Id": "CloakingGenerator",
+      "Name": "Personal Cloaking Generator",
+      "Description": "Replaces the stealth generator: invisible except to omni sensors. Upkeep +600 energy/s.",
+      "Slot": "Back",
+      "Prerequisite": "StealthGenerator",
+      "BuildCostMass": 1200,
+      "BuildCostEnergy": 24000,
+      "BuildTime": 1200,
+      "Visual": "cloak",
+      "Icon": "CLK",
+      "Effects": {
+        "Cloak": true,
+        "MaintenanceEnergyAdd": 600
+      }
+    },
+    {
+      "Id": "SelfRepairSystem",
+      "Name": "Nano-Repair System",
+      "Description": "+40 health/s regeneration and +1500 health.",
+      "Slot": "Back",
+      "BuildCostMass": 500,
+      "BuildCostEnergy": 10000,
+      "BuildTime": 500,
+      "Visual": "repair",
+      "Icon": "NRS",
+      "Effects": {
+        "RegenRateAdd": 40,
+        "MaxHealthAdd": 1500
+      }
+    }
+  ]
+}

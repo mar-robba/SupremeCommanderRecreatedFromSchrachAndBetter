@@ -1,0 +1,65 @@
+{
+  "Id": "cybran_t3_engineer",
+  "Name": "T3 Engineer",
+  "Description": "Builds T1, T2 and T3 structures and experimentals. Heavy build power.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Engineer",
+    "Tech3"
+  ],
+  "MaxHealth": 850,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 360,
+    "BuildCostEnergy": 1800,
+    "BuildTime": 1300,
+    "BuildRate": 30
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 2.2,
+    "Acceleration": 2,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Visual": {
+    "Shape": "cy_engineer3",
+    "Size": [
+      1.2,
+      0.95,
+      1.5
+    ],
+    "Icon": "land_engineer"
+  },
+  "Builds": [
+    "cybran_t1_land_factory",
+    "cybran_t1_air_factory",
+    "cybran_t1_mass_extractor",
+    "cybran_t1_power_generator",
+    "cybran_t1_hydrocarbon",
+    "cybran_t1_mass_storage",
+    "cybran_t1_energy_storage",
+    "cybran_t1_point_defense",
+    "cybran_t1_aa_turret",
+    "cybran_t1_radar",
+    "cybran_t2_land_factory",
+    "cybran_t2_air_factory",
+    "cybran_t2_mass_extractor",
+    "cybran_t2_power_generator",
+    "cybran_t2_mass_fabricator",
+    "cybran_t2_point_defense",
+    "cybran_t2_aa_flak",
+    "cybran_t2_radar",
+    "cybran_t3_land_factory",
+    "cybran_t3_air_factory",
+    "cybran_t3_mass_extractor",
+    "cybran_t3_power_generator",
+    "cybran_t3_mass_fabricator",
+    "cybran_t3_sam",
+    "cybran_t3_omni_sensor"
+  ]
+}

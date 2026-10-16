@@ -1,0 +1,77 @@
+{
+  "Id": "cybran_t2_transport",
+  "Name": "Dragon Fly",
+  "Description": "T2 air transport: carries 10 small, 5 medium or 2 large land units. Light anti-air and ground guns.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Transport",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 1150,
+  "Radius": 1.9,
+  "Economy": {
+    "BuildCostMass": 270,
+    "BuildCostEnergy": 8100,
+    "BuildTime": 1800
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 11.5,
+    "Acceleration": 4,
+    "TurnRate": 80,
+    "Altitude": 13
+  },
+  "Intel": {
+    "VisionRadius": 28
+  },
+  "Cargo": {
+    "Layer": "Land",
+    "Capacity": 10,
+    "LoadRange": 3.5,
+    "HoverHeight": 1.8
+  },
+  "Weapons": [
+    {
+      "Name": "Nanodart Launcher",
+      "Range": 18,
+      "Damage": 7,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 45,
+      "TargetLayers": [
+        "Air"
+      ],
+      "TurretTurnRate": 300,
+      "FiringTolerance": 30,
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Electron Autocannon",
+      "Range": 12,
+      "Damage": 5,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 300,
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_transport2",
+    "Size": [
+      3.2,
+      1.3,
+      5.2
+    ],
+    "Icon": "air_transport"
+  },
+  "BuiltBy": [
+    "cybran_t2_air_factory",
+    "cybran_t3_air_factory"
+  ]
+}
