@@ -128,6 +128,8 @@ mostly cache reads, of every session and agent of the project):
   so bigger contexts mean fewer calls per window. (A first version of the script claimed bigger evening windows:
   a bug with resets after midnight, fixed.) The weekly limit (resets Thursday 10:00) came at about **716M tokens**
   (about 280 $), so roughly 13 windows per week.
+- On 2026-10-16, 2 agents (plus at times one sub-agent and the orchestrator) used the 10:40 window in 63 minutes
+  (606 calls, 80M tokens, 22 $), and finished and merged three agents in it.
 - On 2026-10-15 15:01, 12 agents resumed together (5 agents + 7 sub-agents, many with 200k contexts whose cache had
   expired) used the whole window in 9 minutes; on 11:00 the same five agents used it in 20 minutes.
 - A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window

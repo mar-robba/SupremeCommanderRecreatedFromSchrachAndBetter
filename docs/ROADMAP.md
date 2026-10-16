@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 ~13:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-16 15:45 — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
 2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
@@ -12,7 +12,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-16 ~13:00: **running** the last two wave 5 agents, each a coordinator running one sub-agent at a time
+- 2026-10-16 (n, o, m merged 11:00–11:40; session limit 11:43–15:40, then l and k resumed): **running** the last two wave 5 agents, each a coordinator running one sub-agent at a time
   (WORKFLOW "Usage limits": ≤ 2 agents at a time): (l) Cybran (2nd agent) in `agent-a9df3acf3524c656f` and (k) AI
   uses everything (3rd agent) in `agent-ac4c927c54a66ca1d`. If cut by a limit: commit their WIP, then a fresh agent in
   the same worktree (brief + "continue from .claude/handoff.md"). (k) merges main after (l) is merged and runs
