@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 15:45 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-16 16:10, before an orchestrator restart — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
 2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
@@ -12,12 +12,20 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-16 (n, o, m merged 11:00–11:40; session limit 11:43–15:40, then l and k resumed): **running** the last two wave 5 agents, each a coordinator running one sub-agent at a time
-  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (l) Cybran (2nd agent) in `agent-a9df3acf3524c656f` and (k) AI
-  uses everything (3rd agent) in `agent-ac4c927c54a66ca1d`. If cut by a limit: commit their WIP, then a fresh agent in
-  the same worktree (brief + "continue from .claude/handoff.md"). (k) merges main after (l) is merged and runs
-  Cybran vs UEF matches. History: the weekly limit stopped everything on 2026-10-14 08:14, the session limit on
-  2026-10-15 11:21 and 15:09.
+- 2026-10-16 16:10: the owner restarted the orchestrator. The last two wave 5 agents were told to CHECKPOINT
+  (commit + short handoff) and stop with the old session; their ids are gone. **Start a fresh agent in each
+  worktree** (absolute path, no isolation; brief in HISTORY "Wave 5" + "continue from `.claude/handoff.md` and the
+  notes in `.claude/notes/`"), at most 2 at a time (WORKFLOW "Usage limits"), each a coordinator running ONE sub-agent
+  at a time, everyone under the 150k context cap (owner rule 2026-10-16, AGENT_RULES):
+  - (l) Cybran in `agent-a9df3acf3524c656f`: sim done (stealth/cloak/field, EMP, seabed walkers; shield chain: see
+    `notes/A-sim.md`), 80 blueprints + cybran.json committed (15e20f3), roster tests WIP 5c23700; left: tests green,
+    client models/visuals/`--scene cybran`, Cybran vs UEF AI matches, docs, report.
+  - (k) AI uses everything in `agent-ac4c927c54a66ca1d`: tech (upgrades, enhancements) and `AiStrategic` (TML,
+    nukes, anti-nuke aware) committed; see its handoff for the rest (navy, transports, experimentals, balance).
+    (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
+  - First commit any leftovers in both worktrees as WIP (`git -C <wt> status`). Merge (l) first; then (k) merges
+    main and runs Cybran vs UEF matches.
+  History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
