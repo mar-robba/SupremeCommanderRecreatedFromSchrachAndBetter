@@ -48,9 +48,4 @@ public static class NetGameConfig
         info.ClientData = ClientGameData.From(cfg).ToJson();
         return new GameRecording(info);
     }
-
-    /// <summary>Text for a player who left the game.</summary>
-    public static string DropText(string name, Rts.Sim.Orders.DropAction action, string reason) =>
-        $"{name} left{(string.IsNullOrEmpty(reason) ? "" : $" ({reason})")}: " +
-        (action == Rts.Sim.Orders.DropAction.AiTakeover ? "the AI takes over" : "defeated");
 }

@@ -114,6 +114,7 @@ public class ProtocolTests
         Assert.Equal([false, true, false], sk.AiPlayers);
         Assert.Equal(2, sk.Teams![2]);
         Assert.Equal("Bob", sk.Names![2]);
+        Assert.Equal([null, null, "cybran"], sk.Factions!);
     }
 
     [Theory]

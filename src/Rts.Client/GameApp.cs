@@ -101,7 +101,7 @@ public sealed class ClientOptions
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
-                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic")) gameArg = true;
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
