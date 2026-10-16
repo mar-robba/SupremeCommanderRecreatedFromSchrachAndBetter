@@ -505,7 +505,12 @@ interpolates prev/cur by time
   uninterrupted game (`PersistenceTests`, 1 and 4 threads).
 - Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
   set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
-  + hash, bounds-checked reads). No migrations: files are tied to the build (`GameInfo.SimBuild`).
+  + hash, bounds-checked reads). Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
+  now 2; files ≥ `MinVersion` load) is upgraded on load one step at a time: a header-JSON step (also for file lists)
+  and a payload step per version (v1→v2: players without a faction get `FactionDb.DefaultFaction`); `GameInfo.FileVersion`
+  = the version read. To change the format: bump the version, add a `Steps` entry + a `case`, extend
+  `SaveMigrationTests` (writes old-version files from a current game with `SaveContainer.EncodeRaw`). Limit: the
+  payload is still checked against this build's field layouts (no field-level migration yet).
 - Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
   army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
   so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.
