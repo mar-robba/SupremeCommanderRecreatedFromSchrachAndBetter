@@ -20,6 +20,8 @@ public static class FactorySystem
     public const int MaxQueueLength = 500;
     /// <summary>Distance beyond the exit that units without rally orders drive to.</summary>
     public const float ExitMoveDistance = 4f;
+    /// <summary>Largest parked-unit radius looked for on an exit lane (ParkedOnLane).</summary>
+    private const float ParkedQueryRadius = 4f;
 
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
@@ -175,18 +177,32 @@ public static class FactorySystem
         var exit = u.Pos[f] + DMath.Dir(heading) * dist;
         if (layer != MotionLayer.Air)
         {
-            // Front exit first; if blocked try the sides and the back.
+            // Front exit first; if blocked try the sides and the back. A side with a unit parked on its exit lane is
+            // only used when every open side has one (units parked in front of the factory don't get rammed).
+            bool found = false, parkedFallback = false;
+            Vector2 fallbackExit = default;
+            float fallbackHeading = 0;
+            List<int>? near = null;
             for (int side = 0; side < 4; side++)
             {
                 float h = heading + side switch { 0 => 0f, 1 => DMath.Pi * 0.5f, 2 => -DMath.Pi * 0.5f, _ => DMath.Pi };
                 var p = w.Terrain.Clamp(u.Pos[f] + DMath.Dir(h) * dist);
                 int cx = (int)MathF.Floor(p.X), cz = (int)MathF.Floor(p.Y);
-                if (w.Terrain.CanTraverse(layer, cx, cz) && !w.Occupancy.IsBlocked(cx, cz))
+                if (!w.Terrain.CanTraverse(layer, cx, cz) || w.Occupancy.IsBlocked(cx, cz)) continue;
+                if (ParkedOnLane(w, f, unit, ubp, p, DMath.Dir(h), ref near))
                 {
-                    exit = p;
-                    heading = h;
-                    break;
+                    if (!parkedFallback) { parkedFallback = true; fallbackExit = p; fallbackHeading = h; }
+                    continue;
                 }
+                exit = p;
+                heading = h;
+                found = true;
+                break;
+            }
+            if (!found && parkedFallback)
+            {
+                exit = fallbackExit;
+                heading = fallbackHeading;
             }
         }
         exit = w.Terrain.Clamp(exit);
@@ -232,5 +248,29 @@ public static class FactorySystem
             q.Enqueue(Order.MoveTo(w.Terrain.Clamp(exit + dir * ExitMoveDistance + side * jitter)));
         }
         Transport.TransportSystem.DockFinished(w, f, fbp, unit); // dived Atlantis: aboard until it surfaces
+    }
+
+    /// <summary>True if a parked (no move goal) surface unit stands on the exit lane of a side: at exit point
+    /// <paramref name="p"/> or <see cref="ExitMoveDistance"/> further out along <paramref name="dir"/>. Reads the
+    /// spatial grid of this tick. SEQUENTIAL.</summary>
+    private static bool ParkedOnLane(SimWorld w, int f, int unit, UnitBlueprint ubp, Vector2 p, Vector2 dir, ref List<int>? near)
+    {
+        var u = w.Units;
+        near ??= new List<int>(8);
+        for (int k = 0; k < 2; k++)
+        {
+            var c = p + dir * (k * ExitMoveDistance);
+            near.Clear();
+            w.Grid.QueryRadius(u, c, ubp.Radius + ParkedQueryRadius, near);
+            foreach (int j in near)
+            {
+                if (j == unit || j == f || !u.IsActive(j) || u.Move[j].HasGoal) continue;
+                var jbp = w.BpOf(j);
+                if (!jbp.IsMobile || jbp.Movement.Layer == MotionLayer.Air) continue;
+                float r = ubp.Radius + jbp.Radius + 0.3f;
+                if (Vector2.DistanceSquared(u.Pos[j], c) < r * r) return true;
+            }
+        }
+        return false;
     }
 }

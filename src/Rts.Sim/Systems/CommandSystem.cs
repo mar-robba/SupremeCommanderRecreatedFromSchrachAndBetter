@@ -20,7 +20,12 @@ public static class CommandSystem
                 case IssueOrderCommand io: ApplyIssueOrder(w, io); break;
                 case StopCommand sc:
                     foreach (var h in sc.Units)
-                        if (Owns(w, c.Army, h)) StopUnit(w, h.Index);
+                    {
+                        if (!Owns(w, c.Army, h)) continue;
+                        StopUnit(w, h.Index);
+                        // Stop also cancels a commander/SCU enhancement in progress (refund, like any new order).
+                        if (w.Units.Upgrade[h.Index].Active && w.BpOf(h.Index).IsEnhanceable) UpgradeSystem.Cancel(w, h.Index);
+                    }
                     break;
                 case FactoryEnqueueCommand fe: FactorySystem.Enqueue(w, fe); break;
                 case FactoryDequeueCommand fd: FactorySystem.Dequeue(w, fd); break;
