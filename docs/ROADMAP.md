@@ -20,8 +20,12 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   - (l) Cybran in `agent-a9df3acf3524c656f`: sim done (stealth/cloak/field, EMP, seabed walkers; shield chain: see
     `notes/A-sim.md`), 80 blueprints + cybran.json committed (15e20f3), roster tests WIP 5c23700; left: tests green,
     client models/visuals/`--scene cybran`, Cybran vs UEF AI matches, docs, report.
-  - (k) AI uses everything in `agent-ac4c927c54a66ca1d`: tech (upgrades, enhancements) and `AiStrategic` (TML,
-    nukes, anti-nuke aware) committed; see its handoff for the rest (navy, transports, experimentals, balance).
+  - (k) AI uses everything in `agent-ac4c927c54a66ca1d` (CHECKPOINT ab30ce2, compiles, clean): tech (T2/T3
+    upgrades, enhancements, adjacency), projects (shields, TMD, anti-nuke, TML, artillery, gateway/SCUs,
+    experimentals, nukes, mass fabs), `AiStrategic`, captures, a `tech:` summary line in the bench. **Problem first:
+    tech makes games stall** (Hard v Normal 77-16 with 99 unfinished of 192, main 177-7-8; NvN finished 45/96 vs
+    80/96). Left: fix the stalemates, navy + transports (`AiNavy`/`AiTransport` are stubs), T1 artillery balance,
+    `AiTechTests`, docs, report. Client/Net tests not yet run on the branch.
     (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
   - First commit any leftovers in both worktrees as WIP (`git -C <wt> status`). Merge (l) first; then (k) merges
     main and runs Cybran vs UEF matches.
