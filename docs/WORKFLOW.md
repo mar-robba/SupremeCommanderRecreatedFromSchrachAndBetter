@@ -22,6 +22,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-14 | The owner restarts the orchestrator at about 200k context, so the orchestrator keeps its own context lean and prepares its handoff (ROADMAP "NEXT STEPS") early. |
 | 2026-10-14 | All durable documentation goes in `docs/`, organized (see [README.md](README.md)), never only in the agents' private memory. Only small transient working notes stay private. |
 | 2026-10-15 | The owner clarified that they *can* install and uninstall software on this machine (the earlier "not technical" was not accurate). System packages and toolchains still need the owner's OK first: the orchestrator asks, and the owner installs. The owner asked whether Rust would have been a better choice than .NET for efficiency; the orchestrator's answer (stay on .NET: the sim uses ~4 % of its tick budget, the bottleneck is the GPU, a rewrite of ~53k lines would add no features; cross-machine float determinism is a risk in both languages and is handled in C#, see agent (o)). The owner read it and agreed to remove the question note from ARCHITECTURE.md. |
+| 2026-10-15 | Track how many tokens go to each purpose, for this project only: the token ledger in [tokens/](tokens/README.org) is filled by project hooks; agents get a `[purpose]` tag in their description; sessions are tagged with `ledger.py tag`. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -43,15 +44,18 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
 
 ## Lifecycle of a wave
 
-1. **Plan.** Choose areas whose files barely overlap. Write the contracts they share (they become ARCHITECTURE
-   sections): enums are append-only; `BuiltBy` / `UpgradesTo` in blueprints; faction roles instead of hard-coded
-   `uef_*` ids; all sim state saveable.
+1. **Plan.** Check what similar work cost in [tokens/summary.org](tokens/summary.org) and size the briefs to
+   finish within one usage window. Choose areas whose files barely overlap. Write the contracts they share (they
+   become ARCHITECTURE sections): enums are append-only; `BuiltBy` / `UpgradesTo` in blueprints; faction roles
+   instead of hard-coded `uef_*` ids; all sim state saveable.
 2. **Prompt.** Each agent gets its area brief (goal, must-haves, files it owns, what to leave to others) plus the
    rules block from [AGENT_RULES.md](AGENT_RULES.md), with the wave's agent list filled in. Write the briefs
    in [HISTORY.md](HISTORY.md), in the wave's section, so the owner can read what is being built.
-3. **Start.** One agent per area with `isolation: "worktree"`: it gets its own branch and folder under
-   `.claude/worktrees/`. The worktree may be created from `origin/main`, which is stale, so the agent's first step
-   is `git merge main` (the local branch).
+3. **Start.** Give every agent (and every sub-agent) a description that starts with its purpose tag, e.g.
+   `[Fazione Cybran (5l)] client models`, so the token ledger files its cost under that purpose
+   ([tokens/README.org](tokens/README.org)). One agent per area with `isolation: "worktree"`: it gets its own
+   branch and folder under `.claude/worktrees/`. The worktree may be created from `origin/main`, which is stale,
+   so the agent's first step is `git merge main` (the local branch).
 4. **While they run.** Watch their context size (below) and handle usage limits (below). Answer questions; don't
    do their work in the orchestrator's context.
 5. **Finish.** The agent merges main again, builds, runs both test projects, benchmarks, takes screenshots, writes
@@ -62,7 +66,8 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    branch's worktree. It merges main into the branch there and resolves the conflicts. Then main merges the
    branch with no conflicts.
 7. **After the merge.** Copy the agent's report into [HISTORY.md](HISTORY.md) (its own section) and update ROADMAP
-   "NEXT STEPS". Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
+   "NEXT STEPS". Commit `docs/tokens/` (the hooks keep it current); after the last merge of a wave, update the
+   "Costi" chapter of [LESSONS.org](LESSONS.org) with the wave's numbers. Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
    A locked worktree needs `git worktree unlock <path>` first.
 8. **Cross-module bugs** often appear only after a merge (example: anti-air vs orbiting aircraft). Send them to the
    agent that owns the area. That agent runs `git merge main` first.
@@ -116,6 +121,17 @@ The account hits usage limits about every 2–5 hours, and the agents stop where
 3. In a new orchestrator session, old agent ids don't carry over. A session resumed with `--resume` keeps them.
    Without the ids, start a fresh agent in the existing worktree path.
 
+**How big a window is** (measured 2026-10-16 with `python3 -I tools/token-ledger/windows.py`, input-side tokens,
+mostly cache reads, of every session and agent of the project):
+- daytime 5-hour windows end at about **40–50M tokens** (400–650 model calls); evening windows (starting 19:00–22:30)
+  were 85–250M. The weekly limit (resets Thursday 10:00) came at about **716M tokens**.
+- On 2026-10-15 15:01, 12 agents resumed together (5 agents + 7 sub-agents, many with 200k contexts whose cache had
+  expired) used the whole window in 9 minutes; on 11:00 the same five agents used it in 20 minutes.
+- A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window
+  end sooner, and each one is cut and needs a resume (about 1 $ of start-up reading each, plus its cache rewrite).
+  So in the daytime run **at most 2 agents, without sub-agents**; keep bigger parallel waves for the evening windows,
+  and size each brief to finish within one window.
+
 ## Resuming (new orchestrator session)
 
 1. Read ROADMAP "▶ NEXT STEPS", especially its "ON RESUME" list.
@@ -147,6 +163,7 @@ Sub-agents cannot write outside their worktree, e.g. the orchestrator's private 
 | An agent's working notes and final report | `<worktree>/.claude/handoff.md`, `<worktree>/.claude/agent-report.md` | until the merge; then the report goes into HISTORY.md |
 | Screenshots, saves, replays | `screenshots/`, `saves/`, `replays/` | local only (gitignored) |
 | AI matrix logs | `<worktree>/.claude/ai-lab/runs/<tag>/` | local only |
+| Token ledger (tokens per session/agent and purpose) | `docs/tokens/`, written by `tools/token-ledger/ledger.py` from the hooks in `.claude/settings.json` | yes, in git (the hooks file is local) |
 | Session transcripts, private memory | `~/.claude/projects/-run-media-marco-Volume-D-RTS/` | private. Memory holds only pointers to these docs and how-to-work preferences. |
 | Scratchpads | `/tmp/claude-1000/...` | **wiped on reboot**: never keep anything important there |
 

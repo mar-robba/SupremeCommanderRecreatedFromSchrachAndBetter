@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-15 ~11:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-16 ~11:00 — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
@@ -11,11 +11,14 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- Running (worktrees under `.claude/worktrees/`): (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish
-  `agent-a141a5d33496dd4c3` (3rd agent), (o) lockstep MP `agent-a4a312626d7228fe6`, (k) AI uses everything
-  `agent-ac4c927c54a66ca1d` (2nd agent), (l) Cybran `agent-a9df3acf3524c656f`. History: the weekly limit stopped
-  everything on 2026-10-14 08:14 and the session limit on 2026-10-15 11:21; each time WIP was kept and agents
-  resumed (SendMessage under 200k context, else handoff note + CHECKPOINT + a fresh agent in the same worktree).
+- 2026-10-16 ~10:50: **running** (n) UX polish (4th agent) in `agent-a141a5d33496dd4c3` and (o) lockstep MP
+  (3rd agent) in `agent-a4a312626d7228fe6`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
+  as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when the usage window allows
+  (WORKFLOW "Usage limits": daytime ≤ 2 agents): (m) scale/perf `agent-a6794a8836fbb263d` (WIP a6e2a98: client perf +
+  8-player maps from its sub-agents B/C, uncommitted at the cut), (k) AI uses everything `agent-ac4c927c54a66ca1d`
+  (its CHECKPOINT WIP does not compile yet, see its note), (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
+  sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed). History: the weekly limit
+  stopped everything on 2026-10-14 08:14, the session limit on 2026-10-15 11:21 and 15:09.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.

@@ -16,6 +16,8 @@ orchestrator session), it belongs here.
 | [AGENT_RULES.md](AGENT_RULES.md) | The rules block that goes into every agent prompt. | When writing an agent prompt. |
 | [DEV_GUIDE.md](DEV_GUIDE.md) | Practical know-how: building/testing when agents share a worktree, shell quirks, sim pitfalls learned the hard way, perf checks and reference numbers, the tools in `tools/`. | Before your first build in a worktree; when something behaves strangely. |
 | [AI_TUNING.md](AI_TUNING.md) | How the skirmish AI is measured (hundreds of headless games), the standard test matrices, and every tuning result so far. | Before touching the AI or game balance. |
+| [tokens/](tokens/README.org) | (Org mode, in Italian) The token ledger: how many tokens each session and agent used and for which purpose, by area, purpose and day. Filled automatically by project hooks. | Before planning a wave or sizing a brief; when the owner asks what something cost. |
+| [LESSONS.org](LESSONS.org) | (Org mode, in Italian) The design and architecture errors made so far, in order, each with the solution that held and its commit; and the "Costi" chapter: token cost per module, per goal and per kind of work, with what it teaches. | Before a design choice, to see whether it already failed; before planning a wave, to size it. |
 
 The repo root has [CLAUDE.md](../CLAUDE.md): commands and the hard rules every agent must follow. It is loaded
 automatically into every agent session, so it stays short and points here.
@@ -41,6 +43,7 @@ Put each thing in exactly one place and link to it from elsewhere. Don't copy th
 | Rules every agent prompt must contain | AGENT_RULES.md |
 | A pitfall, a tool, a build trick, a reference benchmark number | DEV_GUIDE.md |
 | AI/balance experiments and their results | AI_TUNING.md |
+| Token cost of sessions and agents (automatic), purpose tags | `tokens/` (`ledger.py tag`, see tokens/README.org) |
 | A command or a hard rule every agent needs at all times | CLAUDE.md (keep it short) |
 
 What stays out of `docs/`: transient working notes, such as an agent's handoff note
