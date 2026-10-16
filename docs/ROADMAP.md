@@ -2,9 +2,9 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 ~12:15 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish and (o) lockstep MP (merged 2026-10-16).
-Tests: 376 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
+## ▶ NEXT STEPS (updated 2026-10-16 16:10, before an orchestrator restart — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
+2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
 Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
@@ -12,12 +12,26 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-16 ~12:15: **running** (m) scale/perf (3rd agent) in `agent-a6794a8836fbb263d` and (l) Cybran (2nd
-  agent, a coordinator running one sub-agent at a time) in `agent-a9df3acf3524c656f`. **Paused**: (k) AI uses
-  everything `agent-ac4c927c54a66ca1d` (its CHECKPOINT WIP does not compile yet, see its `.claude/handoff.md`): start
-  it as a fresh agent in its worktree (brief + "continue from .claude/handoff.md") when (m) or (l) finishes
-  (WORKFLOW "Usage limits": ≤ 2 agents at a time). History: the weekly limit stopped everything on 2026-10-14 08:14,
-  the session limit on 2026-10-15 11:21 and 15:09.
+- 2026-10-16 16:10: the owner restarted the orchestrator. The last two wave 5 agents were told to CHECKPOINT
+  (commit + short handoff) and stop with the old session; their ids are gone. **Start a fresh agent in each
+  worktree** (absolute path, no isolation; brief in HISTORY "Wave 5" + "continue from `.claude/handoff.md` and the
+  notes in `.claude/notes/`"), at most 2 at a time (WORKFLOW "Usage limits"), each a coordinator running ONE sub-agent
+  at a time, everyone under the 150k context cap (owner rule 2026-10-16, AGENT_RULES):
+  - (l) Cybran in `agent-a9df3acf3524c656f`: sim done (stealth/cloak/field, EMP, seabed walkers; shield chain: see
+    `notes/A-sim.md`), data done (80 blueprints + cybran.json + CybranRosterTests, `notes/B-data.md`; 5c23700, all
+    tests green: 399 sim + 213 client + 21 net). Next: sub-agent C client (remaining air/naval/experimental/structure
+    models: remove the `#if CYBRAN_MODELS_FULL` guard in `UnitModels.Cybran.cs`, `case` lines, icons, status
+    visuals, `--scene cybran`), then D integration (Cybran vs UEF AI matches, perf, docs, final merge, report).
+  - (k) AI uses everything in `agent-ac4c927c54a66ca1d` (CHECKPOINT ab30ce2, compiles, clean): tech (T2/T3
+    upgrades, enhancements, adjacency), projects (shields, TMD, anti-nuke, TML, artillery, gateway/SCUs,
+    experimentals, nukes, mass fabs), `AiStrategic`, captures, a `tech:` summary line in the bench. **Problem first:
+    tech makes games stall** (Hard v Normal 77-16 with 99 unfinished of 192, main 177-7-8; NvN finished 45/96 vs
+    80/96). Left: fix the stalemates, navy + transports (`AiNavy`/`AiTransport` are stubs), T1 artillery balance,
+    `AiTechTests`, docs, report. Client/Net tests not yet run on the branch.
+    (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
+  - Both worktrees were clean at the restart. Merge (l) first; then (k) merges
+    main and runs Cybran vs UEF matches.
+  History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -32,7 +46,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
      anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
   2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
-  3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
+  3. ✅ (merged 2026-10-16) Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
   4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
   5. ✅ (merged 2026-10-16) Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.

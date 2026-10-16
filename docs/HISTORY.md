@@ -413,6 +413,32 @@ case.
 - **Deliverable**: a before/after perf table. Sim results must not change (identical AI match hashes) unless a
   documented fix requires it.
 
+**Delivered** (merged 2026-10-16; three agents and three sub-agents, cut twice by usage limits): a 1024 map with
+8 players and 4.8k units runs at 60 FPS; the worst sim tick went from 217 ms to about 12 ms.
+- Sim: the `Par` worker pool no longer allocates; per-stage profiler (`Rts.Bench`, `BENCH_ALLOC=1`,
+  `BENCH_WARMUP=1`); nav grids built at load and missing region graphs built in parallel; `SimWarmup` compiles the sim
+  code on a background thread when the client starts; `QuickJitForLoops=false` in the client and the bench (the
+  10–30 ms tick spikes were loops running unoptimized JIT code, not GC); goal-field arrays reused.
+- Client: terrain chunk LOD with skirts (no cracks), instanced particles, deposit markers culled, a minimap dot per
+  pixel, `--perf-log`, `--terrain-lod 0..3`.
+- Maps: 6- and 8-player maps on 512 and 1024, fair for every preset.
+- Tests: `MapScaleTests`, `ScalePerfTests` (the warm-up thread leaves a game's hash unchanged). At merge: 393 sim +
+  213 client + 21 net tests green. `ai 30 256 42 hard,normal` = main exactly (hash EDCA8A729F29736E), other bench
+  hashes unchanged.
+
+| (same machine, interleaved runs) | main | m |
+|---|---|---|
+| `2000 300` avg / p95 / max ms | 3.5–4.5 / 5.8–9.2 / 25 | 1.7–2.1 / 2.4–3.4 / 9.5 |
+| `700 400 0 1024 8` avg / p95 / max | 3.9–4.6 / 10.6–12.3 / 34 | 2.4 / 4.5–4.9 / 12–16 (warm-up: 2.0 / 3.8 / 8.5) |
+| first tick on 1024 | ~210 ms | 15 ms (with warm-up) |
+| intel, 8 armies on 1024 | 1.1–1.35 ms | 0.33 ms |
+| 8 AIs on 1024, 40 min: avg / p95 / max, alloc | 1.64 / 3.68 / 217, ~125 KB/tick (main 8146fdd) | 0.96 / 2.21 / 12.1, 10 KB/tick |
+| client, 4.8k units: CPU (close view) / GPU (whole map) | 3.2 / 8.2 ms | 1.6 / 2.3–2.8 ms |
+
+- Still open: one AI think costs about 11 ms with 8 AIs on 1024 (passed to (k)); a new region graph mid-game costs
+  about 14 ms on 1024; no low-poly LOD for unit models; without the warm-up (the bench default) the first tick
+  still costs 100–145 ms.
+
 ### (n) UX polish — client UI/input + small sim fixes
 *brief; started 2026-10-14*
 

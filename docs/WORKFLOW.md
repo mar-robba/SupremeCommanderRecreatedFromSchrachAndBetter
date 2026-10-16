@@ -23,6 +23,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-14 | All durable documentation goes in `docs/`, organized (see [README.md](README.md)), never only in the agents' private memory. Only small transient working notes stay private. |
 | 2026-10-15 | The owner clarified that they *can* install and uninstall software on this machine (the earlier "not technical" was not accurate). System packages and toolchains still need the owner's OK first: the orchestrator asks, and the owner installs. The owner asked whether Rust would have been a better choice than .NET for efficiency; the orchestrator's answer (stay on .NET: the sim uses ~4 % of its tick budget, the bottleneck is the GPU, a rewrite of ~53k lines would add no features; cross-machine float determinism is a risk in both languages and is handled in C#, see agent (o)). The owner read it and agreed to remove the question note from ARCHITECTURE.md. |
 | 2026-10-15 | Track how many tokens go to each purpose, for this project only: the token ledger in [tokens/](tokens/README.org) is filled by project hooks; agents get a `[purpose]` tag in their description; sessions are tagged with `ledger.py tag`. |
+| 2026-10-16 | Context cap lowered: **150k tokens per agent and sub-agent** (CHECKPOINT at ~130k). Every agent and sub-agent, when it finishes or stops, saves only the essentials of its work (done + commits, what is left, decisions/pitfalls) in a short note in its worktree (`.claude/handoff.md`, sub-agents `.claude/notes/<piece>.md`), so the work continues after a restart of the orchestrator. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -91,19 +92,21 @@ To keep conflicts small:
 
 ## Context limits and handoffs
 
-- **Hard cap: 300k tokens of context per agent.** Every prompt says it. At about 250k the agent commits, updates its
+- **Hard cap: 150k tokens of context per agent and sub-agent** (owner, 2026-10-16; it was 300k). Every prompt says it. At about 130k the agent commits, updates its
   handoff note and ends its turn with the word `CHECKPOINT`. The orchestrator then starts a **fresh agent in the
   same worktree**: absolute path in the prompt, no isolation flag, the original task plus "continue from the
   handoff note".
 - **Handoff note**: `<worktree>/.claude/handoff.md`. It has: what is done, the TODO in order, known bugs, key
-  commands and benchmark numbers. The agent updates it at every milestone. It is a transient working note (the
+  commands and benchmark numbers; short (under ~60 lines), only what the next agent needs. The agent updates it at
+  every milestone. A sub-agent writes the essentials of its piece to `<worktree>/.claude/notes/<piece>.md` when it
+  finishes or stops, and its parent links it from the handoff note. It is a transient working note (the
   `.claude/` folder is gitignored). Its lasting parts end up in ARCHITECTURE, HISTORY or DEV_GUIDE.
 - **Never resume a big agent** with SendMessage after it was cut off: it keeps its whole old transcript and grows
-  without limit. Resume only agents well under 200k. Replace the others with a fresh agent and the handoff note.
+  without limit. Resume only agents well under 100k. Replace the others with a fresh agent and the handoff note.
 - **Measuring context**: `python3 -I tools/agents/agent_ctx.py <agentId>...` prints each agent's exact context,
   taken from the API usage fields of its transcript. It never reads the transcript text. File size is useless,
   because screenshots inflate it. Background alert:
-  `python3 -I tools/agents/agent_ctx.py --watch 235000 [ignored ids]`. It covers every agent and sub-agent active
+  `python3 -I tools/agents/agent_ctx.py --watch 135000 [ignored ids]`. It covers every agent and sub-agent active
   in the last 5 minutes, and exits with a message when one passes the threshold.
 - The orchestrator's own context: the owner restarts it at about 200k. Keep it lean:
   - delegate conflict-heavy merges;
@@ -128,6 +131,8 @@ mostly cache reads, of every session and agent of the project):
   so bigger contexts mean fewer calls per window. (A first version of the script claimed bigger evening windows:
   a bug with resets after midnight, fixed.) The weekly limit (resets Thursday 10:00) came at about **716M tokens**
   (about 280 $), so roughly 13 windows per week.
+- On 2026-10-16, 2 agents (plus at times one sub-agent and the orchestrator) used the 10:40 window in 63 minutes
+  (606 calls, 80M tokens, 22 $), and finished and merged three agents in it.
 - On 2026-10-15 15:01, 12 agents resumed together (5 agents + 7 sub-agents, many with 200k contexts whose cache had
   expired) used the whole window in 9 minutes; on 11:00 the same five agents used it in 20 minutes.
 - A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window
@@ -151,7 +156,7 @@ An agent may start sub-agents (general-purpose) for well-separated pieces, e.g. 
 - they work in the parent's worktree (absolute path, no isolation flag), on disjoint files;
 - only one `dotnet build`/`dotnet test` runs at a time per worktree: use `tools/agents/dn.sh` (see DEV_GUIDE);
 - they commit only their own files: `git add <files> && git commit -m "..." -- <files>`;
-- same 300k cap; short reports.
+- same 150k cap; short reports; before finishing or stopping, the essentials go to `.claude/notes/<piece>.md`.
 
 Sub-agents cannot write outside their worktree, e.g. the orchestrator's private folder. That's why reports go to
 `<worktree>/.claude/agent-report.md`.
