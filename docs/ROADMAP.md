@@ -18,8 +18,10 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   notes in `.claude/notes/`"), at most 2 at a time (WORKFLOW "Usage limits"), each a coordinator running ONE sub-agent
   at a time, everyone under the 150k context cap (owner rule 2026-10-16, AGENT_RULES):
   - (l) Cybran in `agent-a9df3acf3524c656f`: sim done (stealth/cloak/field, EMP, seabed walkers; shield chain: see
-    `notes/A-sim.md`), 80 blueprints + cybran.json committed (15e20f3), roster tests WIP 5c23700; left: tests green,
-    client models/visuals/`--scene cybran`, Cybran vs UEF AI matches, docs, report.
+    `notes/A-sim.md`), data done (80 blueprints + cybran.json + CybranRosterTests, `notes/B-data.md`; 5c23700, all
+    tests green: 399 sim + 213 client + 21 net). Next: sub-agent C client (remaining air/naval/experimental/structure
+    models: remove the `#if CYBRAN_MODELS_FULL` guard in `UnitModels.Cybran.cs`, `case` lines, icons, status
+    visuals, `--scene cybran`), then D integration (Cybran vs UEF AI matches, perf, docs, final merge, report).
   - (k) AI uses everything in `agent-ac4c927c54a66ca1d` (CHECKPOINT ab30ce2, compiles, clean): tech (T2/T3
     upgrades, enhancements, adjacency), projects (shields, TMD, anti-nuke, TML, artillery, gateway/SCUs,
     experimentals, nukes, mass fabs), `AiStrategic`, captures, a `tech:` summary line in the bench. **Problem first:
@@ -27,7 +29,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
     80/96). Left: fix the stalemates, navy + transports (`AiNavy`/`AiTransport` are stubs), T1 artillery balance,
     `AiTechTests`, docs, report. Client/Net tests not yet run on the branch.
     (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
-  - First commit any leftovers in both worktrees as WIP (`git -C <wt> status`). Merge (l) first; then (k) merges
+  - Both worktrees were clean at the restart. Merge (l) first; then (k) merges
     main and runs Cybran vs UEF matches.
   History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
