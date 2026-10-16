@@ -308,43 +308,54 @@ public sealed class ParticleSystem : IDisposable
         }
     }
 
-    /// <summary>Builds quads for all live particles (call after Begin on the batches).</summary>
+    /// <summary>Instanced quads of the pool particles, one buffer per blend mode (filled by <see cref="Build"/>).
+    /// The <see cref="QuadBatch"/>es above stay for free-form quads (nuke decals draped on the terrain).</summary>
+    public readonly ParticleInstances InstAdditive = new(), InstAlpha = new(), InstDecals = new();
+
+    /// <summary>Writes one instance per live, visible particle (the GPU expands it into its quad).</summary>
     public void Build(FrameView fv)
     {
-        var right = fv.CamRight;
-        var up = fv.CamUp;
-        var cam = fv.CamPos;
+        InstAdditive.Clear();
+        InstAlpha.Clear();
+        InstDecals.Clear();
+        var planes = fv;
         for (int i = 0; i < _count; i++)
         {
             ref var p = ref _p[i];
             if (p.Age < 0) continue;
             float t = p.Age / p.Life;
             float size = p.Size0 + (p.Size1 - p.Size0) * (1 - (1 - t) * (1 - t));
-            if (!fv.SphereVisible(p.Pos, size + p.Vel.Length() * p.Stretch)) continue;
+            float sp = 0;
+            if (p.Mode == PMode.Streak) sp = p.Vel.Length();
+            if (!planes.SphereVisible(p.Pos, size + sp * p.Stretch)) continue;
             var c4 = p.C1.X < 0 ? p.C0 : Vector4.Lerp(p.C0, p.C1, t);
-            var col = new Color((byte)Math.Clamp(c4.X * 255, 0, 255), (byte)Math.Clamp(c4.Y * 255, 0, 255), (byte)Math.Clamp(c4.Z * 255, 0, 255), (byte)Math.Clamp(c4.W * 255, 0, 255));
-            var batch = p.Blend switch { PBlend.Additive => Additive, PBlend.Alpha => Alpha, _ => Decals };
-            switch (p.Mode)
+            c4 = Vector4.Clamp(c4 * 255f, Vector4.Zero, new Vector4(255f));
+            var list = p.Blend switch { PBlend.Additive => InstAdditive, PBlend.Alpha => InstAlpha, _ => InstDecals };
+            ref var q = ref list.Add();
+            q.Col = new Color((byte)c4.X, (byte)c4.Y, (byte)c4.Z, (byte)c4.W);
+            if (p.Mode == PMode.Streak && sp >= 1e-3f)
             {
-                case PMode.Flat:
-                    batch.Flat(p.Pos, size, p.Rot, col, p.Shape, p.Seed);
-                    break;
-                case PMode.Streak:
-                {
-                    float sp = p.Vel.Length();
-                    if (sp < 1e-3f) { batch.Billboard(p.Pos, size, 0, right, up, col, PShape.Glow, p.Seed); break; }
-                    batch.Streak(p.Pos, p.Vel / sp, size * 2 + sp * p.Stretch, size, cam, col, p.Shape, p.Seed);
-                    break;
-                }
-                default:
-                    batch.Billboard(p.Pos, size, p.Rot, right, up, col, p.Shape, p.Seed);
-                    break;
+                var dir = p.Vel / sp;
+                q.PosSize = new Vector4(p.Pos, size);
+                q.Dir = new Vector4(dir, size * 2 + sp * p.Stretch);
+                q.Params = new Vector4(p.Shape, p.Seed, (float)PMode.Streak, 0);
+            }
+            else
+            {
+                q.PosSize = new Vector4(p.Pos, size);
+                q.Dir = default;
+                // A streak that stopped is drawn as a small glow (as QuadBatch did).
+                bool stopped = p.Mode == PMode.Streak;
+                q.Params = new Vector4(stopped ? PShape.Glow : p.Shape, p.Seed, stopped ? 0f : (float)p.Mode, stopped ? 0f : p.Rot);
             }
         }
     }
 
     public void Dispose()
     {
+        InstAdditive.Dispose();
+        InstAlpha.Dispose();
+        InstDecals.Dispose();
         Additive.Dispose();
         Alpha.Dispose();
         Decals.Dispose();

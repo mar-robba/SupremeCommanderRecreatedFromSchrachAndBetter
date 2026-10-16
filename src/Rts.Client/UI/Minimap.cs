@@ -87,6 +87,11 @@ public sealed class Minimap : IDisposable
         new(Math.Clamp((p.X - m.X) / m.Width, 0, 1) * _ctx.Terrain.Width, Math.Clamp((p.Y - m.Y) / m.Height, 0, 1) * _ctx.Terrain.Height);
 
     /// <summary>Input + drawing. Call from Hud.Draw.</summary>
+    private readonly HashSet<long> _selected = new();
+    private readonly List<int> _mobile = new();
+    private int[] _dotStamp = [], _dotKey = [];
+    private int _dotFrame;
+
     public void Draw(Rectangle panel)
     {
         if (!_baked) Bake();
@@ -111,33 +116,47 @@ public sealed class Minimap : IDisposable
 
         // Units: structures as squares, mobile units as dots; selected units white.
         var snap = _ctx.Snapshots.Current;
-        var selected = new HashSet<long>();
+        var selected = _selected;
+        selected.Clear();
         foreach (var h in _sel.Selected) selected.Add(((long)h.Index << 32) | (uint)h.Generation);
         float dot = MathF.Max(2f, Ui.P(2.5f));
-        for (int pass = 0; pass < 2; pass++)
+        // Mobile units overlap a lot at minimap scale (thousands of units in a few pixels): one dot per pixel and
+        // color is enough. Structures first, mobile units on top (second loop over the remembered indices).
+        int gw = (int)m.Width + 2, gh = (int)m.Height + 2;
+        if (_dotStamp.Length < gw * gh) { _dotStamp = new int[gw * gh]; _dotKey = new int[gw * gh]; }
+        int stamp = ++_dotFrame;
+        _mobile.Clear();
         for (int i = 0; i < snap.UnitCount; i++)
         {
             ref var v = ref snap.Units[i];
             var bp = _ctx.Db[v.Bp];
-            if (bp.IsStructure != (pass == 0)) continue; // structures first, units on top
+            if (!bp.IsStructure) { _mobile.Add(i); continue; }
             var p = ToScreen(m, v.Pos.X, v.Pos.Z);
             bool sel = selected.Contains(((long)v.Index << 32) | (uint)v.Gen);
             var col = sel ? Color.White : _ctx.ArmyColors[v.Army];
-            if (bp.IsStructure)
-            {
-                float s = MathF.Max(dot + 1, MathF.Max(bp.FootprintX, bp.FootprintZ) * k);
-                Raylib.DrawRectangleV(p - new Vector2(s * 0.5f + 1, s * 0.5f + 1), new Vector2(s + 2, s + 2), Color.Black);
-                Raylib.DrawRectangleV(p - new Vector2(s * 0.5f, s * 0.5f), new Vector2(s, s), col);
-            }
-            else if (bp.Has(UnitCategory.Commander))
+            float s = MathF.Max(dot + 1, MathF.Max(bp.FootprintX, bp.FootprintZ) * k);
+            Raylib.DrawRectangleV(p - new Vector2(s * 0.5f + 1, s * 0.5f + 1), new Vector2(s + 2, s + 2), Color.Black);
+            Raylib.DrawRectangleV(p - new Vector2(s * 0.5f, s * 0.5f), new Vector2(s, s), col);
+        }
+        foreach (int i in _mobile)
+        {
+            ref var v = ref snap.Units[i];
+            var bp = _ctx.Db[v.Bp];
+            var p = ToScreen(m, v.Pos.X, v.Pos.Z);
+            bool sel = selected.Contains(((long)v.Index << 32) | (uint)v.Gen);
+            var col = sel ? Color.White : _ctx.ArmyColors[v.Army];
+            if (bp.Has(UnitCategory.Commander))
             {
                 Raylib.DrawPoly(p, 4, dot * 1.6f + 1, 0, Color.Black);
                 Raylib.DrawPoly(p, 4, dot * 1.6f, 0, col);
+                continue;
             }
-            else
-            {
-                Raylib.DrawRectangleV(p - new Vector2(dot * 0.5f, dot * 0.5f), new Vector2(dot, dot), col);
-            }
+            int gx = Math.Clamp((int)(p.X - m.X) + 1, 0, gw - 1), gz = Math.Clamp((int)(p.Y - m.Y) + 1, 0, gh - 1);
+            int cell = gz * gw + gx, key = sel ? -1 : v.Army;
+            if (_dotStamp[cell] == stamp && _dotKey[cell] == key) continue;
+            _dotStamp[cell] = stamp;
+            _dotKey[cell] = key;
+            Raylib.DrawRectangleV(p - new Vector2(dot * 0.5f, dot * 0.5f), new Vector2(dot, dot), col);
         }
 
         _ctx.Fog?.DrawMinimapContacts(m, snap, dot); // fog of war: ghosts + radar blips

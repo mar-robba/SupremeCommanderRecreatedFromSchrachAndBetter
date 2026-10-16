@@ -72,9 +72,9 @@ public static class PathSystem
 
     public static void Run(SimWorld w)
     {
-        var sw = Stopwatch.StartNew();
+        long sw = Stopwatch.GetTimestamp(); // (no Stopwatch object per tick)
         var svc = w.Paths;
-        var st = States.GetValue(w, _ => new State());
+        var st = States.GetValue(w, static _ => new State());
         svc.UpdateNav();
         if ((w.Tick & 63) == 0) svc.TrimFields();
 
@@ -82,9 +82,11 @@ public static class PathSystem
         var u = w.Units;
         int chunks = Par.ChunkCount(u.AliveCount, ChunkSize);
         st.Buffer.Reset(chunks);
-        Par.For(u.AliveCount, ChunkSize, (c, start, end) =>
+        Par.For(u.AliveCount, ChunkSize, w, static (w, c, start, end) =>
         {
-            var list = st.Buffer[c];
+            var u = w.Units;
+            var svc = w.Paths;
+            var list = States.GetValue(w, static _ => new State()).Buffer[c];
             for (int k = start; k < end; k++)
             {
                 int i = u.AliveList[k];
@@ -154,17 +156,18 @@ public static class PathSystem
                 st.SolveOfGroup[key] = st.AssignOf[r] = AddSolve(st, r, q.Graph);
             }
         }
-        for (int g = 0; g < st.GraphNeeded.Length; g++)
-            if (st.GraphNeeded[g]) svc.EnsureGraph(g);
+        svc.EnsureGraphs(st.GraphNeeded);
 
         // ---- A* solves (parallel)
         int solves = st.SolveRequest.Count;
         Grow(ref st.Results, solves);
         var results = st.Results;
-        Par.ForEach(solves, s =>
+        Par.ForEach(solves, w, static (w, s) =>
         {
-            var q = reqs[st.SolveRequest[s]];
-            PathSolver.ForThread().Solve(svc, svc.GraphByIndex(q.Graph), q.Start, q.Goal, results[s]);
+            var st = States.GetValue(w, static _ => new State());
+            var svc = w.Paths;
+            var q = st.Requests[st.SolveRequest[s]];
+            PathSolver.ForThread().Solve(svc, svc.GraphByIndex(q.Graph), q.Start, q.Goal, st.Results[s]);
         });
 
         // ---- follower splices (parallel)
@@ -173,14 +176,17 @@ public static class PathSystem
         if (st.FollowerOk.Length < followers) st.FollowerOk = new bool[Math.Max(followers, st.FollowerOk.Length * 2)];
         var fres = st.FollowerResults;
         var fok = st.FollowerOk;
-        Par.For(followers, 64, (_, a, b) =>
+        Par.For(followers, 64, w, static (w, _, a, b) =>
         {
+            var st = States.GetValue(w, static _ => new State());
+            var svc = w.Paths;
+            var reqs = st.Requests;
             for (int f = a; f < b; f++)
             {
                 var (r, s) = st.Followers[f];
                 var q = reqs[r];
                 var leaderStart = reqs[st.SolveRequest[s]].Start;
-                fok[f] = PathSolver.Splice(svc.GraphByIndex(q.Graph), results[s], leaderStart, q.Start, q.Goal, fres[f]);
+                st.FollowerOk[f] = PathSolver.Splice(svc.GraphByIndex(q.Graph), st.Results[s], leaderStart, q.Start, q.Goal, st.FollowerResults[f]);
             }
         });
 
@@ -227,9 +233,9 @@ public static class PathSystem
         for (int k = old; k < arr.Length; k++) arr[k] = new PathResult();
     }
 
-    private static void Finish(PathService svc, Stopwatch sw)
+    private static void Finish(PathService svc, long sw)
     {
-        svc.Stats.LastPathMs = sw.Elapsed.TotalMilliseconds;
+        svc.Stats.LastPathMs = Stopwatch.GetElapsedTime(sw).TotalMilliseconds;
         svc.Stats.TotalPathMs += svc.Stats.LastPathMs;
     }
 

@@ -46,8 +46,11 @@ public static class ProjectileSystem
         Naval.Torpedoes.Intercept(w, s); // sequential: torpedo defense shoots down torpedoes before they move
         int n = P.AliveCount;
         s.Impacts.Reset(Par.ChunkCount(n, Chunk));
-        Par.For(n, Chunk, (c, start, end) =>
+        Par.For(n, Chunk, w, static (w, c, start, end) =>
         {
+            var s = CombatState.Of(w);
+            var P = w.Projectiles;
+            var strat = StrategicState.Of(w);
             var impacts = s.Impacts[c];
             for (int k = start; k < end; k++)
             {

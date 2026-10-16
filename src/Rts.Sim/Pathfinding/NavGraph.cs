@@ -351,16 +351,23 @@ public sealed class GoalField
     public readonly int[] Next;
     public int LastUsedTick;
 
-    public GoalField(NavGraph g, int goalRegion)
+    [ThreadStatic, Persistence.NoSave] private static PriorityQueue<int, long>? t_heap;
+
+    /// <param name="svc">Recycles arrays of evicted fields (null = new arrays). The arrays may be longer than the
+    /// region count (entries past it stay unreached).</param>
+    public GoalField(NavGraph g, int goalRegion, Systems.PathService? svc = null)
     {
         GraphVersion = g.Version;
         GoalRegion = goalRegion;
         int n = g.RegionCount;
-        Dist = new int[n];
-        Next = new int[n];
+        Dist = svc?.RentFieldArray(n) ?? new int[n];
+        Next = svc?.RentFieldArray(n) ?? new int[n];
         Array.Fill(Dist, int.MaxValue);
         Array.Fill(Next, -1);
-        var heap = new PriorityQueue<int, long>();
+        // Per-thread reusable heap (fields are built inside parallel solves): keys are unique, so the order does not
+        // depend on the heap's history; saves the queue and its growing arrays for every new field.
+        var heap = t_heap ??= new PriorityQueue<int, long>();
+        heap.Clear();
         Dist[goalRegion] = 0;
         heap.Enqueue(goalRegion, goalRegion);
         while (heap.TryDequeue(out int r, out long key))

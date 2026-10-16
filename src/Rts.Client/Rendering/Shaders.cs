@@ -428,6 +428,50 @@ public static unsafe class Shaders
         }
         """;
 
+    /// <summary>Instanced particle quads (<see cref="ParticleInstances"/>): expands one instance into the same corners
+    /// and uvs as QuadBatch.Billboard / Flat / Streak.</summary>
+    private const string ParticleInstVs = """
+        #version 330
+        layout(location = 0) in vec2 corner;
+        layout(location = 10) in vec4 iPosSize;
+        layout(location = 11) in vec4 iDir;
+        layout(location = 12) in vec4 iParams;
+        layout(location = 13) in vec4 iColor;
+        uniform mat4 viewProj;
+        uniform vec3 camRight;
+        uniform vec3 camUp;
+        uniform vec3 camPos;
+        out vec2 fragTexCoord;
+        out vec2 fragParams;
+        out vec4 fragColor;
+        out vec3 fragWorld;
+        void main() {
+            vec3 c = iPosSize.xyz;
+            float size = iPosSize.w;
+            int mode = int(iParams.z + 0.5);
+            vec2 uv = corner * 0.5 + 0.5;
+            vec3 world;
+            if (mode == 2) {
+                vec3 side = cross(iDir.xyz, camPos - c);
+                float l = length(side);
+                side = l > 1e-5 ? side * (size * 0.5 / l) : vec3(0.0);
+                vec3 tail = c - iDir.xyz * iDir.w;
+                world = mix(tail, c, uv.y) + side * corner.x;
+            } else {
+                float cs = cos(iParams.w) * size * 0.5, sn = sin(iParams.w) * size * 0.5;
+                vec3 r, u;
+                if (mode == 1) { r = vec3(cs, 0.0, sn); u = vec3(-sn, 0.0, cs); }
+                else { r = camRight * cs + camUp * sn; u = camUp * cs - camRight * sn; }
+                world = c + r * corner.x + u * corner.y;
+            }
+            fragTexCoord = uv;
+            fragParams = iParams.xy;
+            fragColor = iColor;
+            fragWorld = world;
+            gl_Position = viewProj * vec4(world, 1.0);
+        }
+        """;
+
     private static readonly string ParticleFs = "#version 330\n" + CommonFs + """
         in vec2 fragTexCoord;
         in vec2 fragParams;
@@ -491,6 +535,7 @@ public static unsafe class Shaders
 
     // ------------------------------------------------------------------ loaders
 
+    private static ShaderProgram? _particleInst;
     private static ShaderProgram? _unitLit, _unitHolo, _unitDepth, _terrain, _water, _sky, _particle, _icon;
 
     public static ShaderProgram UnitLit => _unitLit ??= new ShaderProgram(UnitVs, UnitLitFs);
@@ -500,6 +545,7 @@ public static unsafe class Shaders
     public static ShaderProgram Water => _water ??= new ShaderProgram(WorldVs, WaterFs);
     public static ShaderProgram Sky => _sky ??= new ShaderProgram(SkyVs, SkyFs);
     public static ShaderProgram Particle => _particle ??= new ShaderProgram(QuadVs, ParticleFs);
+    public static ShaderProgram ParticleInst => _particleInst ??= new ShaderProgram(ParticleInstVs, ParticleFs);
     public static ShaderProgram Icon => _icon ??= new ShaderProgram(QuadVs, IconFs);
 
     private const string LitVs = """

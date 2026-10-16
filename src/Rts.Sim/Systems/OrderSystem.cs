@@ -19,8 +19,9 @@ public static class OrderSystem
     {
         var u = w.Units;
         Combat.CombatState.Of(w); // create the combat cache before the parallel loop (idle air engage reads its catalog)
-        Par.For(u.AliveCount, 256, (_, start, end) =>
+        Par.For(u.AliveCount, 256, w, static (w, _, start, end) =>
         {
+            var u = w.Units;
             for (int k = start; k < end; k++)
             {
                 int i = u.AliveList[k];
