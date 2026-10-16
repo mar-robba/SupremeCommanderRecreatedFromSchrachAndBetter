@@ -202,11 +202,15 @@ public static class AiMatch
         {
             var army = w.Armies[a];
             int mex = 0, fac = 0, land = 0, air = 0, eng = 0, pgen = 0, def = 0;
+            float armyM = 0, defM = 0, ecoM = 0; // mass value of complete army units / defenses / other structures
             for (int k = 0; k < u.AliveCount; k++)
             {
                 int i = u.AliveList[k];
                 if (!u.IsActive(i) || u.Army[i] != a || !u.IsComplete(i)) continue;
                 var bp = w.BpOf(i);
+                float m = bp.Economy.BuildCostMass;
+                if (bp.IsStructure) { if (bp.Has(UnitCategory.Defense) || bp.Has(UnitCategory.Shield)) defM += m; else ecoM += m; }
+                else if (!bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) armyM += m;
                 if (bp.Has(UnitCategory.MassExtractor)) mex++;
                 else if (bp.Has(UnitCategory.Factory)) fac++;
                 else if (bp.Has(UnitCategory.PowerGenerator)) pgen++;
@@ -242,7 +246,7 @@ public static class AiMatch
                     }
             }
             line.Append($" | {army.Name}{(army.Defeated ? " DEFEATED" : "")}: n={army.UnitCount} mex={mex} pg={pgen} fac={fac} def={def} eng={eng} land={land} air={air} " +
-                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil}");
+                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil} val={armyM / 1000f:F1}k/{defM / 1000f:F1}k/{ecoM / 1000f:F1}k");
         }
         Console.WriteLine(line.ToString());
     }

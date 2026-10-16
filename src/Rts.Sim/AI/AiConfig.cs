@@ -8,7 +8,7 @@ namespace Rts.Sim.AI;
 /// attack, reinforcing, raids, retreats, commander snipes) and intel use (scouts, radar). Every difficulty plays by
 /// the fog-of-war rules and none gets free resources: Hard is stronger through better macro and decisions only.
 /// </summary>
-public sealed class AiConfig
+public sealed partial class AiConfig
 {
     public AiDifficulty Difficulty;
 
