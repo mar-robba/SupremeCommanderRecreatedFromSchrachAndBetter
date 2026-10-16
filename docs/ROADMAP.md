@@ -33,7 +33,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
   3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
-  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+  4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
   5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
