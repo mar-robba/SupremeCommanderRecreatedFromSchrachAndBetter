@@ -9,13 +9,12 @@ namespace Rts.Client.Rendering;
 /// baked cavity AO in vertex colors, sun + sky lighting, unit shadows, distance haze), a sky/void gradient
 /// background, an animated translucent water surface with depth tint and shoreline foam, and deposit markers.
 /// </summary>
-public sealed unsafe class TerrainRenderer : IDisposable
+public sealed unsafe partial class TerrainRenderer : IDisposable
 {
     public const int ChunkSize = 64;
     public static readonly Vector3 SunDir = Vector3.Normalize(new Vector3(-0.45f, 0.8f, -0.35f));
 
     private readonly Terrain _t;
-    private readonly List<(Mesh mesh, BoundingBox box)> _chunks = new();
     private Material _material;
     private Material _waterMat;
     private Material _skyMat;
@@ -33,9 +32,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
         _t = terrain;
         _waterLevel = DebugWaterLevel ?? terrain.WaterLevel;
         var ao = ComputeAo();
-        for (int cz = 0; cz < terrain.Height; cz += ChunkSize)
-        for (int cx = 0; cx < terrain.Width; cx += ChunkSize)
-            _chunks.Add(BuildChunk(cx, cz, Math.Min(ChunkSize, terrain.Width - cx), Math.Min(ChunkSize, terrain.Height - cz), ao));
+        BuildLodChunks(ao); // TerrainRenderer.Lod.cs
 
         _material = Raylib.LoadMaterialDefault();
         _material.Shader = Shaders.Terrain.Shader;
@@ -103,46 +100,6 @@ public sealed unsafe class TerrainRenderer : IDisposable
         return ao;
     }
 
-    private (Mesh, BoundingBox) BuildChunk(int x0, int z0, int w, int h, float[] ao)
-    {
-        int vw = w + 1, vh = h + 1;
-        var mesh = new Mesh { VertexCount = vw * vh, TriangleCount = w * h * 2 };
-        mesh.AllocVertices();
-        mesh.AllocNormals();
-        mesh.AllocColors();
-        mesh.AllocIndices();
-        var verts = mesh.VerticesAs<Vector3>();
-        var norms = mesh.NormalsAs<Vector3>();
-        var cols = mesh.ColorsAs<Color>();
-        var idx = mesh.IndicesAs<ushort>();
-        float minY = float.MaxValue, maxY = float.MinValue;
-        for (int z = 0; z < vh; z++)
-        for (int x = 0; x < vw; x++)
-        {
-            int wx = x0 + x, wz = z0 + z;
-            float y = _t.VertexHeight(wx, wz);
-            minY = MathF.Min(minY, y);
-            maxY = MathF.Max(maxY, y);
-            int v = z * vw + x;
-            verts[v] = new Vector3(wx, y, wz);
-            norms[v] = _t.GetNormal(wx, wz);
-            byte a = (byte)Math.Clamp(ao[wz * (_t.Width + 1) + wx] / 1.06f * 255f, 0, 255);
-            cols[v] = new Color(a, a, a, (byte)255);
-        }
-        int k = 0;
-        for (int z = 0; z < h; z++)
-        for (int x = 0; x < w; x++)
-        {
-            ushort a = (ushort)(z * vw + x), b = (ushort)(a + 1), c = (ushort)(a + vw), d = (ushort)(c + 1);
-            // Counter-clockwise when seen from above (+Y).
-            idx[k++] = a; idx[k++] = c; idx[k++] = b;
-            idx[k++] = b; idx[k++] = c; idx[k++] = d;
-        }
-        Raylib.UploadMesh(ref mesh, false);
-        var box = new BoundingBox(new Vector3(x0, minY, z0), new Vector3(x0 + w, maxY, z0 + h));
-        return (mesh, box);
-    }
-
     /// <summary>Draws the sky/void background and the terrain. Call first inside BeginMode3D.</summary>
     public void Draw(Camera3D cam)
     {
@@ -169,22 +126,40 @@ public sealed unsafe class TerrainRenderer : IDisposable
         sp.Set("mapSize", new Vector2(_t.Width, _t.Height));
         ShadowMap.Bind(sp);
         FogRenderer.Bind(sp);
-        foreach (var (mesh, box) in _chunks)
-        {
-            var c = (box.Min + box.Max) * 0.5f;
-            if (!fv.SphereVisible(c, Vector3.Distance(box.Min, box.Max) * 0.5f)) continue;
-            Raylib.DrawMesh(mesh, _material, Matrix4x4.Identity);
-        }
+        DrawLodChunks(fv);
+        FrameProfiler.Sub("terrain:chunks");
     }
+
+    /// <summary>Deposit marker positions on the ground (computed once).</summary>
+    private Vector3[]? _depositPos;
+
+    /// <summary>Beyond this camera distance a deposit is drawn as one flat square (its outline color) instead of the
+    /// detailed marker (cubes/cylinders with wires, ~500 immediate-mode vertices per hydrocarbon).</summary>
+    private const float DepositDetailDistance = 260f;
 
     public void DrawDeposits()
     {
         float t = (float)Raylib.GetTime();
-        foreach (var d in _t.Deposits)
+        var fv = FrameView.Current;
+        if (_depositPos == null)
         {
-            var p = new Vector3(d.Pos.X, _t.GetHeight(d.Pos) + 0.06f, d.Pos.Y);
+            _depositPos = new Vector3[_t.Deposits.Length];
+            for (int i = 0; i < _depositPos.Length; i++)
+            {
+                var dp = _t.Deposits[i].Pos;
+                _depositPos[i] = new Vector3(dp.X, _t.GetHeight(dp) + 0.06f, dp.Y);
+            }
+        }
+        float detail2 = DepositDetailDistance * DepositDetailDistance;
+        for (int i = 0; i < _depositPos.Length; i++)
+        {
+            var d = _t.Deposits[i];
+            var p = _depositPos[i];
+            if (!fv.SphereVisible(p, 2.5f)) continue;
+            bool far = Vector3.DistanceSquared(p, fv.CamPos) > detail2;
             if (d.Type == DepositType.Mass)
             {
+                if (far) { Raylib.DrawPlane(p + new Vector3(0, 0.08f, 0), new Vector2(1.9f), new Color(90, 220, 120, 255)); continue; }
                 byte g = (byte)(170 + 60 * MathF.Sin(t * 2f + d.Pos.X));
                 Raylib.DrawCube(p, 1.9f, 0.1f, 1.9f, new Color(36, 44, 38, 255));
                 Raylib.DrawCube(p + new Vector3(0, 0.03f, 0), 1.2f, 0.1f, 1.2f, new Color((byte)50, g, (byte)80, (byte)255));
@@ -192,6 +167,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
             }
             else
             {
+                if (far) { Raylib.DrawPlane(p + new Vector3(0, 0.08f, 0), new Vector2(3.4f), new Color(230, 180, 50, 255)); continue; }
                 Raylib.DrawCylinder(p, 1.8f, 1.9f, 0.1f, 16, new Color(30, 30, 32, 255));
                 Raylib.DrawCylinder(p + new Vector3(0, 0.02f, 0), 0.9f, 0.9f, 0.1f, 12, new Color(70, 60, 30, 255));
                 Raylib.DrawCylinderWires(p, 2.0f, 2.0f, 0.12f, 16, new Color(230, 180, 50, 255));
@@ -248,8 +224,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
 
     public void Dispose()
     {
-        foreach (var (mesh, _) in _chunks) Raylib.UnloadMesh(mesh);
-        _chunks.Clear();
+        DisposeLodChunks();
         Raylib.UnloadMesh(_water);
         Raylib.UnloadMesh(_sky);
         Raylib.UnloadTexture(_heightTex);

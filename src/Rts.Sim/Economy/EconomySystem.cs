@@ -44,6 +44,12 @@ public static class EconomySystem
         public float[] EffEnergy = [];
         /// <summary>Units that requested something (need a per-unit efficiency), per chunk.</summary>
         public readonly ChunkedBuffer<int> Consumers = new();
+        // Pass 1 inputs of the current Run (set each tick) and its cached delegate (no closure per tick).
+        [Persistence.NoSave] public SimWorld? W;
+        [Persistence.NoSave] public Strategic.StrategicState? Strat;
+        [Persistence.NoSave] public int Armies;
+        [Persistence.NoSave] public Action<int, int, int>? Pass1Body;
+        public void Pass1(int c, int start, int end) => EconomySystem.Pass1(this, c, start, end);
     }
 
     // One scratch per world (systems are static; worlds may coexist, e.g. in tests).
@@ -75,6 +81,57 @@ public static class EconomySystem
         return upkeep * (1f - w.Units.Econ[i].AdjEnergyUse);
     }
 
+    /// <summary>Pass 1 of one chunk of the AliveList (see <see cref="Run"/>).</summary>
+    private static void Pass1(Scratch s, int c, int start, int end)
+    {
+        var w = s.W!;
+        var u = w.Units;
+        var strat = s.Strat!;
+        int armies = s.Armies;
+        var partial = s.Partial;
+        var consumers = s.Consumers;
+        int baseIdx = c * armies;
+        var list = consumers[c];
+        for (int k = start; k < end; k++)
+        {
+            int i = u.AliveList[k];
+            ref var sum = ref partial[baseIdx + u.Army[i]];
+            ref var e = ref u.Econ[i];
+            var bpi = w.BpOf(i);
+            var eco = bpi.Economy;
+            float upkeep = 0;
+            float prodMass = 0, prodEnergy = 0;
+            if ((u.Flags[i] & UnitFlags.UnderConstruction) == 0)
+            {
+                sum.StorageMass += eco.StorageMass;
+                sum.StorageEnergy += eco.StorageEnergy;
+                if (IsActiveProducer(u, i))
+                {
+                    upkeep = Upkeep(w, strat, i, bpi);
+                    prodEnergy = eco.ProductionEnergy * (1f + e.AdjEnergyProd);
+                    if (eco.MaintenanceEnergy > 0) sum.ProdMassUpkeep += eco.ProductionMass * (1f + e.AdjMassProd);
+                    else prodMass = eco.ProductionMass * (1f + e.AdjMassProd);
+                }
+            }
+            prodMass += e.ReclaimMass;
+            prodEnergy += e.ReclaimEnergy;
+            sum.ProdMass += prodMass;
+            sum.ProdEnergy += prodEnergy;
+            e.MassProduction = prodMass; // upkeep-dependent production is added in pass 2
+            e.EnergyProduction = prodEnergy;
+
+            float reqM = e.MassRequest;
+            float reqE = e.EnergyRequest * (1f - e.AdjEnergyUse) + upkeep; // adjacency: pgens cut energy use
+            sum.DemandMass += reqM;
+            sum.DemandEnergy += reqE;
+            if (reqM > 0 && reqE > 0) { sum.BothMass += reqM; sum.BothEnergy += reqE; }
+            else if (reqM > 0) sum.MassOnly += reqM;
+            else if (reqE > 0) sum.EnergyOnly += reqE;
+            else { e.Efficiency = 1; continue; }
+            list.Add(i);
+        }
+    }
+
     public static void Run(SimWorld w)
     {
         var u = w.Units;
@@ -92,49 +149,10 @@ public static class EconomySystem
         var strat = Strategic.StrategicState.Of(w);
 
         // Pass 1 (parallel, each unit writes only its own Econ): storage, production, demand.
-        Par.For(n, ChunkSize, (c, start, end) =>
-        {
-            int baseIdx = c * armies;
-            var list = consumers[c];
-            for (int k = start; k < end; k++)
-            {
-                int i = u.AliveList[k];
-                ref var sum = ref partial[baseIdx + u.Army[i]];
-                ref var e = ref u.Econ[i];
-                var bpi = w.BpOf(i);
-                var eco = bpi.Economy;
-                float upkeep = 0;
-                float prodMass = 0, prodEnergy = 0;
-                if ((u.Flags[i] & UnitFlags.UnderConstruction) == 0)
-                {
-                    sum.StorageMass += eco.StorageMass;
-                    sum.StorageEnergy += eco.StorageEnergy;
-                    if (IsActiveProducer(u, i))
-                    {
-                        upkeep = Upkeep(w, strat, i, bpi);
-                        prodEnergy = eco.ProductionEnergy * (1f + e.AdjEnergyProd);
-                        if (eco.MaintenanceEnergy > 0) sum.ProdMassUpkeep += eco.ProductionMass * (1f + e.AdjMassProd);
-                        else prodMass = eco.ProductionMass * (1f + e.AdjMassProd);
-                    }
-                }
-                prodMass += e.ReclaimMass;
-                prodEnergy += e.ReclaimEnergy;
-                sum.ProdMass += prodMass;
-                sum.ProdEnergy += prodEnergy;
-                e.MassProduction = prodMass; // upkeep-dependent production is added in pass 2
-                e.EnergyProduction = prodEnergy;
-
-                float reqM = e.MassRequest;
-                float reqE = e.EnergyRequest * (1f - e.AdjEnergyUse) + upkeep; // adjacency: pgens cut energy use
-                sum.DemandMass += reqM;
-                sum.DemandEnergy += reqE;
-                if (reqM > 0 && reqE > 0) { sum.BothMass += reqM; sum.BothEnergy += reqE; }
-                else if (reqM > 0) sum.MassOnly += reqM;
-                else if (reqE > 0) sum.EnergyOnly += reqE;
-                else { e.Efficiency = 1; continue; }
-                list.Add(i);
-            }
-        });
+        s.W = w;
+        s.Strat = strat;
+        s.Armies = armies;
+        Par.For(n, ChunkSize, s.Pass1Body ??= s.Pass1);
 
         float dt = SimWorld.Dt;
         for (int a = 0; a < armies; a++)

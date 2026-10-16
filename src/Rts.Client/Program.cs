@@ -10,6 +10,8 @@ using Rts.Client;
 //                   [--screenshot out.png --frames 120] [--camera x,z,distance]
 //                   [--stress N] [--fxtest] [--gallery] [--novsync] [--debugwater H] [--nofog]
 //                   [--nosound] [--sound] [--volume F] [--sfx-volume F] [--music-volume F] [--nomusic]
+//                   [--perf-log] (prints fps, frame stages, allocations and sim tick once per second)
+//                   [--terrain-lod N] (force terrain LOD level 0..3: 0 = full detail; default automatic)
 //                   [--sandbox] (sandbox game: spawn panel F9, console F10/`) [--exec "spawn tank 100 enemy; wait 30; nuke 128,128"]
 //                   (--exec runs sandbox console commands at the start and implies --sandbox; with --setup --sandbox: sandbox setup)
 //        Rts.Client --saves | --replays                      -> the Load Game / Replays list (saves/, replays/ folders)

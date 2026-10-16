@@ -103,6 +103,9 @@ public static class GameSetup
             var h = world.SpawnUnit(commanders[a], a, sp, DMath.HeadingOf(center - sp), complete: true);
             armies[a].Commander = h;
         }
+        // Nav clearance grids now (loading) instead of in the first tick (~50 ms on 1024): a pure function of terrain
+        // + occupancy, so building them earlier changes nothing (later structures update them incrementally).
+        world.Paths.EnsureGrids();
         return new Simulation(world);
     }
 }

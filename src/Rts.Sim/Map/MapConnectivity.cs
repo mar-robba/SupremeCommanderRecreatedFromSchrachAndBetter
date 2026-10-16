@@ -302,6 +302,18 @@ internal static class MapConnectivity
     public static void CarveCorridor(float[] h, int n, float water, List<Vector2> poly, float coreR, float blendR,
         CarveScratch scratch, float minAboveWater = 1.2f, float slope = CorridorSlope)
     {
+        var (s, target) = CorridorProfile(h, n, water, poly, minAboveWater, slope);
+        RasterizeCorridor(h, n, s, target, coreR, blendR, scratch);
+    }
+
+    /// <summary>
+    /// The corridor of <see cref="CarveCorridor"/> before it is applied: the extended, resampled path and the ground
+    /// profile along it. Maps whose rotations are not quarter turns compute it once and rasterize the rotated copies
+    /// with the same profile (<see cref="RasterizeCorridor"/>), so every copy is identical.
+    /// </summary>
+    public static (List<Vector2> Samples, float[] Target) CorridorProfile(float[] h, int n, float water, List<Vector2> poly,
+        float minAboveWater = 1.2f, float slope = CorridorSlope)
+    {
         var smooth = Smooth(poly);
         float extA = 6f, extB = 6f;
         List<Vector2> s = null!;
@@ -341,8 +353,13 @@ internal static class MapConnectivity
             if (mB > 0.3f && extB < 90f) { extB += mB / slope + 4f; grow = true; }
             if (!grow) break;
         }
+        return (s, target);
+    }
 
-        // Nearest-sample rasterization into the touched vertices.
+    /// <summary>Sets the ground along the samples to the profile within coreR, blending back to the terrain by
+    /// blendR (nearest-sample rasterization into the touched vertices).</summary>
+    public static void RasterizeCorridor(float[] h, int n, List<Vector2> s, float[] target, float coreR, float blendR, CarveScratch scratch)
+    {
         int stride = n + 1;
         var dist = scratch.Dist;
         var tgt = scratch.Target;

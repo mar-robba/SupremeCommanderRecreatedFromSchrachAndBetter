@@ -27,6 +27,7 @@ public static class AiMatch
         string[]? factions = args.Length > 7 ? args[7].Split(',') : null;
 
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        if (Environment.GetEnvironmentVariable("BENCH_WARMUP") == "1") SimWarmup.Run(db); // JIT warm-up as the client does
         var ai = Enumerable.Range(0, players).Select(i => !passive || i > 0).ToArray();
         var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings
         {
@@ -50,11 +51,13 @@ public static class AiMatch
             AiSystem.Trace = (army, msg) => Console.WriteLine($"  <{Fmt(w.GameTime)}> a{army} {msg}");
         var tickMs = new List<double>(maxTicks);
         var total = Stopwatch.StartNew();
+        var stages = new StageStats();
         int firstDeathTick = -1;
         for (int t = 0; t < maxTicks && w.WinningTeam < 0; t++)
         {
             sim.Step();
-            if (t == 0) ApplyCfgOverrides(w, players);
+            if (t == 0) { ApplyCfgOverrides(w, players); Console.WriteLine($"first tick {sim.LastTickMs:F1} ms: {StageStats.LastTick(sim)}"); stages.Start(sim); }
+            else stages.Add(sim);
             if (t == 0 && Environment.GetEnvironmentVariable("AI_OMNI") == "1")
                 for (int a = 0; a < players; a++)
                     if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) br.Perception.RespectIntel = false; // omniscient AIs (comparison)
@@ -113,6 +116,7 @@ public static class AiMatch
         tickMs.Sort();
         Console.WriteLine($"sim tick ms: avg {tickMs.Average():F2} p50 {tickMs[tickMs.Count / 2]:F2} p95 {tickMs[(int)(tickMs.Count * 0.95)]:F2} max {tickMs[^1]:F2}; " +
                           $"wall {total.Elapsed.TotalSeconds:F1}s ({w.Tick / total.Elapsed.TotalSeconds:F0} ticks/s), hash {sim.StateHash():X16}");
+        Console.WriteLine($"  {stages.Format()}");
     }
 
     /// <summary>AI_CFG="Field=value,..." (all AIs), AI_CFG0/AI_CFG1/... (one army), AI_CFG_Hard/_Normal/_Easy (one difficulty): override AiConfig fields for

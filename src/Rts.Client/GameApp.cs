@@ -103,7 +103,8 @@ public sealed class ClientOptions
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
-                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name")) gameArg = true;
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
+                or "--perf-log" or "--terrain-lod")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -149,6 +150,8 @@ public sealed class ClientOptions
                 case "--fxtest": o.FxTest = true; break;
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
+                case "--perf-log": Rendering.PerfLog.Enabled = true; break;
+                case "--terrain-lod": Rendering.TerrainRenderer.ForceLod = int.Parse(Next()); break;
                 case "--nofog": o.NoFog = true; break;
                 case "--sandbox": o.Sandbox = true; break;
                 case "--exec": o.Exec = Next(); o.Sandbox = true; break;
@@ -201,6 +204,7 @@ public static class GameApp
         Persistence.GameRecording.AutoWriteReplays = opt.ScreenshotPath == null || opt.WriteReplay;
         var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        SimWarmup.Start(db); // JIT warm-up of the sim on a background thread while the menu/loading shows (wave 5m)
 
         // Direct game (CLI): the simulation is created before the window, exactly as before the menus existed.
         GameConfig? directCfg = null;
@@ -216,6 +220,7 @@ public static class GameApp
         int width = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Width : settings.Width;
         int height = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Height : settings.Height;
         Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | (opt.NoVsync ? 0 : ConfigFlags.VSyncHint));
+        Rendering.FrameProfiler.GpuEnabled = opt.ScreenshotPath != null || Rendering.PerfLog.Enabled; // GPU stage timings
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
         Raylib.SetExitKey(KeyboardKey.Null);

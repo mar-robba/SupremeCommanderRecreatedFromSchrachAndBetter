@@ -54,6 +54,10 @@ internal sealed class MapSymmetry
         }
     }
 
+    /// <summary>True for 1, 2 and 4 players: every rotation is a quarter turn, which maps grid vertices onto grid
+    /// vertices exactly. Other counts rotate by arbitrary angles (rotated copies are resampled).</summary>
+    public bool QuarterTurns => 4 % N == 0;
+
     /// <summary>Rotates p about the center by k·2π/N (k may be negative, |k| &lt; N).</summary>
     public Vector2 Rotate(Vector2 p, int k)
     {

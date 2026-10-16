@@ -413,6 +413,32 @@ case.
 - **Deliverable**: a before/after perf table. Sim results must not change (identical AI match hashes) unless a
   documented fix requires it.
 
+**Delivered** (merged 2026-10-16; three agents and three sub-agents, cut twice by usage limits): a 1024 map with
+8 players and 4.8k units runs at 60 FPS; the worst sim tick went from 217 ms to about 12 ms.
+- Sim: the `Par` worker pool no longer allocates; per-stage profiler (`Rts.Bench`, `BENCH_ALLOC=1`,
+  `BENCH_WARMUP=1`); nav grids built at load and missing region graphs built in parallel; `SimWarmup` compiles the sim
+  code on a background thread when the client starts; `QuickJitForLoops=false` in the client and the bench (the
+  10–30 ms tick spikes were loops running unoptimized JIT code, not GC); goal-field arrays reused.
+- Client: terrain chunk LOD with skirts (no cracks), instanced particles, deposit markers culled, a minimap dot per
+  pixel, `--perf-log`, `--terrain-lod 0..3`.
+- Maps: 6- and 8-player maps on 512 and 1024, fair for every preset.
+- Tests: `MapScaleTests`, `ScalePerfTests` (the warm-up thread leaves a game's hash unchanged). At merge: 393 sim +
+  213 client + 21 net tests green. `ai 30 256 42 hard,normal` = main exactly (hash EDCA8A729F29736E), other bench
+  hashes unchanged.
+
+| (same machine, interleaved runs) | main | m |
+|---|---|---|
+| `2000 300` avg / p95 / max ms | 3.5–4.5 / 5.8–9.2 / 25 | 1.7–2.1 / 2.4–3.4 / 9.5 |
+| `700 400 0 1024 8` avg / p95 / max | 3.9–4.6 / 10.6–12.3 / 34 | 2.4 / 4.5–4.9 / 12–16 (warm-up: 2.0 / 3.8 / 8.5) |
+| first tick on 1024 | ~210 ms | 15 ms (with warm-up) |
+| intel, 8 armies on 1024 | 1.1–1.35 ms | 0.33 ms |
+| 8 AIs on 1024, 40 min: avg / p95 / max, alloc | 1.64 / 3.68 / 217, ~125 KB/tick (main 8146fdd) | 0.96 / 2.21 / 12.1, 10 KB/tick |
+| client, 4.8k units: CPU (close view) / GPU (whole map) | 3.2 / 8.2 ms | 1.6 / 2.3–2.8 ms |
+
+- Still open: one AI think costs about 11 ms with 8 AIs on 1024 (passed to (k)); a new region graph mid-game costs
+  about 14 ms on 1024; no low-poly LOD for unit models; without the warm-up (the bench default) the first tick
+  still costs 100–145 ms.
+
 ### (n) UX polish — client UI/input + small sim fixes
 *brief; started 2026-10-14*
 
@@ -489,3 +515,26 @@ Deterministic lockstep on top of the replay command log and the desync hashes.
   - protocol framing; drop handling;
   - `Rts.Bench -- mp` self-test;
   - two client windows on this machine (`--host` + `--join 127.0.0.1:port`).
+
+**Delivered** (merged 2026-10-16; three agents, the first two cut by usage limits):
+- `src/Rts.Net` (no raylib): TCP framed protocol, the host relays every turn; LAN discovery on UDP 47625; lobby with
+  8 slots (human / AI / open / closed): faction, team, color, AI level, ready flags, host map options, chat, kick.
+- Lockstep: one turn per player per tick, input delay adapted to ping; speed and pause negotiated with the host;
+  `StateHash` checked at load and every 10 ticks (a desync shows a banner and writes the replay so far); a dropped
+  player goes to the AI or is defeated (host option); a client that loses the host continues offline. Lobby
+  factions go into the skirmish settings; the host refuses unknown faction ids.
+- Client: main menu Multiplayer (name, Host, Join, LAN list), lobby with map preview, loading screen; in game: chat
+  (Enter, in `Hotkeys.cs`), players/pings panel, "Waiting for X" banner, an Esc menu that doesn't pause, observer
+  mode after defeat. Space / + / − become requests to the host. Every MP game writes a normal replay.
+- How to try: two windows, `--host 47704 --name A --autostart` and `--join 127.0.0.1:47704 --name B --autostart`;
+  against AI only `--host --autostart --players 3`; headless `Rts.Bench -- mp 4 1200` (or `mp 3 1200 256 1 0 drop`).
+- Sim fix: the static `_tmp` scratch lists in ConstructionSystem, MissileSystem and DamageSystem are now
+  `[ThreadStatic]` (several sims in one process raced on them: the loopback test failed about 1 run in 3).
+- Docs: ARCHITECTURE "Multiplayer" (with the float determinism review), DEV_GUIDE (port forwarding), CLAUDE.md.
+- Tests: `Rts.Net.Tests` (21: framing, codec, lobby, loopback 2/3/4 peers + AI with random commands, drops, desync,
+  speed/pause, LAN), `NetGameConfigTests`. At merge: 376 sim + 213 client + 21 net tests green.
+- Numbers: `mp` 4 peers × 1200 ticks in 1.3 s, all hashes equal; bench 2000 300 main 4.07 ms vs branch 3.84 ms;
+  `ai 30 256 42 hard,normal` = main exactly (hash EDCA8A729F29736E).
+- Known issues: games between different operating systems can desync (the sim's trig uses each OS's C math
+  library); no reconnect, MP observers, MP saves or NAT traversal; after game over the end screen stops the local
+  sim, so a peer that keeps playing waits.
