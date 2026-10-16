@@ -131,9 +131,8 @@ public sealed class NetInGameScreen : IScreen
                     _feed.Add((c.Line, Raylib.GetTime()));
                     if (_feed.Count > 50) _feed.RemoveAt(0);
                     break;
-                case PlayerDroppedEvent d:
-                    Toasts.Show(NetGameConfig.DropText(d.Name, d.Action, d.Reason));
-                    break;
+                case PlayerDroppedEvent:
+                    break; // the host (or this peer, offline) posts a system chat line
                 case DesyncEvent d:
                     // The game goes on, but the peers no longer agree: dump the replay so far for the bug report.
                     _s.Recording?.WriteReplayNow(_s.Runner);
@@ -211,7 +210,7 @@ public sealed class NetInGameScreen : IScreen
         var list = _game.PlayerStatus();
         int fs = Ui.F(11);
         float lineH = fs + Ui.P(5), w = Ui.P(190);
-        var r = Ui.R(Ui.Sw - w - Ui.P(10), Ui.P(64), w, Ui.P(10) + lineH * list.Count);
+        var r = Ui.R(Ui.Sw - w - Ui.P(10), Ui.P(80), w, Ui.P(10) + lineH * list.Count);
         Raylib.DrawRectangleRec(r, new Color(10, 14, 20, 170));
         float y = r.Y + Ui.P(5);
         var colors = _s.Ctx.ArmyColors;

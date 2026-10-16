@@ -25,6 +25,7 @@ public sealed class MultiplayerScreen : IScreen
     {
         _app = app;
         _error = error;
+        if (error != null) Console.WriteLine("multiplayer: " + error);
         var s = AppSettings.Current;
         string name = app.Options.PlayerName ?? (s.PlayerName.Length > 0 ? s.PlayerName : DefaultName());
         _name = new NetTextField(name, 24, NetTextField.IsNameChar);
@@ -52,8 +53,13 @@ public sealed class MultiplayerScreen : IScreen
         if (!_cliDone)
         {
             _cliDone = true;
-            if (_app.Options.HostPort > 0) Host(_app.Options.HostPort);
-            else if (_app.Options.JoinAddress != null) Join(_app.Options.JoinAddress);
+            // --host / --join act once per run (consumed: coming back to this screen later does nothing).
+            int hostPort = _app.Options.HostPort;
+            string? join = _app.Options.JoinAddress;
+            _app.Options.HostPort = 0;
+            _app.Options.JoinAddress = null;
+            if (hostPort > 0) Host(hostPort);
+            else if (join != null) Join(join);
         }
         PollJoin();
         bool focused = AnyFocused; // Esc in a field only unfocuses it
@@ -204,7 +210,11 @@ public sealed class MultiplayerScreen : IScreen
         if (_joining is not { IsCompleted: true } t) return;
         _joining = null;
         if (t.IsCompletedSuccessfully) _app.Go(new LobbyScreen(_app, t.Result));
-        else _error = t.Exception?.GetBaseException().Message ?? "Join failed";
+        else
+        {
+            _error = t.Exception?.GetBaseException().Message ?? "Join failed";
+            Console.WriteLine("multiplayer: " + _error);
+        }
     }
 
     public void Dispose()
