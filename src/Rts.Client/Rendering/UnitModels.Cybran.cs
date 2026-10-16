@@ -80,6 +80,7 @@ public static partial class UnitModels
             case "cy_stealth": t = CyDeceiver(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 1.3f; break;
             case "cy_assault_bot": t = CyLoyalist(b, pivots, w, h, l); break;
             case "cy_heavy_artillery": t = CyTrebuchet(b, pivots, w, h, l); break;
+#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C): remove this guard once the air/naval/experimental/structure partials exist
             // ---- air (UnitModels.CybranAir.cs)
             case "cy_air_scout": CyAirScout(b, w, h, l); break;
             case "cy_interceptor": CyProwler(b, w, h, l); break;
@@ -136,6 +137,7 @@ public static partial class UnitModels
             case "cy_radar2": t = CyRadar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 1.6f; break;
             case "cy_omni": t = CyOmni(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.9f; break;
             case "cy_stealth_field": t = CyStealthField(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.7f; break;
+#endif
             default: CyGeneric(b, w, h, l, bp.IsStructure); break;
         }
         return t;
