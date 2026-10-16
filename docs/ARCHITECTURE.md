@@ -601,7 +601,7 @@ interpolates prev/cur by time
   command log (remote humans are non-AI armies whose commands come from the log): `Rts.Bench -- replay` verifies it.
 - **Client** (`Menus/MultiplayerScreen` → `LobbyScreen` → `NetLoadingScreen` → `NetInGameScreen`): the screen that
   holds the session passes it on (`_handedOff`), any other exit calls `Leave()`. `GameSession` gets the lockstep
-  hooks through `wrapHooks`, `NetKeys` (Space/+/− become requests; no F1/F2 spawns, no F7 fog reveal) and
+  hooks through `wrapHooks`, `NetKeys` (Space/+/− become requests; no debug spawns, no F7 fog reveal; Enter = chat, `Hotkeys.Chat`) and
   `KeyboardCaptured` (chat line open → game hotkeys blocked). No saving and no Restart in MP; Esc menu doesn't pause;
   local defeat → observer (the sim must keep running so the others don't wait); game over → end screen (runner
   stopped: the others may then wait if they continue).
