@@ -39,6 +39,30 @@ public static class LineOfFire
         return IsClear(w.Terrain, muzzle, tc);
     }
 
+    /// <summary>
+    /// True if the shell trajectory from <paramref name="from"/> with launch velocity <paramref name="vel"/> stays above
+    /// the terrain/water surface (minus <see cref="Tolerance"/>) for its <paramref name="time"/> seconds of flight
+    /// (gravity <see cref="Ballistics.Gravity"/>). Sampled every <see cref="Step"/> horizontally; the first step and the
+    /// last <see cref="ArcEndSkip"/> units (the target's own ground) are not tested. Pure: thread-safe, deterministic.
+    /// </summary>
+    public static bool IsArcClear(Terrain t, Vector3 from, Vector3 vel, float time)
+    {
+        float vh = MathF.Sqrt(vel.X * vel.X + vel.Z * vel.Z);
+        float len = vh * time;
+        int n = (int)(len / Step);
+        int last = n - (int)MathF.Ceiling(ArcEndSkip / Step);
+        for (int k = 1; k < last; k++)
+        {
+            float tk = time * (k / (float)n);
+            float y = from.Y + vel.Y * tk - 0.5f * Ballistics.Gravity * tk * tk;
+            if (t.GetSurfaceHeight(new Vector2(from.X + vel.X * tk, from.Z + vel.Z * tk)) > y + Tolerance) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Horizontal distance before the aim point that <see cref="IsArcClear"/> does not test.</summary>
+    public const float ArcEndSkip = 1.5f;
+
     /// <summary>True if the straight segment a→b stays above the terrain/water surface (minus the tolerance). The
     /// first and last step are not tested (the shooter's and the target's own ground).</summary>
     public static bool IsClear(Terrain t, Vector3 a, Vector3 b)

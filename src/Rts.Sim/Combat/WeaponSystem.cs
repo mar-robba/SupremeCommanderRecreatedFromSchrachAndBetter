@@ -76,6 +76,7 @@ public static class WeaponSystem
         var pos = u.Pos[i];
         float elev = u.Elevation[i];
         bool engaged = false;
+        bool submerged = Naval.Submarines.IsSubmerged(w, i); // divers (Atlantis): only torpedoes work under water
 
         for (int wi = 0; wi < info.Weapons.Length; wi++)
         {
@@ -86,6 +87,13 @@ public static class WeaponSystem
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
             if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind))
+            {
+                ws.Target = UnitHandle.None; // own slot (parallel-safe); re-acquired after surfacing
+                ws.TurretHeading = DMath.RotateTowards(ws.TurretHeading, u.Heading[i], winfo.TurnRate * dt);
+                ws.TurretPitch = 0;
+                continue;
+            }
 
             // What are we shooting at?
             int tj = -1;
@@ -123,10 +131,19 @@ public static class WeaponSystem
             Vector3 aim, launch;
             float flight;
             bool solution = true;
+            bool high = winfo.HighArc;
             switch (winfo.Kind)
             {
                 case WeaponKind.Ballistic:
-                    solution = Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
+                    solution = Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, high, out launch, out flight);
+                    // Mavor: a ridge in the way of the low arc -> lob it over (a pure function of terrain + positions).
+                    if (solution && !high && wbp.HighArcWhenBlocked && !LineOfFire.IsArcClear(w.Terrain, muzzle, launch, flight)
+                        && Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, true, out var hl, out var hf))
+                    {
+                        high = true;
+                        launch = hl;
+                        flight = hf;
+                    }
                     aim = tc;
                     if (tv != Vector2.Zero)
                     {
@@ -135,7 +152,7 @@ public static class WeaponSystem
                         {
                             var pp = Ballistics.PredictPosition(tp, tv, tom, flight);
                             aim = new Vector3(pp.X, tc.Y, pp.Y);
-                            solution = Ballistics.SolveArc(muzzle, aim, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out launch, out flight);
+                            solution = Ballistics.SolveArc(muzzle, aim, wbp.MuzzleVelocity, Ballistics.Gravity, high, out launch, out flight);
                         }
                     }
                     break;
@@ -185,7 +202,7 @@ public static class WeaponSystem
                     a.Z += MathF.Sin(ang) * r;
                     if (winfo.Kind == WeaponKind.Ballistic)
                     {
-                        if (!Ballistics.SolveArc(muzzle, a, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out vel, out _)) vel = launch;
+                        if (!Ballistics.SolveArc(muzzle, a, wbp.MuzzleVelocity, Ballistics.Gravity, high, out vel, out _)) vel = launch;
                     }
                     else if (winfo.Kind != WeaponKind.Beam)
                     {

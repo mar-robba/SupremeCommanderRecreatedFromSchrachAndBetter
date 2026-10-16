@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Input;
 using Rts.Client.Persistence;
 using Rts.Client.UI;
 using Rts.Sim;
@@ -73,9 +74,9 @@ public sealed class ReplayScreen : IScreen
 
     private void HandleKeys()
     {
-        if (MenuUi.Key(KeyboardKey.Space)) _s.Runner.Paused = !_s.Runner.Paused;
-        if (MenuUi.Key(KeyboardKey.Equal) || MenuUi.Key(KeyboardKey.KpAdd)) SetSpeed(_speed + 1);
-        if (MenuUi.Key(KeyboardKey.Minus) || MenuUi.Key(KeyboardKey.KpSubtract)) SetSpeed(_speed - 1);
+        if (Hotkeys.ReplayPause.Keys.Any(MenuUi.Key)) _s.Runner.Paused = !_s.Runner.Paused;
+        if (Hotkeys.ReplaySpeedUp.Keys.Any(MenuUi.Key)) SetSpeed(_speed + 1);
+        if (Hotkeys.ReplaySpeedDown.Keys.Any(MenuUi.Key)) SetSpeed(_speed - 1);
     }
 
     private void SetSpeed(int i)
@@ -136,7 +137,8 @@ public sealed class ReplayScreen : IScreen
         _timeline = Ui.R(x, y + bh * 0.5f - Ui.P(5), _panel.X + _panel.Width - Ui.P(14) - x, Ui.P(10));
         DrawTimeline(snap.Tick, start, end, interactive);
 
-        // Row 2: view selector + status.
+        // Row 2: view selector + status. F7 (fog on / off) changes the view too: keep the selector in sync.
+        _view = _s.Fog.Enabled ? _s.Ctx.LocalArmy : -1;
         float y2 = y + bh + Ui.P(6), rh = Ui.P(21);
         MenuUi.Label("View", _panel.X + Ui.P(10), y2, rh);
         float vx = _panel.X + Ui.P(10) + Ui.Measure("VIEW", Ui.F(11.5f), true) + Ui.P(8);

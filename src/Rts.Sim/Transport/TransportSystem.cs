@@ -196,6 +196,7 @@ public static class TransportSystem
         {
             // Aircraft carrier: sail to the point first (structures launch where they are).
             if (bp.IsMobile && d > bp.Radius + 4f) { OrderSystem.SetGoal(ref mv, dest, bp.Radius + 2f); return; }
+            if (Naval.Submarines.IsSubmerged(w, i)) return; // deck closed (Atlantis dived): launch once surfaced
             LaunchAll(w, i, bp);
             PopStop(w, i, q);
             return;
@@ -321,7 +322,8 @@ public static class TransportSystem
         var tbp = w.BpOf(ti);
         float dockR = ConstructionSystem.HalfSize(tbp) + tbp.Cargo!.LoadRange
                       + (bp.IsVtol ? 1f : MovementSystem.OrbitRadius(bp.Movement) * 1.2f);
-        bool room = w.Cargo.UsedSlots(w, ti) + bp.CargoSize <= tbp.Cargo.Capacity;
+        bool room = w.Cargo.UsedSlots(w, ti) + bp.CargoSize <= tbp.Cargo.Capacity
+                    && !Naval.Submarines.IsSubmerged(w, ti); // a dived Atlantis: wait above it until it surfaces
         if (room && Vector2.DistanceSquared(u.Pos[i], u.Pos[ti]) <= dockR * dockR) { Board(w, ti, i); return; }
         OrderSystem.SetGoal(ref u.Move[i], w.Terrain.Clamp(u.Pos[ti]), MathF.Max(1f, ConstructionSystem.HalfSize(tbp)));
         if (bp.IsVtol) w.Cargo.AirMode[i] = AirModes.Fly;
@@ -349,6 +351,7 @@ public static class TransportSystem
         var holds = c.Holds[i];
         if (holds == null || holds.Count == 0) return;
         var cb = bp.Cargo!;
+        bool deckClosed = cb.Layer == CargoLayer.Air && Naval.Submarines.IsSubmerged(w, i); // dived Atlantis
         for (int k = 0; k < holds.Count; k++)
         {
             int j = holds[k].Index;
@@ -362,7 +365,7 @@ public static class TransportSystem
             float fuelMax = jbp.FuelSeconds;
             if (fuelMax > 0 && c.Fuel[j] < fuelMax) c.Fuel[j] = MathF.Min(fuelMax, c.Fuel[j] + cb.RefuelRate * fuelMax * SimWorld.Dt);
             bool done = u.Health[j] >= jmax && (fuelMax <= 0 || c.Fuel[j] >= fuelMax);
-            if (done && (!cb.KeepDocked || u.Orders[j].Count > 1))
+            if (done && !deckClosed && (!cb.KeepDocked || u.Orders[j].Count > 1))
             {
                 Undock(w, i, bp, j, k);
                 k--;
@@ -456,6 +459,36 @@ public static class TransportSystem
         u.Elevation[j] = w.BpOf(j).Movement.Layer is MotionLayer.Land or MotionLayer.Amphibious
             ? w.Terrain.GetHeight(p) : w.Terrain.GetSurfaceHeight(p);
         ResetMove(w, j);
+    }
+
+    /// <summary>
+    /// A mobile factory that is also a submerged air carrier (dived Atlantis) takes its finished aircraft aboard
+    /// (<see cref="DockFinished"/>), so it only builds while the hold has room for the unit: true = production waits
+    /// (FactorySystem idles) until the carrier surfaces or launches aircraft. SEQUENTIAL.
+    /// </summary>
+    public static bool WaitsForRoom(SimWorld w, int factory, UnitBlueprint fbp, int unit) =>
+        fbp.Cargo is { Layer: CargoLayer.Air } cb && Naval.Submarines.IsSubmerged(w, factory)
+        && w.Cargo.UsedSlots(w, factory) + w.BpOf(unit).CargoSize > cb.Capacity;
+
+    /// <summary>
+    /// Called by <c>FactorySystem.Release</c> after the finished unit got its orders: a submerged air carrier (dived
+    /// Atlantis) docks it instead of launching it. A Dock order goes in front of its orders, so it takes off by
+    /// itself once the carrier is up (<see cref="UpdateCarrier"/>: a docked aircraft with queued orders undocks when
+    /// repaired/refuelled). It boards mid-tick (after the AliveList rebuild): TargetingSystem ignores carried units,
+    /// and its old locks are purged here. No room (only if the carrier dived right as the unit completed): it is
+    /// launched as usual. SEQUENTIAL.
+    /// </summary>
+    public static void DockFinished(SimWorld w, int factory, UnitBlueprint fbp, int unit)
+    {
+        if (fbp.Cargo is not { Layer: CargoLayer.Air } || !Naval.Submarines.IsSubmerged(w, factory) || !CanCarry(w, factory, unit)) return;
+        var q = w.Units.Orders[unit];
+        var orders = q.AsSpan().ToArray();
+        q.Clear();
+        q.Enqueue(TransportOrders.Dock(w.Units.HandleOf(factory)));
+        if (orders.Length == 0) q.Enqueue(Order.MoveTo(w.Units.Pos[factory])); // something to launch for
+        foreach (var o in orders) q.Enqueue(o);
+        Board(w, factory, unit);
+        PurgeReferences(w); // enemy locks taken on it while it was being built
     }
 
     /// <summary>Air carrier launches every docked aircraft (Unload on staging / Atlantis).</summary>
@@ -572,8 +605,8 @@ public static class TransportSystem
         return tbp.Cargo != null && tbp.Cargo.Layer == CargoLayer.Air && w.BpOf(aircraft).CargoSize <= tbp.Cargo.Capacity;
     }
 
-    /// <summary>Nearest own air carrier (air staging / Atlantis) for an aircraft; with needRoom only carriers with a
-    /// free slot now. Ties: lowest index. Scans the alive list (rare: issue time / auto-return).</summary>
+    /// <summary>Nearest own air carrier (air staging / Atlantis, not a submerged one) for an aircraft; with needRoom only
+    /// carriers with a free slot now. Ties: lowest index. Scans the alive list (rare: issue time / auto-return).</summary>
     public static UnitHandle FindAirCarrier(SimWorld w, int i, UnitBlueprint bp, bool needRoom)
     {
         var u = w.Units;
@@ -585,6 +618,7 @@ public static class TransportSystem
             var tbp = w.BpOf(t);
             if (tbp.Cargo == null || tbp.Cargo.Layer != CargoLayer.Air) continue;
             if (!IsAirCarrierFor(w, u.HandleOf(t), i)) continue;
+            if (Naval.Submarines.IsSubmerged(w, t)) continue; // dived Atlantis: deck closed
             if (needRoom && w.Cargo.UsedSlots(w, t) + bp.CargoSize > tbp.Cargo.Capacity) continue;
             float d = Vector2.DistanceSquared(u.Pos[i], u.Pos[t]);
             if (d < bestD) { bestD = d; best = t; }

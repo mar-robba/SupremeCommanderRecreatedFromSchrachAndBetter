@@ -149,6 +149,8 @@ public sealed class MovementBlueprint
     public float Altitude;
     /// <summary>Max terrain slope (rise/run) this unit can climb.</summary>
     public float MaxSlope = 0.75f;
+    /// <summary>Divers (Layer Sub) only: spawn surfaced instead of submerged (Atlantis). See Naval/Submarines.</summary>
+    public bool StartSurfaced;
 }
 
 public sealed class IntelBlueprint
@@ -174,6 +176,9 @@ public sealed class WeaponBlueprint
     public float MuzzleVelocity = 25;
     /// <summary>Ballistic arc (artillery) instead of straight line.</summary>
     public bool Ballistic;
+    /// <summary>Low-arc ballistic weapons (the Mavor): lob the shell on the high arc when terrain blocks the low one
+    /// (<see cref="Combat.LineOfFire.IsArcClear"/>, decided each tick in WeaponSystem).</summary>
+    public bool HighArcWhenBlocked;
     /// <summary>Random spread radius at target, in world units.</summary>
     public float Spread;
     public string[] TargetLayers = ["Land", "Water"];

@@ -20,7 +20,12 @@ public static class CommandSystem
                 case IssueOrderCommand io: ApplyIssueOrder(w, io); break;
                 case StopCommand sc:
                     foreach (var h in sc.Units)
-                        if (Owns(w, c.Army, h)) StopUnit(w, h.Index);
+                    {
+                        if (!Owns(w, c.Army, h)) continue;
+                        StopUnit(w, h.Index);
+                        // Stop also cancels a commander/SCU enhancement in progress (refund, like any new order).
+                        if (w.Units.Upgrade[h.Index].Active && w.BpOf(h.Index).IsEnhanceable) UpgradeSystem.Cancel(w, h.Index);
+                    }
                     break;
                 case FactoryEnqueueCommand fe: FactorySystem.Enqueue(w, fe); break;
                 case FactoryDequeueCommand fd: FactorySystem.Dequeue(w, fd); break;
@@ -32,6 +37,7 @@ public static class CommandSystem
                 case CancelUpgradeCommand cu: UpgradeSystem.Apply(w, cu); break;
                 case SetPausedCommand sp: PauseSystem.Apply(w, sp); break;
                 case SetSubmergedCommand ss: Naval.Submarines.Apply(w, ss); break;
+                case SetFireStateCommand fs: Combat.FireStates.Apply(w, fs); break;
                 case EnhanceCommand en: Commander.EnhancementSystem.Apply(w, en); break;
                 case RemoveEnhancementCommand re: Commander.EnhancementSystem.Apply(w, re); break;
                 case PlayerLeftCommand pl: MultiplayerSystem.Apply(w, pl); break;

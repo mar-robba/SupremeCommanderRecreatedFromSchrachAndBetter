@@ -2,6 +2,7 @@ using Rts.Sim.Combat;
 using Rts.Sim.Commander;
 using Rts.Sim.Data;
 using Rts.Sim.Orders;
+using Rts.Sim.Strategic;
 using Rts.Sim.Systems;
 using Rts.Sim.World;
 
@@ -64,5 +65,65 @@ public class EnhancementPolishTests
         Assert.Equal(2, Veterancy.Level(nbp, w.Units.Kills[i]));
         Assert.Equal(Veterancy.MaxHealth(w, i) * 0.5f, w.Units.Health[i], 1);
         Assert.True(Veterancy.MaxHealth(w, i) > nbp.MaxHealth);
+    }
+    [Fact]
+    public void StopCancelsAnEnhancementWithRefund()
+    {
+        var sim = TestUtil.NewSkirmish();
+        sim.Step();
+        var w = sim.World;
+        var acu = w.Armies[0].Commander;
+        int i = acu.Index;
+        int bp0 = w.Units.Bp[i];
+        StepRich(sim, new EnhanceCommand(0, [acu], "HeavyAntimatterCannon"));
+        for (int k = 0; k < 50; k++) StepRich(sim);
+        Assert.True(w.Units.Upgrade[i].Active);
+        var eco = w.Armies[0].Eco;
+        eco.Mass = 0;
+        sim.Step([new StopCommand(0, [acu])]);
+        Assert.False(w.Units.Upgrade[i].Active, "Stop cancels the enhancement");
+        Assert.Equal(bp0, w.Units.Bp[i]);
+        Assert.True(eco.Mass > 0, "the spent mass is refunded");
+    }
+
+    [Fact]
+    public void ShieldKeepsItsHpThroughAnEnhancementChange()
+    {
+        var sim = TestUtil.NewSkirmish();
+        sim.Step();
+        var w = sim.World;
+        var acu = w.Armies[0].Commander;
+        int i = acu.Index;
+        var s = StrategicState.Of(w);
+        void Install(string id)
+        {
+            var bp = w.BpOf(i);
+            int e = EnhancementCatalog.Find(bp, id);
+            int target = EnhancementCatalog.WithSlot(w.Blueprints, bp, bp.Enhancements[e].Slot, e);
+            w.Units.Upgrade[i] = new UpgradeState { Active = true, TargetBp = target };
+            UpgradeSystem.Complete(w, i);
+        }
+
+        Install("PersonalShield");
+        StepRich(sim);
+        Assert.True(s.Shield[i].Up);
+        float max = w.BpOf(i).Shield!.MaxHealth;
+        s.Shield[i].Hp = max * 0.3f;
+        s.Shield[i].RegenDelay = 100; // no regeneration during the test
+        Install("ZephyrAmplifier"); // other slot: same shield, new blueprint
+        Assert.True(s.Shield[i].Up);
+        Assert.Equal(max * 0.3f, s.Shield[i].Hp, 2);
+
+        Install("ShieldGeneratorField"); // bigger shield: HP kept, not refilled
+        Assert.True(s.Shield[i].Up);
+        Assert.Equal(max * 0.3f, s.Shield[i].Hp, 2);
+
+        // A collapsed shield stays down (recharge time clamped to the new blueprint).
+        s.Shield[i].Up = false;
+        s.Shield[i].Hp = 0;
+        s.Shield[i].RechargeLeft = 5f;
+        Install("AdvancedEngineering");
+        Assert.False(s.Shield[i].Up);
+        Assert.Equal(MathF.Min(5f, w.BpOf(i).Shield!.RechargeTime), s.Shield[i].RechargeLeft, 3);
     }
 }

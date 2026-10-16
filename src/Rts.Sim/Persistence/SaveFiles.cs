@@ -10,23 +10,32 @@ public enum SaveFileKind { Save, Replay }
 /// <summary>
 /// File container shared by saves and replays:
 /// magic (8 bytes) · container version (u16) · header JSON (<see cref="GameInfo"/>, length-prefixed, uncompressed) ·
-/// payload length (u64) · payload hash (u64) · Brotli-compressed payload.
+/// payload length (u64) · payload hash (u64) · Brotli-compressed payload. Files of an older version
+/// (≥ <see cref="MinVersion"/>) are upgraded on load by <see cref="SaveMigrations"/>.
 /// </summary>
 public static class SaveContainer
 {
-    public const ushort Version = 1;
+    /// <summary>Version written by this build (history: <see cref="SaveMigrations.Steps"/>).</summary>
+    public const ushort Version = 2;
+    /// <summary>Oldest version this build still reads (migrated on load).</summary>
+    public const ushort MinVersion = 1;
     private static readonly byte[] SaveMagic = "RTSSAVE\x1A"u8.ToArray();
     private static readonly byte[] ReplayMagic = "RTSREPL\x1A"u8.ToArray();
 
     private static byte[] Magic(SaveFileKind k) => k == SaveFileKind.Save ? SaveMagic : ReplayMagic;
 
-    public static byte[] Encode(SaveFileKind kind, GameInfo info, ReadOnlySpan<byte> payload, CompressionLevel level = CompressionLevel.Fastest)
+    public static byte[] Encode(SaveFileKind kind, GameInfo info, ReadOnlySpan<byte> payload, CompressionLevel level = CompressionLevel.Fastest) =>
+        EncodeRaw(kind, Version, info.ToJson(), payload, level);
+
+    /// <summary>Writes a container with an explicit version and header JSON (tests write older-format files with it).</summary>
+    public static byte[] EncodeRaw(SaveFileKind kind, ushort version, string headerJson, ReadOnlySpan<byte> payload,
+        CompressionLevel level = CompressionLevel.Fastest)
     {
         var ms = new MemoryStream(payload.Length / 8 + 4096);
         ms.Write(Magic(kind));
         var head = new ByteWriter(1024);
-        head.Raw(Version);
-        var json = Encoding.UTF8.GetBytes(info.ToJson());
+        head.Raw(version);
+        var json = Encoding.UTF8.GetBytes(headerJson);
         head.Raw(json.Length);
         head.Bytes(json);
         head.Raw((ulong)payload.Length);
@@ -44,12 +53,12 @@ public static class SaveContainer
         if (f.ReadAtLeast(head, head.Length, throwOnEndOfStream: false) < head.Length) throw new SaveFormatException("Not a save or replay file (too short)");
         kind = KindOf(head);
         var r = new ByteReader(head, 8, 6);
-        CheckVersion(r.Raw<ushort>());
+        ushort version = CheckVersion(r.Raw<ushort>());
         int len = r.Raw<int>();
         if (len < 2 || len > f.Length) throw ByteReader.Corrupt("header length");
         var json = new byte[len];
         f.ReadExactly(json);
-        return GameInfo.FromJson(Encoding.UTF8.GetString(json));
+        return Header(version, json);
     }
 
     public static (GameInfo info, byte[] payload) Decode(byte[] file, SaveFileKind expected)
@@ -58,10 +67,10 @@ public static class SaveContainer
         var kind = KindOf(file);
         if (kind != expected) throw new SaveFormatException(expected == SaveFileKind.Save ? "This is a replay, not a saved game" : "This is a saved game, not a replay");
         var r = new ByteReader(file, 8, file.Length - 8);
-        CheckVersion(r.Raw<ushort>());
+        ushort version = CheckVersion(r.Raw<ushort>());
         int len = r.Raw<int>();
         if (len < 2 || len > r.Remaining) throw ByteReader.Corrupt("header length");
-        var info = GameInfo.FromJson(Encoding.UTF8.GetString(r.Take(len)));
+        var info = Header(version, r.Take(len));
         ulong size = r.Raw<ulong>();
         ulong hash = r.Raw<ulong>();
         if (size > (ulong)Array.MaxLength) throw ByteReader.Corrupt("payload size");
@@ -76,7 +85,14 @@ public static class SaveContainer
             throw new SaveFormatException("Damaged file (compressed data)", e);
         }
         if (Hash64.Of(payload) != hash) throw new SaveFormatException("Damaged file (checksum mismatch)");
-        return (info, payload);
+        return (info, SaveMigrations.MigratePayload(version, payload, kind));
+    }
+
+    private static GameInfo Header(ushort version, ReadOnlySpan<byte> json)
+    {
+        var info = GameInfo.FromJson(SaveMigrations.MigrateHeader(version, Encoding.UTF8.GetString(json)));
+        info.FileVersion = version;
+        return info;
     }
 
     private static SaveFileKind KindOf(ReadOnlySpan<byte> head)
@@ -86,9 +102,11 @@ public static class SaveContainer
         throw new SaveFormatException("Not a save or replay file");
     }
 
-    private static void CheckVersion(ushort v)
+    private static ushort CheckVersion(ushort v)
     {
-        if (v != Version) throw new IncompatibleSaveException($"File format version {v} is not supported by this build (expects {Version})");
+        if (v < MinVersion || v > Version)
+            throw new IncompatibleSaveException($"File format version {v} is not supported by this build (reads {MinVersion}..{Version})");
+        return v;
     }
 }
 

@@ -150,6 +150,7 @@ public sealed class GameSession : IDisposable
     {
         if (!MenuUi.Key(KeyboardKey.Escape)) return false;
         if (_sandbox != null && _sandbox.WantsEscape) return false; // closes the console / cancels the sandbox tool
+        if (_hud.HelpOpen) return false; // Esc closes the F1 help (Hud)
         var s = _selection;
         if (s.Mode != SelectionController.CommandMode.Normal || s.Placement.Active || s.PendingSelfDestruct != null) return false;
         if (s.Selected.Count > 0)

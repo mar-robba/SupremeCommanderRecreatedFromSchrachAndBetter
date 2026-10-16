@@ -2,8 +2,8 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-15 ~11:00 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
+## ▶ NEXT STEPS (updated 2026-10-16 ~11:30 — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish (merged 2026-10-16). Tests: 376 sim + 211 client.
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
 Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
@@ -11,11 +11,13 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- Running (worktrees under `.claude/worktrees/`): (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish
-  `agent-a141a5d33496dd4c3` (3rd agent), (o) lockstep MP `agent-a4a312626d7228fe6`, (k) AI uses everything
-  `agent-ac4c927c54a66ca1d` (2nd agent), (l) Cybran `agent-a9df3acf3524c656f`. History: the weekly limit stopped
-  everything on 2026-10-14 08:14 and the session limit on 2026-10-15 11:21; each time WIP was kept and agents
-  resumed (SendMessage under 200k context, else handoff note + CHECKPOINT + a fresh agent in the same worktree).
+- 2026-10-16 ~11:30: **running** (o) lockstep MP (3rd agent) in `agent-a4a312626d7228fe6` and (m) scale/perf
+  (3rd agent) in `agent-a6794a8836fbb263d`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
+  as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when one of the two finishes
+  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
+  sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed), then (k) AI uses everything
+  `agent-ac4c927c54a66ca1d` (its CHECKPOINT WIP does not compile yet, see its note). History: the weekly limit
+  stopped everything on 2026-10-14 08:14, the session limit on 2026-10-15 11:21 and 15:09.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -31,7 +33,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
   3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
-  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+  4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
   5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
@@ -174,9 +176,8 @@ Shared contracts (still valid):
       shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
       from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
       lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
-      - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
-        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out; nearby own units keep
-        shooting a unit being captured (no hold-fire state yet)
+      - [ ] later: AI uses capture/pause/adjacency/dive; the Fatboy drops units at its back without a drive-out
+        (done in wave 5n: factory exits skip sides with parked units; fire states, captured targets held)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
@@ -191,9 +192,10 @@ Shared contracts (still valid):
       timeline seek, fog per army or all, DESYNC banner), sandbox setups saveable, clear errors for damaged/incompatible
       files; `Rts.Bench replay <file>` / `savebench`. Late game (512 map, 4 AIs, 25 min, 6.6k units): save 1.8 MB,
       capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
-      - [ ] later: saves/replays don't survive sim code changes (no migration: the layout check refuses them);
-            "Load Game" in the pause menu; replay viewer: F7 fog toggle doesn't update the view selector, seek
-            checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
+      - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
+            the replay view selector
+      - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
+            seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
 - [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
       relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),
       faction, team, color, AI level, ready, host map options + live preview, chat, kick; one turn per player per
