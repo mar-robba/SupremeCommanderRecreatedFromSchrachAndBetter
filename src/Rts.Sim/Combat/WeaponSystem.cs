@@ -76,7 +76,7 @@ public static class WeaponSystem
         var pos = u.Pos[i];
         float elev = u.Elevation[i];
         bool engaged = false;
-        bool submerged = Naval.Submarines.IsSubmerged(w, i); // divers (Atlantis): only torpedoes work under water
+        bool submerged = Naval.Submarines.WeaponsUnderwater(w, i); // divers (Atlantis), seabed walkers: only torpedoes + FiresSubmerged
 
         for (int wi = 0; wi < info.Weapons.Length; wi++)
         {
@@ -87,7 +87,7 @@ public static class WeaponSystem
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
             if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
-            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind))
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp))
             {
                 ws.Target = UnitHandle.None; // own slot (parallel-safe); re-acquired after surfacing
                 ws.TurretHeading = DMath.RotateTowards(ws.TurretHeading, u.Heading[i], winfo.TurnRate * dt);
@@ -127,7 +127,7 @@ public static class WeaponSystem
                 continue;
             }
 
-            var muzzle = new Vector3(pos.X, elev + info.MuzzleHeight, pos.Y);
+            var muzzle = new Vector3(pos.X, submerged ? Naval.Submarines.UnderwaterMuzzleY(w, elev + info.MuzzleHeight, winfo.Kind) : elev + info.MuzzleHeight, pos.Y);
             Vector3 aim, launch;
             float flight;
             bool solution = true;

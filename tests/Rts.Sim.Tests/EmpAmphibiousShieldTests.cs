@@ -180,4 +180,98 @@ public class EmpAmphibiousShieldTests
         sim.Step();
         Assert.False(EmpStun.IsStunned(w, b.Index));
     }
+
+    // ------------------------------------------------------------------ seabed walkers
+
+    private static BlueprintDb? _amphDb;
+
+    /// <summary>Private copy: the UEF T2 heavy tank walks on the seabed (Movement.Layer Amphibious, like a Wagner).</summary>
+    private static BlueprintDb AmphDb => _amphDb ??= BuildAmphDb();
+
+    private static BlueprintDb BuildAmphDb()
+    {
+        var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        db["uef_t2_heavy_tank"].Movement.Layer = MotionLayer.Amphibious;
+        return db;
+    }
+
+    /// <summary>128 map, land at height 10, a north-south channel x 40..88 (ramps 16 wide, bottom 2 = 4 deep at
+    /// water level 6).</summary>
+    private static Simulation ChannelWorld(BlueprintDb db)
+    {
+        const int size = 128;
+        var heights = new float[(size + 1) * (size + 1)];
+        for (int z = 0; z <= size; z++)
+        for (int x = 0; x <= size; x++)
+        {
+            float h = x < 40 ? 10 : x < 56 ? 10 - (x - 40) * 0.5f : x <= 72 ? 2 : x < 88 ? 2 + (x - 72) * 0.5f : 10;
+            heights[z * (size + 1) + x] = h;
+        }
+        var terrain = new Map.Terrain(size, size, heights, 6f, [], [new Vector2(20, 20), new Vector2(108, 108)], 1);
+        var armies = new[] { new Army { Index = 0, Team = 0, Name = "A0" }, new Army { Index = 1, Team = 1, Name = "A1" } };
+        return new Simulation(new SimWorld(db, terrain, armies, 1, unitCapacity: 512, projectileCapacity: 4096));
+    }
+
+    [Fact]
+    public void SeabedWalkerCrossesChannelHiddenFromSurfaceGunsAndFiresOnLandOnly()
+    {
+        var sim = ChannelWorld(AmphDb);
+        var w = sim.World;
+        var u = w.Units;
+        var walker = Spawn(sim, "uef_t2_heavy_tank", 0, 25, 64);
+        var frigate = Spawn(sim, "uef_t1_frigate", 1, 64, 80);
+        var target = Spawn(sim, "uef_t1_tank", 1, 110, 64, heading: MathF.PI);
+        Assert.Equal(MotionLayer.Amphibious, w.BpOf(walker.Index).Movement.Layer);
+        sim.Step([new IssueOrderCommand(0, [walker], Order.MoveTo(new Vector2(100, 64)), false)]);
+        int underwaterTicks = 0;
+        bool firedUnderwater = false, targetedUnderwater = false, firedOnLandAfter = false;
+        float minElevation = float.MaxValue;
+        for (int t = 0; t < 900 && u.IsActive(walker); t++)
+        {
+            sim.Step();
+            int i = walker.Index;
+            bool under = OrderSystem.LayerOf(w, i) == LayerMask.Sub;
+            if (under)
+            {
+                underwaterTicks++;
+                minElevation = MathF.Min(minElevation, u.Elevation[i]);
+                Assert.True(Naval.Submarines.IsOnSeabed(w, i));
+                firedUnderwater |= (u.Flags[i] & UnitFlags.Firing) != 0 || !CybranTestWorld.Target(sim, walker).IsNone;
+                for (int wi = 0; wi < w.BpOf(frigate.Index).Weapons.Length; wi++)
+                    targetedUnderwater |= u.IsActive(frigate) && CybranTestWorld.Target(sim, frigate, wi) == walker;
+                targetedUnderwater |= u.IsActive(target) && CybranTestWorld.Target(sim, target) == walker;
+            }
+            else if (u.Pos[i].X > 88 && (u.Flags[i] & UnitFlags.Firing) != 0) firedOnLandAfter = true;
+            if (firedOnLandAfter && u.Pos[i].X > 95) break;
+        }
+        Assert.True(u.IsActive(walker), "the walker survived");
+        Assert.True(underwaterTicks > 30, $"walked under water ({underwaterTicks} ticks)");
+        Assert.True(minElevation < w.Terrain.WaterLevel - 2f, $"on the seabed (elevation {minElevation})");
+        Assert.False(firedUnderwater, "a non-submerged weapon doesn't fire under water");
+        Assert.False(targetedUnderwater, "surface guns can't target a seabed walker");
+        Assert.True(u.Pos[walker.Index].X > 88, "crossed the channel");
+        Assert.True(firedOnLandAfter, "fires again on land");
+    }
+
+    [Fact]
+    public void FiresSubmergedWeaponWorksOnTheSeabed()
+    {
+        var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        db["uef_t2_heavy_tank"].Movement.Layer = MotionLayer.Amphibious;
+        var wb = db["uef_t2_heavy_tank"].Weapons[0];
+        wb.FiresSubmerged = true;
+        var sim = ChannelWorld(db);
+        var w = sim.World;
+        var walker = Spawn(sim, "uef_t2_heavy_tank", 0, 64, 64); // channel bottom
+        var frigate = Spawn(sim, "uef_t1_frigate", 1, 64, 76);
+        sim.Step([new SetFireStateCommand(1, [frigate], FireState.HoldFire)]);
+        Assert.True(Naval.Submarines.IsOnSeabed(w, walker.Index));
+        bool fired = false;
+        for (int t = 0; t < 60 && !fired; t++)
+        {
+            sim.Step();
+            fired = (w.Units.Flags[walker.Index] & UnitFlags.Firing) != 0;
+        }
+        Assert.True(fired, "a FiresSubmerged weapon fires from the seabed");
+    }
 }
