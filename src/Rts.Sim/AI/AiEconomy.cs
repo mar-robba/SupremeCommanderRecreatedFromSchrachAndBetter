@@ -411,7 +411,7 @@ public sealed partial class AiEconomy
         }
     }
 
-    private void GoHome(int unit, float radius)
+    public void GoHome(int unit, float radius)
     {
         ref var info = ref _b.Info(unit);
         var u = W.Units;
@@ -428,7 +428,7 @@ public sealed partial class AiEconomy
         SetTask(unit, AiTask.Return, p, 0, -1);
     }
 
-    private void SetTask(int unit, AiTask task, Vector2 at, float workTime, int deposit, bool queue = false)
+    public void SetTask(int unit, AiTask task, Vector2 at, float workTime, int deposit, bool queue = false)
     {
         ref var info = ref _b.Info(unit);
         var u = W.Units;
@@ -443,7 +443,7 @@ public sealed partial class AiEconomy
     }
 
     /// <summary>Issues a build order (and reserves the site) for a builder.</summary>
-    private void IssueBuild(int unit, int bp, Vector2 site, int deposit, bool queue)
+    public void IssueBuild(int unit, int bp, Vector2 site, int deposit, bool queue)
     {
         var sbp = W.Blueprints[bp];
         float heading = sbp.Has(UnitCategory.Factory) ? DMath.HeadingOf(_b.EnemyDir) : 0f;
@@ -476,6 +476,7 @@ public sealed partial class AiEconomy
             if (WantAirFactory() && TryBuildInBase(unit, _b.BpAirFactory, Perp(_b.EnemyDir), 10, isCommander ? Cfg.CommanderRadius : 42, false)) return true;
             if (_b.Navy.TryBuild(unit, isCommander)) return true;
             if (TryAssistUpgrade(unit, isCommander)) return true;
+            if (TryCapture(unit, isCommander)) return true;
             if (TryDefense(unit, isCommander)) return true;
             if (TryProjects(unit, isCommander)) return true;
             if (_b.Transport.TryBuild(unit, isCommander)) return true;

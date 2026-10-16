@@ -120,6 +120,7 @@ public sealed partial class AiEconomy
         // Factories first when their tier time has come (they unlock units, engineers and T2/T3 structures).
         if (TryUpgradeFactory(V.LandFactories, LandWant(), ref room)) return;
         if (TryUpgradeFactory(V.AirFactories, AirWant(), ref room)) return;
+        if (TryUpgradeFactory(V.NavalFactories, AirWant(), ref room)) return;
         TryUpgradeMex(ref room);
     }
 
@@ -486,6 +487,46 @@ public sealed partial class AiEconomy
             if (!_b.Placement.FindAdjacentSite(pg, f, _b.EnemyDir, out var site)) continue;
             IssueBuild(unit, pg, site, -1, false);
             return true;
+        }
+        return false;
+    }
+
+    /// <summary>Engineers capture undefended enemy structures (seen, complete) near the base: cheap value.</summary>
+    private bool TryCapture(int unit, bool isCommander)
+    {
+        if (isCommander || MassStall || EnergyStall || EnergyRatio < 0.3f || V.EnemyStructures.Count == 0) return false;
+        var u = W.Units;
+        var pos = u.Pos[unit];
+        int best = -1;
+        float bd = 45f * 45f;
+        foreach (int s in V.EnemyStructures)
+        {
+            var p = u.Pos[s];
+            float d = Vector2.DistanceSquared(p, pos);
+            if (d >= bd || Vector2.DistanceSquared(p, _b.BasePos) > 70f * 70f) continue;
+            if (!u.IsComplete(s) || !_b.Perception.IsIdentified(s)) continue;
+            var bp = W.BpOf(s);
+            if (bp.HasAny(UnitCategory.Commander | UnitCategory.Wall) || bp.Economy.BuildCostMass < 30f) continue;
+            if (V.ThreatAt(p, 26f) > 0) continue;
+            if (Capturing(s, unit)) continue;
+            best = s;
+            bd = d;
+        }
+        if (best < 0) return false;
+        _b.Cmd.Order(unit, Order.CaptureUnit(u.HandleOf(best)));
+        SetTask(unit, AiTask.Build, u.Pos[best], W.BpOf(best).Economy.BuildTime / MathF.Max(1f, W.BpOf(unit).Economy.BuildRate), -1);
+        _b.Stats.Captures++;
+        return true;
+    }
+
+    private bool Capturing(int target, int self)
+    {
+        var u = W.Units;
+        foreach (int e in V.Engineers)
+        {
+            if (e == self) continue;
+            var q = u.Orders[e];
+            if (!q.IsEmpty && q.Current.Type == OrderType.Capture && q.Current.Target.Index == target) return true;
         }
         return false;
     }
