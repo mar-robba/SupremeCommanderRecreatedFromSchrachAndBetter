@@ -24,6 +24,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-15 | The owner clarified that they *can* install and uninstall software on this machine (the earlier "not technical" was not accurate). System packages and toolchains still need the owner's OK first: the orchestrator asks, and the owner installs. The owner asked whether Rust would have been a better choice than .NET for efficiency; the orchestrator's answer (stay on .NET: the sim uses ~4 % of its tick budget, the bottleneck is the GPU, a rewrite of ~53k lines would add no features; cross-machine float determinism is a risk in both languages and is handled in C#, see agent (o)). The owner read it and agreed to remove the question note from ARCHITECTURE.md. |
 | 2026-10-15 | Track how many tokens go to each purpose, for this project only: the token ledger in [tokens/](tokens/README.org) is filled by project hooks; agents get a `[purpose]` tag in their description; sessions are tagged with `ledger.py tag`. |
 | 2026-10-16 | Context cap lowered: **150k tokens per agent and sub-agent** (CHECKPOINT at ~130k). Every agent and sub-agent, when it finishes or stops, saves only the essentials of its work (done + commits, what is left, decisions/pitfalls) in a short note in its worktree (`.claude/handoff.md`, sub-agents `.claude/notes/<piece>.md`), so the work continues after a restart of the orchestrator. |
+| 2026-10-16 | The 150k cap is the **default, not a fixed size**: before starting an agent or sub-agent, judge from the task's requirements how much splitting it across fresh agents would hurt the *result* (not the token cost); when it would hurt a lot, give that agent a proportionally higher cap (up to 300k). Keep evaluating how much the small-context approach harms the success of the work. See "Sizing an agent's context cap" and "Fragmentation: does a small cap hurt the result?". |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -92,7 +93,8 @@ To keep conflicts small:
 
 ## Context limits and handoffs
 
-- **Hard cap: 150k tokens of context per agent and sub-agent** (owner, 2026-10-16; it was 300k). Every prompt says it. At about 130k the agent commits, updates its
+- **Cap: 150k tokens of context per agent and sub-agent by default** (owner, 2026-10-16; it was 300k), raised per task
+  when splitting would hurt the result (next section). Every prompt states the agent's cap. About 20k below it the agent commits, updates its
   handoff note and ends its turn with the word `CHECKPOINT`. The orchestrator then starts a **fresh agent in the
   same worktree**: absolute path in the prompt, no isolation flag, the original task plus "continue from the
   handoff note".
@@ -110,13 +112,55 @@ To keep conflicts small:
 - **Measuring context**: `python3 -I tools/agents/agent_ctx.py <agentId>...` prints each agent's exact context,
   taken from the API usage fields of its transcript. It never reads the transcript text. File size is useless,
   because screenshots inflate it. Background alert:
-  `python3 -I tools/agents/agent_ctx.py --watch 135000 [ignored ids]`. It covers every agent and sub-agent active
+  `python3 -I tools/agents/agent_ctx.py --watch 135000 [id=tokens ...] [ignored ids]` (`id=tokens`: own threshold of an agent with a raised cap). It covers every agent and sub-agent active
   in the last 5 minutes, and exits with a message when one passes the threshold.
 - The orchestrator's own context: the owner restarts it at about 200k. Keep it lean:
   - delegate conflict-heavy merges;
   - don't read big files or many screenshots;
   - pipe long outputs through `tail`/`grep`;
   - keep ROADMAP "NEXT STEPS" current, so a restart costs nothing.
+
+## Sizing an agent's context cap
+
+Owner rule (2026-10-16): the cap follows the task. Before writing an agent or sub-agent prompt, the parent judges
+its **fragmentation sensitivity**: how much the task's success depends on reasoning that a short handoff note
+cannot carry to a fresh agent.
+
+| Class | Cap (CHECKPOINT) | Typical tasks |
+|---|---|---|
+| low | 150k (130k) | Separable pieces with a written contract: data files, one model/test/doc file per piece, a well-specified feature in 1-3 files. The note carries everything. |
+| medium | 200k (180k) | One feature across several files or modules whose design choices must stay consistent; integrating other agents' pieces; a merge with a few conflicts. |
+| high | 250k (230k) | The result rests on a chain of evidence built during the work: diagnosing a non-obvious bug, AI/balance tuning that compares many runs, a performance investigation, a cross-cutting refactor, a conflict-heavy merge. |
+| critical | 300k (280k), the maximum | Searches where a restart means starting the search again: desync/determinism hunts. Above 300k quality drops (owner, 2026-10-12). |
+
+Proportional check: estimate **S**, the start-up reading (system prompt ≈ 35k + the files and sections the agent
+must read, bytes / 4), and **W**, what it must hold at once (the code it edits, the logs or run outputs it
+compares). If S + W + 40k exceeds the class cap, take the next class. If S alone is over ~60k, first trim the
+reading list: that is a prompt problem, not a cap problem (both "dead" attempts of 2026-10-16 below).
+- The parent writes in the prompt: `Fragmentation sensitivity: <class>, because <reason>. Your cap: <cap>k,
+  CHECKPOINT at <cap-20>k.` and the same line in its handoff note.
+- A raised cap belongs to the piece that needs it: when the diagnosis is done and the rest is routine, the next
+  agent gets its own class again.
+- The orchestrator gives the context watcher the raised threshold: `agent_ctx.py --watch 135000 <id>=<cap-15k>`.
+- Bigger contexts cost more per call (see "Usage limits"); the owner accepts that when the result needs it.
+
+## Fragmentation: does a small cap hurt the result?
+
+Owner request (2026-10-16): keep evaluating how much many small contexts harm the *success* of the work.
+- **Countable symptoms**: `python3 -I tools/agents/handoffs.py [--since DATE] [--agents]` gives per purpose the
+  attempts, the CHECKPOINT hand-overs and the **dead** attempts (stopped at the cap having worked only in its last
+  15 %: read until the cap, handed over nearly nothing).
+- **The result itself**: every agent that continued from a handoff adds a "Handoff review" to its report: what
+  the note lacked, what it had to rediscover, what it redid or re-tried that its predecessor had already done or
+  ruled out, what it found broken at the seam. At each merge the orchestrator copies it into HISTORY and adds a row
+  below.
+- About every two waves the orchestrator reads the table: classes whose pieces show major harm get a bigger cap
+  (or that kind of task moves up a class); classes that never show harm stay at 150k.
+
+| Date | Piece | Class (cap used) | Attempts / dead | Harm to the result |
+|---|---|---|---|---|
+| 2026-10-16 | (k) AI stall diagnosis | high (150k at the time) | k3 202k (old cap), k4 135k, k5 / navy sub-agent dead at 164k | medium: k4 found the cause (T2/T3 play itself: half the land army, 42 pgens vs 15, unspent mass) but stopped at the cap before any fix, so a third agent re-reads the evidence. Navy: read until the cap, no code. k5 raised to 250k. |
+| 2026-10-16 | (l) client models | low (150k) | C dead at 152k, C1 started at 70k | none on the result so far; the dead attempt came from a too-wide reading list (fixed in AGENT_RULES), not from the cap. |
 
 ## Usage limits
 
@@ -160,7 +204,7 @@ An agent may start sub-agents (general-purpose) for well-separated pieces, e.g. 
 - they work in the parent's worktree (absolute path, no isolation flag), on disjoint files;
 - only one `dotnet build`/`dotnet test` runs at a time per worktree: use `tools/agents/dn.sh` (see DEV_GUIDE);
 - they commit only their own files: `git add <files> && git commit -m "..." -- <files>`;
-- same 150k cap; short reports; before finishing or stopping, the essentials go to `.claude/notes/<piece>.md`.
+- a cap sized like any agent's ("Sizing an agent's context cap", default 150k); short reports; before finishing or stopping, the essentials go to `.claude/notes/<piece>.md`.
 
 Sub-agents cannot write outside their worktree, e.g. the orchestrator's private folder. That's why reports go to
 `<worktree>/.claude/agent-report.md`.
