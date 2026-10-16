@@ -8,7 +8,7 @@ Things learned while building the project that are not about how a system works 
 
 - **Only one `dotnet build`/`dotnet test` at a time per worktree.** Two builds in the same folder corrupt each
   other's `obj/` output. When several agents share a worktree, everyone runs dotnet through the lock wrapper:
-  `tools/agents/dn.sh build Rts.slnx`, `tools/agents/dn.sh test tests/Rts.Sim.Tests --filter "..."`.
+  `bash tools/agents/dn.sh build Rts.slnx`, `bash tools/agents/dn.sh test tests/Rts.Sim.Tests --filter "..."` (always through `bash`: in worktrees the file may not be executable).
   Run it from inside the worktree; the lock is `<worktree>/.claude/build.lock`.
 - **Why the wrapper uses `flock -o` and turns MSBuild node reuse off:** with a plain `flock`, the reused MSBuild
   nodes and the compiler server inherited the lock's file descriptor and kept the lock held forever after the build
@@ -68,7 +68,12 @@ Things learned while building the project that are not about how a system works 
 - **Weapon arcs**: the `IndirectFire`/`Artillery` categories give a weapon a high arc, with 25–40 s flights at long
   range. A long-range direct gun (the Mavor) must not have them.
 - **Carried units are alive but not on the map**: `IsActive` is true, but they are not in the AliveList. Orders or
-  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo").
+  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo"). A unit that boards after
+  the AliveList rebuild (e.g. an aircraft finished inside a dived Atlantis, in FactorySystem) stays in this tick's
+  AliveList and grid: TargetingSystem skips `UnitFlags.Carried` shooters and targets for that reason.
+- **Fresh spawn vs blueprint swap in `InitUnit`**: `UnitStore.Allocate` zeroes the module structs, so a field that
+  `InitUnit` always sets to non-zero (`MoveState.OrbitDir`) tells a new unit from a re-init (MovementSystem uses it
+  to keep a dived sub down).
 - **Saveable state** (CLAUDE.md rule 9): static scratch lists and cached delegates get `[NoSave]` and are rebuilt
   lazily (`??=`). An unsupported framework type in sim state makes the serializer throw with a hint;
   `SaveCoverageTests` catches it first.
@@ -127,3 +132,4 @@ integrated GPU.
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert (WORKFLOW "Context limits and handoffs"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
+| `tools/token-ledger/` | Token ledger: tokens per session/agent and purpose, kept up to date by project hooks ([tokens/README.org](tokens/README.org)); `windows.py`: tokens used in each usage-limit window ([WORKFLOW.md](WORKFLOW.md) "Usage limits"). |

@@ -1,0 +1,87 @@
+#+TITLE: Registro dei token
+#+LANGUAGE: it
+#+STARTUP: showall
+
+Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
+Dati fino al 2026-10-16 08:48 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+
+* Totale
+838,7 milioni di token, 433,5 $, 14 sessioni e 83 agenti.
+Output: 18 righe esatte, 0 calibrate sul contatore di Claude Code, 105 stimate (testo visibile / 4 × 2,58).
+
+* Per area
+| Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
+|------------------------+--------+-----------+------------+-------+---------+-----------------|
+| Gameplay SupCom        | 42     | 385,9     | 2.081      | 198,7 | 45,8    | 2026-10-15      |
+| Esperienza client      | 19     | 177,1     | 991        | 80,0  | 18,4    | 2026-10-16      |
+| Avversario IA          | 9      | 103,4     | 446        | 46,1  | 10,6    | 2026-10-15      |
+| Coordinamento          | 0      | 66,8      | 374        | 44,9  | 10,4    | 2026-10-16      |
+| Infrastruttura tecnica | 13     | 74,8      | 639        | 44,2  | 10,2    | 2026-10-16      |
+| Documentazione         | 0      | 30,8      | 270        | 19,6  | 4,5     | 2026-10-15      |
+
+* Per scopo
+| Scopo                                 | Agenti | Token (M) | Output (k) | $    | % costo | Ultima attività |
+|---------------------------------------+--------+-----------+------------+------+---------+-----------------|
+| Orchestrazione (sessioni principali)  | 0      | 64,3      | 345        | 43,1 | 9,9     | 2026-10-15      |
+| Rifinitura SupCom (4f)                | 9      | 79,5      | 411        | 41,5 | 9,6     | 2026-10-14      |
+| IA schermaglie (onde 2-4)             | 7      | 90,5      | 394        | 39,9 | 9,2     | 2026-10-14      |
+| Navale (3c)                           | 4      | 61,0      | 232        | 31,6 | 7,3     | 2026-10-12      |
+| Mappe, menu, flusso (onda 2)          | 3      | 64,8      | 234        | 24,6 | 5,7     | 2026-10-11      |
+| Armi strategiche (3b)                 | 6      | 45,7      | 258        | 22,3 | 5,2     | 2026-10-12      |
+| Sperimentali e comandanti (4g)        | 5      | 38,4      | 235        | 22,1 | 5,1     | 2026-10-13      |
+| Trasporti (4h)                        | 4      | 37,9      | 228        | 20,2 | 4,7     | 2026-10-14      |
+| Salvataggi e replay (4i)              | 3      | 30,9      | 213        | 16,9 | 3,9     | 2026-10-14      |
+| UX (5n)                               | 7      | 30,9      | 175        | 14,6 | 3,4     | 2026-10-16      |
+| Sandbox (3e)                          | 5      | 28,1      | 214        | 14,5 | 3,3     | 2026-10-12      |
+| Scala e prestazioni (5m)              | 5      | 26,0      | 142        | 13,4 | 3,1     | 2026-10-15      |
+| Nebbia di guerra e intel (onda 2)     | 2      | 30,9      | 136        | 12,7 | 2,9     | 2026-10-11      |
+| Documentazione                        | 0      | 15,2      | 156        | 11,4 | 2,6     | 2026-10-15      |
+| Fazione Cybran (5l)                   | 5      | 22,5      | 107        | 11,1 | 2,6     | 2026-10-15      |
+| Tecnologia T2/T3 (3a)                 | 2      | 22,2      | 122        | 10,5 | 2,4     | 2026-10-12      |
+| Grafica client (onda 1)               | 1      | 20,7      | 163        | 9,9  | 2,3     | 2026-10-10      |
+| Audio e rifinitura (onda 2)           | 2      | 20,6      | 108        | 9,8  | 2,3     | 2026-10-11      |
+| Pathfinding e movimento (onda 1)      | 1      | 18,1      | 129        | 8,9  | 2,0     | 2026-10-10      |
+| Multigiocatore lockstep (5o)          | 5      | 14,0      | 128        | 8,9  | 2,0     | 2026-10-16      |
+| Documentazione e analisi costi        | 0      | 15,6      | 114        | 8,2  | 1,9     | 2026-10-15      |
+| Combattimento (onda 1)                | 1      | 11,9      | 67         | 7,3  | 1,7     | 2026-10-10      |
+| UI e HUD (onda 1)                     | 1      | 12,0      | 98         | 6,6  | 1,5     | 2026-10-10      |
+| IA usa tutto (5k)                     | 2      | 12,9      | 52         | 6,2  | 1,4     | 2026-10-15      |
+| Economia e costruzione (onda 1)       | 1      | 6,7       | 78         | 5,5  | 1,3     | 2026-10-10      |
+| Fondazione (sessione principale)      | 0      | 3,9       | 156        | 5,1  | 1,2     | 2026-10-10      |
+| Infrastruttura fazioni (j)            | 2      | 11,0      | 79         | 5,1  | 1,2     | 2026-10-14      |
+| Orchestrazione wave 5 (ripresa 16/10) | 0      | 2,5       | 29         | 1,8  | 0,4     | 2026-10-16      |
+
+* Per giorno
+| Giorno     | Token (M) | $     | Agenti |
+|------------+-----------+-------+--------|
+| 2026-10-10 | 89,8      | 52,2  | 9      |
+| 2026-10-11 | 192,0     | 83,9  | 9      |
+| 2026-10-12 | 204,4     | 105,5 | 29     |
+| 2026-10-13 | 142,4     | 82,5  | 20     |
+| 2026-10-14 | 91,7      | 45,9  | 14     |
+| 2026-10-15 | 115,4     | 61,2  | 18     |
+| 2026-10-16 | 3,0       | 2,4   | 2      |
+
+* Ultime attività
+| Fine (UTC)       | Tipo     | Scopo                                 | Descrizione                                        | Token (M) | $    | Output  |
+|------------------+----------+---------------------------------------+----------------------------------------------------+-----------+------+---------|
+| 2026-10-16 08:48 | sessione | Orchestrazione wave 5 (ripresa 16/10) | continua                                           | 2,5       | 1.84 | esatto  |
+| 2026-10-16 08:47 | ripresa  | Multigiocatore lockstep (5o)          | [Multigiocatore lockstep (5o)] Wave 5 (o) lockstep | 0,2       | 0.27 | stimato |
+| 2026-10-16 08:47 | agente   | UX (5n)                               | [UX (5n)] Wave 5 (n) UX polish, part 4             | 0,2       | 0.27 | stimato |
+| 2026-10-15 20:52 | sessione | Documentazione e analisi costi        | cambia lestensione di lezioni in org e traducilo i | 15,3      | 7.81 | esatto  |
+| 2026-10-15 20:50 | sessione | Documentazione e analisi costi        | dimmi cosa è la chache di cui parli nei costi del  | 0,3       | 0.35 | esatto  |
+| 2026-10-15 20:18 | sessione | Documentazione                        | traduci in italiano il file lezioni                | 0,1       | 0.25 | esatto  |
+| 2026-10-15 20:14 | sessione | Documentazione                        | /home/marco/.claude/projects/-run-media-marco-Volu | 1,5       | 1.35 | esatto  |
+| 2026-10-15 19:58 | sessione | Documentazione                        | metti in un file .md nella docs le soluzioni in mo | 1,8       | 1.61 | esatto  |
+| 2026-10-15 13:10 | ripresa  | IA usa tutto (5k)                     | Wave 5 (k) AI uses everything, part 2              | 2,6       | 1.16 | stimato |
+| 2026-10-15 13:10 | agente   | Multigiocatore lockstep (5o)          | MP client lobby UI                                 | 3,6       | 1.75 | stimato |
+| 2026-10-15 13:09 | agente   | Fazione Cybran (5l)                   | C Cybran client models and scene                   | 3,5       | 2.03 | stimato |
+| 2026-10-15 13:09 | ripresa  | UX (5n)                               | Wave 5 (n) UX polish, part 3                       | 2,4       | 1.17 | stimato |
+| 2026-10-15 13:09 | agente   | Fazione Cybran (5l)                   | A1 stealth/cloak sim feature                       | 4,1       | 2.02 | stimato |
+| 2026-10-15 13:09 | agente   | Scala e prestazioni (5m)              | Sim perf sub-agent (m-A)                           | 5,7       | 2.87 | stimato |
+| 2026-10-15 13:09 | agente   | Scala e prestazioni (5m)              | Maps 8 players sub-agent (m-C)                     | 5,7       | 2.88 | stimato |
+| 2026-10-15 13:09 | agente   | Fazione Cybran (5l)                   | B Cybran blueprints and faction file               | 3,6       | 1.48 | stimato |
+| 2026-10-15 13:09 | agente   | Fazione Cybran (5l)                   | A2 EMP/seabed/shield chain sim                     | 4,9       | 1.97 | stimato |
+| 2026-10-15 13:09 | agente   | UX (5n)                               | Sim fixes for agent n                              | 1,1       | 0.64 | stimato |
+| 2026-10-15 13:07 | agente   | Scala e prestazioni (5m)              | Client perf sub-agent (m-B)                        | 5,5       | 2.67 | stimato |
+| 2026-10-15 13:06 | ripresa  | Multigiocatore lockstep (5o)          | Wave 5 (o) lockstep MP resume                      | 7,1       | 4.71 | stimato |

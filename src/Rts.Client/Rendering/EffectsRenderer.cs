@@ -249,9 +249,9 @@ public sealed partial class EffectsRenderer : IDisposable
     private void HandleDebugKeys()
     {
         if (!DebugKeysEnabled) return;
-        if (Raylib.IsKeyPressed(KeyboardKey.F9)) FakeBattle = !FakeBattle;
+        if (Raylib.IsKeyPressed(Input.Hotkeys.DebugFakeBattle.Key)) FakeBattle = !FakeBattle;
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
-        if (Raylib.IsKeyPressed(KeyboardKey.F10) && _ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
+        if (Raylib.IsKeyPressed(Input.Hotkeys.DebugExplosion.Key) && _ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
             Spawn(new EffectEvent { Kind = shift ? EffectKind.Nuke : EffectKind.UnitDeath, Pos = g, Size = shift ? 40f : 4f, Army = 0, BlueprintIndex = -1 });
     }
 

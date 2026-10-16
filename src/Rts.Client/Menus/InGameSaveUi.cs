@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Input;
 using Rts.Client.Persistence;
 using Rts.Client.Sandbox;
 using Rts.Client.UI;
@@ -33,8 +34,8 @@ public sealed class InGameSaveUi
     public void HandleHotkeys(int frame)
     {
         if (_opt.SaveAt == frame) QuickSave();
-        if (MenuUi.Key(KeyboardKey.F5)) QuickSave();
-        if (MenuUi.Key(KeyboardKey.F6)) QuickLoad();
+        if (MenuUi.Key(Hotkeys.QuickSave.Key)) QuickSave();
+        if (MenuUi.Key(Hotkeys.QuickLoad.Key)) QuickLoad();
     }
 
     public void QuickSave() => Save(SaveStore.QuickSaveName);

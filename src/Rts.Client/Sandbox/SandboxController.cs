@@ -47,6 +47,13 @@ public sealed class SandboxController : IDisposable
     /// <summary>Blast rings of the real strategic missile (from the silo blueprint), for the nuke tool preview.</summary>
     private (float Inner, float Outer)? _missileRings;
 
+    /// <summary>Faction of the local army (its nuke silo gives the sandbox nuke rings).</summary>
+    private string? LocalFaction()
+    {
+        var armies = Ctx.Snapshots.Current.Armies;
+        return (uint)Ctx.LocalArmy < (uint)armies.Length ? armies[Ctx.LocalArmy].Faction : null;
+    }
+
     private readonly Queue<string> _script = new();
     private int _wait;
     private bool _cameraLocked, _cameraWasEnabled;
@@ -109,8 +116,8 @@ public sealed class SandboxController : IDisposable
         Ui.BeginFrame();
 
         bool searchFocused = Panel.SearchFocused;
-        if (Raylib.IsKeyPressed(KeyboardKey.F9)) TogglePanel();
-        if (Raylib.IsKeyPressed(KeyboardKey.F10) || (!searchFocused && Raylib.IsKeyPressed(KeyboardKey.Grave))) ToggleConsole();
+        if (Raylib.IsKeyPressed(Hotkeys.SandboxPanel.Key)) TogglePanel();
+        if (Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[0]) || (!searchFocused && Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[1]))) ToggleConsole();
         if (Raylib.IsKeyPressed(KeyboardKey.Escape))
         {
             if (ConsoleUi.Focused) ConsoleUi.Hide();
@@ -493,7 +500,7 @@ public sealed class SandboxController : IDisposable
             }
             case SandboxTool.Nuke:
             {
-                _missileRings ??= StrategicApi.NukeRings(Ctx.Db);
+                _missileRings ??= StrategicApi.NukeRings(Ctx.Db, StrategicApi.NukeSiloOf(Ctx.Db, LocalFaction()));
                 var (inner, outer) = _toolInstant || _missileRings.Value.Outer <= 0
                     ? (SandboxSystem.NukeInnerRadius, SandboxSystem.NukeOuterRadius) : _missileRings.Value;
                 GroundCircle(p, inner, new Color(255, 70, 40, 230));

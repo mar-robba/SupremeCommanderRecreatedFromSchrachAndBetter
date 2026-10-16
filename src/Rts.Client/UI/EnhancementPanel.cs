@@ -301,7 +301,7 @@ public sealed class EnhancementPanel
         {
             case State.Building:
                 lines.Add(new TipLine($"Enhancing… {frac * 100:0}%", EnhanceColor, 12, true));
-                lines.Add(new TipLine("Right-click: cancel (refunds what was spent)", Ui.TextFaint, 11));
+                lines.Add(new TipLine($"Right-click or Stop [{Hotkeys.Stop.Label}]: cancel (refunds what was spent)", Ui.TextFaint, 11));
                 break;
             case State.Available:
                 lines.Add(new TipLine(_units.Count > 1 ? $"Click: install on {nCan} of {_units.Count} units" : "Click: install (the unit stops and builds it on itself)", Ui.Good, 12, true));
@@ -365,7 +365,7 @@ public sealed class EnhancementPanel
                 _ctx.Runner.Enqueue(new CancelUpgradeCommand(_ctx.LocalArmy, _enhancing.ToArray()));
                 UiSounds.Confirm();
             }
-            if (st.Hover) Ui.Tooltip(cr, "Cancel enhancement", "Stops building the enhancement and refunds what was spent on it.");
+            if (st.Hover) Ui.Tooltip(cr, $"Cancel enhancement  [{Hotkeys.Stop.Label}]", "Stops building the enhancement and refunds what was spent on it.\nStop (or any new order) cancels it too.");
             return;
         }
         Ui.Text("Click: install", r.X, r.Y, sfs, Ui.TextDim);

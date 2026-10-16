@@ -51,6 +51,52 @@ interpolates prev/cur by time
 - New per-unit state: add a field to the module struct in `World/Components.cs` and initialize it in your
   system's `InitUnit` (called from `UnitLifecycle.OnSpawn`).
 
+## Factions (`Rts.Sim/Data/FactionDb.cs`, `data/factions/*.json`) — contract for faction/AI agents
+- A faction = `data/factions/<id>.json`: `Id` (lowercase, = file name = the blueprint id prefix of its units, e.g.
+  `cybran` → `cybran_t1_tank`), `Name`, `Commander` (blueprint id of the starting commander), `Color` ("#RRGGBB" UI
+  accent), `Description`, `Roles` {role → blueprint id}. Loaded with the blueprints into `BlueprintDb.Factions`
+  (`FactionDb`: file order = ordinal id order, ids case-insensitive, immutable, readable from any thread). Loading
+  throws `InvalidDataException` for an unknown role name, a role/commander pointing to a missing blueprint, a bad
+  color, duplicate ids or the reserved id `random`. `uef.json` is the reference file.
+- `UnitBlueprint.Faction` = JSON `"Faction"`, else the id prefix before the first `_` (`BlueprintDb.FactionOfId`).
+- `SkirmishSettings.Factions[army]` (null/"" = `uef`, `random` = `FactionDb.Resolve(choice, seed, army)`, the same on
+  every machine; unknown id → `InvalidOperationException`) → `Army.Faction` (saved with the game, so loads and replays
+  keep it) → the army starts with its faction's `Commander`. Exposed as `ArmyView.Faction` (snapshot) and
+  `PlayerInfo.Faction` (save/replay header).
+- **Rule: sim/AI code never hard-codes unit ids** (`"uef_..."`): it asks a role of the army's faction:
+  `w.Blueprints.Factions.RoleBlueprint(w.Armies[a].Faction, FactionRoles.TankT1)` → blueprint index, -1 = none
+  (`FactionBlueprint.Role(role)` on a resolved faction). `grep -rn '"uef_' src/Rts.Sim` must only find doc comments.
+  Tests, client visual scenes (`--scene ...`) and data files may use ids. Example: `AiBrain` resolves its `Bp*` fields
+  from roles once per brain; `StrategicApi.NukeSiloOf(w, army)` = the faction's `nuke_silo` (else the first faction
+  that has one).
+- Roles are `FactionRoles` constants. **Required** roles must be filled by every shipped faction (AI/sim code may rely
+  on them); **Optional** roles (`FactionRoles.Optional`) are faction-specific units, code using them must handle -1.
+  Tests (`FactionTests`): `EveryFactionFillsEveryRequiredRole`, `EveryFactionBlueprintHasARole` (every non-variant
+  blueprint of a faction is its commander or some role, so the AI can find it), `RoleListsAreConsistent`.
+  - Required: engineer_t1, engineer_t2, engineer_t3, scu, scout_t1, tank_t1, artillery_t1, mobile_aa_t1,
+    amphibious_t2, heavy_tank_t2, mml_t2, mobile_aa_t2, assault_t3, artillery_t3, air_scout_t1, interceptor_t1,
+    bomber_t1, transport_t1, gunship_t2, torpedo_bomber_t2, transport_t2, air_staging, air_superiority_t3,
+    spy_plane_t3, strat_bomber_t3, frigate_t1, sub_t1, destroyer_t2, cruiser_t2, battleship_t3, land_factory_t1,
+    land_factory_t2, land_factory_t3, air_factory_t1, air_factory_t2, air_factory_t3, naval_factory_t1,
+    naval_factory_t2, naval_factory_t3, quantum_gateway, mex_t1, mex_t2, mex_t3, pgen_t1, pgen_t2, pgen_t3, hydro,
+    mass_fab_t2, mass_fab_t3, mass_storage, energy_storage, pd_t1, pd_t2, aa_t1, aa_t2, aa_t3, torpedo_t1, shield_t2,
+    tml, tmd, artillery_installation_t2, artillery_installation_t3, nuke_silo, anti_nuke, radar_t1, radar_t2, omni_t3,
+    sonar_t1, sonar_t2, exp_land.
+  - Optional: mobile_shield_t2, mobile_stealth_t2, siege_t3, sniper_t3, fighter_bomber_t2, gunship_t3, carrier_t3,
+    pd_t3, torpedo_t2, shield_t3, stealth_field_t2, exp_land_2, exp_air, exp_naval, exp_artillery.
+- **New faction** (e.g. Cybran): add `data/factions/cybran.json` + `cybran_*` blueprints in `data/blueprints/units`
+  (build lists via `Builds`/`BuiltBy` inside the faction); fill every required role and the optional ones it has; a
+  unit that fits no role gets a new (optional) role. Nothing else: the client lists it automatically (setup FACTION
+  column, sandbox FACTION filter, `--faction cybran`), the AI plays it through roles.
+- **AI agents** ask roles, never ids; prefer required roles, fall back when an optional role is -1 (e.g. no mobile
+  shield → skip it, no `exp_air` → build `exp_land`).
+- **New role**: a constant in `FactionRoles` + an entry in `FactionRoles.All` (+ `Optional` if not every faction has
+  one) + the role in every `data/factions/*.json` + the lists above. Role names are lowercase `<kind>_t<tier>`.
+- Client: setup screen FACTION column per slot (`GameConfig.FactionChoices` = every faction, then Random; unknown ids
+  block the start via `GameConfig.Problem(factions)`), `--faction ID` (local player) / `--factions a,b,...` (slots in
+  order), sandbox spawn panel FACTION filter (`SandboxPanel.MatchesFaction`), slot factions kept in `ClientGameData`
+  and rebuilt from save headers.
+
 ## Economy model (SupCom flow economy) — `Rts.Sim/Economy/`
 - **Production/upkeep** come from blueprints: complete, non-`Paused` units produce `ProductionMass/Energy` and pay
   `MaintenanceEnergy`. Units with upkeep (mass extractors) have their production scaled by energy efficiency.
@@ -72,7 +118,8 @@ interpolates prev/cur by time
   gets a copy of the factory's order queue (rally) or a short move. Repeat re-appends; Dequeue of the item in progress
   cancels it with a refund; factory death kills the unfinished unit.
   **Drive-out** (`FactoryExitMotion`): a finished surface unit starts at the factory center and, while
-  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side)
+  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side; a side with a parked unit
+  — no move goal — on its exit lane is used only if every open side has one)
   across the factory's own blocked footprint; then it repaths to its rally. Aircraft take off from the pad (spawned
   at ground height, they climb). Mobile factories (Fatboy) drop units straight at their back (no drive-out, no rally).
 - **Adjacency** (`AdjacencyRules` values, `AdjacencySystem`, sequential, right before EconomySystem): writes
@@ -156,7 +203,12 @@ interpolates prev/cur by time
   terrain/water surface (same grazing tolerance as projectiles), shells need an arc solution (`Ballistics.SolveArc`,
   as `WeaponSystem` uses). Homing/missiles, bombs, flak, torpedoes and silo weapons are not restricted; forced
   targets (Attack orders, TML/nukes, attack-ground) skip the check. Effect: units below a cliff no longer stop
-  on attack-move to shoot into the rock; they walk up the ramp.
+  on attack-move to shoot into the rock; they walk up the ramp. `WeaponBlueprint.HighArcWhenBlocked` (Mavor): when
+  `LineOfFire.IsArcClear` finds terrain on the low arc, `WeaponSystem` lobs the shell on the high arc instead.
+- **Fire states** (`Combat/FireStates.cs`, `SetFireStateCommand`, `UnitStore.FireStates`, snapshot `UnitView.FireState`):
+  Fire at will (default) / Return fire (acquires targets only while hit in the last 5 s) / Hold fire (never acquires;
+  Attack orders and attack-ground still fire). `TargetingSystem` reads it; a unit being captured by an army (or an
+  ally) is never auto-acquired by that army's units.
 
 ## Shields & strategic weapons (`Rts.Sim/Strategic`)
 - `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
@@ -217,11 +269,12 @@ interpolates prev/cur by time
   `BuildListFrom`, Shield, Silo). `EnhancementCatalog` (at `BlueprintDb.FinalizeDb`) generates one blueprint VARIANT per slot
   combination (id `base+Enh1+Enh2`, JSON clone + effects, prerequisite effects stack; `IsVariant`, `Installed`,
   `EnhancementVariants`). Installing/removing swaps `Units.Bp` in place (same handle, health fraction kept, modules re-init;
-  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock), so every system just reads the new blueprint.
+  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock and the shield HP/up-down state, clamped), so every
+  system just reads the new blueprint.
   `BuildListFrom` merges other builders' final build lists (SCU/T3 Engineering from `uef_t3_engineer`, Fatboy from the T3
   land factory). Building one reuses `UpgradeState`/`UpgradeSystem`: `EnhanceCommand` stops the unit and targets the variant,
   `UpgradeSystem.Cost` returns the enhancement's cost/time, the unit works on itself with its BuildRate, engineers assist
-  with Guard, `CancelUpgradeCommand` refunds, any new order cancels it; `RemoveEnhancementCommand` clears a slot at once
+  with Guard, `CancelUpgradeCommand` refunds, any new order or Stop cancels it (with refund); `RemoveEnhancementCommand` clears a slot at once
   (no refund). The snapshot's `UpgradeBp`/`UpgradeFrac` carry the progress (`EnhancementCatalog.Added` = which one).
   Client: `UI/EnhancementPanel.cs`, model attachments in `Rendering/UnitModels.Experimental.cs` (from `Installed` + `Visual`).
 - **Quantum Gateway / SCU**: a T3 factory building `uef_scu` (engineer + cannon with its own enhancements). The SCU has no
@@ -260,7 +313,9 @@ interpolates prev/cur by time
   only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
 - Dive/surface (`SetSubmergedCommand` → `Naval/Submarines.cs`, `UnitFlags.Surfaced`): depth changes smoothly;
   the layer (`OrderSystem.LayerOf`) switches halfway. A surfaced sub is a Water-layer unit: seen by vision/radar,
-  hit by surface guns, collides with ships.
+  hit by surface guns, collides with ships. Every `Movement.Layer: "Sub"` unit can dive; `StartSurfaced` divers
+  (the Atlantis) spawn at the surface. Submerged, only torpedo weapons work (`Submarines.FiresSubmerged`: Targeting
+  and WeaponSystem hold the SAMs/guns). A blueprint swap (InitUnit re-run) keeps the dive state and depth.
 - Ship separation (`Naval/NavalMotion.cs`): hulls are capsules along the heading, pushed apart for all armies;
   submerged subs only collide with subs, surfaced subs with ships.
 - Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
@@ -294,7 +349,11 @@ interpolates prev/cur by time
   Air Staging repairs/refuels for free and releases aircraft when full; `KeepDocked` carriers (the Atlantis) keep
   them until Unload (Launch) or until the aircraft gets new queued orders.
 - Mobile factory (Atlantis): builds aircraft on deck (`SyncFactoryUnit` keeps the unit being built on the carrier)
-  and carries them. Pausable like any factory (H). It can't dive yet (it is a Water-layer unit).
+  and carries them. Pausable like any factory (H). It can dive (`Movement.Layer: "Sub"` + `StartSurfaced`, see Naval):
+  while submerged (`Submarines.IsSubmerged`) the deck is closed: no docking (aircraft wait above it; `FindAirCarrier`
+  skips it), no launching (Unload waits, docked aircraft stay aboard), a finished aircraft goes straight into the hold
+  with a Dock order in front of its orders (`TransportSystem.DockFinished`) and takes off after surfacing; with a
+  full hold production waits (`WaitsForRoom`).
 - Capture (`UnitTransfer`): a captured carrier's cargo changes army with it (hold order, recursive); carried units
   can't be captured and a carrier holding a commander can't be captured. Boarding ends a factory roll-out
   (`MoveState.LeaveTime = 0`). Air staging repairs veterans to their raised max health.
@@ -356,7 +415,7 @@ interpolates prev/cur by time
   (mean ≈ 18.6 min); Hard beats Normal in 86 % of games (166 won / 8 lost / 18 undecided of 192), Easy loses to
   Normal in 23 of 24; Hard vs Hard ends in ~69 %; 4-player FFAs on 512 end by ~30 min. Stalemates are equal armies
   trading in the middle of Highlands/Canyon maps. T1 mobile artillery is very cost-efficient (balance pass later).
-- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset]`
+- Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset] [factions]`
   (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
   `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`
   (override `AiConfig` fields for sweeps; bench only, the sim never reads the environment).
@@ -397,6 +456,19 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+- **Hotkeys**: `Input/Hotkeys.cs` is THE key table (key(s), modifiers, scope, help group/text, `Share` tags for keys
+  shared on purpose: D, E, U, M; `Pressed()`, `Label`, `Clashes()`, `Mouse` help lines). Input code reads keys from it
+  (never a raw `KeyboardKey` for a game action). Rule: a new key goes in the table; `HotkeyTableTests` fails on clashes
+  and on keys polled in `src/Rts.Client` that are not in it. F1 / the top-bar "?" open `UI/HelpOverlay` (generated
+  from the table; `--help-overlay` for screenshots). Tooltips show keys through `Hotkey.Label`.
+- Selection/UX: fire state Q / Shift+Q (`Input/FireStateToggle.cs`, "Fire" order button, unit panel order line);
+  `UI/IdleButtons` above the minimap (idle engineers ".", idle factories ","; Shift = all; `Input/SelectionMath`);
+  double-click / Ctrl+click = that type on screen (Shift / Ctrl+Shift add); double-tapping a control group centers the
+  camera; minimap left click gives the current order mode's order there (`SelectionController.IssueAtWorldPoint`);
+  `OrdersPanel` adds columns (max 3 rows); the unit panel uses a compact header when ≥ 2 extra rows follow; a mixed
+  selection shows idle/fire-state counts and type buttons (smaller when many; Ctrl+click = that type on screen).
+- Pause menu "Load Game": `AppHost.Go(next, keepOld: true)` keeps the paused `InGameScreen` alive; `SaveListScreen`
+  (`returnTo`) owns it: Back returns to it, loading a save disposes it.
 - Gameplay toggles (unit panel buttons + hotkeys): pause H (`SetPausedCommand`), dive/surface D (subs), capture E
   (then click an enemy; engineers also capture with a context right-click on enemies, `CursorHint` shows it).
   D and E are shared with the transport orders (`Input/SharedHotkeys.cs`, pure): E = transport-to when transports are
@@ -453,7 +525,12 @@ interpolates prev/cur by time
   uninterrupted game (`PersistenceTests`, 1 and 4 threads).
 - Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
   set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
-  + hash, bounds-checked reads). No migrations: files are tied to the build (`GameInfo.SimBuild`).
+  + hash, bounds-checked reads). Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
+  now 2; files ≥ `MinVersion` load) is upgraded on load one step at a time: a header-JSON step (also for file lists)
+  and a payload step per version (v1→v2: players without a faction get `FactionDb.DefaultFaction`); `GameInfo.FileVersion`
+  = the version read. To change the format: bump the version, add a `Steps` entry + a `case`, extend
+  `SaveMigrationTests` (writes old-version files from a current game with `SaveContainer.EncodeRaw`). Limit: the
+  payload is still checked against this build's field layouts (no field-level migration yet).
 - Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
   army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
   so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.

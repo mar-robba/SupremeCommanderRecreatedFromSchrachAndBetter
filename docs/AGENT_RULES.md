@@ -34,9 +34,11 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
 - Sub-agents: you MAY start sub-agents (general-purpose) for well-separated pieces (e.g. sim vs client). Rules:
   - they work in YOUR worktree (give them the absolute path; no isolation flag) on disjoint files;
   - only ONE `dotnet build`/`dotnet test` may run at a time per worktree: everyone runs dotnet through
-    `tools/agents/dn.sh <dotnet args>`;
+    `bash tools/agents/dn.sh <dotnet args>` (call it through `bash`: the volume is mounted without exec bits and git has `core.fileMode=false`);
   - they commit only their own files (`git commit -m "..." -- <files>`);
-  - give them the same 300k cap and ask for short reports.
+  - give them the same 300k cap and ask for short reports;
+  - start their description with your purpose tag in brackets, e.g. `[Fazione Cybran (5l)] client models`: the
+    token ledger files their cost under that purpose (docs/tokens/README.org).
 - The hard rules in CLAUDE.md apply:
   - determinism and threading;
   - the client reads only snapshots;

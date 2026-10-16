@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using Rts.Client.UI;
 using Rts.Sim;
+using Rts.Sim.Data;
 using Rts.Sim.Map;
 using Rts.Sim.World;
 
@@ -61,10 +62,12 @@ public sealed class SkirmishSetupScreen : IScreen
         Ui.PanelTitle(p, $"Players ({_cfg.Players} / {GameConfig.MaxSlots})");
         float x = p.X + Ui.P(12), y = p.Y + Ui.P(30);
         float rowH = Ui.P(32), gap = Ui.P(8);
-        float wNum = Ui.P(26), wKind = Ui.P(190), wDiff = Ui.P(130), wTeam = Ui.P(90), wCol = Ui.P(64);
-        float cx1 = x + wNum, cx2 = cx1 + wKind + gap, cx3 = cx2 + wDiff + gap, cx4 = cx3 + wTeam + gap;
+        float wNum = Ui.P(26), wKind = Ui.P(162), wFac = Ui.P(112), wDiff = Ui.P(100), wTeam = Ui.P(86), wCol = Ui.P(64);
+        float cxF = x + wNum + wKind + gap;
+        float cx1 = x + wNum, cx2 = cxF + wFac + gap, cx3 = cx2 + wDiff + gap, cx4 = cx3 + wTeam + gap;
         int hs = Ui.F(10.5f);
         Ui.Text("PLAYER", cx1, y, hs, Ui.TextFaint, true);
+        Ui.Text("FACTION", cxF, y, hs, Ui.TextFaint, true);
         Ui.Text("AI LEVEL", cx2, y, hs, Ui.TextFaint, true);
         Ui.Text("TEAM", cx3, y, hs, Ui.TextFaint, true);
         Ui.Text("COLOR", cx4, y, hs, Ui.TextFaint, true);
@@ -85,6 +88,10 @@ public sealed class SkirmishSetupScreen : IScreen
             int d = MenuUi.Cycle(Ui.R(cx1, y, wKind, rowH), kind, true, kc);
             if (d != 0) SetKind(i, (SlotKind)(((int)s.Kind + d + 3) % 3));
 
+            var (facName, facColor) = FactionLabel(s.Faction);
+            d = MenuUi.Cycle(Ui.R(cxF, y, wFac, rowH), open ? facName : "—", open, facColor);
+            if (d != 0) s.Faction = GameConfig.NextFaction(_app.Db.Factions, s.Faction, d);
+
             bool ai = s.Kind == SlotKind.AI;
             d = MenuUi.Cycle(Ui.R(cx2, y, wDiff, rowH), ai ? s.Difficulty.ToString() : "—", ai,
                 s.Difficulty switch { AiDifficulty.Easy => Ui.Good, AiDifficulty.Hard => Ui.Bad, _ => Ui.Warn });
@@ -104,6 +111,14 @@ public sealed class SkirmishSetupScreen : IScreen
         }
         Ui.Text("Left click: next · right click: previous. Teams share victory; \"None\" = free for all.",
             p.X + Ui.P(12), p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
+    }
+
+    private (string Name, Color Color) FactionLabel(string id)
+    {
+        if (string.Equals(id, FactionDb.Random, StringComparison.OrdinalIgnoreCase)) return ("Random", Ui.TextDim);
+        var f = _app.Db.Factions.Get(id);
+        if (f == null) return (id + "?", Ui.Bad);
+        return (f.Name, f.ColorRgba != 0 ? ColorUtil.Scale(ColorUtil.FromRgba(f.ColorRgba), 1.25f) : Ui.TextColor);
     }
 
     private void SetKind(int i, SlotKind kind)
@@ -202,7 +217,7 @@ public sealed class SkirmishSetupScreen : IScreen
             _app.ToMainMenu();
             return;
         }
-        string? problem = _cfg.Problem();
+        string? problem = _cfg.Problem(_app.Db.Factions);
         var start = Ui.R(right - Ui.P(220), y, Ui.P(220), bh);
         if (problem != null)
             Ui.TextRight(problem, start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.Warn, true);

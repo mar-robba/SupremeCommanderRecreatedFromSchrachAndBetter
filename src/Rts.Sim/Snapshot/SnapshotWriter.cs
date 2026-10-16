@@ -45,6 +45,7 @@ public static class SnapshotWriter
             v.Flags = u.Flags[i];
             v.FactoryRepeat = u.Factory[i].Repeat;
             v.Kills = u.Kills[i];
+            v.FireState = u.FireStates[i];
             ref readonly var econ = ref u.Econ[i];
             v.AdjMassProd = econ.AdjMassProd;
             v.AdjEnergyProd = econ.AdjEnergyProd;
@@ -134,7 +135,7 @@ public static class SnapshotWriter
             var e = ar.Eco;
             s.Armies[a] = new ArmyView
             {
-                Index = a, Team = ar.Team, Color = ar.Color, Defeated = ar.Defeated, UnitCount = ar.UnitCount,
+                Index = a, Team = ar.Team, Color = ar.Color, Faction = ar.Faction, Defeated = ar.Defeated, UnitCount = ar.UnitCount,
                 Mass = e.Mass, MassMax = e.MassMax, MassIncome = e.MassIncome, MassDemand = e.MassDemand, MassEfficiency = e.MassEfficiency,
                 Energy = e.Energy, EnergyMax = e.EnergyMax, EnergyIncome = e.EnergyIncome, EnergyDemand = e.EnergyDemand, EnergyEfficiency = e.EnergyEfficiency,
             };

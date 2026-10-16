@@ -14,6 +14,8 @@ public sealed class PlayerInfo
     public uint Color;
     public bool IsAI;
     public AiDifficulty Difficulty;
+    /// <summary>Faction id of the army (v1 files from before factions have "": migrated to the default faction).</summary>
+    public string Faction = "";
 }
 
 /// <summary>
@@ -47,6 +49,9 @@ public sealed class GameInfo
     public string SimBuild = "";
     public ulong BlueprintHash;
     public ulong TerrainHash;
+    /// <summary>Container version of the file this header was read from (set by the reader; older = migrated on
+    /// load, see <see cref="SaveMigrations"/>). Not written.</summary>
+    [JsonIgnore] public int FileVersion = SaveContainer.Version;
 
     public float GameSeconds => Ticks / (float)SimWorld.TicksPerSecond;
 
@@ -67,7 +72,7 @@ public sealed class GameInfo
     public void FillFrom(Simulation sim)
     {
         var w = sim.World;
-        Players = w.Armies.Select(a => new PlayerInfo { Name = a.Name, Team = a.Team, Color = a.Color, IsAI = a.IsAI, Difficulty = a.AiDifficulty }).ToList();
+        Players = w.Armies.Select(a => new PlayerInfo { Name = a.Name, Team = a.Team, Color = a.Color, IsAI = a.IsAI, Difficulty = a.AiDifficulty, Faction = a.Faction }).ToList();
         Ticks = w.Tick;
         WinningTeam = w.WinningTeam;
         GameVersion = CurrentGameVersion;
