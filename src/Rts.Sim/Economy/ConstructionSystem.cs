@@ -38,7 +38,9 @@ public static class ConstructionSystem
     public const float PropPickRadius = 2.5f;
     private const float CompleteEpsilon = 1e-4f;
 
-    [Persistence.NoSave] private static readonly List<int> _tmp = new(); // scratch, cleared before use
+    // Scratch, cleared before use. Per thread: several SimWorlds may step at once in one process (multiplayer loopback tests).
+    [ThreadStatic, Persistence.NoSave] private static List<int>? t_tmp;
+    private static List<int> _tmp => t_tmp ??= new();
 
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {

@@ -8,7 +8,9 @@ namespace Rts.Sim.Systems;
 /// <summary>Applies queued damage events in deterministic order and kills units at 0 HP. Sequential.</summary>
 public static class DamageSystem
 {
-    [Persistence.NoSave] private static readonly List<int> _tmp = new(); // scratch, cleared before use
+    // Scratch, cleared before use. Per thread: several SimWorlds may step at once in one process (multiplayer loopback tests).
+    [ThreadStatic, Persistence.NoSave] private static List<int>? t_tmp;
+    private static List<int> _tmp => t_tmp ??= new();
 
     public static void Run(SimWorld w)
     {

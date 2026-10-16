@@ -14,7 +14,9 @@ public class LoopbackMatchTests
     private static void RunAll(List<HeadlessPeer> peers, int ticks, double rate, Action<HeadlessPeer, int>? perTick = null)
     {
         foreach (var p in peers) p.Run(ticks, rate, perTick);
-        foreach (var p in peers) Assert.True(p.Wait(60000), $"{p.Session.LocalName} did not finish (tick {p.Sim.World.Tick}, waiting for {p.Game.WaitingFor})");
+        foreach (var p in peers)
+            Assert.True(p.Wait(60000), $"{p.Session.LocalName} did not finish (tick {p.Sim.World.Tick}, waiting for {p.Game.WaitingFor})"
+                + string.Concat(peers.Where(q => q.Fault != null).Select(q => $"; {q.Session.LocalName} fault: {q.Fault}")));
         foreach (var p in peers) Assert.Null(p.Fault);
     }
 
