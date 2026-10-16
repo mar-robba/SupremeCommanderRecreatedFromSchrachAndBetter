@@ -530,3 +530,62 @@ interpolates prev/cur by time
   ticks. `SaveCoverageTests` walks every reachable field type and fails with the field path and the fix;
   `PersistenceTests.SaveLoadContinueMatchesUninterruptedGame` proves the round trip on a rich game (AIs, every
   blueprint spawned, missiles, nukes, upgrades) — extend that scenario if your feature has state it doesn't reach.
+
+## Multiplayer (`src/Rts.Net`, no raylib; client screens in `Rts.Client/Menus`)
+- **Model**: deterministic lockstep on top of the replay machinery. Every peer runs the full sim; only commands
+  travel. Star topology: the host relays every turn (no peer-to-peer). TCP, length-framed binary messages
+  (`Wire/Framing.cs`, `Wire/Messages.cs`: Hello, Welcome, Reject, Lobby, LobbyRequest, Chat, Start, Loaded, Go, Turn,
+  Hash, Desync, Drop, Speed, Delay, Ping/Pong, Pings, Leave, Abort). Port 47624 TCP (game), 47625 UDP (LAN
+  discovery: `LanAnnouncer` broadcasts once a second, `LanBrowser` lists the games; protocol + sim build compared).
+  Joining needs the same `GameInfo.CurrentSimBuild` (the Rts.Sim assembly's MVID) and protocol version.
+- **Lobby** (`Lobby/LobbyState.cs`): 8 slots (Open / Human / AI / Closed) with faction, team, color, AI difficulty,
+  ready; `LobbyOptions` (map size, preset, water, seed, `OnDrop`). The host owns the state and applies requests
+  (`HostSession.SetSlotKind/SetSlot/MoveHost/SetOptions/Kick`, clients send `LobbyRequest`); every change is broadcast
+  and published as an immutable copy (`NetSession.Lobby`, any thread). UI threads read events with `TryGetEvent`.
+- **Start**: `HostSession.StartGame` (checks `LobbyState.Problem()` and `FactionKnown`) broadcasts `GameStart` (lobby
+  copy + initial delay). Army slots in slot order = armies 0..n-1; `NetGameSetup.ToSkirmish` maps slots to
+  `SkirmishSettings` (AI flags, difficulty, teams, colors, names, factions; "random" resolved from the seed). Each peer
+  builds the sim on a worker, reports `Loaded(StateHash)`; the host sends Go when every hash equals its own, else
+  Abort (everybody back to the lobby).
+- **Turns** (`Lockstep/LockstepHooks.cs`, the runner's `ITickHooks`, wrapping the replay recorder): every player
+  sends exactly one turn per tick, contiguous. Local commands of the frame stepping to T+1 go into the turn for
+  T+1+delay (ticks 1..delay are pre-sent empty at Go). `Hold()` = no Go yet, or some player's turn for tick+1 is
+  missing (`WaitingFor`). `BeforeStep` merges the turns in player order, keeps only commands of that player's army,
+  renumbers `Sequence`/`ExecuteTick` → identical command lists on every peer (and in every replay). The local copy is
+  decoded from the bytes sent, so all peers step identical objects. Turn payload = `TurnEncoder`/`TurnDecoder`:
+  the persistence graph writer with a per-sender type table (type names/layouts go over the wire once per game).
+- **Delay**: sender-side, host-adaptive: `DelayFor(maxRtt, speed) = 1 + (maxRtt + 20 ms) / tickMs` (1..30 ticks),
+  recomputed every 250 ms from the pings and broadcast (Delay). A larger delay leaves a gap filled with empty turns;
+  a smaller one makes the sender wait until the ticks catch up (commands stay pending).
+- **Speed/pause**: requests to the host (`NetGame.RequestSpeed`), broadcast (Speed) and applied to every runner
+  (`NetGame.AttachRunner`); they don't affect determinism.
+- **Desync detection**: every 10 ticks each client sends `StateHash` to the host; the host compares with its own →
+  Desync broadcast (game continues; the client shows a banner and writes the replay so far: `GameRecording.WriteReplayNow`).
+- **Disconnects**: a connection silent for `TimeoutSeconds` (10 s) or closed → the host picks lastTick = the last turn it
+  relayed for that player, broadcasts Drop after those turns; every peer applies empty turns afterwards and a
+  `PlayerLeftCommand(army, OnDrop)` at lastTick+1 (`Rts.Sim/Orders/MultiplayerCommands.cs`, `MultiplayerSystem`):
+  AI takeover (`Army.IsAI`) or defeat. Host lost → a client continues offline (drops every other player after its
+  last received turn; `NetGame.Offline`). Reconnecting is not supported.
+- **Replays**: the MP game's `GameRecording` (`NetGameConfig.Recording`) is a normal skirmish replay of the merged
+  command log (remote humans are non-AI armies whose commands come from the log): `Rts.Bench -- replay` verifies it.
+- **Client** (`Menus/MultiplayerScreen` → `LobbyScreen` → `NetLoadingScreen` → `NetInGameScreen`): the screen that
+  holds the session passes it on (`_handedOff`), any other exit calls `Leave()`. `GameSession` gets the lockstep
+  hooks through `wrapHooks`, `NetKeys` (Space/+/− become requests; no F1/F2 spawns, no F7 fog reveal) and
+  `KeyboardCaptured` (chat line open → game hotkeys blocked). No saving and no Restart in MP; Esc menu doesn't pause;
+  local defeat → observer (the sim must keep running so the others don't wait); game over → end screen (runner
+  stopped: the others may then wait if they continue).
+- **Tests**: `tests/Rts.Net.Tests` (framing, codecs, lobby round trip, factions, loopback TCP matches of 2–4 peers with
+  random commands → identical hashes + MP replay re-simulates, drops, desync, speed, LAN discovery);
+  `Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (headless self-test, exit 1 on desync).
+- **Float determinism review** (2026-10-16). Lockstep needs bit-identical floats on every machine:
+  - Basic IEEE ops (+ − × ÷, sqrt, float↔int casts) are deterministic: RyuJIT uses scalar SSE2 on x64 and NEON on
+    ARM64, no x87 and no implicit FMA contraction; .NET 9+ float→int casts saturate the same on x64 and ARM64. No
+    `MathF.FusedMultiplyAdd`, no explicit SIMD, no `GetHashCode` in Rts.Sim (checked).
+  - `System.Numerics.Vector2/3` (≈200 uses): same results on the same .NET + ISA; their intrinsic code paths could in
+    principle round differently between x64 and ARM64 (dot products) — unverified.
+  - **Risk**: transcendental functions (`MathF.Sin/Cos/Atan2/Pow/Log2`, ~40 calls in Rts.Sim: weapons, projectiles,
+    missiles, movement, AI memory decay, map generation) call the OS C runtime (glibc libm, Windows UCRT, macOS
+    libSystem), which may differ in the last bit → Linux vs Windows games can desync. Same OS + same build: identical.
+  - Safety net: `Loaded` hashes at start, `StateHash` every 10 ticks, desync banner + replay dump.
+  - later: route all sim trig through `DMath` with software implementations (polynomials using only + − × ÷), verify
+    Linux↔Windows↔ARM64 with `Rts.Bench -- replay` of the same file on each machine.
