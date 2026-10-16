@@ -35,6 +35,9 @@ public sealed class PathService
     private readonly NavGrid?[] _grids = new NavGrid?[7];
     private readonly NavGraph?[] _graphs = new NavGraph?[7 * (NavGrid.MaxClearance + 1)];
     private int[]? _occSnapshot;
+    /// <summary>Scratch of the occupancy diff (cleared before each use).</summary>
+    [Persistence.NoSave] private readonly Dictionary<int, (int x0, int z0, int x1, int z1)> _diffBoxes = new();
+    [Persistence.NoSave] private readonly List<int> _diffOrder = new();
     private int _occVersion;
     /// <summary>Goal-field cache: not saved (a field is a pure function of its graph version + goal region, so the
     /// recomputed cache gives identical results; eviction only affects speed).</summary>
@@ -199,8 +202,10 @@ public sealed class PathService
         var snap = _occSnapshot!;
         const int B = NavGraph.S;
         int bx = (w + B - 1) / B;
-        var boxes = new Dictionary<int, (int x0, int z0, int x1, int z1)>();
-        var order = new List<int>();
+        var boxes = _diffBoxes;
+        var order = _diffOrder;
+        boxes.Clear();
+        order.Clear();
         for (int z = 0; z < h; z++)
         {
             var cur = occ.Cells.AsSpan(z * w, w);
@@ -233,14 +238,35 @@ public sealed class PathService
         foreach (var kv in _fields)
         {
             var f = kv.Value.Value;
-            if (f.GraphVersion != _graphs[(int)(kv.Key >> 32)]!.Version) _fields.TryRemove(kv.Key, out _);
+            if (f.GraphVersion != _graphs[(int)(kv.Key >> 32)]!.Version && _fields.TryRemove(kv.Key, out _)) RecycleField(f);
         }
+    }
+
+    /// <summary>Dist/Next arrays of evicted goal fields, by capacity (multiple of 1024), reused by new fields: a field
+    /// on a 1024 map is ~80 KB and every structure placed invalidates the fields of the graphs it touches. Fields are
+    /// only read during the solves of one tick and evicted in sequential phases, so a recycled array is never in use;
+    /// a new field overwrites its arrays entirely, so which array it gets does not matter.</summary>
+    [Persistence.NoSave] private readonly ConcurrentDictionary<int, ConcurrentStack<int[]>> _fieldArrays = new();
+    private const int MaxPooledFieldArrays = 64;
+
+    internal int[] RentFieldArray(int n)
+    {
+        int cap = (n + 1023) & ~1023;
+        return _fieldArrays.TryGetValue(cap, out var st) && st.TryPop(out var a) ? a : new int[Math.Max(cap, 1024)];
+    }
+
+    private void RecycleField(GoalField f)
+    {
+        var st = _fieldArrays.GetOrAdd(f.Dist.Length, static _ => new ConcurrentStack<int[]>());
+        if (st.Count >= MaxPooledFieldArrays) return;
+        st.Push(f.Dist);
+        st.Push(f.Next);
     }
 
     internal GoalField GetField(NavGraph g, int goalRegion)
     {
         long key = ((long)GraphIndex(g.Grid.Layer, g.Req) << 32) | (uint)goalRegion;
-        var lazy = _fields.GetOrAdd(key, static (_, arg) => new Lazy<GoalField>(() => new GoalField(arg.g, arg.r)), (g, r: goalRegion));
+        var lazy = _fields.GetOrAdd(key, static (_, arg) => new Lazy<GoalField>(() => new GoalField(arg.g, arg.r, arg.svc)), (g, r: goalRegion, svc: this));
         var f = lazy.Value;
         f.LastUsedTick = _w.Tick;
         return f;
@@ -253,7 +279,8 @@ public sealed class PathService
         var all = new List<(int tick, long key)>();
         foreach (var kv in _fields) all.Add((kv.Value.Value.LastUsedTick, kv.Key));
         all.Sort();
-        for (int k = 0; k < all.Count - MaxGoalFields * 3 / 4; k++) _fields.TryRemove(all[k].key, out _);
+        for (int k = 0; k < all.Count - MaxGoalFields * 3 / 4; k++)
+            if (_fields.TryRemove(all[k].key, out var lazy)) RecycleField(lazy.Value);
     }
 
     public int CachedGoalFields => _fields.Count;
@@ -320,7 +347,7 @@ public sealed class PathService
         var pts = _pts[unit];
         if (pts == null || pts.Length < n)
         {
-            int cap = Math.Max(8, n);
+            int cap = Math.Max(16, (int)System.Numerics.BitOperations.RoundUpToPowerOf2((uint)n)); // fewer regrowths
             _pts[unit] = pts = new Vector2[cap];
             _suffix[unit] = new float[cap];
         }
