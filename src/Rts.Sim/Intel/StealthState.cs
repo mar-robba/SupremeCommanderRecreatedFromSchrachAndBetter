@@ -51,7 +51,7 @@ public sealed class StealthState
             byte bits = 0;
             if (it.RadarStealth) bits |= StealthSystem.RadarBit;
             if (it.SonarStealth) bits |= StealthSystem.SonarBit;
-            if (it.Cloak) bits |= StealthSystem.CloakBit;
+            if (it.Cloak) bits |= StealthSystem.CloakBit | StealthSystem.RadarBit | StealthSystem.SonarBit; // cloak includes stealth
             if (it.StealthFieldRadius > 0)
             {
                 bits |= StealthSystem.FieldBit | StealthSystem.RadarBit | StealthSystem.SonarBit;

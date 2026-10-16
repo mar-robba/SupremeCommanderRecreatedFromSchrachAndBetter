@@ -10,8 +10,8 @@ namespace Rts.Sim.Systems;
 /// (RadarStealth, SonarStealth, Cloak, StealthFieldRadius; commander enhancements set them on their variants).
 /// <list type="bullet">
 /// <item>Radar stealth: enemy radar doesn't detect the unit. Sonar stealth: enemy sonar doesn't (a submerged unit
-/// then needs enemy omni even in vision). Cloak: enemy vision doesn't see it (radar still shows a blip unless it is
-/// radar-stealthed too). Enemy omni beats all of them.</item>
+/// then needs enemy omni even in vision). Cloak: enemy vision doesn't see it either (cloak implies radar + sonar
+/// stealth: no blip). Enemy omni beats all of them (a blip on omni; full vision of a cloaked unit only inside omni).</item>
 /// <item>A stealth field (radius &gt; 0) gives radar + sonar stealth to every unit of the generator's TEAM whose
 /// center is within the radius, the generator included.</item>
 /// <item>An effect is active while its unit is complete, on the map (not carried), not Paused (the intel toggle) and,
@@ -85,6 +85,12 @@ public static class StealthSystem
         if ((u.Flags[i] & (UnitFlags.Dead | UnitFlags.UnderConstruction | UnitFlags.Paused | UnitFlags.Carried)) != 0) return false;
         return w.BpOf(i).Economy.MaintenanceEnergy <= 0 || w.Armies[u.Army[i]].Eco.EnergyEfficiency >= MinPowerEfficiency;
     }
+
+    /// <summary>Does any unit have an active stealth/cloak/field effect this tick? (False = the intel queries pay nothing.)</summary>
+    public static bool AnyActive(SimWorld w) => w.Intel.StealthMask != null;
+
+    /// <summary>Does the blueprint database have any stealth/cloak/field blueprint? (False = the update is one check.)</summary>
+    public static bool AnyBlueprint(SimWorld w) => StealthState.Of(w).EnsureBlueprints(w.Blueprints);
 
     /// <summary>Active stealth bits of a unit slot this tick (0 = none).</summary>
     public static byte BitsOf(SimWorld w, int i) => w.Intel.StealthMask is { } m ? m[i] : (byte)0;

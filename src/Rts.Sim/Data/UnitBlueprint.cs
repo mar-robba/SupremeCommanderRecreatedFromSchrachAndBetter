@@ -163,8 +163,8 @@ public sealed class IntelBlueprint
     public bool RadarStealth;
     /// <summary>Hidden from enemy sonar while active (omni still sees it).</summary>
     public bool SonarStealth;
-    /// <summary>Cloak: hidden from enemy vision while active, unless enemy omni covers it (radar still sees it unless
-    /// RadarStealth too).</summary>
+    /// <summary>Cloak: hidden from enemy vision while active, unless enemy omni covers it. Implies radar + sonar stealth
+    /// (a cloaked unit leaves no blip either; only omni reveals it).</summary>
     public bool Cloak;
     /// <summary>&gt; 0: projects a stealth field: allied units within this radius (itself included) get radar + sonar
     /// stealth while it is active.</summary>
