@@ -339,9 +339,13 @@ internal sealed partial class MapBuilder
         };
     }
 
+    /// <summary>Height of the flat start plateaus (the same for every start), set by <see cref="FlattenStarts"/>.</summary>
+    private float _plateauH;
+
     private void FlattenStarts()
     {
         float hs = StartHeight();
+        _plateauH = hs;
         Parallel.For(0, _stride, z =>
         {
             for (int x = 0; x < _stride; x++)
@@ -360,6 +364,37 @@ internal sealed partial class MapBuilder
     /// <summary>Carves a corridor in all N rotated copies.</summary>
     private void CarveSymmetric(List<Vector2> poly, float coreR, float blendR)
     {
+        var lo = new Vector2(1.5f);
+        var hi = new Vector2(_n - 1.5f);
+        if (!_sym.QuarterTurns)
+        {
+            // 3, 5–8 players: one ground profile (computed along this copy) for every rotated copy, and all copies
+            // rasterized together (nearest sample wins where they overlap). A profile per copy, carved one copy
+            // after the other, depends on the resampled terrain under it and on the copies carved before it, which
+            // made ramps and causeways differ between the players' sectors.
+            var first = new List<Vector2>(poly.Count);
+            foreach (var p in poly) first.Add(Vector2.Clamp(p, lo, hi));
+            var (samples, target) = MapConnectivity.CorridorProfile(_h, _n, _w, first);
+            // Start plateaus stay flat: the profile is kept at the plateau height inside it and may leave that height
+            // only at the corridor slope from its edge, so ramps are built outwards instead of being cut into a base
+            // (on small maps with many players a corridor often runs right past or through a start).
+            float hs = _plateauH;
+            for (int j = 0; j < samples.Count; j++)
+            {
+                float slack = MapConnectivity.CorridorSlope * MathF.Max(0f, DistToNearestStart(samples[j]) - _flatR);
+                target[j] = Math.Clamp(target[j], hs - slack, hs + slack);
+            }
+            int m = samples.Count;
+            var all = new List<Vector2>(m * _sym.N);
+            var allTarget = new float[m * _sym.N];
+            for (int k = 0; k < _sym.N; k++)
+            {
+                foreach (var p in samples) all.Add(Vector2.Clamp(_sym.Rotate(p, k), lo, hi));
+                Array.Copy(target, 0, allTarget, k * m, m);
+            }
+            MapConnectivity.RasterizeCorridor(_h, _n, all, allTarget, coreR, blendR, _scratch);
+            return;
+        }
         for (int k = 0; k < _sym.N; k++)
         {
             var rp = new List<Vector2>(poly.Count);

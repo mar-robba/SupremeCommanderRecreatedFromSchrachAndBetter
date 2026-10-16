@@ -175,6 +175,7 @@ public sealed unsafe class TerrainRenderer : IDisposable
             if (!fv.SphereVisible(c, Vector3.Distance(box.Min, box.Max) * 0.5f)) continue;
             Raylib.DrawMesh(mesh, _material, Matrix4x4.Identity);
         }
+        FrameProfiler.Sub("terrain:chunks");
     }
 
     public void DrawDeposits()

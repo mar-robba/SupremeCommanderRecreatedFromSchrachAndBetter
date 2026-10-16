@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Rendering;
 using Rts.Client.Input;
 using Rts.Sim.Snapshot;
 using Mode = Rts.Client.Input.SelectionController.CommandMode;
@@ -126,6 +127,7 @@ public sealed class Hud : IDisposable
         _sel.Placement.Draw3D(_sel.Selected);
         Raylib.EndMode3D();
         _sel.Placement.DrawOverlay();
+        FrameProfiler.Sub("hud:placement");
 
         bool dialog = _sel.PendingSelfDestruct != null;
         if (dialog) HandleDialogInput();
@@ -139,7 +141,9 @@ public sealed class Hud : IDisposable
         }
 
         DrawTopBar(snap);
+        FrameProfiler.Sub("hud:topbar");
         _minimap.Draw(_mini);
+        FrameProfiler.Sub("hud:minimap");
         if (_showSelectionPanels)
         {
             _info.Draw(_infoR, snap);

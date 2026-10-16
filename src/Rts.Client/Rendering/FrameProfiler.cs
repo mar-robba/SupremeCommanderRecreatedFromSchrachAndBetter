@@ -28,8 +28,16 @@ public sealed class FrameProfiler
     private int _frames, _windowFrames;
     private double _allocSum, _allocWindow;
 
+    /// <summary>The profiler of the frame being drawn (null outside a profiled frame).</summary>
+    public static FrameProfiler? Active;
+
+    /// <summary>Sub-stage lap from inside a module (e.g. "fx:particles"): splits the enclosing stage. No-op when
+    /// no frame is being profiled.</summary>
+    public static void Sub(string name) => Active?.Lap(name);
+
     public void Begin()
     {
+        Active = this;
         if (_gpu != null)
         {
             int n = _gpu.BeginFrame(_gpuStage);
@@ -79,6 +87,7 @@ public sealed class FrameProfiler
     /// <summary>Call once at the end of the frame.</summary>
     public void End()
     {
+        Active = null;
         if (_frames >= Warmup)
         {
             double a = GC.GetAllocatedBytesForCurrentThread() - _alloc0;
