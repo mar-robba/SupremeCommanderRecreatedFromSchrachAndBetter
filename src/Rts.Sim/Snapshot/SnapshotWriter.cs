@@ -43,6 +43,7 @@ public static class SnapshotWriter
             v.HealthFrac = maxHp > 0 ? u.Health[i] / maxHp : 1;
             v.BuildFrac = u.BuildFraction[i];
             v.Flags = u.Flags[i];
+            v.Status = Systems.StealthSystem.StatusOf(w, i, viewArmy); // stealth/cloak (own/allied), EMP stun
             v.FactoryRepeat = u.Factory[i].Repeat;
             v.Kills = u.Kills[i];
             ref readonly var econ = ref u.Econ[i];

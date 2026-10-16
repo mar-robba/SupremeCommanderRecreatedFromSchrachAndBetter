@@ -27,6 +27,7 @@ public static class IntelSystem
 
     public static void Run(SimWorld w)
     {
+        StealthSystem.Run(w); // active stealth/cloak/field bits per unit (Intel/StealthSystem)
         var intel = w.Intel;
         if (!intel.Enabled) return;
         var sw = Stopwatch.StartNew();
@@ -291,6 +292,7 @@ public static class IntelSystem
                 int b = u.Bp[i];
                 if (!_structure[b] || (u.Flags[i] & (UnitFlags.Dead | UnitFlags.UnderConstruction)) != 0) continue;
                 if (intel.TeamOf(u.Army[i]) == t || !IntelService.Test(ti.Vision, intel.BitIndex(u.Pos[i]))) continue;
+                if (StealthSystem.HiddenFromTeam(w, ti, i)) continue; // cloaked: not seen, no ghost
                 if (ti.GhostGen[i] == 0) ti.GhostSlots.Add(i);
                 ti.GhostGen[i] = u.Gen[i];
                 ti.Ghosts[i] = new GhostInfo { Slot = i, Gen = u.Gen[i], Bp = b, Army = u.Army[i], Pos = u.Pos[i], Elevation = u.Elevation[i], Heading = u.Heading[i] };
@@ -302,7 +304,8 @@ public static class IntelSystem
             {
                 int s = list[k];
                 ref var g = ref ti.Ghosts[s];
-                bool gone = IntelService.Test(ti.Vision, intel.BitIndex(g.Pos)) && !(u.Alive[s] && u.Gen[s] == g.Gen && u.IsActive(s));
+                bool gone = IntelService.Test(ti.Vision, intel.BitIndex(g.Pos)) && !(u.Alive[s] && u.Gen[s] == g.Gen && u.IsActive(s)
+                    && !StealthSystem.HiddenFromTeam(w, ti, s)); // a cloaked structure in sight looks gone
                 if (gone) { ti.GhostGen[s] = 0; continue; }
                 list[n++] = s;
             }
