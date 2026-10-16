@@ -152,6 +152,7 @@ public static class Hotkeys
     public static readonly Hotkey Menu = new(KeyboardKey.Escape, N, G, "Game", "Cancel the order mode / placement / help; nothing selected: menu");
     public static readonly Hotkey QuickSave = new(KeyboardKey.F5, N, Pl, "Game", "Quicksave");
     public static readonly Hotkey QuickLoad = new(KeyboardKey.F6, N, Pl, "Game", "Quickload");
+    public static readonly Hotkey Chat = new([KeyboardKey.Enter, KeyboardKey.KpEnter], N, Pl, "Game", "Multiplayer: chat (Enter sends, Esc cancels)", label: "Enter");
     public static readonly Hotkey Fog = new(KeyboardKey.F7, N, G, "Game", "Fog of war on / off (reveal all)");
     public static readonly Hotkey Perf = new(KeyboardKey.F8, N, G, "Game", "Performance overlay");
     public static readonly Hotkey Mute = new(KeyboardKey.M, N, G, "Game", "Mute (nothing selected; Ctrl+M always)", share: "M");
@@ -181,7 +182,7 @@ public static class Hotkeys
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
         FactorySlots, FactoryRepeat, FactoryTier,
-        Help, PauseGame, SpeedUp, SpeedDown, Menu, QuickSave, QuickLoad, Fog, Perf, Mute, MuteCtrl, Music,
+        Help, PauseGame, SpeedUp, SpeedDown, Menu, QuickSave, QuickLoad, Chat, Fog, Perf, Mute, MuteCtrl, Music,
         DialogConfirm, DialogCancel, ReplayPause, ReplaySpeedUp, ReplaySpeedDown,
         SandboxPanel, SandboxConsole, DebugSpawnOwn, DebugSpawnEnemy, DebugFakeBattle, DebugExplosion,
     ];

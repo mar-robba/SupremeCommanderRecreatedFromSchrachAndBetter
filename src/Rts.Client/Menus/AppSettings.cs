@@ -23,6 +23,10 @@ public sealed class AppSettings
     public int MapSize { get; set; } = 256;
     public string Preset { get; set; } = "Plains";
     public float WaterAmount { get; set; } = -1;
+    // Multiplayer (Menus/MultiplayerScreen.cs): player name ("" = the OS user name), last address joined, host port.
+    public string PlayerName { get; set; } = "";
+    public string JoinAddress { get; set; } = "";
+    public int HostPort { get; set; } = 47624;
 
     /// <summary>The settings in use (loaded at startup).</summary>
     public static AppSettings Current { get; private set; } = new();

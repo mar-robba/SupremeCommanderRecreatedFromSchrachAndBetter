@@ -15,7 +15,7 @@ using Rts.Sim.World;
 namespace Rts.Client;
 
 /// <summary>Which client state the app starts in.</summary>
-public enum StartScreen { Game, MainMenu, Setup, Settings, Saves, Replays, LoadFile, ReplayFile }
+public enum StartScreen { Game, MainMenu, Setup, Settings, Saves, Replays, LoadFile, ReplayFile, Multiplayer }
 
 public sealed class ClientOptions
 {
@@ -86,6 +86,9 @@ public sealed class ClientOptions
     public string? LoadPath, ReplayPath;
     public int SeekTick = -1, SaveAt = -1;
     public bool SaveDialog, WriteReplay;
+    /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
+    public int HostPort;
+    public string? JoinAddress, PlayerName;
 
     public ClientOptions Copy() => (ClientOptions)MemberwiseClone();
 
@@ -100,7 +103,7 @@ public sealed class ClientOptions
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
-                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic"
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
                 or "--perf-log" or "--terrain-lod")) gameArg = true;
             switch (a)
             {
@@ -161,6 +164,14 @@ public sealed class ClientOptions
                 case "--save-at": o.SaveAt = int.Parse(Next()); break;
                 case "--save-dialog": o.SaveDialog = o.PauseMenu = true; break;
                 case "--write-replay": o.WriteReplay = true; break;
+                case "--host":
+                    o.HostPort = i + 1 < args.Length && int.TryParse(args[i + 1], out int hp) ? hp : Rts.Net.Session.NetSession.DefaultPort;
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out _)) i++;
+                    screen = StartScreen.Multiplayer;
+                    break;
+                case "--join": o.JoinAddress = Next(); screen = StartScreen.Multiplayer; break;
+                case "--name": o.PlayerName = Next(); break;
+                case "--multiplayer": screen = StartScreen.Multiplayer; break;
                 case "--help-overlay": o.HelpOverlay = true; gameArg = true; break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
@@ -229,6 +240,7 @@ public static class GameApp
             StartScreen.Replays => new SaveListScreen(app, replays: true),
             StartScreen.LoadFile => new FileLoadingScreen(app, opt.LoadPath!, replay: false, opt),
             StartScreen.ReplayFile => new FileLoadingScreen(app, opt.ReplayPath!, replay: true, opt),
+            StartScreen.Multiplayer => new MultiplayerScreen(app),
             _ => new MainMenuScreen(app),
         };
 
@@ -239,7 +251,7 @@ public static class GameApp
             Raylib.BeginDrawing();
             app.Current.Frame(dt);
             Raylib.EndDrawing();
-            if (app.Current is not InGameScreen) audio.MenuUpdate(dt); // in game GameAudio drives the device
+            if (app.Current is not (InGameScreen or NetInGameScreen)) audio.MenuUpdate(dt); // in game GameAudio drives the device
 
             frame++;
             if (opt.ScreenshotPath != null && frame >= opt.Frames)

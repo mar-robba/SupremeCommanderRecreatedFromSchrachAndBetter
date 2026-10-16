@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Rts.Sim\Rts.Sim.csproj" />
+    <ProjectReference Include="..\..\src\Rts.Net\Rts.Net.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

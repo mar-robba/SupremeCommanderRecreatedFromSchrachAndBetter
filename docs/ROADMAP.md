@@ -2,8 +2,9 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 ~11:00 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
+## ▶ NEXT STEPS (updated 2026-10-16 ~12:15 — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish and (o) lockstep MP (merged 2026-10-16).
+Tests: 376 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
 Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
@@ -11,14 +12,12 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-16 ~10:50: **running** (n) UX polish (4th agent) in `agent-a141a5d33496dd4c3` and (o) lockstep MP
-  (3rd agent) in `agent-a4a312626d7228fe6`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
-  as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when the usage window allows
-  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (m) scale/perf `agent-a6794a8836fbb263d` (WIP a6e2a98: client perf +
-  8-player maps from its sub-agents B/C, uncommitted at the cut), (k) AI uses everything `agent-ac4c927c54a66ca1d`
-  (its CHECKPOINT WIP does not compile yet, see its note), (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
-  sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed). History: the weekly limit
-  stopped everything on 2026-10-14 08:14, the session limit on 2026-10-15 11:21 and 15:09.
+- 2026-10-16 ~12:15: **running** (m) scale/perf (3rd agent) in `agent-a6794a8836fbb263d` and (l) Cybran (2nd
+  agent, a coordinator running one sub-agent at a time) in `agent-a9df3acf3524c656f`. **Paused**: (k) AI uses
+  everything `agent-ac4c927c54a66ca1d` (its CHECKPOINT WIP does not compile yet, see its `.claude/handoff.md`): start
+  it as a fresh agent in its worktree (brief + "continue from .claude/handoff.md") when (m) or (l) finishes
+  (WORKFLOW "Usage limits": ≤ 2 agents at a time). History: the weekly limit stopped everything on 2026-10-14 08:14,
+  the session limit on 2026-10-15 11:21 and 15:09.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -34,9 +33,9 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
   3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
-  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+  4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
-  5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
+  5. ✅ (merged 2026-10-16) Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
 Shared contracts (still valid):
 - `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
@@ -205,4 +204,17 @@ Shared contracts (still valid):
             the replay view selector
       - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
             seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
-- [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)
+- [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
+      relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),
+      faction, team, color, AI level, ready, host map options + live preview, chat, kick; one turn per player per
+      tick, input delay adaptive to ping (1..30 ticks), sim holds until every turn is in ("Waiting for X"); speed and
+      pause negotiated; StateHash at load + every 10 ticks → desync banner + replay dump; drop after 10 s silence →
+      AI takeover or defeat (host option), host lost → client continues offline; every MP game writes a normal
+      replay. Client: Multiplayer menu (Host / Join / LAN list), lobby, net loading, in-game chat (Enter), players +
+      pings panel, Esc menu without pause; CLI `--host [port]`, `--join ip:port`, `--name`, `--autostart`.
+      Tests: Rts.Net.Tests (21: framing, codecs, lobby, factions, 2–4 peer loopback matches with random commands,
+      drops, desync, speed, LAN), `Rts.Bench -- mp` (4 peers 1200 ticks in 1.3 s, all hashes equal; drop variant),
+      two windows on one machine. Float determinism review in ARCHITECTURE "Multiplayer".
+      - [ ] later: software trig in `DMath` (cross-OS games can desync: libm vs UCRT), reconnecting, observers,
+            host migration, saving/loading MP games, lobby pings per player, chat sounds, NAT traversal/relay server
+            (today: port forwarding), "Waiting for X" → vote to drop

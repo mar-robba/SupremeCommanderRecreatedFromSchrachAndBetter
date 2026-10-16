@@ -36,6 +36,11 @@ public sealed class GameSession : IDisposable
     public readonly ReplayPlayer? Replay;
     /// <summary>Optional: true if the mouse is over an extra overlay (e.g. replay controls) so the world ignores it.</summary>
     public Func<bool>? MouseOverExtraUi;
+    /// <summary>Multiplayer (Menus/NetInGameScreen.cs): called instead of the debug keys (speed and pause are negotiated,
+    /// no debug spawns, no fog reveal key).</summary>
+    public Action? NetKeys;
+    /// <summary>Set by the owner while a text line has the keyboard (multiplayer chat): game hotkeys are blocked.</summary>
+    public bool KeyboardCaptured;
     private readonly SnapshotInterpolator _interp;
     private readonly RtsCamera _camera;
     private readonly TerrainRenderer _terrainR;
@@ -81,8 +86,9 @@ public sealed class GameSession : IDisposable
     /// <param name="audio">App-wide audio (null = this game opens its own device from <c>opt.Audio</c>).</param>
     /// <param name="recording">Recording of a loaded game (null = a new recording of this game).</param>
     /// <param name="replay">Watch this replay instead (read-only; <paramref name="sim"/> = its simulation).</param>
+    /// <param name="wrapHooks">Multiplayer: wraps the recording hooks (lockstep), before the runner starts.</param>
     public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt, AudioSystem? audio = null,
-        GameRecording? recording = null, ReplayPlayer? replay = null)
+        GameRecording? recording = null, ReplayPlayer? replay = null, Func<ITickHooks, ITickHooks>? wrapHooks = null)
     {
         Db = db;
         Sim = sim;
@@ -93,6 +99,7 @@ public sealed class GameSession : IDisposable
         // Replays: playback hooks. Games: replay recording (+ saving), see Rts.Client/Persistence.
         if (replay != null) Runner.Hooks = Replay = replay;
         else Runner.Hooks = Recording = recording ?? GameRecording.ForNewGame(cfg, sim, localArmy);
+        if (wrapHooks != null) Runner.Hooks = wrapHooks(Runner.Hooks!);
         _interp = new SnapshotInterpolator(Runner);
         _camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
         _terrainR = new TerrainRenderer(terrain);
@@ -166,17 +173,22 @@ public sealed class GameSession : IDisposable
         _prof.Begin();
         _interp.Update();
         _prof.Lap("interp");
-        _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true);
+        _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true && NetKeys == null && !KeyboardCaptured);
         _prof.Lap("fog");
         bool overUi = interactive && (_hud.MouseOverUi() | MouseOverExtraUi?.Invoke() == true);
         if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
+        if (KeyboardCaptured) _selection.InputBlocked = true;
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
-        if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly) GameApp.DebugKeys(ctx);
+        if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly && !KeyboardCaptured)
+        {
+            if (NetKeys != null) NetKeys();
+            else GameApp.DebugKeys(ctx);
+        }
         _prof.Lap("input+audio");
 
         var cur = _interp.Current;

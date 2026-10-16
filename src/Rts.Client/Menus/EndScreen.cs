@@ -14,6 +14,8 @@ public sealed class EndScreen
 {
     public enum Result { Victory, Defeat, Summary }
     public enum Action { None, Continue, Restart, MainMenu }
+    /// <summary>False in multiplayer (the Restart button is disabled).</summary>
+    public bool CanRestart = true;
 
     private sealed record Row(string Name, Color Color, string Team, string Outcome, Color OutcomeColor, bool Local, float[] Values);
 
@@ -100,7 +102,7 @@ public sealed class EndScreen
         float bx = (sw - (3 * bw + 2 * gap)) * 0.5f, by = p.Y + p.Height + Ui.P(26);
         var action = Action.None;
         if (MenuUi.BigButton(Ui.R(bx, by, bw, bh), _result == Result.Defeat ? "Keep Watching" : "Continue")) action = Action.Continue;
-        if (MenuUi.BigButton(Ui.R(bx + bw + gap, by, bw, bh), "Restart")) action = Action.Restart;
+        if (MenuUi.BigButton(Ui.R(bx + bw + gap, by, bw, bh), "Restart", CanRestart)) action = Action.Restart;
         if (MenuUi.BigButton(Ui.R(bx + 2 * (bw + gap), by, bw, bh), "Main Menu", true, true)) action = Action.MainMenu;
         return action;
     }
