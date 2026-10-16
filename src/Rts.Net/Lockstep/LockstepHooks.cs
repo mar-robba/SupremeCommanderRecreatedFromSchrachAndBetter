@@ -48,6 +48,9 @@ public sealed class LockstepHooks : ITickHooks
     private readonly int[] _lastTick;
     private readonly DropAction[] _dropAction;
     private readonly List<Command> _tickCommands = new();
+    private readonly TurnEncoder _encoder = new();
+    /// <summary>One decoder per sender (stateful type tables): used by that sender's network thread (own turns: under the lock).</summary>
+    private readonly TurnDecoder[] _decoders;
     private readonly List<Command> _pending = new();
     /// <summary>Local turns to send once the lock is released (the sink may take the session's lock: never call it under ours).</summary>
     private readonly List<(int tick, byte[] payload)> _outbox = new();
@@ -83,9 +86,11 @@ public sealed class LockstepHooks : ITickHooks
         _received = new int[n];
         _lastTick = new int[n];
         _dropAction = new DropAction[n];
+        _decoders = new TurnDecoder[n];
         for (int p = 0; p < n; p++)
         {
             _turns[p] = new Dictionary<int, Command[]>();
+            _decoders[p] = new TurnDecoder();
             _received[p] = startTick;
             _lastTick[p] = int.MaxValue;
         }
@@ -112,7 +117,8 @@ public sealed class LockstepHooks : ITickHooks
     public void AddTurn(int turnPlayer, int tick, byte[] payload)
     {
         if ((uint)turnPlayer >= (uint)Players) throw new Wire.ProtocolException($"bad turn player {turnPlayer}");
-        var cmds = TurnCodec.Decode(payload);
+        Command[] cmds;
+        lock (_decoders[turnPlayer]) cmds = _decoders[turnPlayer].Decode(payload);
         lock (_lock)
         {
             if (_lastTick[turnPlayer] != int.MaxValue) return; // dropped: late turns are ignored
@@ -223,7 +229,7 @@ public sealed class LockstepHooks : ITickHooks
         int target = next + Delay;
         if (_nextSend > target) return; // delay decreased: wait until the ticks catch up (commands stay pending)
         // Local commands go out with the first turn; gap ticks (delay increased) get empty turns.
-        byte[] first = _pending.Count == 0 ? TurnCodec.Empty : TurnCodec.Encode(_pending);
+        byte[] first = _encoder.Encode(_pending);
         CommandsSent += _pending.Count;
         _pending.Clear();
         SendLocal(_nextSend++, first);
@@ -233,7 +239,7 @@ public sealed class LockstepHooks : ITickHooks
     private void SendLocal(int tick, byte[] payload)
     {
         // The local copy is decoded from the same bytes the peers get: every peer steps identical command objects.
-        _turns[LocalTurn][tick] = TurnCodec.Decode(payload);
+        _turns[LocalTurn][tick] = _decoders[LocalTurn].Decode(payload);
         _received[LocalTurn] = tick;
         _outbox.Add((tick, payload));
     }

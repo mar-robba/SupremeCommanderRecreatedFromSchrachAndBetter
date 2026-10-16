@@ -134,6 +134,11 @@ public sealed class HostSession : NetSession, ITurnSink
         }
     }
 
+    public override (long sent, long received) Traffic
+    {
+        get { lock (Gate) return (_conns.Sum(c => c.BytesSent), _conns.Sum(c => c.BytesReceived)); }
+    }
+
     public override void SendChat(string text)
     {
         text = CleanText(text, MaxChat);

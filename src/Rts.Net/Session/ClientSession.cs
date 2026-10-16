@@ -70,6 +70,8 @@ public sealed class ClientSession : NetSession, ITurnSink
 
     public void SetReady(bool ready) => Request(new LobbyRequest { Ready = ready ? 1 : 0 });
 
+    public override (long sent, long received) Traffic => (_conn.BytesSent, _conn.BytesReceived);
+
     public override void SendChat(string text)
     {
         text = CleanText(text, MaxChat);

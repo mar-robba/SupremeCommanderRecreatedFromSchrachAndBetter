@@ -72,6 +72,9 @@ public abstract class NetSession : IDisposable
 
     protected void SystemChat(string text) => AddChat(new ChatLine(-1, "", text));
 
+    /// <summary>Bytes sent/received over TCP by this session so far (open connections).</summary>
+    public abstract (long sent, long received) Traffic { get; }
+
     public abstract void SendChat(string text);
     internal abstract void ReportLoaded(NetGame game, ulong hash);
     internal abstract void RequestSpeed(NetGame game, float speed, bool paused);

@@ -85,7 +85,7 @@ public sealed class GraphWriter
 /// <summary>Reads what <see cref="GraphWriter"/> wrote. Call <see cref="Complete"/> after reading the roots.</summary>
 public sealed class GraphReader
 {
-    public readonly ByteReader In;
+    public ByteReader In { get; private set; }
     private readonly ExternalSet? _ext;
     private readonly List<object> _objs = new();
     private readonly Queue<(object obj, RefCodec codec)> _pending = new();
@@ -187,4 +187,8 @@ public sealed class GraphReader
         Complete();
         _objs.Clear();
     }
+
+    /// <summary>Continues the stream from another buffer (type table kept; call after <see cref="ResetObjects"/>).
+    /// Used by multiplayer turns: one stream per player, cut into one buffer per turn.</summary>
+    public void ContinueWith(ByteReader input) => In = input;
 }

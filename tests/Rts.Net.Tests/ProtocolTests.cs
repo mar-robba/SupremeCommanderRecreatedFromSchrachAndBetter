@@ -68,6 +68,23 @@ public class ProtocolTests
     }
 
     [Fact]
+    public void StatefulTurnStreamSendsTypesOnce()
+    {
+        var enc = new TurnEncoder();
+        var dec = new TurnDecoder();
+        Command Make(int i) => new IssueOrderCommand(2, [new UnitHandle(i, 1)], Order.MoveTo(new Vector2(i, i)), false);
+        var first = enc.Encode([Make(1)]);
+        var empty = enc.Encode([]);
+        var second = enc.Encode([Make(2), Make(3)]);
+        Assert.Same(TurnCodec.Empty, empty);
+        Assert.True(second.Length < first.Length, $"type table repeated: {first.Length} then {second.Length} bytes");
+        Assert.Equal(new UnitHandle(1, 1), Assert.IsType<IssueOrderCommand>(Assert.Single(dec.Decode(first))).Units[0]);
+        Assert.Empty(dec.Decode(empty));
+        var two = dec.Decode(second);
+        Assert.Equal(new Vector2(3, 3), Assert.IsType<IssueOrderCommand>(two[1]).Order.Pos);
+    }
+
+    [Fact]
     public void LobbyAndGameStartRoundTrip()
     {
         var l = LobbyState.CreateDefault("Host");
