@@ -7,9 +7,12 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
 
 ## Rules for this job (read carefully)
 - Project: a Supreme Commander 1-like RTS in C#/.NET 10 + Raylib-cs. Main checkout: `/run/media/marco/Volume D/RTS`.
-  First read CLAUDE.md, docs/README.md and docs/ROADMAP.md. Read the docs/ARCHITECTURE.md sections for your area
-  in full and skim the rest, especially "Factions" and "Save/load & replays": every new sim field must be saveable.
-  Read docs/DEV_GUIDE.md before your first build.
+  CLAUDE.md is already in your context. Read ONLY what your job needs, by section (`grep -n '^## ' <file>`, then
+  read that range): reading all of docs/ costs ~50k tokens, a third of your cap. A resumed agent reads its
+  `.claude/handoff.md` and notes first, then only the sections they point to. A new agent reads its brief, the
+  docs/ARCHITECTURE.md sections of its area plus "Factions" and "Save/load & replays" (every new sim field must be
+  saveable), and docs/DEV_GUIDE.md "Building in a shared worktree" and "Sim pitfalls" before its first build. Never read docs/HISTORY.md, docs/ROADMAP.md
+  or docs/ARCHITECTURE.md whole.
 - You are one of `<N>` agents working in parallel (wave `<W>`), each in its own git worktree and branch:
   `<one line per agent: (letter) area (main folders)>`.
   Stay in your area. Keep edits to shared files minimal and additive. Shared files: GameApp.cs, GameSession.cs,

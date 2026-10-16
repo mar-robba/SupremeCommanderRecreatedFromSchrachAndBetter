@@ -101,6 +101,10 @@ To keep conflicts small:
   every milestone. A sub-agent writes the essentials of its piece to `<worktree>/.claude/notes/<piece>.md` when it
   finishes or stops, and its parent links it from the handoff note. It is a transient working note (the
   `.claude/` folder is gitignored). Its lasting parts end up in ARCHITECTURE, HISTORY or DEV_GUIDE.
+- **Reading costs context**: all of `docs/` is ~190 kB, about 50k tokens; with the system prompt a fresh agent that
+  reads everything starts near 70k. On 2026-10-16 a coordinator reached 126k and a client sub-agent 144k within
+  10 minutes of starting. So prompts give a targeted reading list (AGENT_RULES first bullet): handoff and notes
+  first, then only the needed sections; sub-agent prompts carry the contract lines they need instead of "read the docs".
 - **Never resume a big agent** with SendMessage after it was cut off: it keeps its whole old transcript and grows
   without limit. Resume only agents well under 100k. Replace the others with a fresh agent and the handoff note.
 - **Measuring context**: `python3 -I tools/agents/agent_ctx.py <agentId>...` prints each agent's exact context,
