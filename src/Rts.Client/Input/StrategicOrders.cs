@@ -65,10 +65,13 @@ public static class StrategicOrders
     }
 
     /// <summary>Issues a launch at the ground point under the mouse. Returns false (error sound) if nothing can fire there.</summary>
-    public static bool TryLaunch(GameContext ctx, SelectionController sel, Vector2 mouse)
+    public static bool TryLaunch(GameContext ctx, SelectionController sel, Vector2 mouse) =>
+        ctx.PickGround(mouse) is Vector3 g && TryLaunchAt(ctx, sel, new Vector2(g.X, g.Z));
+
+    /// <summary>Launch mode at a world point (map click or minimap click).</summary>
+    public static bool TryLaunchAt(GameContext ctx, SelectionController sel, Vector2 p)
     {
-        if (ctx.PickGround(mouse) is not Vector3 g) return false;
-        var p = new Vector2(g.X, g.Z);
+        var g = new Vector3(p.X, ctx.Terrain.GetSurfaceHeight(p), p.Y);
         if (!PickLauncher(ctx, sel, p, out var v))
         {
             UiSounds.Error();
@@ -83,6 +86,6 @@ public static class StrategicOrders
     /// <summary>L hotkey: enters launch mode if a launcher is selected.</summary>
     public static void HandleHotkey(GameContext ctx, SelectionController sel, bool ctrl)
     {
-        if (!ctrl && Raylib.IsKeyPressed(KeyboardKey.L) && AnyLauncher(ctx, sel)) sel.SetMode(SelectionController.CommandMode.Launch);
+        if (!ctrl && Hotkeys.Launch.Pressed() && AnyLauncher(ctx, sel)) sel.SetMode(SelectionController.CommandMode.Launch);
     }
 }

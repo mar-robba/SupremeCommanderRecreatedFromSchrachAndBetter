@@ -16,10 +16,10 @@ namespace Rts.Client.UI;
 /// </summary>
 public sealed class BuildMenu
 {
-    public static readonly KeyboardKey[] SlotKeys = [KeyboardKey.Z, KeyboardKey.X, KeyboardKey.C, KeyboardKey.V, KeyboardKey.B, KeyboardKey.N];
+    public static KeyboardKey[] SlotKeys => Hotkeys.BuildSlots.Keys;
     public static readonly string[] SlotNames = ["Z", "X", "C", "V", "B", "N"];
     /// <summary>Cycles the tech tier filter (T1/T2/T3) in the build menu and factory panel.</summary>
-    public const KeyboardKey TierKey = KeyboardKey.T;
+    public static KeyboardKey TierKey => Hotkeys.BuildTier.Key;
     private static readonly BuildTab[] MainTabs = [BuildTab.Economy, BuildTab.Factory, BuildTab.Defense, BuildTab.Intel];
 
     private readonly GameContext _ctx;
@@ -123,7 +123,7 @@ public sealed class BuildMenu
 
     public void HandleHotkeys()
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.Tab))
+        if (Raylib.IsKeyPressed(Hotkeys.BuildCategory.Key))
         {
             var tabs = Tabs().Where(t => _byTab[t].Count > 0).ToList();
             if (tabs.Count > 0)

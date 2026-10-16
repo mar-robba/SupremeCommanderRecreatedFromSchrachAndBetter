@@ -67,6 +67,7 @@ public static class CaptureSystem
         float reserved = tb.CaptureTick == w.Tick ? tb.CaptureReserved : 0;
         float work = MathF.Min(step, 1f - tb.CaptureProgress - reserved);
         tb.CaptureTick = w.Tick; // capture activity (also while energy-stalled)
+        tb.CaptureArmy = u.Army[i] + 1; // friendly units hold fire on it (Combat/FireStates)
         tb.CaptureReserved = reserved + MathF.Max(0, work);
         if (work <= 0) return;
         b.PendingWork = work;

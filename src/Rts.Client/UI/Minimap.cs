@@ -151,6 +151,7 @@ public sealed class Minimap : IDisposable
                 new("Minimap", Ui.TextColor, 13, true),
                 new("Left click / drag: move camera", Ui.TextDim, 11.5f),
                 new("Right click: move selection (factory: rally point)", Ui.TextDim, 11.5f),
+                new("In an order mode (attack, patrol, unload, launch, guard, capture…): left click gives it there", Ui.TextDim, 11.5f),
             }, above: true);
     }
 
@@ -163,10 +164,11 @@ public sealed class Minimap : IDisposable
         {
             var wp = ToWorld(m, Ui.Mouse);
             var mode = _sel.Mode;
-            if (mode is SelectionController.CommandMode.AttackMove or SelectionController.CommandMode.Patrol or SelectionController.CommandMode.Move && _sel.Selected.Count > 0)
+            if (mode != SelectionController.CommandMode.Normal && _sel.Selected.Count > 0 && !_ctx.ReadOnly)
             {
-                _sel.IssueAtPoint(wp, mode, Ui.Shift);
-                if (!Ui.Shift) _sel.Mode = SelectionController.CommandMode.Normal;
+                // Every order mode works on the minimap (guard / capture: the nearest fitting unit to the click).
+                float pickR = MathF.Max(3f, Ui.P(6) * _ctx.Terrain.Width / MathF.Max(1f, m.Width));
+                if (_sel.IssueAtWorldPoint(wp, mode, Ui.Shift, pickR) && !Ui.Shift) _sel.Mode = SelectionController.CommandMode.Normal;
             }
             else _dragging = true;
         }

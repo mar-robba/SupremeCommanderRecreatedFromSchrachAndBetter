@@ -46,6 +46,7 @@ public static class SnapshotWriter
             v.Status = Systems.StealthSystem.StatusOf(w, i, viewArmy); // stealth/cloak (own/allied), EMP stun
             v.FactoryRepeat = u.Factory[i].Repeat;
             v.Kills = u.Kills[i];
+            v.FireState = u.FireStates[i];
             ref readonly var econ = ref u.Econ[i];
             v.AdjMassProd = econ.AdjMassProd;
             v.AdjEnergyProd = econ.AdjEnergyProd;

@@ -19,6 +19,8 @@ namespace Rts.Sim.Systems;
 ///    of the spatial grid picks the best target: priority tier (see <see cref="Tier"/>), then distance, then index.
 /// Non-forced targets must be hittable from where the unit stands (<see cref="LineOfFire"/>: terrain line of fire for
 /// straight shots/beams, an arc solution for shells), checked on acquisition and on every engaged re-scan.
+/// Fire states (<see cref="FireStates"/>): Hold fire / unprovoked Return fire skip steps 3-4; units our army (or an
+/// ally) is capturing are never acquired automatically.
 /// </summary>
 public static class TargetingSystem
 {
@@ -41,17 +43,22 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!u.IsActive(i) || !u.IsComplete(i)) return;
+        if ((u.Flags[i] & UnitFlags.Carried) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];
+        bool submerged = Naval.Submarines.IsSubmerged(w, i); // dived Atlantis: only torpedoes (WeaponSystem holds the rest)
 
         var forced = UnitHandle.None;
         var q = u.Orders[i];
         if (!q.IsEmpty && q.Current.Type == OrderType.Attack) forced = q.Current.Target;
+        // A captor never shoots its capture target (also while walking to it, before the capture starts).
+        int captureTarget = !q.IsEmpty && q.Current.Type == OrderType.Capture && u.IsActive(q.Current.Target) ? q.Current.Target.Index : -1;
 
         int army = u.Army[i];
         var pos = u.Pos[i];
         var myLayer = s.Layer[i];
+        bool auto = FireStates.AutoTargetAllowed(w, i); // Hold fire / Return fire (Combat/FireStates)
         for (int wi = 0; wi < info.Weapons.Length; wi++)
         {
             ref var ws = ref u.Weapons[i * UnitStore.MaxWeapons + wi];
@@ -60,14 +67,17 @@ public static class TargetingSystem
             if (winfo.Kind == WeaponKind.Manual) continue; // silo / missile defense (Strategic module)
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
             if (winfo.Kind == WeaponKind.AntiTorpedo) { ws.Target = UnitHandle.None; continue; } // torpedo defense: never targets units
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind)) { ws.Target = UnitHandle.None; continue; }
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
             // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.
             if (!forced.IsNone && ws.Target == forced && u.IsActive(forced) && CombatState.CanSee(w, army, forced.Index)) continue;
 
+            if (!auto) { ws.Target = UnitHandle.None; continue; } // fire state forbids automatic targets
+
             bool had = !ws.Target.IsNone;
             // Line of fire is re-checked on the engaged re-scan cadence (a target behind a cliff is dropped).
-            if (had && u.IsActive(ws.Target) && CanEngage(w, s, army, pos, wbp.TargetMask, winfo.AcquireRange, wbp.MinRange, ws.Target.Index)
+            if (had && u.IsActive(ws.Target) && ws.Target.Index != captureTarget && CanEngage(w, s, army, pos, wbp.TargetMask, winfo.AcquireRange, wbp.MinRange, ws.Target.Index)
                 && (ws.RetargetTimer > 0 || LineOfFire.CanHit(w, s, i, winfo, wbp, ws.Target.Index)))
             {
                 if (ws.RetargetTimer <= 0)
@@ -77,7 +87,7 @@ public static class TargetingSystem
                     int curTier = Tier(s, info, myLayer, cur, u);
                     if (curTier > 0)
                     {
-                        int best = Scan(w, s, i, info, myLayer, winfo, wbp, out int bestTier);
+                        int best = Scan(w, s, i, info, myLayer, winfo, wbp, captureTarget, out int bestTier);
                         if (best >= 0 && bestTier < curTier) ws.Target = u.HandleOf(best);
                     }
                 }
@@ -88,7 +98,7 @@ public static class TargetingSystem
             if (had) ws.RetargetTimer = 0; // lost the target: look for a new one right away
             if (ws.RetargetTimer > 0) continue;
             ws.RetargetTimer = IdleScanInterval + (i + wi) % 3;
-            int found = Scan(w, s, i, info, myLayer, winfo, wbp, out _);
+            int found = Scan(w, s, i, info, myLayer, winfo, wbp, captureTarget, out _);
             if (found >= 0) ws.Target = u.HandleOf(found);
         }
     }
@@ -97,7 +107,9 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!s.IsEnemyArmy(army, u.Army[j])) return false;
+        if ((u.Flags[j] & UnitFlags.Carried) != 0) return false; // inside a carrier: off the map
         if ((s.Layer[j] & mask) == 0) return false;
+        if (FireStates.CapturedByFriend(w, army, j)) return false; // we are capturing it: hold fire
         float d2 = Vector2.DistanceSquared(pos, u.Pos[j]);
         float r = range + s.Catalog.Units[u.Bp[j]].TargetRadius;
         if (d2 > r * r || d2 < minRange * minRange) return false;
@@ -125,7 +137,7 @@ public static class TargetingSystem
         return armed ? 2 : 3;
     }
 
-    private static int Scan(SimWorld w, CombatState s, int i, UnitCombatInfo info, LayerMask myLayer, in WeaponInfo winfo, WeaponBlueprint wbp, out int tier)
+    private static int Scan(SimWorld w, CombatState s, int i, UnitCombatInfo info, LayerMask myLayer, in WeaponInfo winfo, WeaponBlueprint wbp, int skip, out int tier)
     {
         var u = w.Units;
         int army = u.Army[i];
@@ -143,6 +155,7 @@ public static class TargetingSystem
             Mask = wbp.TargetMask,
             Range = winfo.AcquireRange,
             MinRange2 = wbp.MinRange * wbp.MinRange,
+            Skip = skip,
             Best = -1,
             BestTier = int.MaxValue,
             BestD2 = float.MaxValue,
@@ -166,6 +179,7 @@ public static class TargetingSystem
         public LayerMask Mask;
         public float Range;
         public float MinRange2;
+        public int Skip;
         public int Best;
         public int BestTier;
         public float BestD2;
@@ -173,9 +187,9 @@ public static class TargetingSystem
         public bool Visit(int j)
         {
             var u = W.Units;
-            if (!S.IsEnemyArmy(Army, u.Army[j])) return true;
+            if (!S.IsEnemyArmy(Army, u.Army[j]) || j == Skip) return true;
             if ((S.Layer[j] & Mask) == 0) return true;
-            if (!u.IsActive(j)) return true;
+            if (!u.IsActive(j) || (u.Flags[j] & UnitFlags.Carried) != 0) return true; // boarded this tick: off the map
             float d2 = Vector2.DistanceSquared(u.Pos[j], Pos);
             float r = Range + S.Catalog.Units[u.Bp[j]].TargetRadius;
             if (d2 > r * r || d2 < MinRange2) return true;
@@ -183,6 +197,7 @@ public static class TargetingSystem
             if (tier > BestTier) return true;
             if (tier == BestTier && (d2 > BestD2 || (d2 == BestD2 && j > Best))) return true;
             if (!CombatState.CanSee(W, Army, j)) return true;
+            if (FireStates.CapturedByFriend(W, Army, j)) return true; // being captured by us / an ally
             if (!LineOfFire.CanHit(W, S, ShooterIndex, WInfo, WBp, j)) return true;
             Best = j;
             BestTier = tier;

@@ -9,6 +9,8 @@ namespace Rts.Client.Menus;
 /// Main menu → "Load Game" / "Replays": the files of the saves/ or replays/ folder (headers only, newest first) with
 /// date, name, map, players, length and tags (sandbox, winner, other build). Unreadable files are listed greyed with
 /// the reason. Load/Play (double-click, Enter), Delete (with confirmation), Back (Esc).
+/// Opened from the pause menu it owns the paused game (<c>returnTo</c>): Back returns to it, loading a save
+/// disposes it.
 /// </summary>
 public sealed class SaveListScreen : IScreen
 {
@@ -21,12 +23,16 @@ public sealed class SaveListScreen : IScreen
     private int _lastClickIndex = -1;
     private SaveEntry? _confirmDelete;
     private string? _message;
+    /// <summary>The paused game this list was opened from (pause menu "Load Game"), null from the main menu.</summary>
+    private readonly IScreen? _returnTo;
+    private bool _returned;
 
-    public SaveListScreen(AppHost app, bool replays, string? message = null)
+    public SaveListScreen(AppHost app, bool replays, string? message = null, IScreen? returnTo = null)
     {
         _app = app;
         _replays = replays;
         _message = message;
+        _returnTo = returnTo;
         Refresh();
     }
 
@@ -61,9 +67,14 @@ public sealed class SaveListScreen : IScreen
         float bh = Ui.P(40), by = panel.Y + panel.Height + Ui.P(18), bw = Ui.P(150);
         var sel = (uint)_selected < (uint)_entries.Count ? _entries[_selected] : null;
         bool canOpen = sel?.Info != null && !modal;
-        if (MenuUi.BigButton(Ui.R(x, by, bw, bh), "Back", !modal) || (!modal && MenuUi.Key(KeyboardKey.Escape)))
+        if (MenuUi.BigButton(Ui.R(x, by, bw, bh), _returnTo != null ? "Back to Game" : "Back", !modal) || (!modal && MenuUi.Key(KeyboardKey.Escape)))
         {
-            _app.ToMainMenu();
+            if (_returnTo != null)
+            {
+                _returned = true;
+                _app.Go(_returnTo);
+            }
+            else _app.ToMainMenu();
             return;
         }
         var openR = Ui.R(panel.X + panel.Width - bw, by, bw, bh);
@@ -189,5 +200,9 @@ public sealed class SaveListScreen : IScreen
         _app.Go(new FileLoadingScreen(_app, e.Path, _replays, _app.MenuGameOptions(), fromList: true));
     }
 
-    public void Dispose() { }
+    /// <summary>Disposes the paused game it was opened from, unless Back returned to it.</summary>
+    public void Dispose()
+    {
+        if (!_returned) _returnTo?.Dispose();
+    }
 }

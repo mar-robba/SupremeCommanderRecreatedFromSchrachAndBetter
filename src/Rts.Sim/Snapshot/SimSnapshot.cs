@@ -41,6 +41,8 @@ public struct UnitView
     public float Fuel;
     /// <summary>Active stealth/cloak/stealth-field and EMP stun state (see <see cref="UnitStatus"/>).</summary>
     public UnitStatus Status;
+    /// <summary>Fire state (Combat/FireStates).</summary>
+    public FireState FireState;
 }
 
 public struct OrderView

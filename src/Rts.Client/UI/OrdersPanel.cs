@@ -2,6 +2,7 @@ using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Input;
 using Rts.Sim.Data;
+using Rts.Sim.Orders;
 using Rts.Sim.Snapshot;
 using Mode = Rts.Client.Input.SelectionController.CommandMode;
 
@@ -20,7 +21,7 @@ public sealed class OrdersPanel
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
 
-    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Capture, Pause, Dive, Unload, TransportTo, Ferry, Dock }
+    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Capture, Pause, Dive, Unload, TransportTo, Ferry, Dock, FireState }
 
     public OrdersPanel(GameContext ctx, SelectionController sel)
     {
@@ -28,14 +29,28 @@ public sealed class OrdersPanel
         _sel = sel;
     }
 
-    /// <summary>Panel width for the given UI scale.</summary>
-    public static float Width => 3 * Ui.P(48) + 4 * Ui.P(6);
+    private readonly List<(Btn id, string label, string key, bool enabled, bool active)> _buttons = new();
+    private int _cols = 3;
 
-    public void Draw(Rectangle r, SimSnapshot snap)
+    /// <summary>Button size and gap for the current UI scale.</summary>
+    private static float ButtonW => Ui.P(48);
+    private static float Pad => Ui.P(6);
+
+    /// <summary>Minimum panel width (3 columns).</summary>
+    public static float Width => 3 * ButtonW + 4 * Pad;
+
+    /// <summary>Builds this frame's buttons and returns the panel width: at most 3 rows, so a big selection (loaded
+    /// transports, subs, launchers…) gets extra columns instead of squashed buttons.</summary>
+    public float Refresh(SimSnapshot snap)
     {
-        Ui.Panel(r);
-        float y = Ui.PanelTitle(r, "Orders");
+        BuildButtons(snap);
+        _cols = Math.Max(3, (_buttons.Count + 2) / 3);
+        return _cols * ButtonW + (_cols + 1) * Pad;
+    }
 
+    private void BuildButtons(SimSnapshot snap)
+    {
+        _buttons.Clear();
         bool anyMobile = false, anyFactory = false, anyEngineer = false, anyLauncher = StrategicOrders.AnyLauncher(_ctx, _sel);
         foreach (var h in _sel.Selected)
         {
@@ -46,54 +61,70 @@ public sealed class OrdersPanel
             anyEngineer |= bp.Has(UnitCategory.Engineer);
         }
         bool canMove = anyMobile || anyFactory;
-
-        var buttons = new List<(Btn id, string label, string key, bool enabled, bool active)>
-        {
-            (Btn.Stop, "Stop", "S", true, false),
-            anyLauncher && !canMove ? (Btn.Launch, "Launch", "L", true, _sel.Mode == Mode.Launch) : (Btn.Move, "Move", "M", canMove, _sel.Mode == Mode.Move),
-            (Btn.AttackMove, "Attack", "A", canMove, _sel.Mode == Mode.AttackMove),
-            (Btn.Patrol, "Patrol", "P", canMove, _sel.Mode == Mode.Patrol),
-            (Btn.Guard, anyEngineer || anyFactory ? "Assist" : "Guard", "G", canMove, _sel.Mode == Mode.Guard),
-        };
+        var b = _buttons;
+        b.Add((Btn.Stop, "Stop", Hotkeys.Stop.Label, true, false));
+        b.Add(anyLauncher && !canMove ? (Btn.Launch, "Launch", Hotkeys.Launch.Label, true, _sel.Mode == Mode.Launch) : (Btn.Move, "Move", Hotkeys.Move.Label, canMove, _sel.Mode == Mode.Move));
+        b.Add((Btn.AttackMove, "Attack", Hotkeys.AttackMove.Label, canMove, _sel.Mode == Mode.AttackMove));
+        b.Add((Btn.Patrol, "Patrol", Hotkeys.Patrol.Label, canMove, _sel.Mode == Mode.Patrol));
+        b.Add((Btn.Guard, anyEngineer || anyFactory ? "Assist" : "Guard", Hotkeys.Guard.Label, canMove, _sel.Mode == Mode.Guard));
+        if (anyLauncher && canMove) b.Add((Btn.Launch, "Launch", Hotkeys.Launch.Label, true, _sel.Mode == Mode.Launch));
+        _fire = UnitToggles.FireStateOf(_ctx, _sel.Selected);
+        if (_fire.Any) b.Add((Btn.FireState, _fire.Mixed ? "Mixed" : UnitToggles.FireStateShort(_fire.State), Hotkeys.FireState.Label, true, !_fire.Mixed && _fire.State != FireState.FireAtWill));
         if (UnitToggles.AnyCapturer(_ctx, _sel.Selected))
         {
             // E is transport-to while transports are selected (SharedHotkeys): no key on the Capture button then.
             string key = UnitToggles.EKey(_ctx, _sel.Selected) == SharedHotkeys.EAction.Capture ? UnitToggles.CaptureKeyName : "";
-            buttons.Add((Btn.Capture, "Capture", key, true, _sel.Mode == Mode.Capture));
+            b.Add((Btn.Capture, "Capture", key, true, _sel.Mode == Mode.Capture));
         }
         _pause = UnitToggles.PauseState(_ctx, _sel.Selected);
-        if (_pause.Any) buttons.Add((Btn.Pause, _pause.AllOn ? "Resume" : "Pause", UnitToggles.PauseKeyName, true, _pause.AllOn));
+        if (_pause.Any) b.Add((Btn.Pause, _pause.AllOn ? "Resume" : "Pause", UnitToggles.PauseKeyName, true, _pause.AllOn));
         _dive = UnitToggles.DiveState(_ctx, _sel.Selected);
-        if (_dive.Any) buttons.Add((Btn.Dive, _dive.AllOn ? "Surface" : "Dive", UnitToggles.DiveKeyName, true, false));
+        if (_dive.Any) b.Add((Btn.Dive, _dive.AllOn ? "Surface" : "Dive", UnitToggles.DiveKeyName, true, false));
         var tb = TransportInput.ButtonsFor(CargoSelection.Of(_ctx, _sel.Selected, snap));
-        if ((tb & TransportButtons.Unload) != 0) buttons.Add((Btn.Unload, "Unload", "U", true, _sel.Mode == Mode.Unload));
-        if ((tb & TransportButtons.Launch) != 0) buttons.Add((Btn.Unload, "Launch", "U", true, _sel.Mode == Mode.Unload));
-        if ((tb & TransportButtons.TransportTo) != 0) buttons.Add((Btn.TransportTo, "Transport", "E", true, _sel.Mode == Mode.TransportTo));
-        if ((tb & TransportButtons.Ferry) != 0) buttons.Add((Btn.Ferry, "Ferry", "F", true, _sel.Mode == Mode.Ferry));
-        if ((tb & TransportButtons.Dock) != 0) buttons.Add((Btn.Dock, "Dock", "D", true, false));
-        buttons.Add((Btn.SelfDestruct, "Destruct", "^K", true, _sel.PendingSelfDestruct != null));
+        if ((tb & TransportButtons.Unload) != 0) b.Add((Btn.Unload, "Unload", Hotkeys.Unload.Label, true, _sel.Mode == Mode.Unload));
+        if ((tb & TransportButtons.Launch) != 0) b.Add((Btn.Unload, "Launch", Hotkeys.Unload.Label, true, _sel.Mode == Mode.Unload));
+        if ((tb & TransportButtons.TransportTo) != 0) b.Add((Btn.TransportTo, "Transport", Hotkeys.TransportTo.Label, true, _sel.Mode == Mode.TransportTo));
+        if ((tb & TransportButtons.Ferry) != 0) b.Add((Btn.Ferry, "Ferry", Hotkeys.Ferry.Label, true, _sel.Mode == Mode.Ferry));
+        if ((tb & TransportButtons.Dock) != 0) b.Add((Btn.Dock, "Dock", Hotkeys.Dock.Label, true, false));
+        b.Add((Btn.SelfDestruct, "Destruct", "^K", true, _sel.PendingSelfDestruct != null));
+    }
 
-        float pad = Ui.P(6);
-        int rows = (buttons.Count + 2) / 3;
-        float bw = (r.Width - 4 * pad) / 3f;
+    public void Draw(Rectangle r, SimSnapshot snap)
+    {
+        Ui.Panel(r);
+        float y = Ui.PanelTitle(r, "Orders");
+        if (_buttons.Count == 0) Refresh(snap);
+
+        float pad = Pad;
+        int cols = _cols;
+        int rows = (_buttons.Count + cols - 1) / cols;
+        float bw = (r.Width - (cols + 1) * pad) / cols;
         float bh = MathF.Min(bw, (r.Y + r.Height - y - (rows + 1) * pad) / rows);
-        for (int i = 0; i < buttons.Count; i++)
+        for (int i = 0; i < _buttons.Count; i++)
         {
-            var b = buttons[i];
-            var br = new Rectangle(MathF.Round(r.X + pad + (i % 3) * (bw + pad)), MathF.Round(y + pad * 0.5f + (i / 3) * (bh + pad)), MathF.Round(bw), MathF.Round(bh));
+            var b = _buttons[i];
+            var br = new Rectangle(MathF.Round(r.X + pad + (i % cols) * (bw + pad)), MathF.Round(y + pad * 0.5f + (i / cols) * (bh + pad)), MathF.Round(bw), MathF.Round(bh));
             var tint = b.id == Btn.SelfDestruct ? new Color(80, 36, 34, 255) : (Color?)null;
             var st = Ui.Button(br, b.enabled, b.active, tint);
-            DrawGlyph(b.id, br, b.enabled, _pause.AllOn, _dive.AllOn);
+            DrawGlyph(b.id, br, b.enabled, _pause.AllOn, _dive.AllOn, _fire);
             int fs = Ui.F(10);
-            float lw = Ui.Measure(b.label, fs);
-            Ui.Text(b.label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled ? Ui.TextColor : Ui.TextFaint);
+            string label = Ui.Fit(b.label, br.Width - Ui.P(2), fs);
+            float lw = Ui.Measure(label, fs);
+            Ui.Text(label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled ? Ui.TextColor : Ui.TextFaint);
             if (b.key.Length > 0) Ui.HotkeyBadge(br, b.key);
             if (st.Left) Execute(b.id);
-            if (st.Hover) Ui.Tooltip(br, b.label == "Destruct" ? "Self-destruct  [Ctrl+K]" : b.key.Length == 0 ? Title(b.id, b.label) : $"{Title(b.id, b.label)}  [{b.key}]", Description(b.id, b.label));
+            else if (st.Right && b.id == Btn.FireState) UnitToggles.CycleFireState(_ctx, _sel.Selected, -1);
+            if (st.Hover)
+            {
+                string key = b.id == Btn.SelfDestruct ? Hotkeys.SelfDestruct.Label : b.key;
+                Ui.Tooltip(br, key.Length == 0 ? Title(b.id, b.label) : $"{Title(b.id, b.label)}  [{key}]", Description(b.id, b.label));
+            }
         }
+        _buttons.Clear(); // rebuilt by the next Refresh (Hud layout)
     }
 
     private UnitToggles.ToggleState _pause, _dive;
+    private UnitToggles.FireSelection _fire;
 
     private void Execute(Btn id)
     {
@@ -113,6 +144,7 @@ public sealed class OrdersPanel
             case Btn.TransportTo: TransportInput.StartMode(_sel, Mode.TransportTo); break;
             case Btn.Ferry: TransportInput.StartMode(_sel, Mode.Ferry); break;
             case Btn.Dock: TransportInput.DockNow(_ctx, _sel, Ui.Shift); break;
+            case Btn.FireState: UnitToggles.CycleFireState(_ctx, _sel.Selected, Ui.Shift ? -1 : 1); break;
         }
     }
 
@@ -121,6 +153,7 @@ public sealed class OrdersPanel
         Btn.AttackMove => "Attack-move",
         Btn.Guard => label == "Assist" ? "Guard / Assist" : "Guard",
         Btn.TransportTo => "Transport to",
+        Btn.FireState => label == "Mixed" ? "Fire state: mixed" : "Fire state: " + label switch { "Return" => "Return fire", "Hold" => "Hold fire", _ => "Fire at will" },
         _ => label,
     };
 
@@ -140,11 +173,12 @@ public sealed class OrdersPanel
         Btn.Unload => "Click the drop point: the transports land there and unload. (Right-click on the ground also unloads.)",
         Btn.TransportTo => "Click a destination: the selected units are shared among the selected transports, picked up and dropped there.",
         Btn.Ferry => "Transports: click the pickup beacon, then the drop point - they shuttle units left at the beacon. Land units: click a beacon to wait there.",
+        Btn.FireState => "Click: next state, right-click: previous (Fire at will → Return fire → Hold fire). Return fire: weapons pick targets only for a few seconds after the unit is hit. Hold fire: only attack orders and attack-move targets you click fire. Units capturing something never shoot it.",
         Btn.Dock => "The selected aircraft fly to the nearest air staging / carrier to repair and refuel. (Right-click a carrier: dock there.)",
         _ => "",
     };
 
-    private static void DrawGlyph(Btn id, Rectangle br, bool enabled, bool paused, bool submerged)
+    private static void DrawGlyph(Btn id, Rectangle br, bool enabled, bool paused, bool submerged, UnitToggles.FireSelection fire)
     {
         float labelH = Ui.F(10) + Ui.P(4);
         var c = new Vector2(br.X + br.Width * 0.5f, br.Y + (br.Height - labelH) * 0.5f + Ui.P(2));
@@ -153,6 +187,7 @@ public sealed class OrdersPanel
         float t = MathF.Max(2f, s * 0.2f);
         switch (id)
         {
+            case Btn.FireState: DrawFireGlyph(c, s, t, enabled ? fire.Mixed ? new Color(200, 200, 210, 255) : FireColor(fire.State) : col, fire.Mixed ? FireState.FireAtWill : fire.State); break;
             case Btn.Launch: StrategicHud.DrawLaunchGlyph(c, s, t, enabled, col); break;
             case Btn.Capture: CursorHint.DrawFlag(c, s * 0.9f, enabled ? CursorHint.CaptureColor : col); break;
             case Btn.Pause:
@@ -228,5 +263,31 @@ public sealed class OrdersPanel
                 break;
             }
         }
+    }
+
+    public static Color FireColor(FireState s) => s switch
+    {
+        FireState.ReturnFire => new Color(245, 190, 70, 255),
+        FireState.HoldFire => new Color(240, 90, 80, 255),
+        _ => new Color(120, 225, 120, 255),
+    };
+
+    /// <summary>Crosshair (fire at will), crosshair inside a shield (return fire), crossed-out crosshair (hold fire).</summary>
+    public static void DrawFireGlyph(Vector2 c, float s, float t, Color col, FireState state)
+    {
+        Raylib.DrawRing(c, s * 0.55f, s * 0.55f + t, 0, 360, 24, col);
+        Raylib.DrawLineEx(c - new Vector2(s * 0.95f, 0), c - new Vector2(s * 0.3f, 0), t, col);
+        Raylib.DrawLineEx(c + new Vector2(s * 0.3f, 0), c + new Vector2(s * 0.95f, 0), t, col);
+        Raylib.DrawLineEx(c - new Vector2(0, s * 0.95f), c - new Vector2(0, s * 0.3f), t, col);
+        Raylib.DrawLineEx(c + new Vector2(0, s * 0.3f), c + new Vector2(0, s * 0.95f), t, col);
+        if (state == FireState.ReturnFire)
+        {
+            // Return arrow around the crosshair.
+            Raylib.DrawRing(c, s * 1.05f, s * 1.05f + t * 0.8f, 200, 340, 12, col);
+            var tip = c + new Vector2(MathF.Cos(MathF.PI * 340 / 180) * s * 1.1f, MathF.Sin(MathF.PI * 340 / 180) * s * 1.1f);
+            Raylib.DrawTriangle(tip + new Vector2(s * 0.3f, -s * 0.15f), tip + new Vector2(-s * 0.25f, -s * 0.2f), tip + new Vector2(0, s * 0.3f), col);
+        }
+        else if (state == FireState.HoldFire)
+            Raylib.DrawLineEx(c + new Vector2(-s * 0.85f, s * 0.85f), c + new Vector2(s * 0.85f, -s * 0.85f), t * 1.2f, col);
     }
 }
