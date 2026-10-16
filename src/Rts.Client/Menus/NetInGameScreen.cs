@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Input;
 using Rts.Client.Persistence;
 using Rts.Client.UI;
 using Rts.Net.Session;
@@ -75,7 +76,7 @@ public sealed class NetInGameScreen : IScreen
                         _chat.Focused = false;
                     }
                 }
-                else if (MenuUi.Key(KeyboardKey.Enter) || MenuUi.Key(KeyboardKey.KpEnter))
+                else if (!MenuUi.Automated && Hotkeys.Chat.Pressed())
                 {
                     if (_s.Selection.PendingSelfDestruct == null) _chat.Focus();
                 }
@@ -155,9 +156,9 @@ public sealed class NetInGameScreen : IScreen
     /// <summary>Space / + / − (instead of the single-player debug keys): requests to the host.</summary>
     private void SpeedKeys()
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.Space)) _game.RequestSpeed(_game.Speed, !_game.Paused);
-        if (Raylib.IsKeyPressed(KeyboardKey.Equal) || Raylib.IsKeyPressed(KeyboardKey.KpAdd)) _game.RequestSpeed(MathF.Min(8f, _game.Speed * 2f), _game.Paused);
-        if (Raylib.IsKeyPressed(KeyboardKey.Minus) || Raylib.IsKeyPressed(KeyboardKey.KpSubtract)) _game.RequestSpeed(MathF.Max(0.125f, _game.Speed * 0.5f), _game.Paused);
+        if (Hotkeys.PauseGame.Pressed()) _game.RequestSpeed(_game.Speed, !_game.Paused);
+        if (Hotkeys.SpeedUp.Pressed()) _game.RequestSpeed(MathF.Min(8f, _game.Speed * 2f), _game.Paused);
+        if (Hotkeys.SpeedDown.Pressed()) _game.RequestSpeed(MathF.Max(0.125f, _game.Speed * 0.5f), _game.Paused);
     }
 
     private void CheckOutcome()
