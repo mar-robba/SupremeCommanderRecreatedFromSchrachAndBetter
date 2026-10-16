@@ -25,6 +25,7 @@ public sealed class Simulation
         var sw = Stopwatch.StartNew();
         var w = World;
         w.Tick++;
+        Combat.EmpStun.Expire(w); // EMP stuns that ran out (Combat/EmpStun)
 
         CommandSystem.Run(w, commands);
         AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands

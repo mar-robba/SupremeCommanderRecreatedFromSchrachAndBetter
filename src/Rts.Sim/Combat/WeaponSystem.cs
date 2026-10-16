@@ -68,7 +68,7 @@ public static class WeaponSystem
     {
         var u = w.Units;
         s.Engaged[i] = 0;
-        if (!u.IsActive(i) || !u.IsComplete(i)) return;
+        if (!u.IsActive(i) || !u.IsComplete(i) || (u.Flags[i] & UnitFlags.Stunned) != 0) return; // EMP stun: no firing
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];
@@ -350,6 +350,7 @@ public static class WeaponSystem
             var hitPos = u.IsActive(shot.Target) ? CombatState.Of(w).Center(u, shot.Target.Index) : shot.TargetPos;
             // Enemy shield domes between the muzzle and the target absorb the beam (Strategic module).
             if (Strategic.ShieldSystem.TryBlockInstant(w, shot.Army, shot.Pos, hitPos, shot.Damage, shot.Bp, shot.Weapon)) return;
+            EmpStun.OnImpact(w, shot.Bp, shot.Weapon, shot.Army, new Vector2(hitPos.X, hitPos.Z), u.IsActive(shot.Target) ? shot.Target.Index : -1);
             if (shot.DamageRadius > 0)
             {
                 w.Events.AreaDamage.Add(new AreaDamageEvent

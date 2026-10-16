@@ -103,7 +103,8 @@ public static partial class MovementSystem
             {
                 int i = u.AliveList[k];
                 var bp = w.BpOf(i);
-                if (bp.IsStructure || !u.IsComplete(i) || bp.Movement.Layer == MotionLayer.None)
+                if (bp.IsStructure || !u.IsComplete(i) || bp.Movement.Layer == MotionLayer.None
+                    || (u.Flags[i] & UnitFlags.Stunned) != 0 && Combat.EmpStun.HoldStill(u, i)) // EMP stun: stands still
                 {
                     u.ScratchPos[i] = u.Pos[i];
                     continue;

@@ -43,7 +43,7 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!u.IsActive(i) || !u.IsComplete(i)) return;
-        if ((u.Flags[i] & UnitFlags.Carried) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold
+        if ((u.Flags[i] & (UnitFlags.Carried | UnitFlags.Stunned)) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold; EMP-stunned (Combat/EmpStun)
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];

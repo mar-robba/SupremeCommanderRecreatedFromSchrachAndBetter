@@ -203,7 +203,7 @@ public static class UpgradeSystem
         ref var e = ref u.Econ[i];
         e.MassRequest = 0;
         e.EnergyRequest = 0;
-        if ((u.Flags[i] & UnitFlags.Paused) != 0) { ConstructionSystem.Idle(w, i); return; }
+        if ((u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0) { ConstructionSystem.Idle(w, i); return; }
         ConstructionSystem.Work(w, i, u.HandleOf(i), BuilderMode.Upgrade);
     }
 

@@ -179,7 +179,7 @@ public static class ConstructionSystem
             e.EnergyRequest = 0;
             e.ReclaimMass = 0;
             e.ReclaimEnergy = 0;
-            if (!complete || (u.Flags[i] & UnitFlags.Paused) != 0 || q.IsEmpty)
+            if (!complete || (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0 || q.IsEmpty)
             {
                 Idle(w, i);
                 continue;
@@ -281,7 +281,7 @@ public static class ConstructionSystem
         float maxHp = Combat.Veterancy.MaxHealth(w, t);
         if (mode == BuilderMode.Repair && u.Health[t] >= maxHp && u.Upgrade[t].Active)
         {
-            if ((u.Flags[t] & UnitFlags.Paused) != 0) { Idle(w, i); return; } // paused upgrade: wait
+            if ((u.Flags[t] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0) { Idle(w, i); return; } // paused/stunned upgrade: wait
             mode = BuilderMode.Upgrade;
         }
         if (mode == BuilderMode.Repair && u.Health[t] >= maxHp) { Finish(w, i, q); return; }
@@ -378,7 +378,7 @@ public static class ConstructionSystem
         var mode = BuilderMode.None;
         int anchor = t; // unit we must be in range of
         ref var tb = ref u.Builder[t];
-        bool paused = (u.Flags[t] & UnitFlags.Paused) != 0; // a paused factory/upgrade: assistants wait too
+        bool paused = (u.Flags[t] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0; // a paused/stunned factory/upgrade: assistants wait too
         if (u.IsComplete(t) && u.Health[t] < Combat.Veterancy.MaxHealth(w, t) && !u.Upgrade[t].Active)
         {
             work = g; mode = BuilderMode.Repair; // a damaged assisted unit (e.g. the factory) is repaired first
@@ -400,7 +400,7 @@ public static class ConstructionSystem
                  && u.IsActive(tb.Target) && tb.Target.Index != i)
         {
             int bt = tb.Target.Index;
-            if (tb.Mode == BuilderMode.Upgrade) { if (u.Upgrade[bt].Active && (u.Flags[bt] & UnitFlags.Paused) == 0) { work = tb.Target; mode = BuilderMode.Upgrade; anchor = bt; } }
+            if (tb.Mode == BuilderMode.Upgrade) { if (u.Upgrade[bt].Active && (u.Flags[bt] & (UnitFlags.Paused | UnitFlags.Stunned)) == 0) { work = tb.Target; mode = BuilderMode.Upgrade; anchor = bt; } }
             else if (tb.Mode == BuilderMode.Capture) { if (CaptureSystem.CanCapture(w, i, bt)) { work = tb.Target; mode = BuilderMode.Capture; anchor = bt; } }
             else if (!u.IsComplete(bt)) { work = tb.Target; mode = BuilderMode.Assist; anchor = bt; }
             else if (tb.Mode == BuilderMode.Repair && u.Health[bt] < Combat.Veterancy.MaxHealth(w, bt)) { work = tb.Target; mode = BuilderMode.Repair; anchor = bt; }
