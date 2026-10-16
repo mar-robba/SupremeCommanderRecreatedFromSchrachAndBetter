@@ -125,6 +125,8 @@ public struct BuilderState
     public int CaptureTick;
     /// <summary>As a TARGET: capture work reserved by captors during <see cref="CaptureTick"/> (no overshoot).</summary>
     public float CaptureReserved;
+    /// <summary>As a TARGET: army index + 1 of the last captor (0 = never captured); see Combat/FireStates.</summary>
+    public int CaptureArmy;
 }
 
 /// <summary>Factory production state (owned by FactorySystem).</summary>

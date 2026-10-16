@@ -32,6 +32,8 @@ public sealed class UnitStore
     public readonly int[] LastHitTick;
     /// <summary>Accumulated veterancy kills.</summary>
     public readonly int[] Kills;
+    /// <summary>Fire state (Fire at will / Return fire / Hold fire, see Combat/FireStates).</summary>
+    public readonly FireState[] FireStates;
 
     // Modules
     public readonly MoveState[] Move;
@@ -66,6 +68,7 @@ public sealed class UnitStore
         Flags = new UnitFlags[capacity];
         LastHitTick = new int[capacity];
         Kills = new int[capacity];
+        FireStates = new FireState[capacity];
         Move = new MoveState[capacity];
         Weapons = new WeaponState[capacity * MaxWeapons];
         Orders = new OrderQueue[capacity];
@@ -105,6 +108,7 @@ public sealed class UnitStore
         Elevation[i] = 0;
         LastHitTick[i] = -1000;
         Kills[i] = 0;
+        FireStates[i] = FireState.FireAtWill;
         Move[i] = default;
         Move[i].PathId = -1;
         WeaponsOf(i).Clear();

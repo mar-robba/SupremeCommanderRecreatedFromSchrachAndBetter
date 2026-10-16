@@ -68,7 +68,12 @@ Things learned while building the project that are not about how a system works 
 - **Weapon arcs**: the `IndirectFire`/`Artillery` categories give a weapon a high arc, with 25–40 s flights at long
   range. A long-range direct gun (the Mavor) must not have them.
 - **Carried units are alive but not on the map**: `IsActive` is true, but they are not in the AliveList. Orders or
-  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo").
+  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo"). A unit that boards after
+  the AliveList rebuild (e.g. an aircraft finished inside a dived Atlantis, in FactorySystem) stays in this tick's
+  AliveList and grid: TargetingSystem skips `UnitFlags.Carried` shooters and targets for that reason.
+- **Fresh spawn vs blueprint swap in `InitUnit`**: `UnitStore.Allocate` zeroes the module structs, so a field that
+  `InitUnit` always sets to non-zero (`MoveState.OrbitDir`) tells a new unit from a re-init (MovementSystem uses it
+  to keep a dived sub down).
 - **Saveable state** (CLAUDE.md rule 9): static scratch lists and cached delegates get `[NoSave]` and are rebuilt
   lazily (`??=`). An unsupported framework type in sim state makes the serializer throw with a hint;
   `SaveCoverageTests` catches it first.

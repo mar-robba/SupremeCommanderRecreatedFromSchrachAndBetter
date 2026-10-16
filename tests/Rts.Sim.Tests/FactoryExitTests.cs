@@ -68,6 +68,29 @@ public class FactoryExitTests
     }
 
     [Fact]
+    public void ExitAvoidsAUnitParkedInFrontOfTheFactory()
+    {
+        var sim = TestUtil.NewSkirmish(42);
+        var w = sim.World;
+        var u = w.Units;
+        var site = FindSite(w, "uef_t1_land_factory", CommanderPos(w), 10);
+        var f = TestUtil.Spawn(sim, "uef_t1_land_factory", 0, site);
+        var fbp = w.BpOf(f.Index);
+        var tbp = TestUtil.Db["uef_t1_tank"];
+        float dist = ConstructionSystem.HalfSize(fbp) + tbp.Radius + 0.3f;
+        var front = u.Pos[f.Index] + DMath.Dir(u.Heading[f.Index]) * dist;
+        var parked = TestUtil.Spawn(sim, "uef_t1_tank", 0, front);
+        sim.Step();
+        var tank = BuildOne(sim, f, "uef_t1_tank");
+        var exit = u.Move[tank.Index].FactoryExit;
+        float clear = tbp.Radius * 2 + 0.3f;
+        Assert.True(Vector2.Distance(exit, u.Pos[parked.Index]) > clear, $"exit {exit} on the parked tank at {u.Pos[parked.Index]}");
+        var parkedAt = u.Pos[parked.Index];
+        AssertDrivesOut(sim, f, tank, 60);
+        Assert.True(Vector2.Distance(u.Pos[parked.Index], parkedAt) < 1.5f, "the parked tank was not rammed aside");
+    }
+
+    [Fact]
     public void FrigateSailsOutOfTheNavalFactory()
     {
         var sim = NavalWorld.Archipelago(seed: 42);

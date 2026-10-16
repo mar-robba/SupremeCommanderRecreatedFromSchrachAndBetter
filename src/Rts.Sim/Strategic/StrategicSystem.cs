@@ -20,7 +20,7 @@ public static class StrategicSystem
 
     /// <summary>Spawn hook (UnitLifecycle.OnSpawn). Sequential.
     /// Idempotent: it is re-run when a unit changes blueprint in place (upgrades, commander enhancements); the silo
-    /// stock is kept then, and a unit whose new blueprint has no module leaves the list.</summary>
+    /// stock and the shield HP/state are kept then, and a unit whose new blueprint has no module leaves the list.</summary>
     public static void InitUnit(SimWorld w, int i, UnitBlueprint bp)
     {
         bool module = HasModule(bp);
@@ -31,6 +31,7 @@ public static class StrategicSystem
         bool reinit = s.Units.Contains(h);
         if (!module && !reinit) return;
         var silo = s.Silo[i];
+        var shield = s.Shield[i];
         ShieldSystem.InitUnit(s, w, i, bp);
         SiloSystem.InitUnit(s, w, i, bp);
         MissileSystem.InitUnit(s, w, i, bp);
@@ -38,6 +39,14 @@ public static class StrategicSystem
         {
             silo.Stock = Math.Min(silo.Stock, bp.Silo.MaxStorage);
             s.Silo[i] = silo;
+        }
+        // A shield that existed before the blueprint change (enhancement, upgrade) keeps its HP (clamped to the new
+        // maximum) and its up/down state instead of refilling; a newly installed one starts full as usual.
+        if (reinit && bp.Shield != null && (shield.Up || shield.RechargeLeft > 0))
+        {
+            shield.Hp = MathF.Min(shield.Hp, bp.Shield.MaxHealth);
+            shield.RechargeLeft = MathF.Min(shield.RechargeLeft, bp.Shield.RechargeTime);
+            s.Shield[i] = shield;
         }
         if (!module) s.Units.Remove(h);
         else if (!reinit) s.Units.Add(h);
