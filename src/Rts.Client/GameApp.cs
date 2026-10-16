@@ -193,6 +193,7 @@ public static class GameApp
         Persistence.GameRecording.AutoWriteReplays = opt.ScreenshotPath == null || opt.WriteReplay;
         var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        SimWarmup.Start(db); // JIT warm-up of the sim on a background thread while the menu/loading shows (wave 5m)
 
         // Direct game (CLI): the simulation is created before the window, exactly as before the menus existed.
         GameConfig? directCfg = null;

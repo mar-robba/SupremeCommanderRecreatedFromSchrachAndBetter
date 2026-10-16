@@ -156,8 +156,7 @@ public static class PathSystem
                 st.SolveOfGroup[key] = st.AssignOf[r] = AddSolve(st, r, q.Graph);
             }
         }
-        for (int g = 0; g < st.GraphNeeded.Length; g++)
-            if (st.GraphNeeded[g]) svc.EnsureGraph(g);
+        svc.EnsureGraphs(st.GraphNeeded);
 
         // ---- A* solves (parallel)
         int solves = st.SolveRequest.Count;

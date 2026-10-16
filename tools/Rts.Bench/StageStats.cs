@@ -30,7 +30,12 @@ public sealed class StageStats
             _alloc[i] += sim.Profile.LastAlloc[i];
         }
         _ticks++;
+        if (sim.LastTickMs > _worstMs) { _worstMs = sim.LastTickMs; _worst = $"worst tick #{_ticks} {sim.LastTickMs:F1} ms: {LastTick(sim)}"; }
+        if (_ticks > 20 && sim.LastTickMs > _worstLateMs) { _worstLateMs = sim.LastTickMs; _worstLate = $"worst after tick 20: #{_ticks} {sim.LastTickMs:F1} ms: {LastTick(sim)}"; }
     }
+
+    private double _worstMs, _worstLateMs;
+    private string _worst = "", _worstLate = "";
 
     /// <summary>Stages of the last tick costing at least 0.5 ms (e.g. the first tick: navigation build, JIT).</summary>
     public static string LastTick(Simulation sim) => string.Join(" ", Enumerable.Range(0, SimProfile.Count)
@@ -47,6 +52,6 @@ public sealed class StageStats
         if (_trackAllocs)
             alloc += "\n  alloc KB/tick by stage: " + string.Join(" ", Enumerable.Range(0, SimProfile.Count).OrderByDescending(i => _alloc[i])
                 .Where(i => _alloc[i] > 0).Select(i => $"{SimProfile.Names[i]}={_alloc[i] / 1024.0 / n:F1}"));
-        return "stages avg/max ms: " + stages + alloc;
+        return "stages avg/max ms: " + stages + alloc + "\n  " + _worst + "\n  " + _worstLate;
     }
 }

@@ -27,6 +27,7 @@ public static class AiMatch
         string[]? factions = args.Length > 7 ? args[7].Split(',') : null;
 
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        if (Environment.GetEnvironmentVariable("BENCH_WARMUP") == "1") SimWarmup.Run(db); // JIT warm-up as the client does
         var ai = Enumerable.Range(0, players).Select(i => !passive || i > 0).ToArray();
         var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings
         {

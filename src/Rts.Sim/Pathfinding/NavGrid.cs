@@ -40,9 +40,14 @@ public sealed class NavGrid
         Height = terrain.Height;
         Clear = new byte[Width * Height];
         _terrainOk = new byte[Width * Height];
-        for (int z = 0; z < Height; z++)
-        for (int x = 0; x < Width; x++)
-            _terrainOk[z * Width + x] = terrain.CanTraverse(layer, x, z) ? (byte)1 : (byte)0;
+        int w = Width;
+        var ok = _terrainOk;
+        Par.For(Height, 32, (_, z0, z1) =>
+        {
+            for (int z = z0; z < z1; z++)
+            for (int x = 0; x < w; x++)
+                ok[z * w + x] = terrain.CanTraverse(layer, x, z) ? (byte)1 : (byte)0;
+        });
         RecomputeAll();
     }
 

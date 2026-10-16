@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Numerics;
+using Rts.Sim.Core;
 using Rts.Sim.Data;
 using Rts.Sim.Pathfinding;
 using Rts.Sim.World;
@@ -134,6 +135,27 @@ public sealed class PathService
     }
 
     internal NavGraph GraphByIndex(int k) => _graphs[k]!;
+
+    /// <summary>Builds the missing graphs among the needed ones; several at once are built in parallel (each is a
+    /// pure function of its grid, so the result does not depend on the order). SEQUENTIAL caller.</summary>
+    internal void EnsureGraphs(bool[] needed)
+    {
+        int missing = 0, last = -1;
+        for (int g = 0; g < needed.Length; g++)
+            if (needed[g] && _graphs[g] == null) { missing++; last = g; }
+        if (missing == 0) return;
+        if (missing == 1) { EnsureGraph(last); return; } // one graph: its own build is parallel inside
+        var todo = new int[missing];
+        for (int g = 0, n = 0; g < needed.Length; g++)
+            if (needed[g] && _graphs[g] == null) todo[n++] = g;
+        var built = new NavGraph[missing];
+        Par.ForEach(missing, i =>
+        {
+            int k = todo[i], gi = k / (NavGrid.MaxClearance + 1), req = k % (NavGrid.MaxClearance + 1);
+            built[i] = new NavGraph(_grids[gi]!, req);
+        });
+        for (int i = 0; i < missing; i++) _graphs[todo[i]] = built[i];
+    }
 
     internal void EnsureGraph(int k)
     {

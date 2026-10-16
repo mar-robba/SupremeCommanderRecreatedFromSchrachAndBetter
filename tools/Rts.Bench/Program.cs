@@ -10,6 +10,7 @@ using Rts.Sim.Orders;
 //        (armies > 2: each army starts at its start position and attack-moves to the opposite one)
 //        Rts.Bench replay <file> [threads] | savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnits] [threads]  (ReplayBench.cs)
 //        Rts.Bench parbench [threads] [calls]  (Par.For overhead per call, ParBench.cs)
+//        env BENCH_WARMUP=1: run SimWarmup first (JIT warm-up, as the client does at startup); BENCH_ALLOC=1: allocations per stage
 //        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset] [factions]  (skirmish AI match, see AiMatch.cs)
 if (int.TryParse(Environment.GetEnvironmentVariable("PAR_SPIN"), out int parSpin)) Par.WorkerSpinMicroseconds = parSpin; // pool worker spin (µs) experiments
 if (Environment.GetEnvironmentVariable("PAR_TASKS") == "1") Par.UseTaskParallel = true; // A/B: the old Parallel.For path
@@ -28,6 +29,7 @@ int mapSize = args.Length > 3 ? int.Parse(args[3]) : 512;
 int armies = args.Length > 4 ? int.Parse(args[4]) : 2;
 
 var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+if (Environment.GetEnvironmentVariable("BENCH_WARMUP") == "1") { var ws = Stopwatch.StartNew(); SimWarmup.Run(db); Console.WriteLine($"warm-up {ws.Elapsed.TotalMilliseconds:F0} ms"); } // JIT warm-up as the client does
 var setup = Stopwatch.StartNew();
 var sim = GameSetup.CreateSkirmish(db, new SkirmishSettings
 {
