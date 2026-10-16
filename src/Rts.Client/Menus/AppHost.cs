@@ -66,7 +66,15 @@ public sealed class AppHost : IDisposable
     /// <summary>Shared animated menu background (created on first use).</summary>
     public MenuBackdrop Backdrop => _backdrop ??= new MenuBackdrop();
 
-    public void Go(IScreen next) => _next = next;
+    /// <summary>Switches to <paramref name="next"/> after this frame. The old screen is disposed unless
+    /// <paramref name="keepOld"/> (the new one then owns it, e.g. the save list opened from the pause menu).</summary>
+    public void Go(IScreen next, bool keepOld = false)
+    {
+        _next = next;
+        _keepOld = keepOld;
+    }
+
+    private bool _keepOld;
 
     public void ToMainMenu() => Go(new MainMenuScreen(this));
 
@@ -90,7 +98,9 @@ public sealed class AppHost : IDisposable
         var old = Current;
         Current = _next;
         _next = null;
-        if (!ReferenceEquals(old, Current)) old.Dispose();
+        bool keep = _keepOld;
+        _keepOld = false;
+        if (!keep && !ReferenceEquals(old, Current)) old.Dispose();
     }
 
     public void Dispose()

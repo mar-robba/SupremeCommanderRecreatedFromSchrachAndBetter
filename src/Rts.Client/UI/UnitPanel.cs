@@ -14,9 +14,10 @@ namespace Rts.Client.UI;
 
 /// <summary>
 /// Unit info panel. One unit: icon, name, description, health, construction / work progress, current order and
-/// key stats, veterancy bonus, adjacency bonuses, pause / dive state and capture progress. Several units: a grid of
-/// type buttons with counts (click = keep only that type, Shift+click =
-/// remove that type) and the group's total health.
+/// key stats, veterancy bonus, adjacency bonuses, pause / dive state and capture progress. Several units: the group's
+/// total health, a summary line (idle units, fire states), cargo, and a grid of type buttons with counts (smaller when
+/// they don't fit; click = keep only that type, Shift+click / right-click = remove it, Ctrl+click = add that type on
+/// screen).
 /// </summary>
 public sealed class UnitPanel
 {
@@ -319,11 +320,13 @@ public sealed class UnitPanel
         return l;
     }
 
+    private static readonly float[] TypeButtonSizes = [46f, 38f, 31f];
+
     private void DrawMulti(Rectangle r, SimSnapshot snap, List<UnitView> views)
     {
         // Group by blueprint: commander first, then engineers, then mobile, then structures; stable by bp index.
         var groups = views.GroupBy(v => v.Bp)
-            .Select(g => (bp: g.Key, count: g.Count(), hp: g.Sum(v => v.HealthFrac * MaxHealthOf(v, _ctx.Db[v.Bp])), max: g.Sum(v => MaxHealthOf(v, _ctx.Db[v.Bp]))))
+            .Select(g => (bp: g.Key, army: g.First().Army, count: g.Count(), hp: g.Sum(v => v.HealthFrac * MaxHealthOf(v, _ctx.Db[v.Bp])), max: g.Sum(v => MaxHealthOf(v, _ctx.Db[v.Bp]))))
             .OrderBy(g => SortKey(_ctx.Db[g.bp])).ThenBy(g => g.bp).ToList();
 
         float pad = Ui.P(8);
@@ -331,13 +334,22 @@ public sealed class UnitPanel
         float totalHp = groups.Sum(g => g.hp), totalMax = groups.Sum(g => g.max);
         float barH = Ui.P(12);
         Ui.Bar(new Rectangle(r.X + pad, y, r.Width - 2 * pad, barH), totalMax > 0 ? totalHp / totalMax : 0, new Color(70, 200, 70, 255), $"Health {totalHp / MathF.Max(1, totalMax) * 100:0}%");
-        y += barH + Ui.P(6);
+        y += barH + Ui.P(5);
+        y = DrawMultiSummary(r.X + pad, y, r.Width - 2 * pad, views);
         y = CargoPanel.DrawMulti(_ctx, snap, views, r.X + pad, y, r.Width - 2 * pad, barH);
 
-        float btn = Ui.P(46), gap = Ui.P(4);
-        int cols = Math.Max(1, (int)((r.Width - 2 * pad + gap) / (btn + gap)));
-        int rows = Math.Max(1, (int)((r.Y + r.Height - pad - y + gap) / (btn + gap)));
+        // Type buttons: full size if they fit, else smaller ones before the "+N" overflow button.
+        float gap = Ui.P(4), btn = Ui.P(46);
+        int cols = 1, rows = 1;
+        foreach (float size in TypeButtonSizes)
+        {
+            btn = Ui.P(size);
+            cols = Math.Max(1, (int)((r.Width - 2 * pad + gap) / (btn + gap)));
+            rows = Math.Max(1, (int)((r.Y + r.Height - pad - y + gap) / (btn + gap)));
+            if (groups.Count <= cols * rows) break;
+        }
         int maxShown = cols * rows;
+        bool small = btn < Ui.P(40);
         for (int i = 0; i < groups.Count && i < maxShown; i++)
         {
             var g = groups[i];
@@ -350,10 +362,10 @@ public sealed class UnitPanel
                 break;
             }
             var st = Ui.Button(br);
-            UnitIcons.Draw(br, bp, compact: false);
+            UnitIcons.Draw(br, bp, compact: small);
             // Count badge.
             string cnt = g.count.ToString();
-            int fs = Ui.F(11);
+            int fs = Ui.F(small ? 9.5f : 11);
             float cw = Ui.Measure(cnt, fs, true) + Ui.P(6);
             var badge = new Rectangle(br.X + br.Width - cw - 2, br.Y + 2, cw, fs + Ui.P(2));
             Raylib.DrawRectangleRec(badge, new Color(0, 0, 0, 190));
@@ -364,7 +376,8 @@ public sealed class UnitPanel
 
             if (st.Left)
             {
-                if (Ui.Shift) _sel.RemoveType(g.bp);
+                if (Ui.Ctrl) _sel.SelectTypeOnScreen(g.bp, g.army);
+                else if (Ui.Shift) _sel.RemoveType(g.bp);
                 else _sel.NarrowToType(g.bp);
             }
             else if (st.Right) _sel.RemoveType(g.bp);
@@ -373,9 +386,41 @@ public sealed class UnitPanel
                 {
                     new($"{bp.Name}  ×{g.count}", Ui.TextColor, 13, true),
                     new($"Health {g.hp:0} / {g.max:0}", Ui.TextDim, 11.5f),
-                    new("Click: select only these   Shift+click / right-click: deselect", Ui.TextFaint, 11),
+                    new("Click: select only these", Ui.TextFaint, 11),
+                    new("Shift+click / right-click: deselect them", Ui.TextFaint, 11),
+                    new("Ctrl+click: add every one on screen", Ui.TextFaint, 11),
                 });
         }
+    }
+
+    /// <summary>One line under the group health bar: idle mobile units and the fire states of the armed ones
+    /// (colored like the Fire order button). Returns the y below it.</summary>
+    private float DrawMultiSummary(float x, float y, float w, List<UnitView> views)
+    {
+        int idle = 0, armed = 0;
+        Span<int> fire = stackalloc int[3];
+        foreach (var v in views)
+        {
+            var bp = _ctx.Db[v.Bp];
+            if (bp.IsMobile && (v.Flags & UnitFlags.UnderConstruction) == 0 && v.OrderCount == 0 && v.WorkMode == BuilderMode.None) idle++;
+            if (bp.Weapons.Length > 0 && (uint)v.FireState < 3u) { fire[(int)v.FireState]++; armed++; }
+        }
+        int fs = Ui.F(11);
+        float cx = x;
+        void Part(string text, Color col)
+        {
+            if (cx + Ui.Measure(text, fs) > x + w) return;
+            Ui.Text(text, cx, y, fs, col);
+            cx += Ui.Measure(text, fs) + Ui.P(10);
+        }
+        Part(idle > 0 ? $"Idle {idle}" : "None idle", idle > 0 ? Ui.Warn : Ui.TextFaint);
+        if (armed > 0)
+        {
+            if (fire[(int)FireState.FireAtWill] > 0) Part($"At will {fire[(int)FireState.FireAtWill]}", Ui.TextDim);
+            if (fire[(int)FireState.ReturnFire] > 0) Part($"Return fire {fire[(int)FireState.ReturnFire]}", Ui.Warn);
+            if (fire[(int)FireState.HoldFire] > 0) Part($"Hold fire {fire[(int)FireState.HoldFire]}", Ui.Bad);
+        }
+        return y + fs + Ui.P(6);
     }
 
     /// <summary>Filled five-pointed star (dark outline) centered at c.</summary>

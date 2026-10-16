@@ -119,7 +119,7 @@ public sealed class InGameScreen : IScreen
             return;
         }
         float w = Ui.P(320), bh = Ui.P(42), gap = Ui.P(10);
-        float h = Ui.P(64) + 5 * (bh + gap) + Ui.P(10);
+        float h = Ui.P(64) + 6 * (bh + gap) + Ui.P(10);
         var p = Ui.R((Ui.Sw - w) * 0.5f, (Ui.Sh - h) * 0.42f, w, h);
         Ui.Panel(p);
         Ui.TextCentered("PAUSED", Ui.R(p.X, p.Y + Ui.P(12), p.Width, Ui.P(30)), Ui.F(22), Ui.TextColor, true);
@@ -128,6 +128,9 @@ public sealed class InGameScreen : IScreen
         if (MenuUi.BigButton(r, "Resume", true, true)) Resume();
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Save Game", _s.Recording != null)) _saveUi.OpenDialog();
+        r.Y += bh + gap;
+        // The save list takes this paused game along: Back returns here, loading a save disposes it.
+        if (MenuUi.BigButton(r, "Load Game")) _app.Go(new SaveListScreen(_app, replays: false, returnTo: this), keepOld: true);
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Restart")) _app.StartGame(_s.Config, _opt);
         r.Y += bh + gap;
