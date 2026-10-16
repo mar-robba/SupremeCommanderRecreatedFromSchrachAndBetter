@@ -69,7 +69,7 @@ public sealed class UnitPanel
         Ui.Text(Ui.Fit(bp.Name, tw, fsName, true), tx, r.Y + pad, fsName, Ui.TextColor, true);
         float y = r.Y + pad + fsName + Ui.P(4);
         if (Ui.Hover(new Rectangle(iconR.X, iconR.Y, r.Width - 2 * pad, fsName + Ui.P(4) + (compact ? 0 : icon - fsName))))
-            Ui.Tooltip(iconR, bp.Name, string.Join("\n", Ui.Wrap(bp.Description, Ui.P(320), Ui.F(12))));
+            Ui.Tooltip(iconR, IconTip(bp, v));
         if (!compact)
         {
             var desc = Ui.Wrap(bp.Description, tw, fsDesc);
@@ -318,6 +318,21 @@ public sealed class UnitPanel
         if (e.StorageMass > 0) l.Add(("Mass store", Ui.Num(e.StorageMass), Ui.MassColor));
         if (e.StorageEnergy > 0) l.Add(("Energy store", Ui.Num(e.StorageEnergy), Ui.EnergyColor));
         return l;
+    }
+
+    /// <summary>Icon / name tooltip: description, then the unit's toggles with their hotkeys.</summary>
+    private List<TipLine> IconTip(UnitBlueprint bp, in UnitView v)
+    {
+        var lines = new List<TipLine> { new(bp.Name, Ui.TextColor, 13, true) };
+        foreach (var l in Ui.Wrap(bp.Description, Ui.P(320), Ui.F(12))) lines.Add(new(l, Ui.TextDim, 12));
+        bool own = _ctx.Controls(v.Army);
+        if (!own) return lines;
+        lines.Add(new("", Ui.TextDim, 5));
+        if (bp.Weapons.Length > 0)
+            lines.Add(new($"{UnitToggles.FireStateName(v.FireState)}  ·  [{Hotkeys.FireState.Label}] cycles", v.FireState == FireState.FireAtWill ? Ui.TextFaint : Ui.Warn, 11));
+        if ((v.Flags & UnitFlags.Paused) != 0) lines.Add(new($"Paused  ·  [{Hotkeys.Pause.Label}] resumes", Ui.Warn, 11));
+        if (bp.IsMobile) lines.Add(new($"[{Hotkeys.Stop.Label}] stop  ·  [{Hotkeys.SelfDestruct.Label}] self-destruct", Ui.TextFaint, 11));
+        return lines;
     }
 
     private static readonly float[] TypeButtonSizes = [46f, 38f, 31f];

@@ -190,14 +190,14 @@ public static class Hotkeys
     public static readonly MouseHelp[] Mouse =
     [
         new("Selection", "Click / drag", "Select (box: mobile units first; Shift: add / toggle)"),
-        new("Selection", "Double-click / Ctrl+click", "Every unit of that type on screen (Ctrl+Shift: add them)"),
+        new("Selection", "Double-click", "Every unit of that type on screen (also Ctrl+click; Shift or Ctrl+Shift: add them)"),
         new("Selection", "Unit panel icon", "Click: only that type · Shift / right-click: remove it · Ctrl: that type on screen"),
         new("Selection", "Idle buttons", "Above the minimap: click = next idle engineer / factory, Shift+click = all"),
         new("Orders", "Right click", "Move / attack / assist / reclaim / repair / capture / load (Shift: queue)"),
         new("Orders", "Right click (factory)", "Set the rally point"),
         new("Orders", "Minimap", "Left: camera; in an order mode: give it there · right: move"),
         new("Camera", "Wheel", "Zoom to the cursor (zoomed out: strategic icons)"),
-        new("Building", "Right-click a factory button", "-1 (Shift: -5)"),
+        new("Factory", "Right-click", "On a unit button: remove one from the queue (Shift: 5)"),
     ];
 
     /// <summary>Help group order.</summary>
