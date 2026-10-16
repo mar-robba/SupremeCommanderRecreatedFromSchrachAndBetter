@@ -8,14 +8,15 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 ## Commands (run from repo root)
 - Build all: `dotnet build Rts.slnx`
 - Tests: `dotnet test tests/Rts.Sim.Tests` and `dotnet test tests/Rts.Client.Tests` (headless, must stay green)
-- Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads]`
+- Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads] [mapSize] [armies]`
+  (env `BENCH_WARMUP=1` = JIT warm-up first, `BENCH_ALLOC=1` = allocations per stage; DEV_GUIDE "Profiling")
 - AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions]`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
   both also preset `--setup`)
   (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
-  `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`;
+  `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis) (scene positions are printed; aim with `--camera`))
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;

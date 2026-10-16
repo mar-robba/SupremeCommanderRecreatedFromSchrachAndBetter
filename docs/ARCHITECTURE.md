@@ -561,3 +561,39 @@ interpolates prev/cur by time
   ticks. `SaveCoverageTests` walks every reachable field type and fails with the field path and the fix;
   `PersistenceTests.SaveLoadContinueMatchesUninterruptedGame` proves the round trip on a rich game (AIs, every
   blueprint spawned, missiles, nukes, upgrades) — extend that scenario if your feature has state it doesn't reach.
+
+## Performance & scale (wave 5m)
+
+Goal: 1024 maps, 8 armies, 5k+ units at 60 FPS on the Radeon 780M, sim tick < 10 ms. Numbers: DEV_GUIDE "Reference
+numbers"; how to measure: DEV_GUIDE "Perf check" and "Profiling".
+- **Worker pool** (`Core/ParPool.cs`, `Par.cs`): persistent threads, the caller participates, no allocation per call.
+  A call made while the pool is busy (nested, or from a second thread such as the warm-up or a loading thread) runs
+  inline on the caller with the same chunks, so results never depend on it. Hot call sites pass static lambdas
+  with the world as an argument (`Par.For(n, chunk, w, static (w, c, a, b) => ...)`): a capturing lambda allocates.
+- **Profiling**: `Simulation.Profile` (`Core/SimProfile.cs`) times every tick stage (and, opt-in, its allocations);
+  `Rts.Bench` prints stage avg/max, KB/tick, the first tick and the worst tick with their stage breakdown. Client:
+  `FrameProfiler` (CPU laps per frame stage, `FrameProfiler.Sub("x")` splits a stage from inside a module; GPU timer
+  queries per stage) printed by `--screenshot` runs and once per second by `--perf-log`.
+- **JIT**: tier-0 code + on-stack replacement made the first ~30 s of a game spiky (10–30 ms ticks in loops that
+  normally cost 0.05 ms). `Rts.Client` and `Rts.Bench` set `TieredCompilationQuickJitForLoops=false` (methods with
+  loops are optimized at once), and the client starts `SimWarmup` at startup: a throwaway 2-AI skirmish with a small
+  battle on a background thread, so the real game's first tick runs compiled code (first tick ~200 → ~15 ms on 1024).
+  The warm-up world is separate; `ScalePerfTests` checks a game's hash is unchanged while it runs.
+- **Navigation build**: `GameSetup.CreateSkirmish` builds the clearance grids (`PathService.EnsureGrids`, terrain pass
+  parallel) at load instead of in the first tick; region graphs are still built on first use (they are saved state,
+  so building all 16 up front would bloat saves) and several missing graphs are built in parallel
+  (`PathService.EnsureGraphs`). Early vs lazy building gives identical results: grids and graphs are pure functions
+  of terrain + occupancy, and later structures update them incrementally with the same functions.
+- **Allocations**: ~0 per tick in combat; AI games ~10 KB/tick on 1024 (was ~125), mostly new goal fields. Goal
+  fields reuse the Dist/Next arrays of evicted fields (`PathService.RentFieldArray`/`RecycleField`, safe because
+  fields are read only during one tick's solves and evicted in sequential phases) and a per-thread Dijkstra heap.
+- **Intel**: < 0.4 ms avg on 1024 with 8 armies (was ~1.1).
+- **Client**: units are instanced (2 draw calls); particles are GPU-instanced (`ParticleInstances.cs`, one 52-byte
+  instance per particle, the vertex shader builds billboard / ground quad / streak); terrain chunks (64×64) have
+  LOD meshes at vertex strides 1/2/4/8 (`TerrainRenderer.Lod.cs`): a chunk uses the coarsest stride whose cell
+  stays ≤ 5 px on screen, and every inner chunk edge has a skirt (depth = 2 × the largest stride error on that edge)
+  so neighbours at different strides leave no cracks; `--terrain-lod N` forces a level. Deposit markers are
+  frustum-culled and drawn as one flat square beyond 260 units; the minimap draws one dot per pixel and color.
+- **Maps**: 6–8 players on 512/1024 for every preset are rotationally symmetric (non-quarter-turn counts carve one
+  corridor profile and rasterize every rotated copy with it) and fair: `MapScaleTests` checks plateau heights,
+  terrain symmetry, the nearest deposits of each start and the ground distances between starts.

@@ -107,6 +107,23 @@ your branch, not one run against an old number:
    and compare the `tick ms` lines.
 3. The budget is a regression of at most 10%. Remove the extra worktree afterwards (`git worktree remove`).
 
+## Profiling
+
+- Sim: `Rts.Bench` prints per-stage avg/max ms, KB allocated per tick, the first tick and the worst tick (overall
+  and after tick 20) with their stage breakdown. `BENCH_ALLOC=1` adds allocations per stage (slower, use it to find
+  allocations, not for timings); `BENCH_WARMUP=1` runs `SimWarmup` first (as the client does); 5th argument =
+  armies (`... 700 400 0 1024 8`: 8 blobs on a 1024 map). `ai` matches print the same stage lines.
+- Client: `--screenshot` runs print `perf:` (frame/CPU ms), `stages ms:` (CPU per frame stage, avg/max) and `gpu ms:`
+  (GPU timer queries); `--perf-log` prints the same once per second while playing. Frames are vsync-capped at 60:
+  compare CPU and GPU ms, not FPS (or add `--novsync`).
+- Big client scene (5k units, 8 players, 1024): `--map 1024 --players 8 --nosound --nofog --exec "spawn tank 1200 me
+  at 460,470; spawn tank 1200 enemy at 540,550; spawn tank 1200 enemy at 460,550; spawn tank 1200 me at 540,470"
+  --frames 900 --size 960x540 --camera 500,510,110` (close) or `--camera 500,510,700` (whole battle, strategic zoom).
+- Tick spikes that hit stages which are normally ~0 (Construction, Economy, Factory at 1–7 ms in the same tick) are
+  JIT tiering, not GC: try `DOTNET_TieredCompilation=0` to confirm. Hence `TieredCompilationQuickJitForLoops=false`
+  in the client and bench csproj (ARCHITECTURE "Performance & scale").
+- `dotnet build` may die with `Internal CLR error (0x80131506)` once in a while: just run it again.
+
 ## Reference numbers
 
 Measured at merge time (details in [HISTORY.md](HISTORY.md)). Machine: AMD Ryzen 7 8840U (16 threads), Radeon 780M
@@ -123,6 +140,10 @@ integrated GPU.
 | Save, 512 map, 4 AIs, 25 min, 6641 units | file 1.8 MB (raw 29.5 MB); capture 86 ms on the sim thread; encode 99 ms in the background; load 0.3 s | wave 4 |
 | Replay of that game | 165 KB; headless verify 1493 ticks/s; recording 0.009 ms/tick | wave 4 |
 | 96 AI games of 30 min (256 maps) | ≈ 60 s wall with `tools/ai-lab` | wave 4 |
+| `Rts.Bench 2000 300` | avg 1.7–2.0 ms/tick, p95 2.4–2.9, max ≈ 10 (main before 5m, same runs: 3.5–4.5 / 5.8–9.2 / 25) | wave 5m |
+| `Rts.Bench 700 400 0 1024 8` (8 armies, 4.6k units) | avg 2.4, p95 4.5–4.9, intel 0.33 (before: 3.9–4.6 / 10.6–12.3 / 1.1–1.35); with warm-up avg 2.0, p95 3.8, max 8.5, first tick 15 ms (before ≈ 210) | wave 5m |
+| `ai 40 1024 42 hard 0 8 plains` (8 AIs, 40 min) | avg 0.96, p95 2.21, max 12.1 (one AI think), 10 KB/tick (before: 1.64 / 3.68 / 217 / ≈ 125 KB) | wave 5m |
+| Client, 4.8k units in battle, 1024, 960×540 | close: CPU 1.6 ms, GPU 4.2 ms (before CPU 3.2); whole map: CPU 2.2 ms, GPU 2.8 ms (before 2.8 / 8.2: terrain 7.4 → 2.0 with chunk LOD) | wave 5m |
 
 ## Tools
 
