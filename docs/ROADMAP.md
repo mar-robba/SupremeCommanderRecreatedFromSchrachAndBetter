@@ -174,9 +174,8 @@ Shared contracts (still valid):
       shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
       from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
       lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
-      - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
-        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out; nearby own units keep
-        shooting a unit being captured (no hold-fire state yet)
+      - [ ] later: AI uses capture/pause/adjacency/dive; the Fatboy drops units at its back without a drive-out
+        (done in wave 5n: factory exits skip sides with parked units; fire states, captured targets held)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
@@ -191,7 +190,8 @@ Shared contracts (still valid):
       timeline seek, fog per army or all, DESYNC banner), sandbox setups saveable, clear errors for damaged/incompatible
       files; `Rts.Bench replay <file>` / `savebench`. Late game (512 map, 4 AIs, 25 min, 6.6k units): save 1.8 MB,
       capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
-      - [ ] later: saves/replays don't survive sim code changes (no migration: the layout check refuses them);
-            "Load Game" in the pause menu; replay viewer: F7 fog toggle doesn't update the view selector, seek
-            checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
+      - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
+            the replay view selector
+      - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
+            seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
 - [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)

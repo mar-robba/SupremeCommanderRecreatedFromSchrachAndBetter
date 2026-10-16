@@ -118,7 +118,8 @@ interpolates prev/cur by time
   gets a copy of the factory's order queue (rally) or a short move. Repeat re-appends; Dequeue of the item in progress
   cancels it with a refund; factory death kills the unfinished unit.
   **Drive-out** (`FactoryExitMotion`): a finished surface unit starts at the factory center and, while
-  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side)
+  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side; a side with a parked unit
+  — no move goal — on its exit lane is used only if every open side has one)
   across the factory's own blocked footprint; then it repaths to its rally. Aircraft take off from the pad (spawned
   at ground height, they climb). Mobile factories (Fatboy) drop units straight at their back (no drive-out, no rally).
 - **Adjacency** (`AdjacencyRules` values, `AdjacencySystem`, sequential, right before EconomySystem): writes
@@ -202,7 +203,12 @@ interpolates prev/cur by time
   terrain/water surface (same grazing tolerance as projectiles), shells need an arc solution (`Ballistics.SolveArc`,
   as `WeaponSystem` uses). Homing/missiles, bombs, flak, torpedoes and silo weapons are not restricted; forced
   targets (Attack orders, TML/nukes, attack-ground) skip the check. Effect: units below a cliff no longer stop
-  on attack-move to shoot into the rock; they walk up the ramp.
+  on attack-move to shoot into the rock; they walk up the ramp. `WeaponBlueprint.HighArcWhenBlocked` (Mavor): when
+  `LineOfFire.IsArcClear` finds terrain on the low arc, `WeaponSystem` lobs the shell on the high arc instead.
+- **Fire states** (`Combat/FireStates.cs`, `SetFireStateCommand`, `UnitStore.FireStates`, snapshot `UnitView.FireState`):
+  Fire at will (default) / Return fire (acquires targets only while hit in the last 5 s) / Hold fire (never acquires;
+  Attack orders and attack-ground still fire). `TargetingSystem` reads it; a unit being captured by an army (or an
+  ally) is never auto-acquired by that army's units.
 
 ## Shields & strategic weapons (`Rts.Sim/Strategic`)
 - `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
@@ -263,11 +269,12 @@ interpolates prev/cur by time
   `BuildListFrom`, Shield, Silo). `EnhancementCatalog` (at `BlueprintDb.FinalizeDb`) generates one blueprint VARIANT per slot
   combination (id `base+Enh1+Enh2`, JSON clone + effects, prerequisite effects stack; `IsVariant`, `Installed`,
   `EnhancementVariants`). Installing/removing swaps `Units.Bp` in place (same handle, health fraction kept, modules re-init;
-  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock), so every system just reads the new blueprint.
+  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock and the shield HP/up-down state, clamped), so every
+  system just reads the new blueprint.
   `BuildListFrom` merges other builders' final build lists (SCU/T3 Engineering from `uef_t3_engineer`, Fatboy from the T3
   land factory). Building one reuses `UpgradeState`/`UpgradeSystem`: `EnhanceCommand` stops the unit and targets the variant,
   `UpgradeSystem.Cost` returns the enhancement's cost/time, the unit works on itself with its BuildRate, engineers assist
-  with Guard, `CancelUpgradeCommand` refunds, any new order cancels it; `RemoveEnhancementCommand` clears a slot at once
+  with Guard, `CancelUpgradeCommand` refunds, any new order or Stop cancels it (with refund); `RemoveEnhancementCommand` clears a slot at once
   (no refund). The snapshot's `UpgradeBp`/`UpgradeFrac` carry the progress (`EnhancementCatalog.Added` = which one).
   Client: `UI/EnhancementPanel.cs`, model attachments in `Rendering/UnitModels.Experimental.cs` (from `Installed` + `Visual`).
 - **Quantum Gateway / SCU**: a T3 factory building `uef_scu` (engineer + cannon with its own enhancements). The SCU has no
@@ -449,6 +456,19 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+- **Hotkeys**: `Input/Hotkeys.cs` is THE key table (key(s), modifiers, scope, help group/text, `Share` tags for keys
+  shared on purpose: D, E, U, M; `Pressed()`, `Label`, `Clashes()`, `Mouse` help lines). Input code reads keys from it
+  (never a raw `KeyboardKey` for a game action). Rule: a new key goes in the table; `HotkeyTableTests` fails on clashes
+  and on keys polled in `src/Rts.Client` that are not in it. F1 / the top-bar "?" open `UI/HelpOverlay` (generated
+  from the table; `--help-overlay` for screenshots). Tooltips show keys through `Hotkey.Label`.
+- Selection/UX: fire state Q / Shift+Q (`Input/FireStateToggle.cs`, "Fire" order button, unit panel order line);
+  `UI/IdleButtons` above the minimap (idle engineers ".", idle factories ","; Shift = all; `Input/SelectionMath`);
+  double-click / Ctrl+click = that type on screen (Shift / Ctrl+Shift add); double-tapping a control group centers the
+  camera; minimap left click gives the current order mode's order there (`SelectionController.IssueAtWorldPoint`);
+  `OrdersPanel` adds columns (max 3 rows); the unit panel uses a compact header when ≥ 2 extra rows follow; a mixed
+  selection shows idle/fire-state counts and type buttons (smaller when many; Ctrl+click = that type on screen).
+- Pause menu "Load Game": `AppHost.Go(next, keepOld: true)` keeps the paused `InGameScreen` alive; `SaveListScreen`
+  (`returnTo`) owns it: Back returns to it, loading a save disposes it.
 - Gameplay toggles (unit panel buttons + hotkeys): pause H (`SetPausedCommand`), dive/surface D (subs), capture E
   (then click an enemy; engineers also capture with a context right-click on enemies, `CursorHint` shows it).
   D and E are shared with the transport orders (`Input/SharedHotkeys.cs`, pure): E = transport-to when transports are
