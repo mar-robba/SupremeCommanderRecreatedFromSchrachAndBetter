@@ -35,6 +35,9 @@ public sealed class AiRoster
     public readonly int[] PointDefense = [-1, -1, -1, -1];
     public readonly int[] AntiAir = [-1, -1, -1, -1];
     public readonly int Torpedo1, Torpedo2, Shield2, Shield3, Tml, Tmd, ArtilleryInst2, ArtilleryInst3, NukeSilo, AntiNuke;
+    /// <summary>Tier arrays for roles that start at T2 (index 1 = -1).</summary>
+    public readonly int[] Shield = [-1, -1, -1, -1];
+    public readonly int[] MassFab = [-1, -1, -1, -1];
     // Intel
     public readonly int Radar1, Radar2, Omni3, Sonar1, Sonar2;
     // Experimentals
@@ -69,6 +72,8 @@ public sealed class AiRoster
         AntiAir[1] = R(FactionRoles.AaT1); AntiAir[2] = R(FactionRoles.AaT2); AntiAir[3] = R(FactionRoles.AaT3);
         Torpedo1 = R(FactionRoles.TorpedoT1); Torpedo2 = R(FactionRoles.TorpedoT2);
         Shield2 = R(FactionRoles.ShieldT2); Shield3 = R(FactionRoles.ShieldT3);
+        Shield[2] = Shield2; Shield[3] = Shield3;
+        MassFab[2] = MassFab2; MassFab[3] = MassFab3;
         Tml = R(FactionRoles.Tml); Tmd = R(FactionRoles.Tmd);
         ArtilleryInst2 = R(FactionRoles.ArtilleryInstallationT2); ArtilleryInst3 = R(FactionRoles.ArtilleryInstallationT3);
         NukeSilo = R(FactionRoles.NukeSilo); AntiNuke = R(FactionRoles.AntiNuke);

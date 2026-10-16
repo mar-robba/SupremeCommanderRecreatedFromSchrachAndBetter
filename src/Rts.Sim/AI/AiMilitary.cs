@@ -145,7 +145,7 @@ public sealed class AiMilitary
             if (info.Role != AiRole.None) continue;
             var bp = W.BpOf(i);
             info.Role = bp.Has(UnitCategory.Transport) ? AiRole.Transport
-                : bp.Has(UnitCategory.Bomber) ? AiRole.Bomber
+                : bp.HasAny(UnitCategory.Bomber | UnitCategory.Gunship) ? AiRole.Bomber
                 : bp.Weapons.Length == 0 ? AiRole.AirScout
                 : AiRole.AirDefense;
         }

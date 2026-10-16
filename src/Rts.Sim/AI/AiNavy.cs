@@ -19,7 +19,7 @@ public sealed class AiNavy
 
     /// <summary>Keeps the naval factories' queues topped up. <paramref name="slot"/> counts factories allowed to
     /// start units against <paramref name="budget"/> (same budget as land/air factories).</summary>
-    public void ManageFactories(ref int slot, int budget) { }
+    public void ManageFactories(ref float slot, float budget) { }
 
     /// <summary>Fleet orders (military think).</summary>
     public void Think() { }

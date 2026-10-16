@@ -111,6 +111,32 @@ public sealed class AiConfig
     /// <summary>Seconds of a shooter's damage counted against a focus target before the next shooter picks another.</summary>
     public float FocusHorizon = 3f;
 
+    // ---- tech, strategic, navy, transports (wave 5k). Times are game seconds.
+    /// <summary>Highest tech level the AI goes for (factories, engineers, structures).</summary>
+    public int MaxTier = 3;
+    /// <summary>Extractor upgrades start (T1→T2, T2→T3) once the game is this old.</summary>
+    public float MexT2Time = 330, MexT3Time = 900;
+    /// <summary>Factory upgrades (first factory of the tier; more follow with income).</summary>
+    public float LandT2Time = 480, LandT3Time = 1020, AirT2Time = 720, AirT3Time = 1200;
+    /// <summary>Share of the mass income that running upgrades may take.</summary>
+    public float UpgradeShare = 0.35f;
+    public int MaxMexUpgrades = 2;
+    public int MaxFactoryUpgrades = 1;
+    /// <summary>Commander enhancements start (engineering first, then shield).</summary>
+    public float EnhanceTime = 540;
+    /// <summary>Base shields, TML, artillery installations, mass storage next to upgraded extractors.</summary>
+    public float ShieldTime = 780;
+    public int MaxShields = 3;
+    public float TmlTime = 840;
+    public int MaxTml = 1;
+    /// <summary>Nukes, experimentals, quantum gateway (also need a big mass income).</summary>
+    public float StrategicTime = 1260;
+    public int MaxScus = 2;
+    /// <summary>Navy: frigates/subs vs destroyers/cruisers mix cap; 0 = no navy.</summary>
+    public int MaxNavalFactories = 2;
+    /// <summary>Transport drops (0 = never).</summary>
+    public int MaxTransports = 2;
+
     public static AiConfig For(AiDifficulty d) => d switch
     {
         AiDifficulty.Easy => new AiConfig
@@ -125,6 +151,9 @@ public sealed class AiConfig
             AttackMargin = 1f, StageDistance = 0, AssembleTimeout = 60,
             RetreatFraction = 0, PullBackHealth = 0, DefenseRadius = 40, CommanderRetreatHealth = 0,
             PushTime = 1500, LateGameTime = 1800, BomberGroup = 3, Reinforce = false,
+            MaxTier = 2, MexT2Time = 600, MexT3Time = 99999, LandT2Time = 900, AirT2Time = 1500, UpgradeShare = 0.25f,
+            MaxMexUpgrades = 1, EnhanceTime = 1200, ShieldTime = 1500, MaxShields = 1, TmlTime = 99999, MaxTml = 0,
+            StrategicTime = 99999, MaxScus = 0, MaxNavalFactories = 1, MaxTransports = 0,
         },
         AiDifficulty.Hard => new AiConfig
         {
@@ -140,6 +169,9 @@ public sealed class AiConfig
             RetreatFraction = 0, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
             PushTime = 840, LateGameTime = 1140, BomberGroup = 5, Reinforce = true,
             RaidSize = 6, MaxRaids = 1, CommanderSnipe = true, FocusFire = true,
+            MexT2Time = 300, MexT3Time = 840, LandT2Time = 420, LandT3Time = 900, AirT2Time = 660, AirT3Time = 1080,
+            UpgradeShare = 0.4f, MaxMexUpgrades = 3, MaxFactoryUpgrades = 2, EnhanceTime = 480, ShieldTime = 720,
+            MaxShields = 4, TmlTime = 720, MaxTml = 2, StrategicTime = 1140, MaxScus = 3, MaxNavalFactories = 3, MaxTransports = 3,
             ArtilleryShare = 0.55f, // matrix: 0.15 -> 36 % wins vs Normal, 0.25 -> 57 %, 0.4 -> 78 %, 0.55 -> 86 %
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
