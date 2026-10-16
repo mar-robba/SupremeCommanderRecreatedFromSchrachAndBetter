@@ -60,11 +60,12 @@ public sealed class Hud : IDisposable
     /// <summary>Frees GPU resources (minimap texture) when the game ends.</summary>
     public void Dispose() => _minimap.Dispose();
 
-    /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse) for automated screenshots.</summary>
+    /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse, --help-overlay) for automated screenshots.</summary>
     public void ApplyStartupOptions(ClientOptions o)
     {
         if (o.Select != null || o.UiDemo || o.UiPlace != null || o.MousePos != null) _startup = new UiStartup(_ctx, _sel, o);
         if (o.TechDemo) _techDemo = new TechDemo(_ctx, _sel, o);
+        if (o.HelpOverlay && !_help.Open) _help.Toggle();
     }
 
     /// <summary>True if the mouse is over a HUD panel (camera/selection should ignore it).</summary>
