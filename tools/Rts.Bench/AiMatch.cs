@@ -112,6 +112,9 @@ public static class AiMatch
             if (b == null) continue;
             Console.WriteLine($"  {w.Armies[a].Name}: AI cost avg {b.Stats.AvgMs:F3} ms/tick, max {b.Stats.MaxMs:F2} ms, (scan {b.Stats.ScanMs:F0} / eco {b.Stats.EconMs:F0} / mil {b.Stats.MilitaryMs:F0} ms total, sites {b.Stats.SiteSearches}/{b.Stats.SiteFailures} failed/{b.Stats.SiteCandidates} cand), commands {b.Stats.Commands}, waves {b.Military.WavesLaunched}, " +
                               $"deep stall E {Pct(b.Economy.DeepEnergyStallThinks, b.Economy.Thinks)} M {Pct(b.Economy.DeepMassStallThinks, b.Economy.Thinks)}");
+            var ts = b.Stats;
+            Console.WriteLine($"  {w.Armies[a].Name} tech: tier={ts.MaxTier} upgrades={ts.Upgrades} enh={ts.Enhancements} exp={ts.Experimentals} " +
+                              $"nukes={ts.Nukes} tml={ts.Tml} navy={ts.Naval} drops={ts.Drops} captures={ts.Captures}");
         }
         tickMs.Sort();
         Console.WriteLine($"sim tick ms: avg {tickMs.Average():F2} p50 {tickMs[tickMs.Count / 2]:F2} p95 {tickMs[(int)(tickMs.Count * 0.95)]:F2} max {tickMs[^1]:F2}; " +

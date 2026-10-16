@@ -122,6 +122,9 @@ public sealed class AiStats
     [Persistence.NoSave] public double ScanMs, EconMs, MilitaryMs;
     /// <summary>Placement searches, failed searches, candidate sites evaluated.</summary>
     public long SiteSearches, SiteFailures, SiteCandidates;
+    /// <summary>Tech summary (bench line, wave 5k): highest tier owned, upgrades/enhancements started, experimentals
+    /// started, missiles launched, naval units queued, transport drops, captures.</summary>
+    public int MaxTier, Upgrades, Enhancements, Experimentals, Nukes, Tml, Naval, Drops, Captures;
 
     public void Record(double ms)
     {

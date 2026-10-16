@@ -50,6 +50,7 @@ public sealed class AiCommands
     {
         _out.Add(new UpgradeCommand(_army, [H(unit)]));
         _stats.Commands++;
+        _stats.Upgrades++;
     }
 
     /// <summary>Starts building an enhancement (by id) on a commander/SCU.</summary>
@@ -57,6 +58,7 @@ public sealed class AiCommands
     {
         _out.Add(new EnhanceCommand(_army, [H(unit)], enhancement));
         _stats.Commands++;
+        _stats.Enhancements++;
     }
 
     public void SetPaused(int unit, bool paused)

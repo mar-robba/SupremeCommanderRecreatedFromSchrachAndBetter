@@ -124,6 +124,7 @@ public sealed class AiMilitary
         ManageAir();
         _b.Navy.Think();
         _b.Transport.Think();
+        _b.Strategic.Think();
         _b.Scouting.Think();
     }
 

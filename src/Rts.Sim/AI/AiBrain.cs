@@ -30,6 +30,7 @@ public sealed class AiBrain
     public readonly AiRoster R;
     public readonly AiNavy Navy;
     public readonly AiTransport Transport;
+    public readonly AiStrategic Strategic;
 
     /// <summary>Base center (commander start), direction toward the nearest enemy start, rally point for new units.</summary>
     public Vector2 BasePos;
@@ -60,6 +61,7 @@ public sealed class AiBrain
         Scouting = new AiScouting(this);
         Navy = new AiNavy(this);
         Transport = new AiTransport(this);
+        Strategic = new AiStrategic(this);
 
         // Blueprints come from the army faction's roles (never hardcoded ids): -1 = the faction has no such unit.
         var factions = W.Blueprints.Factions;
@@ -109,6 +111,7 @@ public sealed class AiBrain
         Stats.ScanMs += System.Diagnostics.Stopwatch.GetElapsedTime(t0, t1).TotalMilliseconds;
         if (View.Commander < 0 && View.Engineers.Count == 0 && View.LandFactories.Count == 0 && View.AirFactories.Count == 0
             && View.LandCombat.Count == 0 && View.AirUnits.Count == 0 && View.NavalUnits.Count == 0 && View.NavalFactories.Count == 0) return;
+        Stats.MaxTier = Math.Max(Stats.MaxTier, Math.Max(Math.Max(View.LandTier, View.AirTier), Math.Max(View.NavalTier, View.EngineerTier)));
         if (econ) Economy.Think();
         long t2 = System.Diagnostics.Stopwatch.GetTimestamp();
         Stats.EconMs += System.Diagnostics.Stopwatch.GetElapsedTime(t1, t2).TotalMilliseconds;

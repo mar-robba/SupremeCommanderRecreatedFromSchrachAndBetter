@@ -249,11 +249,8 @@ public sealed partial class AiEconomy
         if (EnergyIncome - EnergyDemand < ex.BuildCostEnergy / time * 0.4f && EnergyRatio < 0.6f) return;
         _b.Cmd.Enhance(c, ex.Id);
         info.Task = AiTask.None;
-        Enhancements++;
+        info.HoldUntil = W.Tick + 3; // no other order this think: it would cancel the enhancement
     }
-
-    /// <summary>Enhancements started (bench summary).</summary>
-    public int Enhancements;
 
     /// <summary>Mass fabricators run only while energy is plentiful.</summary>
     private void ManageFabs()

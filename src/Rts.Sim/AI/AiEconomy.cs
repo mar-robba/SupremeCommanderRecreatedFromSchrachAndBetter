@@ -449,6 +449,7 @@ public sealed partial class AiEconomy
         float heading = sbp.Has(UnitCategory.Factory) ? DMath.HeadingOf(_b.EnemyDir) : 0f;
         _b.Cmd.Order(unit, Order.BuildAt(bp, site, heading), queue);
         _b.Placement.Reserve(bp, site, unit, deposit);
+        if (sbp.Has(UnitCategory.Experimental)) _b.Stats.Experimentals++;
         float rate = MathF.Max(1f, W.BpOf(unit).Economy.BuildRate);
         SetTask(unit, AiTask.Build, site, sbp.Economy.BuildTime / rate, deposit, queue);
     }
