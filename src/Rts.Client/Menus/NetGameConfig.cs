@@ -15,14 +15,17 @@ namespace Rts.Client.Menus;
 /// </summary>
 public static class NetGameConfig
 {
-    public static GameConfig From(GameStart start, int localPlayerId)
+    public static GameConfig From(GameStart start, int localPlayerId) => From(start.Lobby, localPlayerId);
+
+    /// <summary>Config of a lobby (also used for the lobby's map preview).</summary>
+    public static GameConfig From(LobbyState lobby, int localPlayerId)
     {
-        var o = start.Lobby.Options;
+        var o = lobby.Options;
         var cfg = new GameConfig { MapSize = o.MapSize, Preset = o.Preset, WaterAmount = o.Water, Seed = o.Seed };
         for (int i = 0; i < GameConfig.MaxSlots; i++)
         {
             var c = cfg.Slots[i];
-            var s = i < start.Lobby.Slots.Count ? start.Lobby.Slots[i] : null;
+            var s = i < lobby.Slots.Count ? lobby.Slots[i] : null;
             if (s == null || !s.IsArmy)
             {
                 c.Kind = SlotKind.Closed;

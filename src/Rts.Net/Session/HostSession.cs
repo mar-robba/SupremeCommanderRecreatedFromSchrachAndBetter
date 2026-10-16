@@ -114,11 +114,11 @@ public sealed class HostSession : NetSession, ITurnSink
         }
     }
 
-    /// <summary>Starts the game; returns why it can't (null = started: a <see cref="GameStartingEvent"/> follows).</summary>
     /// <summary>Optional faction check for <see cref="StartGame"/> (the host's <c>FactionDb</c>): unknown ids are refused.
     /// "" (default) and "random" always pass. The peers' data must match too: the Loaded hashes catch that.</summary>
     public Func<string, bool>? FactionKnown;
 
+    /// <summary>Starts the game; returns why it can't (null = started: a <see cref="GameStartingEvent"/> follows).</summary>
     public string? StartGame()
     {
         lock (Gate)

@@ -28,6 +28,8 @@ public sealed class MainMenuScreen : IScreen
         float by = y + big + Ui.P(70);
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Skirmish", "Play against AI on a generated map")) _app.Go(new SkirmishSetupScreen(_app));
         by += h + gap;
+        if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Multiplayer", "Host or join a game over the network")) _app.Go(new MultiplayerScreen(_app));
+        by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Sandbox", "Test freely: spawn anything, cheats, nukes")) _app.Go(new SkirmishSetupScreen(_app, sandbox: true));
         by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Load Game", "Continue a saved game")) _app.Go(new SaveListScreen(_app, replays: false));
