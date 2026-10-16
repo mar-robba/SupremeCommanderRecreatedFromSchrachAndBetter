@@ -32,6 +32,7 @@ public static class NetGameConfig
             c.Difficulty = s.Difficulty;
             c.Team = Math.Clamp(s.Team, 0, 4);
             c.ColorIndex = s.Color % Rts.Sim.GameSetup.ArmyColors.Length;
+            c.Faction = string.IsNullOrWhiteSpace(s.Faction) ? Rts.Sim.Data.FactionDb.DefaultFaction : s.Faction;
         }
         return cfg;
     }

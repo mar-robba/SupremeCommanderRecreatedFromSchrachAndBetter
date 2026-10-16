@@ -115,12 +115,21 @@ public sealed class HostSession : NetSession, ITurnSink
     }
 
     /// <summary>Starts the game; returns why it can't (null = started: a <see cref="GameStartingEvent"/> follows).</summary>
+    /// <summary>Optional faction check for <see cref="StartGame"/> (the host's <c>FactionDb</c>): unknown ids are refused.
+    /// "" (default) and "random" always pass. The peers' data must match too: the Loaded hashes catch that.</summary>
+    public Func<string, bool>? FactionKnown;
+
     public string? StartGame()
     {
         lock (Gate)
         {
             if (Phase != NetPhase.Lobby) return "Already started";
             if (LobbyRef.Problem() is string p) return p;
+            if (FactionKnown != null)
+                foreach (var s in LobbyRef.Slots)
+                    if (s.IsArmy && !string.IsNullOrWhiteSpace(s.Faction) && !string.Equals(s.Faction, Rts.Sim.Data.FactionDb.Random, StringComparison.OrdinalIgnoreCase)
+                        && !FactionKnown(s.Faction))
+                        return $"Unknown faction '{s.Faction}' ({(s.Kind == NetSlotKind.AI ? "AI" : s.Name)})";
             int delay = DelayFor(_conns.Where(c => c.PlayerId > 0).Select(c => c.RttMs).DefaultIfEmpty(0).Max(), 1f);
             var start = GameStart.From(LobbyRef, delay);
             Game = new NetGame(this, start, start.TurnIndexOf(0));

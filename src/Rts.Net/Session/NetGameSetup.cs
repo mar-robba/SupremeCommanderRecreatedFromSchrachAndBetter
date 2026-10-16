@@ -26,6 +26,8 @@ public static class NetGameSetup
             Teams = slots.Select((s, a) => s.Team > 0 ? s.Team : 100 + a).ToArray(),
             Colors = slots.Select(s => GameSetup.ArmyColors[s.Color % GameSetup.ArmyColors.Length]).ToArray(),
             Names = slots.Select(s => s.Kind == NetSlotKind.AI ? $"AI {++aiNo} ({s.Difficulty})" : s.Name).ToArray(),
+            // "" = the default faction; "random" is resolved from the seed (identical on every peer).
+            Factions = slots.Select(s => string.IsNullOrWhiteSpace(s.Faction) ? null : s.Faction).ToArray()!,
         };
     }
 
