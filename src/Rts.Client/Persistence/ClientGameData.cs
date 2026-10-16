@@ -35,6 +35,7 @@ public sealed class ClientGameData
         public AiDifficulty Difficulty = AiDifficulty.Normal;
         public int Team;
         public int ColorIndex;
+        public string? Faction;
     }
 
     private static readonly JsonSerializerOptions Json = new()
@@ -47,7 +48,7 @@ public sealed class ClientGameData
     public static ClientGameData From(GameConfig cfg, Vector3? camera = null) => new()
     {
         MapSize = cfg.MapSize, Preset = cfg.Preset, WaterAmount = cfg.WaterAmount, Seed = cfg.Seed,
-        Slots = cfg.Slots.Select(s => new SlotData { Kind = s.Kind, Difficulty = s.Difficulty, Team = s.Team, ColorIndex = s.ColorIndex }).ToList(),
+        Slots = cfg.Slots.Select(s => new SlotData { Kind = s.Kind, Difficulty = s.Difficulty, Team = s.Team, ColorIndex = s.ColorIndex, Faction = s.Faction }).ToList(),
         Demo = cfg.Demo, Stress = cfg.Stress, Scene = cfg.Scene, Sandbox = cfg.Sandbox, SandboxAi = cfg.SandboxAi,
         Camera = camera is Vector3 c ? [c.X, c.Y, c.Z] : null,
     };
@@ -69,6 +70,7 @@ public sealed class ClientGameData
                 slot.Difficulty = d.Difficulty;
                 slot.Team = Math.Clamp(d.Team, 0, 4);
                 slot.ColorIndex = Math.Max(0, d.ColorIndex);
+                if (!string.IsNullOrEmpty(d.Faction)) slot.Faction = d.Faction;
             }
             else slot.Kind = SlotKind.Closed;
         }
@@ -117,6 +119,7 @@ public sealed class ClientGameData
             slot.Team = p.Team is >= 1 and <= 4 ? p.Team : 0;
             int ci = Array.IndexOf(GameSetup.ArmyColors, p.Color);
             slot.ColorIndex = ci >= 0 ? ci : i;
+            if (!string.IsNullOrEmpty(p.Faction)) slot.Faction = p.Faction;
         }
         return cfg;
     }

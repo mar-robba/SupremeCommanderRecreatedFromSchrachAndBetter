@@ -2,27 +2,27 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-14 ~00:50 — read this first in a new session)
-main has waves 1-4 (incl. 4f polish, merged 2026-10-14). Tests: 342 sim + 193 client.
-Agent ids/worktrees: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md`; prompts:
-`common-wave5.md` + `wave5-briefs.md` there. Each agent keeps `<worktree>/.claude/handoff.md` and writes
-`<worktree>/.claude/agent-report.md` when done (copy it to `orchestrator/report-<x>.md` before removing the worktree).
+## ▶ NEXT STEPS (updated 2026-10-15 ~11:00 — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
+`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
+(the reference for agents that must not change sim results).
+Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
+the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
+`<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- Running: (j) faction infrastructure; wave 5 (m) scale/perf, (n) UX polish, (o) lockstep MP.
-  Worktrees are created from the stale `origin/main`; every prompt says "first `git merge main`" (local main).
+- Running (worktrees under `.claude/worktrees/`): (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish
+  `agent-a141a5d33496dd4c3` (3rd agent), (o) lockstep MP `agent-a4a312626d7228fe6`, (k) AI uses everything
+  `agent-ac4c927c54a66ca1d` (2nd agent), (l) Cybran `agent-a9df3acf3524c656f`. History: the weekly limit stopped
+  everything on 2026-10-14 08:14 and the session limit on 2026-10-15 11:21; each time WIP was kept and agents
+  resumed (SendMessage under 200k context, else handoff note + CHECKPOINT + a fresh agent in the same worktree).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
-  a screenshot, then `git worktree unlock` + `git worktree remove` + `git branch -d`.
-- (j) check after merge: `Rts.Bench -- ai 30 256 42 hard,normal` result must equal main's ("WINNER: Player (Hard) after
-  14:44" on e954f07).
-- After (j) merges: start (k) AI uses everything and (l) Cybran (briefs ready), giving them the ARCHITECTURE
-  "Factions" contract.
+  a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
+  then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
 - If an agent got cut off by a usage limit: commit its WIP in its worktree, then start a fresh agent in the same
-  worktree (absolute path, no isolation) with the same brief + "continue from .claude/handoff.md".
-- Open follow-ups not yet assigned: AI Highlands/Canyon stalemates + T1 artillery balance (→ k); everything else from
-  wave 4 is in (n)'s brief.
-- Housekeeping: sub-agents can't write `orchestrator/` files; agents use a build lock wrapper `dn.sh` in an old
-  scratchpad; a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
+  worktree (absolute path, no isolation) with its brief + "continue from .claude/handoff.md".
+- Owner question (2026-10-15) "would Rust have been better than .NET?": answered, stay on .NET (WORKFLOW "Owner decisions").
+- Housekeeping: a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
 
 **Next waves (owner: "everything must be done"):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
@@ -161,6 +161,11 @@ Shared contracts (still valid):
       - [x] merged with wave 4f polish (2026-10-14): shared hotkeys E (transport-to with transports selected, else
             capture) and D (subs dive + aircraft dock); captured carriers take their cargo along (not when carrying a
             commander); pausable Atlantis factory; boarding ends the factory roll-out
+- [x] Faction infrastructure (2026-10-14, agent j): `data/factions/<id>.json` (commander, color, roles → blueprint ids,
+      70 required + 15 optional roles), `FactionDb` on `BlueprintDb.Factions`, `UnitBlueprint.Faction`, per-army
+      `Army.Faction` from the setup (random = from the seed), faction commander; AI + strategic code use roles (no
+      `uef_*` ids in the sim); client: FACTION column in the skirmish setup, `--faction`/`--factions`, sandbox FACTION
+      filter, saved in client data/save headers; bench `[factions]` arg; ARCHITECTURE "Factions" contract
 - [ ] Second faction (Cybran-like) with distinct visuals and units
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs

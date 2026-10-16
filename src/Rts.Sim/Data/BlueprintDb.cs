@@ -24,6 +24,12 @@ public sealed class BlueprintDb
 
     public int IndexOf(string id) => _byId.TryGetValue(id, out int i) ? i : -1;
 
+    /// <summary>
+    /// The factions (<c>data/factions</c>), loaded with the blueprints by <see cref="LoadDirectory"/>; empty for a db
+    /// built in code. Set it only while loading (tests: <c>db.Factions = FactionDb.Create(db, ...)</c> on their own db).
+    /// </summary>
+    public FactionDb Factions { get; set; } = FactionDb.Empty;
+
     public static readonly JsonSerializerOptions JsonOptions = CreateJsonOptions();
 
     private static JsonSerializerOptions CreateJsonOptions()
@@ -50,8 +56,12 @@ public sealed class BlueprintDb
         _byId[bp.Id] = bp.Index;
     }
 
-    /// <summary>Loads every *.json under the directory (recursively). Each file holds one blueprint object.</summary>
-    public static BlueprintDb LoadDirectory(string dir)
+    /// <summary>
+    /// Loads every *.json under the directory (recursively). Each file holds one blueprint object. Then loads the
+    /// factions from <paramref name="factionDir"/> (default: <see cref="DataPaths.FactionDirFor"/> = <c>data/factions</c>
+    /// next to <c>data/blueprints/units</c>; missing = no factions).
+    /// </summary>
+    public static BlueprintDb LoadDirectory(string dir, string? factionDir = null)
     {
         var db = new BlueprintDb();
         foreach (var file in Directory.EnumerateFiles(dir, "*.json", SearchOption.AllDirectories).Order(StringComparer.Ordinal))
@@ -69,7 +79,15 @@ public sealed class BlueprintDb
             }
         }
         db.FinalizeDb();
+        db.Factions = FactionDb.LoadDirectory(factionDir ?? DataPaths.FactionDirFor(dir), db);
         return db;
+    }
+
+    /// <summary>Default faction of a blueprint without "Faction": its id prefix before the first '_' ("uef_t1_tank" → "uef").</summary>
+    public static string FactionOfId(string id)
+    {
+        int u = id.IndexOf('_');
+        return u > 0 ? id[..u].ToLowerInvariant() : "";
     }
 
     /// <summary>Resolves string references and derived flags. Must be called once after all Add() calls.</summary>
@@ -78,6 +96,7 @@ public sealed class BlueprintDb
         Commander.EnhancementCatalog.GenerateVariants(this); // enhancement variants are resolved like file blueprints
         foreach (var bp in _all)
         {
+            if (string.IsNullOrEmpty(bp.Faction)) bp.Faction = FactionOfId(bp.Id);
             bp.CategoryFlags = UnitCategory.None;
             foreach (var c in bp.Categories)
             {
@@ -187,4 +206,7 @@ public static class DataPaths
     }
 
     public static string UnitBlueprintDir => Path.Combine(FindDataRoot(), "blueprints", "units");
+    public static string FactionDir => Path.Combine(FindDataRoot(), "factions");
+    /// <summary>The factions folder belonging to a unit blueprint folder: <c>&lt;dir&gt;/../../factions</c>.</summary>
+    public static string FactionDirFor(string unitBlueprintDir) => Path.GetFullPath(Path.Combine(unitBlueprintDir, "..", "..", "factions"));
 }

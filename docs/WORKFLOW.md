@@ -21,6 +21,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-12 | "Giudica contando che tutto deve essere fatto": everything must be done. The orchestrator chooses the next waves itself, aiming at the full SupCom feature set. |
 | 2026-10-14 | The owner restarts the orchestrator at about 200k context, so the orchestrator keeps its own context lean and prepares its handoff (ROADMAP "NEXT STEPS") early. |
 | 2026-10-14 | All durable documentation goes in `docs/`, organized (see [README.md](README.md)), never only in the agents' private memory. Only small transient working notes stay private. |
+| 2026-10-15 | The owner clarified that they *can* install and uninstall software on this machine (the earlier "not technical" was not accurate). System packages and toolchains still need the owner's OK first: the orchestrator asks, and the owner installs. The owner asked whether Rust would have been a better choice than .NET for efficiency; the orchestrator's answer (stay on .NET: the sim uses ~4 % of its tick budget, the bottleneck is the GPU, a rewrite of ~53k lines would add no features; cross-machine float determinism is a risk in both languages and is handled in C#, see agent (o)). The owner read it and agreed to remove the question note from ARCHITECTURE.md. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves

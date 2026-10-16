@@ -14,6 +14,8 @@ public sealed class PlayerInfo
     public uint Color;
     public bool IsAI;
     public AiDifficulty Difficulty;
+    /// <summary>Faction id of the army ("" in files written before factions existed).</summary>
+    public string Faction = "";
 }
 
 /// <summary>
@@ -67,7 +69,7 @@ public sealed class GameInfo
     public void FillFrom(Simulation sim)
     {
         var w = sim.World;
-        Players = w.Armies.Select(a => new PlayerInfo { Name = a.Name, Team = a.Team, Color = a.Color, IsAI = a.IsAI, Difficulty = a.AiDifficulty }).ToList();
+        Players = w.Armies.Select(a => new PlayerInfo { Name = a.Name, Team = a.Team, Color = a.Color, IsAI = a.IsAI, Difficulty = a.AiDifficulty, Faction = a.Faction }).ToList();
         Ticks = w.Tick;
         WinningTeam = w.WinningTeam;
         GameVersion = CurrentGameVersion;

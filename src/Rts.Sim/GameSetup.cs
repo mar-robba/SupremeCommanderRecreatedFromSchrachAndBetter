@@ -23,7 +23,11 @@ public sealed class SkirmishSettings
     /// <summary>Optional per-army colors (0xRRGGBBAA) and names; defaults: <see cref="GameSetup.ArmyColors"/>, "Player"/"AI n".</summary>
     public uint[]? Colors;
     public string[]? Names;
-    public string CommanderBlueprint = "uef_commander";
+    /// <summary>
+    /// Faction id per army (data/factions; <see cref="FactionDb.Random"/> = picked from the seed; missing/null/"" =
+    /// <see cref="FactionDb.DefaultFaction"/>). The army's starting commander is its faction's Commander.
+    /// </summary>
+    public string[]? Factions;
     public int UnitCapacity = 16384;
     /// <summary>Starting stored resources; negative = full storage (the commander's StorageMass/StorageEnergy).</summary>
     public float StartMass = -1;
@@ -44,9 +48,27 @@ public static class GameSetup
         Size = s.MapSize, Players = s.Players, Seed = s.Seed, Preset = s.MapPreset, WaterAmount = s.WaterAmount,
     };
 
+    /// <summary>
+    /// The concrete faction of every army of a skirmish ("random" resolved deterministically from the seed). Throws
+    /// <see cref="InvalidOperationException"/> for an unknown faction id.
+    /// </summary>
+    public static string[] ResolveFactions(BlueprintDb db, SkirmishSettings s)
+    {
+        var result = new string[s.Players];
+        for (int a = 0; a < s.Players; a++)
+        {
+            string? choice = s.Factions != null && a < s.Factions.Length ? s.Factions[a] : null;
+            result[a] = db.Factions.Resolve(choice, s.Seed, a);
+            if (db.Factions.Get(result[a]) == null)
+                throw new InvalidOperationException($"Unknown faction '{result[a]}' (known: {string.Join(", ", db.Factions.All.Select(f => f.Id))})");
+        }
+        return result;
+    }
+
     public static Simulation CreateSkirmish(BlueprintDb db, SkirmishSettings s)
     {
         var terrain = MapGenerator.Generate(MapSettingsFor(s));
+        var factions = ResolveFactions(db, s);
         var armies = new Army[s.Players];
         for (int a = 0; a < s.Players; a++)
         {
@@ -58,16 +80,17 @@ public static class GameSetup
                 Color = s.Colors != null && a < s.Colors.Length ? s.Colors[a] : ArmyColors[a % ArmyColors.Length],
                 IsAI = a < s.AiPlayers.Length && s.AiPlayers[a],
                 AiDifficulty = s.AiDifficulties != null && a < s.AiDifficulties.Length ? s.AiDifficulties[a] : AiDifficulty.Normal,
+                Faction = factions[a],
             };
         }
 
         var world = new SimWorld(db, terrain, armies, (ulong)s.Seed, s.UnitCapacity);
-        int cmd = db.IndexOf(s.CommanderBlueprint);
-        if (cmd < 0) throw new InvalidOperationException($"Commander blueprint '{s.CommanderBlueprint}' not found");
         // SupCom: storage comes from units (the commander at start); games begin with full storage.
-        var cmdEco = db[cmd].Economy;
+        var commanders = new int[s.Players];
         foreach (var army in armies)
         {
+            int cmd = commanders[army.Index] = db.Factions.CommanderOf(army.Faction);
+            var cmdEco = db[cmd].Economy;
             army.Eco.MassMax = cmdEco.StorageMass;
             army.Eco.EnergyMax = cmdEco.StorageEnergy;
             army.Eco.Mass = s.StartMass < 0 ? cmdEco.StorageMass : Math.Min(s.StartMass, cmdEco.StorageMass);
@@ -77,7 +100,7 @@ public static class GameSetup
         for (int a = 0; a < s.Players; a++)
         {
             var sp = terrain.StartPositions[a % terrain.StartPositions.Length];
-            var h = world.SpawnUnit(cmd, a, sp, DMath.HeadingOf(center - sp), complete: true);
+            var h = world.SpawnUnit(commanders[a], a, sp, DMath.HeadingOf(center - sp), complete: true);
             armies[a].Commander = h;
         }
         return new Simulation(world);
