@@ -77,6 +77,10 @@ Things learned while building the project that are not about how a system works 
 - **Saveable state** (CLAUDE.md rule 9): static scratch lists and cached delegates get `[NoSave]` and are rebuilt
   lazily (`??=`). An unsupported framework type in sim state makes the serializer throw with a hint;
   `SaveCoverageTests` catches it first.
+- **Static scratch buffers must be `[ThreadStatic]`.** Several `SimWorld`s can step at the same time in one process
+  (multiplayer loopback tests, `Rts.Bench -- mp`): a shared static `List<int>` in `ConstructionSystem` threw
+  "Collection was modified" once in ~3 runs and froze a peer. Pattern: `[ThreadStatic, NoSave] static List<int>? t_tmp;
+  static List<int> _tmp => t_tmp ??= new();`.
 - **The sim never reads environment variables.** `AI_CFG` and the other `AI_*` switches are read by `Rts.Bench`
   only.
 
@@ -96,6 +100,20 @@ Things learned while building the project that are not about how a system works 
   `--camera x,z,dist`.
 - `--select <blueprint id>` (or `any:<id>` in the sandbox) pre-selects units; `--ui-place id@x,z` shows a placement
   ghost; the sandbox `--exec "spawn ...; wait 30; ..."` builds any situation.
+
+## Multiplayer checks
+
+- Two windows on this machine (automated, both exit after their frames; the client leaving shows the host's AI
+  takeover): `dotnet run --project src/Rts.Client -- --host 47704 --name Alice --autostart --screenshot a.png
+  --frames 1100 --size 960x540 &` then, a few seconds later, `... -- --join 127.0.0.1:47704 --name Bob --autostart
+  --screenshot b.png --frames 800 --size 960x540`. `--autostart`: clients press Ready, the host starts when 2+ humans
+  are in (or at once with `--players N`, which fills AI slots). Use a new port per run (a closing socket can linger).
+- Host vs AI only: `--host --autostart --players 3`. Add `--write-replay` to keep the replay, then check it with
+  `Rts.Bench -- replay replays/<file>`.
+- Headless: `dotnet run -c Release --project tools/Rts.Bench -- mp 4 1200` (and `... mp 3 1200 256 1 0 drop`).
+- Internet play: the host forwards TCP port 47624 (or the `--host` port) on the router to its machine and tells the
+  others its public IP; LAN games appear by themselves (UDP 47625, same subnet). Firewalls must allow both.
+- Cross-OS games can desync until the sim trig is software (ARCHITECTURE "Multiplayer", float determinism review).
 
 ## Perf check (before finishing a branch)
 
@@ -129,6 +147,7 @@ integrated GPU.
 | Tool | What for |
 |---|---|
 | `tools/Rts.Bench` | Headless benchmark, AI matches, replay verification, save/load timings (commands in CLAUDE.md). AI debug switches: ARCHITECTURE "Skirmish AI". |
+| `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert (WORKFLOW "Context limits and handoffs"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |

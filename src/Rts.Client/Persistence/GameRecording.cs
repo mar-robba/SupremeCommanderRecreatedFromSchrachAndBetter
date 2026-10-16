@@ -112,6 +112,9 @@ public sealed class GameRecording : ITickHooks
         QueueReplayWrite(runner.Simulation);
     }
 
+    /// <summary>Writes the replay recorded so far now (e.g. a multiplayer desync dump); later writes update the same file.</summary>
+    public void WriteReplayNow(SimRunner runner) => OnSimThread(runner, r => QueueReplayWrite(r.Simulation));
+
     /// <summary>Waits (bounded) for the save/replay writes still running, e.g. at application exit.</summary>
     public static void WaitForPendingWrites(TimeSpan timeout)
     {

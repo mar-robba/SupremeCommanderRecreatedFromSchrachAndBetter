@@ -196,4 +196,17 @@ Shared contracts (still valid):
             the replay view selector
       - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
             seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
-- [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)
+- [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
+      relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),
+      faction, team, color, AI level, ready, host map options + live preview, chat, kick; one turn per player per
+      tick, input delay adaptive to ping (1..30 ticks), sim holds until every turn is in ("Waiting for X"); speed and
+      pause negotiated; StateHash at load + every 10 ticks → desync banner + replay dump; drop after 10 s silence →
+      AI takeover or defeat (host option), host lost → client continues offline; every MP game writes a normal
+      replay. Client: Multiplayer menu (Host / Join / LAN list), lobby, net loading, in-game chat (Enter), players +
+      pings panel, Esc menu without pause; CLI `--host [port]`, `--join ip:port`, `--name`, `--autostart`.
+      Tests: Rts.Net.Tests (21: framing, codecs, lobby, factions, 2–4 peer loopback matches with random commands,
+      drops, desync, speed, LAN), `Rts.Bench -- mp` (4 peers 1200 ticks in 1.3 s, all hashes equal; drop variant),
+      two windows on one machine. Float determinism review in ARCHITECTURE "Multiplayer".
+      - [ ] later: software trig in `DMath` (cross-OS games can desync: libm vs UCRT), reconnecting, observers,
+            host migration, saving/loading MP games, lobby pings per player, chat sounds, NAT traversal/relay server
+            (today: port forwarding), "Waiting for X" → vote to drop
