@@ -83,6 +83,11 @@ Things learned while building the project that are not about how a system works 
   static List<int> _tmp => t_tmp ??= new();`.
 - **The sim never reads environment variables.** `AI_CFG` and the other `AI_*` switches are read by `Rts.Bench`
   only.
+- **New blueprint files can change `StateHash` without changing the game.** Blueprints are indexed in ordinal file
+  order and the hash mixes `Bp[i]`; the 80 `cybran_*` files sort before `uef_*`, so `ai 30 256 42 hard,normal` gives
+  the same game (Hard wins at 11:30) with another hash. To prove it, copy `tools/Rts.Bench/bin/Release/net10.0` to a
+  scratch `bin/` next to a copy of `data/` without the new files (the data root is found by walking up from the
+  binary) and run the match there: the old hash must come back (wave 5l).
 
 ## Client pitfalls
 

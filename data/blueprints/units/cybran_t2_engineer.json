@@ -19,7 +19,7 @@
   },
   "Movement": {
     "Layer": "Amphibious",
-    "MaxSpeed": 2.1,
+    "MaxSpeed": 2.0,
     "Acceleration": 2,
     "TurnRate": 110
   },
