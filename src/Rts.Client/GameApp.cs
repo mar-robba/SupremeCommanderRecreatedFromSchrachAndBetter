@@ -15,7 +15,7 @@ using Rts.Sim.World;
 namespace Rts.Client;
 
 /// <summary>Which client state the app starts in.</summary>
-public enum StartScreen { Game, MainMenu, Setup, Settings, Saves, Replays, LoadFile, ReplayFile }
+public enum StartScreen { Game, MainMenu, Setup, Settings, Saves, Replays, LoadFile, ReplayFile, Multiplayer }
 
 public sealed class ClientOptions
 {
@@ -42,6 +42,8 @@ public sealed class ClientOptions
     /// <summary>Screenshot helpers: open the pause menu / end screen ~15 frames before the capture.</summary>
     public bool PauseMenu;
     public bool EndScreen;
+    /// <summary>Screenshot helper: --help-overlay opens the F1 help overlay at the start of the game.</summary>
+    public bool HelpOverlay;
     /// <summary>Screenshot helper: the skirmish setup screen starts the game as soon as the preview is ready.</summary>
     public bool AutoStart;
     /// <summary>Debug: scripted menu flow (game → Restart → Quit to Menu → Skirmish → autostart → …) to exercise
@@ -84,6 +86,9 @@ public sealed class ClientOptions
     public string? LoadPath, ReplayPath;
     public int SeekTick = -1, SaveAt = -1;
     public bool SaveDialog, WriteReplay;
+    /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
+    public int HostPort;
+    public string? JoinAddress, PlayerName;
 
     public ClientOptions Copy() => (ClientOptions)MemberwiseClone();
 
@@ -98,7 +103,8 @@ public sealed class ClientOptions
             string Next() => i + 1 < args.Length ? args[++i] : throw new ArgumentException("missing value for " + a);
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
-                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic")) gameArg = true;
+                or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
+                or "--perf-log" or "--terrain-lod")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -144,6 +150,8 @@ public sealed class ClientOptions
                 case "--fxtest": o.FxTest = true; break;
                 case "--gallery": o.Gallery = true; break;
                 case "--novsync": o.NoVsync = true; break;
+                case "--perf-log": Rendering.PerfLog.Enabled = true; break;
+                case "--terrain-lod": Rendering.TerrainRenderer.ForceLod = int.Parse(Next()); break;
                 case "--nofog": o.NoFog = true; break;
                 case "--sandbox": o.Sandbox = true; break;
                 case "--exec": o.Exec = Next(); o.Sandbox = true; break;
@@ -156,6 +164,15 @@ public sealed class ClientOptions
                 case "--save-at": o.SaveAt = int.Parse(Next()); break;
                 case "--save-dialog": o.SaveDialog = o.PauseMenu = true; break;
                 case "--write-replay": o.WriteReplay = true; break;
+                case "--host":
+                    o.HostPort = i + 1 < args.Length && int.TryParse(args[i + 1], out int hp) ? hp : Rts.Net.Session.NetSession.DefaultPort;
+                    if (i + 1 < args.Length && int.TryParse(args[i + 1], out _)) i++;
+                    screen = StartScreen.Multiplayer;
+                    break;
+                case "--join": o.JoinAddress = Next(); screen = StartScreen.Multiplayer; break;
+                case "--name": o.PlayerName = Next(); break;
+                case "--multiplayer": screen = StartScreen.Multiplayer; break;
+                case "--help-overlay": o.HelpOverlay = true; gameArg = true; break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
                     {
@@ -187,6 +204,7 @@ public static class GameApp
         Persistence.GameRecording.AutoWriteReplays = opt.ScreenshotPath == null || opt.WriteReplay;
         var settings = AppSettings.Load();
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
+        SimWarmup.Start(db); // JIT warm-up of the sim on a background thread while the menu/loading shows (wave 5m)
 
         // Direct game (CLI): the simulation is created before the window, exactly as before the menus existed.
         GameConfig? directCfg = null;
@@ -202,6 +220,7 @@ public static class GameApp
         int width = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Width : settings.Width;
         int height = opt.SizeGiven || opt.ScreenshotPath != null ? opt.Height : settings.Height;
         Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint | ConfigFlags.ResizableWindow | (opt.NoVsync ? 0 : ConfigFlags.VSyncHint));
+        Rendering.FrameProfiler.GpuEnabled = opt.ScreenshotPath != null || Rendering.PerfLog.Enabled; // GPU stage timings
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
         Raylib.SetExitKey(KeyboardKey.Null);
@@ -221,6 +240,7 @@ public static class GameApp
             StartScreen.Replays => new SaveListScreen(app, replays: true),
             StartScreen.LoadFile => new FileLoadingScreen(app, opt.LoadPath!, replay: false, opt),
             StartScreen.ReplayFile => new FileLoadingScreen(app, opt.ReplayPath!, replay: true, opt),
+            StartScreen.Multiplayer => new MultiplayerScreen(app),
             _ => new MainMenuScreen(app),
         };
 
@@ -231,7 +251,7 @@ public static class GameApp
             Raylib.BeginDrawing();
             app.Current.Frame(dt);
             Raylib.EndDrawing();
-            if (app.Current is not InGameScreen) audio.MenuUpdate(dt); // in game GameAudio drives the device
+            if (app.Current is not (InGameScreen or NetInGameScreen)) audio.MenuUpdate(dt); // in game GameAudio drives the device
 
             frame++;
             if (opt.ScreenshotPath != null && frame >= opt.Frames)
@@ -294,10 +314,11 @@ public static class GameApp
 
     public static void DebugKeys(GameContext ctx)
     {
-        if (Raylib.IsKeyPressed(KeyboardKey.Space)) ctx.Runner.Paused = !ctx.Runner.Paused;
-        if (Raylib.IsKeyPressed(KeyboardKey.Equal) || Raylib.IsKeyPressed(KeyboardKey.KpAdd)) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
-        if (Raylib.IsKeyPressed(KeyboardKey.Minus) || Raylib.IsKeyPressed(KeyboardKey.KpSubtract)) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
-        bool f1 = Raylib.IsKeyPressed(KeyboardKey.F1), f2 = Raylib.IsKeyPressed(KeyboardKey.F2);
+        if (Input.Hotkeys.PauseGame.Pressed()) ctx.Runner.Paused = !ctx.Runner.Paused;
+        if (Input.Hotkeys.SpeedUp.Pressed()) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
+        if (Input.Hotkeys.SpeedDown.Pressed()) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
+        // F1 = help overlay (UI/HelpOverlay); the debug tank spawns are Ctrl+F1 / Ctrl+F2.
+        bool f1 = Input.Hotkeys.DebugSpawnOwn.Pressed(), f2 = Input.Hotkeys.DebugSpawnEnemy.Pressed();
         if ((f1 || f2) && ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
         {
             int army = f1 ? ctx.LocalArmy : (ctx.LocalArmy + 1) % ctx.ArmyColors.Length;

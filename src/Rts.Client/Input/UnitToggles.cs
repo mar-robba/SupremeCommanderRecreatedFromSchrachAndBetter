@@ -7,6 +7,7 @@ using Rts.Sim.Orders;
 using Rts.Sim.Snapshot;
 using Rts.Sim.Systems;
 using Rts.Sim.World;
+using Rts.Client.UI;
 
 namespace Rts.Client.Input;
 
@@ -17,14 +18,14 @@ namespace Rts.Client.Input;
 /// D and E are shared with the transport orders (<see cref="SharedHotkeys"/>).
 /// Commands are split per army (<see cref="ArmyCommands"/>).
 /// </summary>
-public static class UnitToggles
+public static partial class UnitToggles
 {
-    public const KeyboardKey PauseHotkey = KeyboardKey.H;
-    public const string PauseKeyName = "H";
-    public const KeyboardKey DiveHotkey = KeyboardKey.D;
-    public const string DiveKeyName = "D";
-    public const KeyboardKey CaptureHotkey = KeyboardKey.E;
-    public const string CaptureKeyName = "E";
+    public static KeyboardKey PauseHotkey => Hotkeys.Pause.Key;
+    public static string PauseKeyName => Hotkeys.Pause.Label;
+    public static KeyboardKey DiveHotkey => Hotkeys.Dive.Key;
+    public static string DiveKeyName => Hotkeys.Dive.Label;
+    public static KeyboardKey CaptureHotkey => Hotkeys.Capture.Key;
+    public static string CaptureKeyName => Hotkeys.Capture.Label;
 
     /// <summary>State of the selection for a toggle: Count = units it applies to, On = how many have it on.</summary>
     public readonly record struct ToggleState(int Count, int On)
@@ -114,6 +115,12 @@ public static class UnitToggles
     public static bool TryCapture(GameContext ctx, SelectionController sel, Vector2 mouse, bool queue)
     {
         if (CaptureTarget(ctx, sel, mouse) is not UnitView t) { UiSounds.Error(); return false; }
+        return TryCaptureUnit(ctx, sel, t, queue);
+    }
+
+    /// <summary>Capture order on unit t for every selected builder hostile to it (also minimap clicks).</summary>
+    public static bool TryCaptureUnit(GameContext ctx, SelectionController sel, UnitView t, bool queue)
+    {
         var snap = ctx.Snapshots.Current;
         var target = new UnitHandle(t.Index, t.Gen);
         bool issued = false;
@@ -136,11 +143,12 @@ public static class UnitToggles
     public static void HandleHotkeys(GameContext ctx, SelectionController sel, bool ctrl)
     {
         if (ctrl) return;
-        if (Raylib.IsKeyPressed(PauseHotkey) && PauseState(ctx, sel.Selected).Any) TogglePause(ctx, sel.Selected);
-        if (Raylib.IsKeyPressed(DiveHotkey) && DiveState(ctx, sel.Selected).Any) ToggleDive(ctx, sel.Selected);
+        if (Hotkeys.Pause.Pressed() && PauseState(ctx, sel.Selected).Any) TogglePause(ctx, sel.Selected);
+        if (Hotkeys.Dive.Pressed() && DiveState(ctx, sel.Selected).Any) ToggleDive(ctx, sel.Selected);
+        if (Hotkeys.FireState.Pressed() && FireStateOf(ctx, sel.Selected).Any) CycleFireState(ctx, sel.Selected, Ui.Shift ? -1 : 1);
         // D and E are shared with the transport orders (SharedHotkeys): D also docks aircraft (TransportInput);
         // E is transport-to as soon as transports are selected.
-        if (Raylib.IsKeyPressed(CaptureHotkey) && EKey(ctx, sel.Selected) == SharedHotkeys.EAction.Capture)
+        if (Hotkeys.Capture.Pressed() && EKey(ctx, sel.Selected) == SharedHotkeys.EAction.Capture)
             sel.SetMode(SelectionController.CommandMode.Capture);
     }
 

@@ -31,7 +31,7 @@ public sealed class PerfOverlay
             else { _sumFrame += frame; _measured++; _maxFrame = MathF.Max(_maxFrame, frame); }
         }
         _start = Stopwatch.GetTimestamp();
-        if (Raylib.IsKeyPressed(KeyboardKey.F8)) Visible = !Visible;
+        if (Raylib.IsKeyPressed(Input.Hotkeys.Perf.Key)) Visible = !Visible;
     }
 
     private void MarkCpu()
@@ -49,7 +49,7 @@ public sealed class PerfOverlay
         for (int k = 0; k < _n; k++) { avg += _frame[k]; max = MathF.Max(max, _frame[k]); cpu += _cpu[k]; }
         avg /= _n;
         cpu /= _n;
-        string s = $"frame {avg:F1} ms ({1000f / MathF.Max(0.01f, avg):F0} fps, max {max:F1})  cpu {cpu:F1} ms  |  units drawn {units.DrawnUnits}  draws {units.DrawCalls}  |  particles {fx.ParticleCount}  proj {fx.ProjectileCount}";
+        string s = $"frame {avg:F1} ms ({1000f / MathF.Max(0.01f, avg):F0} fps, max {max:F1})  cpu {cpu:F1} ms  |  units drawn {units.DrawnUnits}  draws {units.DrawCalls}  |  particles {fx.ParticleCount}  proj {fx.ProjectileCount}  terrain {TerrainRenderer.TrianglesDrawn / 1000}k tris";
         int sw = Raylib.GetScreenWidth();
         int w = Raylib.MeasureText(s, 14);
         Raylib.DrawRectangle(sw - w - 16, y, w + 12, 20, new Color(15, 20, 28, 170));

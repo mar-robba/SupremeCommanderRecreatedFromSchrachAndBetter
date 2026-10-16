@@ -441,6 +441,30 @@ case.
   - idle engineer/factory buttons;
   - any obvious UX bug found while testing.
 
+**Delivered** (merged 2026-10-16; four agents: the first three were cut by usage limits or the context cap, each
+continued from the previous one's handoff note):
+- Sim:
+  - fire states (Fire at will / Return fire / Hold fire); units don't auto-shoot a unit their army is capturing;
+  - Atlantis dive; the Mavor lobs over ridges on the high arc (`HighArcWhenBlocked`);
+  - Stop cancels an enhancement (with refund); shield HP and up/down state are kept when the blueprint changes;
+  - factory exit skips sides with a parked unit;
+  - save migrations: container v2, `SaveMigrations` header/payload steps (v1: default faction),
+    `GameInfo.FileVersion`. Limit: no field-level migration (a changed sim layout still refuses the file).
+- Client:
+  - `Input/Hotkeys.cs` = the one key table (`HotkeyTableTests`: no clashes, every polled key listed); the F1 help
+    overlay is generated from it (`--help-overlay`); tooltips show keys;
+  - the orders panel adds columns (max 3 rows); compact unit panel for transports/aircraft; mixed selection panel
+    (idle/fire-state counts, smaller type buttons, Ctrl+click type);
+  - minimap clicks work in every order mode; idle engineer/factory buttons;
+  - pause menu "Load Game" (Back returns to the game); replay F7 syncs the view selector.
+- New hotkeys: Q / Shift+Q fire state · F1 help overlay (debug spawns moved to Ctrl+F1 / Ctrl+F2) · "." next idle
+  engineer (Shift: all) · "," next idle factory (Shift: all) · double-tap 0-9 centers the camera on the group ·
+  Shift+double-click / Ctrl+Shift+click add that type on screen · Ctrl+click a unit panel type button adds that type.
+- Tests: `FireStateTests`, `AtlantisDiveTests`, `MavorHighArcTests`, `FactoryExitTests`, `SaveMigrationTests`,
+  `HotkeyTableTests` and client selection tests. At merge: 376 sim + 211 client tests green.
+- Check: `Rts.Bench -- ai 30 256 42 hard,normal` = main exactly (WINNER Hard after 11:30, hash EDCA8A729F29736E).
+- Not done: a capture cursor hint for transports carrying a commander (unclear, low value).
+
 ### (o) Lockstep multiplayer — new `src/Rts.Net` (no raylib) + client lobby
 *brief; started 2026-10-14*
 
@@ -465,3 +489,26 @@ Deterministic lockstep on top of the replay command log and the desync hashes.
   - protocol framing; drop handling;
   - `Rts.Bench -- mp` self-test;
   - two client windows on this machine (`--host` + `--join 127.0.0.1:port`).
+
+**Delivered** (merged 2026-10-16; three agents, the first two cut by usage limits):
+- `src/Rts.Net` (no raylib): TCP framed protocol, the host relays every turn; LAN discovery on UDP 47625; lobby with
+  8 slots (human / AI / open / closed): faction, team, color, AI level, ready flags, host map options, chat, kick.
+- Lockstep: one turn per player per tick, input delay adapted to ping; speed and pause negotiated with the host;
+  `StateHash` checked at load and every 10 ticks (a desync shows a banner and writes the replay so far); a dropped
+  player goes to the AI or is defeated (host option); a client that loses the host continues offline. Lobby
+  factions go into the skirmish settings; the host refuses unknown faction ids.
+- Client: main menu Multiplayer (name, Host, Join, LAN list), lobby with map preview, loading screen; in game: chat
+  (Enter, in `Hotkeys.cs`), players/pings panel, "Waiting for X" banner, an Esc menu that doesn't pause, observer
+  mode after defeat. Space / + / − become requests to the host. Every MP game writes a normal replay.
+- How to try: two windows, `--host 47704 --name A --autostart` and `--join 127.0.0.1:47704 --name B --autostart`;
+  against AI only `--host --autostart --players 3`; headless `Rts.Bench -- mp 4 1200` (or `mp 3 1200 256 1 0 drop`).
+- Sim fix: the static `_tmp` scratch lists in ConstructionSystem, MissileSystem and DamageSystem are now
+  `[ThreadStatic]` (several sims in one process raced on them: the loopback test failed about 1 run in 3).
+- Docs: ARCHITECTURE "Multiplayer" (with the float determinism review), DEV_GUIDE (port forwarding), CLAUDE.md.
+- Tests: `Rts.Net.Tests` (21: framing, codec, lobby, loopback 2/3/4 peers + AI with random commands, drops, desync,
+  speed/pause, LAN), `NetGameConfigTests`. At merge: 376 sim + 213 client + 21 net tests green.
+- Numbers: `mp` 4 peers × 1200 ticks in 1.3 s, all hashes equal; bench 2000 300 main 4.07 ms vs branch 3.84 ms;
+  `ai 30 256 42 hard,normal` = main exactly (hash EDCA8A729F29736E).
+- Known issues: games between different operating systems can desync (the sim's trig uses each OS's C math
+  library); no reconnect, MP observers, MP saves or NAT traversal; after game over the end screen stops the local
+  sim, so a peer that keeps playing waits.

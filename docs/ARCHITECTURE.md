@@ -118,7 +118,8 @@ interpolates prev/cur by time
   gets a copy of the factory's order queue (rally) or a short move. Repeat re-appends; Dequeue of the item in progress
   cancels it with a refund; factory death kills the unfinished unit.
   **Drive-out** (`FactoryExitMotion`): a finished surface unit starts at the factory center and, while
-  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side)
+  `Move.LeaveTime > 0` (cap 8 s), MovementSystem steers it straight to `Move.FactoryExit` (front, else first free side; a side with a parked unit
+  — no move goal — on its exit lane is used only if every open side has one)
   across the factory's own blocked footprint; then it repaths to its rally. Aircraft take off from the pad (spawned
   at ground height, they climb). Mobile factories (Fatboy) drop units straight at their back (no drive-out, no rally).
 - **Adjacency** (`AdjacencyRules` values, `AdjacencySystem`, sequential, right before EconomySystem): writes
@@ -202,7 +203,12 @@ interpolates prev/cur by time
   terrain/water surface (same grazing tolerance as projectiles), shells need an arc solution (`Ballistics.SolveArc`,
   as `WeaponSystem` uses). Homing/missiles, bombs, flak, torpedoes and silo weapons are not restricted; forced
   targets (Attack orders, TML/nukes, attack-ground) skip the check. Effect: units below a cliff no longer stop
-  on attack-move to shoot into the rock; they walk up the ramp.
+  on attack-move to shoot into the rock; they walk up the ramp. `WeaponBlueprint.HighArcWhenBlocked` (Mavor): when
+  `LineOfFire.IsArcClear` finds terrain on the low arc, `WeaponSystem` lobs the shell on the high arc instead.
+- **Fire states** (`Combat/FireStates.cs`, `SetFireStateCommand`, `UnitStore.FireStates`, snapshot `UnitView.FireState`):
+  Fire at will (default) / Return fire (acquires targets only while hit in the last 5 s) / Hold fire (never acquires;
+  Attack orders and attack-ground still fire). `TargetingSystem` reads it; a unit being captured by an army (or an
+  ally) is never auto-acquired by that army's units.
 
 ## Shields & strategic weapons (`Rts.Sim/Strategic`)
 - `StrategicSystem.Update` is one sequential pipeline step (after movement, before targeting): interceptor prep →
@@ -263,11 +269,12 @@ interpolates prev/cur by time
   `BuildListFrom`, Shield, Silo). `EnhancementCatalog` (at `BlueprintDb.FinalizeDb`) generates one blueprint VARIANT per slot
   combination (id `base+Enh1+Enh2`, JSON clone + effects, prerequisite effects stack; `IsVariant`, `Installed`,
   `EnhancementVariants`). Installing/removing swaps `Units.Bp` in place (same handle, health fraction kept, modules re-init;
-  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock), so every system just reads the new blueprint.
+  `StrategicSystem.InitUnit` is idempotent and keeps the silo stock and the shield HP/up-down state, clamped), so every
+  system just reads the new blueprint.
   `BuildListFrom` merges other builders' final build lists (SCU/T3 Engineering from `uef_t3_engineer`, Fatboy from the T3
   land factory). Building one reuses `UpgradeState`/`UpgradeSystem`: `EnhanceCommand` stops the unit and targets the variant,
   `UpgradeSystem.Cost` returns the enhancement's cost/time, the unit works on itself with its BuildRate, engineers assist
-  with Guard, `CancelUpgradeCommand` refunds, any new order cancels it; `RemoveEnhancementCommand` clears a slot at once
+  with Guard, `CancelUpgradeCommand` refunds, any new order or Stop cancels it (with refund); `RemoveEnhancementCommand` clears a slot at once
   (no refund). The snapshot's `UpgradeBp`/`UpgradeFrac` carry the progress (`EnhancementCatalog.Added` = which one).
   Client: `UI/EnhancementPanel.cs`, model attachments in `Rendering/UnitModels.Experimental.cs` (from `Installed` + `Visual`).
 - **Quantum Gateway / SCU**: a T3 factory building `uef_scu` (engineer + cannon with its own enhancements). The SCU has no
@@ -306,7 +313,9 @@ interpolates prev/cur by time
   only weapons with the Sub layer (torpedoes) can target them: land/air guns never acquire them.
 - Dive/surface (`SetSubmergedCommand` → `Naval/Submarines.cs`, `UnitFlags.Surfaced`): depth changes smoothly;
   the layer (`OrderSystem.LayerOf`) switches halfway. A surfaced sub is a Water-layer unit: seen by vision/radar,
-  hit by surface guns, collides with ships.
+  hit by surface guns, collides with ships. Every `Movement.Layer: "Sub"` unit can dive; `StartSurfaced` divers
+  (the Atlantis) spawn at the surface. Submerged, only torpedo weapons work (`Submarines.FiresSubmerged`: Targeting
+  and WeaponSystem hold the SAMs/guns). A blueprint swap (InitUnit re-run) keeps the dive state and depth.
 - Ship separation (`Naval/NavalMotion.cs`): hulls are capsules along the heading, pushed apart for all armies;
   submerged subs only collide with subs, surfaced subs with ships.
 - Client: models in `Rendering/UnitModels.Naval.cs`; `EffectsRenderer.Naval.cs` (torpedo body + surface streak +
@@ -340,7 +349,11 @@ interpolates prev/cur by time
   Air Staging repairs/refuels for free and releases aircraft when full; `KeepDocked` carriers (the Atlantis) keep
   them until Unload (Launch) or until the aircraft gets new queued orders.
 - Mobile factory (Atlantis): builds aircraft on deck (`SyncFactoryUnit` keeps the unit being built on the carrier)
-  and carries them. Pausable like any factory (H). It can't dive yet (it is a Water-layer unit).
+  and carries them. Pausable like any factory (H). It can dive (`Movement.Layer: "Sub"` + `StartSurfaced`, see Naval):
+  while submerged (`Submarines.IsSubmerged`) the deck is closed: no docking (aircraft wait above it; `FindAirCarrier`
+  skips it), no launching (Unload waits, docked aircraft stay aboard), a finished aircraft goes straight into the hold
+  with a Dock order in front of its orders (`TransportSystem.DockFinished`) and takes off after surfacing; with a
+  full hold production waits (`WaitsForRoom`).
 - Capture (`UnitTransfer`): a captured carrier's cargo changes army with it (hold order, recursive); carried units
   can't be captured and a carrier holding a commander can't be captured. Boarding ends a factory roll-out
   (`MoveState.LeaveTime = 0`). Air staging repairs veterans to their raised max health.
@@ -443,6 +456,19 @@ interpolates prev/cur by time
 - `Input/SelectionController`: selection, control groups, right-click orders, attack-move and patrol modes;
   `Input/ContextOrders` (engineers: wreck → reclaim, damaged/unfinished → repair, factory → assist) + `UI/CursorHint`.
 - `UI/Hud`: resources, selection summary, help.
+- **Hotkeys**: `Input/Hotkeys.cs` is THE key table (key(s), modifiers, scope, help group/text, `Share` tags for keys
+  shared on purpose: D, E, U, M; `Pressed()`, `Label`, `Clashes()`, `Mouse` help lines). Input code reads keys from it
+  (never a raw `KeyboardKey` for a game action). Rule: a new key goes in the table; `HotkeyTableTests` fails on clashes
+  and on keys polled in `src/Rts.Client` that are not in it. F1 / the top-bar "?" open `UI/HelpOverlay` (generated
+  from the table; `--help-overlay` for screenshots). Tooltips show keys through `Hotkey.Label`.
+- Selection/UX: fire state Q / Shift+Q (`Input/FireStateToggle.cs`, "Fire" order button, unit panel order line);
+  `UI/IdleButtons` above the minimap (idle engineers ".", idle factories ","; Shift = all; `Input/SelectionMath`);
+  double-click / Ctrl+click = that type on screen (Shift / Ctrl+Shift add); double-tapping a control group centers the
+  camera; minimap left click gives the current order mode's order there (`SelectionController.IssueAtWorldPoint`);
+  `OrdersPanel` adds columns (max 3 rows); the unit panel uses a compact header when ≥ 2 extra rows follow; a mixed
+  selection shows idle/fire-state counts and type buttons (smaller when many; Ctrl+click = that type on screen).
+- Pause menu "Load Game": `AppHost.Go(next, keepOld: true)` keeps the paused `InGameScreen` alive; `SaveListScreen`
+  (`returnTo`) owns it: Back returns to it, loading a save disposes it.
 - Gameplay toggles (unit panel buttons + hotkeys): pause H (`SetPausedCommand`), dive/surface D (subs), capture E
   (then click an enemy; engineers also capture with a context right-click on enemies, `CursorHint` shows it).
   D and E are shared with the transport orders (`Input/SharedHotkeys.cs`, pure): E = transport-to when transports are
@@ -499,7 +525,12 @@ interpolates prev/cur by time
   uninterrupted game (`PersistenceTests`, 1 and 4 threads).
 - Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
   set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
-  + hash, bounds-checked reads). No migrations: files are tied to the build (`GameInfo.SimBuild`).
+  + hash, bounds-checked reads). Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
+  now 2; files ≥ `MinVersion` load) is upgraded on load one step at a time: a header-JSON step (also for file lists)
+  and a payload step per version (v1→v2: players without a faction get `FactionDb.DefaultFaction`); `GameInfo.FileVersion`
+  = the version read. To change the format: bump the version, add a `Steps` entry + a `case`, extend
+  `SaveMigrationTests` (writes old-version files from a current game with `SaveContainer.EncodeRaw`). Limit: the
+  payload is still checked against this build's field layouts (no field-level migration yet).
 - Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
   army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
   so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.
@@ -530,3 +561,98 @@ interpolates prev/cur by time
   ticks. `SaveCoverageTests` walks every reachable field type and fails with the field path and the fix;
   `PersistenceTests.SaveLoadContinueMatchesUninterruptedGame` proves the round trip on a rich game (AIs, every
   blueprint spawned, missiles, nukes, upgrades) — extend that scenario if your feature has state it doesn't reach.
+
+## Performance & scale (wave 5m)
+
+Goal: 1024 maps, 8 armies, 5k+ units at 60 FPS on the Radeon 780M, sim tick < 10 ms. Numbers: DEV_GUIDE "Reference
+numbers"; how to measure: DEV_GUIDE "Perf check" and "Profiling".
+- **Worker pool** (`Core/ParPool.cs`, `Par.cs`): persistent threads, the caller participates, no allocation per call.
+  A call made while the pool is busy (nested, or from a second thread such as the warm-up or a loading thread) runs
+  inline on the caller with the same chunks, so results never depend on it. Hot call sites pass static lambdas
+  with the world as an argument (`Par.For(n, chunk, w, static (w, c, a, b) => ...)`): a capturing lambda allocates.
+- **Profiling**: `Simulation.Profile` (`Core/SimProfile.cs`) times every tick stage (and, opt-in, its allocations);
+  `Rts.Bench` prints stage avg/max, KB/tick, the first tick and the worst tick with their stage breakdown. Client:
+  `FrameProfiler` (CPU laps per frame stage, `FrameProfiler.Sub("x")` splits a stage from inside a module; GPU timer
+  queries per stage) printed by `--screenshot` runs and once per second by `--perf-log`.
+- **JIT**: tier-0 code + on-stack replacement made the first ~30 s of a game spiky (10–30 ms ticks in loops that
+  normally cost 0.05 ms). `Rts.Client` and `Rts.Bench` set `TieredCompilationQuickJitForLoops=false` (methods with
+  loops are optimized at once), and the client starts `SimWarmup` at startup: a throwaway 2-AI skirmish with a small
+  battle on a background thread, so the real game's first tick runs compiled code (first tick ~200 → ~15 ms on 1024).
+  The warm-up world is separate; `ScalePerfTests` checks a game's hash is unchanged while it runs.
+- **Navigation build**: `GameSetup.CreateSkirmish` builds the clearance grids (`PathService.EnsureGrids`, terrain pass
+  parallel) at load instead of in the first tick; region graphs are still built on first use (they are saved state,
+  so building all 16 up front would bloat saves) and several missing graphs are built in parallel
+  (`PathService.EnsureGraphs`). Early vs lazy building gives identical results: grids and graphs are pure functions
+  of terrain + occupancy, and later structures update them incrementally with the same functions.
+- **Allocations**: ~0 per tick in combat; AI games ~10 KB/tick on 1024 (was ~125), mostly new goal fields. Goal
+  fields reuse the Dist/Next arrays of evicted fields (`PathService.RentFieldArray`/`RecycleField`, safe because
+  fields are read only during one tick's solves and evicted in sequential phases) and a per-thread Dijkstra heap.
+- **Intel**: < 0.4 ms avg on 1024 with 8 armies (was ~1.1).
+- **Client**: units are instanced (2 draw calls); particles are GPU-instanced (`ParticleInstances.cs`, one 52-byte
+  instance per particle, the vertex shader builds billboard / ground quad / streak); terrain chunks (64×64) have
+  LOD meshes at vertex strides 1/2/4/8 (`TerrainRenderer.Lod.cs`): a chunk uses the coarsest stride whose cell
+  stays ≤ 5 px on screen, and every inner chunk edge has a skirt (depth = 2 × the largest stride error on that edge)
+  so neighbours at different strides leave no cracks; `--terrain-lod N` forces a level. Deposit markers are
+  frustum-culled and drawn as one flat square beyond 260 units; the minimap draws one dot per pixel and color.
+- **Maps**: 6–8 players on 512/1024 for every preset are rotationally symmetric (non-quarter-turn counts carve one
+  corridor profile and rasterize every rotated copy with it) and fair: `MapScaleTests` checks plateau heights,
+  terrain symmetry, the nearest deposits of each start and the ground distances between starts.
+
+## Multiplayer (`src/Rts.Net`, no raylib; client screens in `Rts.Client/Menus`)
+- **Model**: deterministic lockstep on top of the replay machinery. Every peer runs the full sim; only commands
+  travel. Star topology: the host relays every turn (no peer-to-peer). TCP, length-framed binary messages
+  (`Wire/Framing.cs`, `Wire/Messages.cs`: Hello, Welcome, Reject, Lobby, LobbyRequest, Chat, Start, Loaded, Go, Turn,
+  Hash, Desync, Drop, Speed, Delay, Ping/Pong, Pings, Leave, Abort). Port 47624 TCP (game), 47625 UDP (LAN
+  discovery: `LanAnnouncer` broadcasts once a second, `LanBrowser` lists the games; protocol + sim build compared).
+  Joining needs the same `GameInfo.CurrentSimBuild` (the Rts.Sim assembly's MVID) and protocol version.
+- **Lobby** (`Lobby/LobbyState.cs`): 8 slots (Open / Human / AI / Closed) with faction, team, color, AI difficulty,
+  ready; `LobbyOptions` (map size, preset, water, seed, `OnDrop`). The host owns the state and applies requests
+  (`HostSession.SetSlotKind/SetSlot/MoveHost/SetOptions/Kick`, clients send `LobbyRequest`); every change is broadcast
+  and published as an immutable copy (`NetSession.Lobby`, any thread). UI threads read events with `TryGetEvent`.
+- **Start**: `HostSession.StartGame` (checks `LobbyState.Problem()` and `FactionKnown`) broadcasts `GameStart` (lobby
+  copy + initial delay). Army slots in slot order = armies 0..n-1; `NetGameSetup.ToSkirmish` maps slots to
+  `SkirmishSettings` (AI flags, difficulty, teams, colors, names, factions; "random" resolved from the seed). Each peer
+  builds the sim on a worker, reports `Loaded(StateHash)`; the host sends Go when every hash equals its own, else
+  Abort (everybody back to the lobby).
+- **Turns** (`Lockstep/LockstepHooks.cs`, the runner's `ITickHooks`, wrapping the replay recorder): every player
+  sends exactly one turn per tick, contiguous. Local commands of the frame stepping to T+1 go into the turn for
+  T+1+delay (ticks 1..delay are pre-sent empty at Go). `Hold()` = no Go yet, or some player's turn for tick+1 is
+  missing (`WaitingFor`). `BeforeStep` merges the turns in player order, keeps only commands of that player's army,
+  renumbers `Sequence`/`ExecuteTick` → identical command lists on every peer (and in every replay). The local copy is
+  decoded from the bytes sent, so all peers step identical objects. Turn payload = `TurnEncoder`/`TurnDecoder`:
+  the persistence graph writer with a per-sender type table (type names/layouts go over the wire once per game).
+- **Delay**: sender-side, host-adaptive: `DelayFor(maxRtt, speed) = 1 + (maxRtt + 20 ms) / tickMs` (1..30 ticks),
+  recomputed every 250 ms from the pings and broadcast (Delay). A larger delay leaves a gap filled with empty turns;
+  a smaller one makes the sender wait until the ticks catch up (commands stay pending).
+- **Speed/pause**: requests to the host (`NetGame.RequestSpeed`), broadcast (Speed) and applied to every runner
+  (`NetGame.AttachRunner`); they don't affect determinism.
+- **Desync detection**: every 10 ticks each client sends `StateHash` to the host; the host compares with its own →
+  Desync broadcast (game continues; the client shows a banner and writes the replay so far: `GameRecording.WriteReplayNow`).
+- **Disconnects**: a connection silent for `TimeoutSeconds` (10 s) or closed → the host picks lastTick = the last turn it
+  relayed for that player, broadcasts Drop after those turns; every peer applies empty turns afterwards and a
+  `PlayerLeftCommand(army, OnDrop)` at lastTick+1 (`Rts.Sim/Orders/MultiplayerCommands.cs`, `MultiplayerSystem`):
+  AI takeover (`Army.IsAI`) or defeat. Host lost → a client continues offline (drops every other player after its
+  last received turn; `NetGame.Offline`). Reconnecting is not supported.
+- **Replays**: the MP game's `GameRecording` (`NetGameConfig.Recording`) is a normal skirmish replay of the merged
+  command log (remote humans are non-AI armies whose commands come from the log): `Rts.Bench -- replay` verifies it.
+- **Client** (`Menus/MultiplayerScreen` → `LobbyScreen` → `NetLoadingScreen` → `NetInGameScreen`): the screen that
+  holds the session passes it on (`_handedOff`), any other exit calls `Leave()`. `GameSession` gets the lockstep
+  hooks through `wrapHooks`, `NetKeys` (Space/+/− become requests; no debug spawns, no F7 fog reveal; Enter = chat, `Hotkeys.Chat`) and
+  `KeyboardCaptured` (chat line open → game hotkeys blocked). No saving and no Restart in MP; Esc menu doesn't pause;
+  local defeat → observer (the sim must keep running so the others don't wait); game over → end screen (runner
+  stopped: the others may then wait if they continue).
+- **Tests**: `tests/Rts.Net.Tests` (framing, codecs, lobby round trip, factions, loopback TCP matches of 2–4 peers with
+  random commands → identical hashes + MP replay re-simulates, drops, desync, speed, LAN discovery);
+  `Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (headless self-test, exit 1 on desync).
+- **Float determinism review** (2026-10-16). Lockstep needs bit-identical floats on every machine:
+  - Basic IEEE ops (+ − × ÷, sqrt, float↔int casts) are deterministic: RyuJIT uses scalar SSE2 on x64 and NEON on
+    ARM64, no x87 and no implicit FMA contraction; .NET 9+ float→int casts saturate the same on x64 and ARM64. No
+    `MathF.FusedMultiplyAdd`, no explicit SIMD, no `GetHashCode` in Rts.Sim (checked).
+  - `System.Numerics.Vector2/3` (≈200 uses): same results on the same .NET + ISA; their intrinsic code paths could in
+    principle round differently between x64 and ARM64 (dot products) — unverified.
+  - **Risk**: transcendental functions (`MathF.Sin/Cos/Atan2/Pow/Log2`, ~40 calls in Rts.Sim: weapons, projectiles,
+    missiles, movement, AI memory decay, map generation) call the OS C runtime (glibc libm, Windows UCRT, macOS
+    libSystem), which may differ in the last bit → Linux vs Windows games can desync. Same OS + same build: identical.
+  - Safety net: `Loaded` hashes at start, `StateHash` every 10 ticks, desync banner + replay dump.
+  - later: route all sim trig through `DMath` with software implementations (polynomials using only + − × ÷), verify
+    Linux↔Windows↔ARM64 with `Rts.Bench -- replay` of the same file on each machine.

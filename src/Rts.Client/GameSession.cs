@@ -36,6 +36,11 @@ public sealed class GameSession : IDisposable
     public readonly ReplayPlayer? Replay;
     /// <summary>Optional: true if the mouse is over an extra overlay (e.g. replay controls) so the world ignores it.</summary>
     public Func<bool>? MouseOverExtraUi;
+    /// <summary>Multiplayer (Menus/NetInGameScreen.cs): called instead of the debug keys (speed and pause are negotiated,
+    /// no debug spawns, no fog reveal key).</summary>
+    public Action? NetKeys;
+    /// <summary>Set by the owner while a text line has the keyboard (multiplayer chat): game hotkeys are blocked.</summary>
+    public bool KeyboardCaptured;
     private readonly SnapshotInterpolator _interp;
     private readonly RtsCamera _camera;
     private readonly TerrainRenderer _terrainR;
@@ -48,6 +53,7 @@ public sealed class GameSession : IDisposable
     private readonly ExperimentalAlert _expAlert;
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
+    private readonly FrameProfiler _prof = new(); // per-stage CPU ms (screenshot perf line, --perf-log)
     private readonly SelectionController _selection;
     private readonly Hud _hud;
     /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
@@ -80,8 +86,9 @@ public sealed class GameSession : IDisposable
     /// <param name="audio">App-wide audio (null = this game opens its own device from <c>opt.Audio</c>).</param>
     /// <param name="recording">Recording of a loaded game (null = a new recording of this game).</param>
     /// <param name="replay">Watch this replay instead (read-only; <paramref name="sim"/> = its simulation).</param>
+    /// <param name="wrapHooks">Multiplayer: wraps the recording hooks (lockstep), before the runner starts.</param>
     public GameSession(BlueprintDb db, Simulation sim, GameConfig cfg, int localArmy, ClientOptions opt, AudioSystem? audio = null,
-        GameRecording? recording = null, ReplayPlayer? replay = null)
+        GameRecording? recording = null, ReplayPlayer? replay = null, Func<ITickHooks, ITickHooks>? wrapHooks = null)
     {
         Db = db;
         Sim = sim;
@@ -92,6 +99,7 @@ public sealed class GameSession : IDisposable
         // Replays: playback hooks. Games: replay recording (+ saving), see Rts.Client/Persistence.
         if (replay != null) Runner.Hooks = Replay = replay;
         else Runner.Hooks = Recording = recording ?? GameRecording.ForNewGame(cfg, sim, localArmy);
+        if (wrapHooks != null) Runner.Hooks = wrapHooks(Runner.Hooks!);
         _interp = new SnapshotInterpolator(Runner);
         _camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
         _terrainR = new TerrainRenderer(terrain);
@@ -143,6 +151,7 @@ public sealed class GameSession : IDisposable
     {
         if (!MenuUi.Key(KeyboardKey.Escape)) return false;
         if (_sandbox != null && _sandbox.WantsEscape) return false; // closes the console / cancels the sandbox tool
+        if (_hud.HelpOpen) return false; // Esc closes the F1 help (Hud)
         var s = _selection;
         if (s.Mode != SelectionController.CommandMode.Normal || s.Placement.Active || s.PendingSelfDestruct != null) return false;
         if (s.Selected.Count > 0)
@@ -161,17 +170,26 @@ public sealed class GameSession : IDisposable
     {
         var ctx = Ctx;
         _perf.BeginFrame();
+        _prof.Begin();
         _interp.Update();
-        _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true);
+        _prof.Lap("interp");
+        _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true && NetKeys == null && !KeyboardCaptured);
+        _prof.Lap("fog");
         bool overUi = interactive && (_hud.MouseOverUi() | MouseOverExtraUi?.Invoke() == true);
         if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
+        if (KeyboardCaptured) _selection.InputBlocked = true;
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
-        if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly) GameApp.DebugKeys(ctx);
+        if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly && !KeyboardCaptured)
+        {
+            if (NetKeys != null) NetKeys();
+            else GameApp.DebugKeys(ctx);
+        }
+        _prof.Lap("input+audio");
 
         var cur = _interp.Current;
         var prev = _interp.Prev;
@@ -183,25 +201,32 @@ public sealed class GameSession : IDisposable
         Raylib.BeginMode3D(_camera.Camera);
         _terrainR.Draw(_camera.Camera);
         _terrainR.DrawDeposits();
+        _prof.Lap("terrain");
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
+        _prof.Lap("units");
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
+        _prof.Lap("props+sel3d");
         _terrainR.DrawWater();
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.DrawSubmerged(); // subs seen through the water
+        _prof.Lap("water+subs");
         _fx.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         _shields.Draw(dt, cur, prev, alpha, _interp.NewEffects);
         Raylib.EndMode3D();
         _fx.DrawOverlay(); // nuke screen flash (NukeFx)
+        _prof.Lap("effects");
 
         _props.DrawStrategic(cur);
         IconRenderer.Draw(ctx, cur, prev, alpha, _selectedSet);
+        _prof.Lap("icons");
         _fog.DrawBlips(cur, alpha);
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
         _shields.DrawBars(cur, prev, alpha, _selectedSet);
         UpgradeOverlay.Draw(ctx, cur, prev, alpha);
+        _prof.Lap("overlays2d");
         if (interactive)
         {
             if (_selection.IsDragging)
@@ -211,13 +236,19 @@ public sealed class GameSession : IDisposable
                 Raylib.DrawRectangleLinesEx(r, 1, new Color(120, 255, 120, 220));
             }
             _hud.Draw();
+            _prof.Lap("hud");
             _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
         }
+        _prof.Lap("cursor");
         _stratHud.Draw2D(cur, dt);
+        _prof.Lap("strathud2d");
         _expAlert.Draw2D(cur, dt);
         _audio.DrawOverlay();
+        _prof.Lap("alerts");
         _perf.Draw(_unitR, _fx);
+        _prof.End();
+        PerfLog.Tick(_prof, _perf, cur);
     }
 
     /// <summary>Game over for the local player: (true, won) once the game has a winner or the local army is defeated.</summary>
@@ -235,7 +266,7 @@ public sealed class GameSession : IDisposable
     public string ScreenshotInfo()
     {
         var cur = _interp.Current;
-        var s = $"(tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)\n{_perf.Summary()}";
+        var s = $"(tick {cur.Tick}, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms)\n{_perf.Summary()}\n{_prof.Summary()}";
         if (Runner.Fault != null) s += "\nSIM FAULT: " + Runner.Fault;
         return s;
     }

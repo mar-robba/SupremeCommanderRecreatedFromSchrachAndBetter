@@ -5,6 +5,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Methods with loops are JIT-optimized at once instead of tier-0 + on-stack replacement: the sim's per-unit
+         loops ran unoptimized for their first ticks (10-30 ms tick spikes; docs/DEV_GUIDE.md "Reference numbers"). -->
+    <TieredCompilationQuickJitForLoops>false</TieredCompilationQuickJitForLoops>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Rts.Sim\Rts.Sim.csproj" />
+    <ProjectReference Include="..\Rts.Net\Rts.Net.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,6 +16,7 @@ namespace Rts.Client.UI;
 public sealed class ExperimentalAlert
 {
     public const float BannerTime = 6f;
+    public const int MaxPings = 8;
 
     private readonly GameContext _ctx;
     private readonly Action? _sound;
@@ -59,7 +60,7 @@ public sealed class ExperimentalAlert
                 _name = _ctx.Db[v.Bp].Name;
                 _underConstruction = (v.Flags & UnitFlags.UnderConstruction) != 0;
             }
-            _pings.Add((v.Pos, 0));
+            if (_pings.Count < MaxPings) _pings.Add((v.Pos, 0)); // a mass spawn must not draw hundreds of rings
             found++;
         }
         if (found > 0)

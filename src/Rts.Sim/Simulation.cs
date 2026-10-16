@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Numerics;
+using Rts.Sim.Core;
 using Rts.Sim.Orders;
 using Rts.Sim.Snapshot;
 using Rts.Sim.Systems;
@@ -15,6 +16,8 @@ public sealed class Simulation
 {
     public readonly SimWorld World;
     [field: Persistence.NoSave] public double LastTickMs { get; private set; } // wall clock, not saved
+    /// <summary>Per-stage wall-clock ms of the last tick (diagnostics, not saved).</summary>
+    [Persistence.NoSave] public readonly Core.SimProfile Profile = new();
     /// <summary>Commands produced by the skirmish AI this tick (reused list).</summary>
     private readonly List<Command> _aiCommands = new();
 
@@ -22,36 +25,55 @@ public sealed class Simulation
 
     public void Step(IReadOnlyList<Command> commands)
     {
-        var sw = Stopwatch.StartNew();
+        long sw = Stopwatch.GetTimestamp(); // (no Stopwatch object per tick)
         var w = World;
+        var pf = Profile;
+        pf.Begin();
         w.Tick++;
 
         CommandSystem.Run(w, commands);
+        pf.Lap(SimProfile.Stage.Commands);
         AI.AiSystem.Run(w, _aiCommands); // skirmish AI armies think and issue normal commands
         CommandSystem.Run(w, _aiCommands);
+        pf.Lap(SimProfile.Stage.Ai);
         SandboxSystem.BeginTick(w); // sandbox only: batched spawns, infinite resources, instant build
         Transport.TransportSystem.Run(w); // load/unload/dock (before AliveList: carried units leave the map), fuel
+        pf.Lap(SimProfile.Stage.Transport);
         w.Units.RebuildAliveList();
         w.Projectiles.RebuildAliveList();
         w.Grid.Rebuild(w.Units);
+        pf.Lap(SimProfile.Stage.Rebuild);
 
         IntelSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Intel);
         AdjacencySystem.Run(w); // adjacency bonuses (recomputed only when structures change)
         EconomySystem.Run(w);
+        pf.Lap(SimProfile.Stage.Economy);
         OrderSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Orders);
         ConstructionSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Construction);
         FactorySystem.Run(w);
+        pf.Lap(SimProfile.Stage.Factory);
         PathSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Path);
         MovementSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Movement);
         Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
+        pf.Lap(SimProfile.Stage.Special);
         TargetingSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Targeting);
         WeaponSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Weapons);
         ProjectileSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Projectiles);
         DamageSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Damage);
         CleanupSystem.Run(w);
+        pf.Lap(SimProfile.Stage.Cleanup);
 
-        LastTickMs = sw.Elapsed.TotalMilliseconds;
+        LastTickMs = Stopwatch.GetElapsedTime(sw).TotalMilliseconds;
     }
 
     public void Step() => Step(Array.Empty<Command>());

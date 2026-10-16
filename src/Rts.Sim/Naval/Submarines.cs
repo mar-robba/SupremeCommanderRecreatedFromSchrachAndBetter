@@ -6,15 +6,32 @@ using Rts.Sim.World;
 namespace Rts.Sim.Naval;
 
 /// <summary>
-/// Submarine dive/surface toggle (SupCom). Units with <c>Movement.Layer == Sub</c> are submerged by default;
-/// <see cref="UnitFlags.Surfaced"/> puts them on the Water layer (targetable by surface weapons, seen by normal
+/// Submarine dive/surface toggle (SupCom). Units with <c>Movement.Layer == Sub</c> are submerged by default
+/// (<see cref="MovementBlueprint.StartSurfaced"/>: surfaced, the Atlantis); <see cref="UnitFlags.Surfaced"/> puts them on the Water layer (targetable by surface weapons, seen by normal
 /// vision/radar, drawn at the surface).
 /// </summary>
 public static class Submarines
 {
+    /// <summary>The unit has the dive/surface toggle (subs, the Atlantis): <c>Movement.Layer == Sub</c>.</summary>
     public static bool CanDive(UnitBlueprint bp) => bp.Movement.Layer == MotionLayer.Sub;
 
+    /// <summary>Divers that spawn surfaced (<see cref="MovementBlueprint.StartSurfaced"/>, the Atlantis); other subs
+    /// start submerged.</summary>
+    public static bool StartsSurfaced(UnitBlueprint bp) => CanDive(bp) && bp.Movement.StartSurfaced;
+
     public static bool IsSurfaced(SimWorld w, int i) => (w.Units.Flags[i] & UnitFlags.Surfaced) != 0;
+
+    /// <summary>
+    /// A diver that is not up at the surface: dive ordered (even while still going down) or surfacing but not yet
+    /// halfway up. Its deck is closed (no docking / launching aircraft, see Transport) and only underwater weapons
+    /// fire (<see cref="FiresSubmerged"/>). False for units that can't dive. Reads only unit i (thread-safe).
+    /// </summary>
+    public static bool IsSubmerged(SimWorld w, int i) =>
+        CanDive(w.BpOf(i)) && (!IsSurfaced(w, i) || LayerOf(w, i) == LayerMask.Sub);
+
+    /// <summary>Weapons that work while their submerged carrier is under water (torpedoes, torpedo defense); guns
+    /// and SAMs (the Atlantis') hold fire and drop their targets.</summary>
+    public static bool FiresSubmerged(Combat.WeaponKind kind) => kind is Combat.WeaponKind.Torpedo or Combat.WeaponKind.AntiTorpedo;
 
     /// <summary>
     /// Layer of a sub for intel and targeting: decided by its depth, not by the toggle, so a dive/surface takes

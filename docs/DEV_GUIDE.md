@@ -68,10 +68,19 @@ Things learned while building the project that are not about how a system works 
 - **Weapon arcs**: the `IndirectFire`/`Artillery` categories give a weapon a high arc, with 25–40 s flights at long
   range. A long-range direct gun (the Mavor) must not have them.
 - **Carried units are alive but not on the map**: `IsActive` is true, but they are not in the AliveList. Orders or
-  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo").
+  weapon locks that point at them must be dropped (see ARCHITECTURE "Transports & cargo"). A unit that boards after
+  the AliveList rebuild (e.g. an aircraft finished inside a dived Atlantis, in FactorySystem) stays in this tick's
+  AliveList and grid: TargetingSystem skips `UnitFlags.Carried` shooters and targets for that reason.
+- **Fresh spawn vs blueprint swap in `InitUnit`**: `UnitStore.Allocate` zeroes the module structs, so a field that
+  `InitUnit` always sets to non-zero (`MoveState.OrbitDir`) tells a new unit from a re-init (MovementSystem uses it
+  to keep a dived sub down).
 - **Saveable state** (CLAUDE.md rule 9): static scratch lists and cached delegates get `[NoSave]` and are rebuilt
   lazily (`??=`). An unsupported framework type in sim state makes the serializer throw with a hint;
   `SaveCoverageTests` catches it first.
+- **Static scratch buffers must be `[ThreadStatic]`.** Several `SimWorld`s can step at the same time in one process
+  (multiplayer loopback tests, `Rts.Bench -- mp`): a shared static `List<int>` in `ConstructionSystem` threw
+  "Collection was modified" once in ~3 runs and froze a peer. Pattern: `[ThreadStatic, NoSave] static List<int>? t_tmp;
+  static List<int> _tmp => t_tmp ??= new();`.
 - **The sim never reads environment variables.** `AI_CFG` and the other `AI_*` switches are read by `Rts.Bench`
   only.
 
@@ -92,6 +101,20 @@ Things learned while building the project that are not about how a system works 
 - `--select <blueprint id>` (or `any:<id>` in the sandbox) pre-selects units; `--ui-place id@x,z` shows a placement
   ghost; the sandbox `--exec "spawn ...; wait 30; ..."` builds any situation.
 
+## Multiplayer checks
+
+- Two windows on this machine (automated, both exit after their frames; the client leaving shows the host's AI
+  takeover): `dotnet run --project src/Rts.Client -- --host 47704 --name Alice --autostart --screenshot a.png
+  --frames 1100 --size 960x540 &` then, a few seconds later, `... -- --join 127.0.0.1:47704 --name Bob --autostart
+  --screenshot b.png --frames 800 --size 960x540`. `--autostart`: clients press Ready, the host starts when 2+ humans
+  are in (or at once with `--players N`, which fills AI slots). Use a new port per run (a closing socket can linger).
+- Host vs AI only: `--host --autostart --players 3`. Add `--write-replay` to keep the replay, then check it with
+  `Rts.Bench -- replay replays/<file>`.
+- Headless: `dotnet run -c Release --project tools/Rts.Bench -- mp 4 1200` (and `... mp 3 1200 256 1 0 drop`).
+- Internet play: the host forwards TCP port 47624 (or the `--host` port) on the router to its machine and tells the
+  others its public IP; LAN games appear by themselves (UDP 47625, same subnet). Firewalls must allow both.
+- Cross-OS games can desync until the sim trig is software (ARCHITECTURE "Multiplayer", float determinism review).
+
 ## Perf check (before finishing a branch)
 
 The machine is noisy when other agents run benchmarks at the same time, so compare **interleaved runs** of main and
@@ -101,6 +124,23 @@ your branch, not one run against an old number:
 2. Alternate 3–4 times, from each tree's root: `dotnet tools/Rts.Bench/bin/Release/net10.0/Rts.Bench.dll 2000 300`
    and compare the `tick ms` lines.
 3. The budget is a regression of at most 10%. Remove the extra worktree afterwards (`git worktree remove`).
+
+## Profiling
+
+- Sim: `Rts.Bench` prints per-stage avg/max ms, KB allocated per tick, the first tick and the worst tick (overall
+  and after tick 20) with their stage breakdown. `BENCH_ALLOC=1` adds allocations per stage (slower, use it to find
+  allocations, not for timings); `BENCH_WARMUP=1` runs `SimWarmup` first (as the client does); 5th argument =
+  armies (`... 700 400 0 1024 8`: 8 blobs on a 1024 map). `ai` matches print the same stage lines.
+- Client: `--screenshot` runs print `perf:` (frame/CPU ms), `stages ms:` (CPU per frame stage, avg/max) and `gpu ms:`
+  (GPU timer queries); `--perf-log` prints the same once per second while playing. Frames are vsync-capped at 60:
+  compare CPU and GPU ms, not FPS (or add `--novsync`).
+- Big client scene (5k units, 8 players, 1024): `--map 1024 --players 8 --nosound --nofog --exec "spawn tank 1200 me
+  at 460,470; spawn tank 1200 enemy at 540,550; spawn tank 1200 enemy at 460,550; spawn tank 1200 me at 540,470"
+  --frames 900 --size 960x540 --camera 500,510,110` (close) or `--camera 500,510,700` (whole battle, strategic zoom).
+- Tick spikes that hit stages which are normally ~0 (Construction, Economy, Factory at 1–7 ms in the same tick) are
+  JIT tiering, not GC: try `DOTNET_TieredCompilation=0` to confirm. Hence `TieredCompilationQuickJitForLoops=false`
+  in the client and bench csproj (ARCHITECTURE "Performance & scale").
+- `dotnet build` may die with `Internal CLR error (0x80131506)` once in a while: just run it again.
 
 ## Reference numbers
 
@@ -118,12 +158,18 @@ integrated GPU.
 | Save, 512 map, 4 AIs, 25 min, 6641 units | file 1.8 MB (raw 29.5 MB); capture 86 ms on the sim thread; encode 99 ms in the background; load 0.3 s | wave 4 |
 | Replay of that game | 165 KB; headless verify 1493 ticks/s; recording 0.009 ms/tick | wave 4 |
 | 96 AI games of 30 min (256 maps) | ≈ 60 s wall with `tools/ai-lab` | wave 4 |
+| `Rts.Bench 2000 300` | avg 1.7–2.0 ms/tick, p95 2.4–2.9, max ≈ 10 (main before 5m, same runs: 3.5–4.5 / 5.8–9.2 / 25) | wave 5m |
+| `Rts.Bench 700 400 0 1024 8` (8 armies, 4.6k units) | avg 2.4, p95 4.5–4.9, intel 0.33 (before: 3.9–4.6 / 10.6–12.3 / 1.1–1.35); with warm-up avg 2.0, p95 3.8, max 8.5, first tick 15 ms (before ≈ 210) | wave 5m |
+| `ai 40 1024 42 hard 0 8 plains` (8 AIs, 40 min) | avg 0.96, p95 2.21, max 12.1 (one AI think), 10 KB/tick (before: 1.64 / 3.68 / 217 / ≈ 125 KB) | wave 5m |
+| Client, 4.8k units in battle, 1024, 960×540 | close: CPU 1.6 ms, GPU 4.2 ms (before CPU 3.2); whole map: CPU 2.2 ms, GPU 2.8 ms (before 2.8 / 8.2: terrain 7.4 → 2.0 with chunk LOD) | wave 5m |
 
 ## Tools
 
 | Tool | What for |
 |---|---|
 | `tools/Rts.Bench` | Headless benchmark, AI matches, replay verification, save/load timings (commands in CLAUDE.md). AI debug switches: ARCHITECTURE "Skirmish AI". |
+| `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert (WORKFLOW "Context limits and handoffs"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
+| `tools/token-ledger/` | Token ledger: tokens per session/agent and purpose, kept up to date by project hooks ([tokens/README.org](tokens/README.org)); `windows.py`: tokens used in each usage-limit window ([WORKFLOW.md](WORKFLOW.md) "Usage limits"). |

@@ -2,8 +2,9 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-15 ~11:00 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
+## ▶ NEXT STEPS (updated 2026-10-16 ~12:15 — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish and (o) lockstep MP (merged 2026-10-16).
+Tests: 376 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
 Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
@@ -11,11 +12,12 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- Running (worktrees under `.claude/worktrees/`): (m) scale/perf `agent-a6794a8836fbb263d`, (n) UX polish
-  `agent-a141a5d33496dd4c3` (3rd agent), (o) lockstep MP `agent-a4a312626d7228fe6`, (k) AI uses everything
-  `agent-ac4c927c54a66ca1d` (2nd agent), (l) Cybran `agent-a9df3acf3524c656f`. History: the weekly limit stopped
-  everything on 2026-10-14 08:14 and the session limit on 2026-10-15 11:21; each time WIP was kept and agents
-  resumed (SendMessage under 200k context, else handoff note + CHECKPOINT + a fresh agent in the same worktree).
+- 2026-10-16 ~12:15: **running** (m) scale/perf (3rd agent) in `agent-a6794a8836fbb263d` and (l) Cybran (2nd
+  agent, a coordinator running one sub-agent at a time) in `agent-a9df3acf3524c656f`. **Paused**: (k) AI uses
+  everything `agent-ac4c927c54a66ca1d` (its CHECKPOINT WIP does not compile yet, see its `.claude/handoff.md`): start
+  it as a fresh agent in its worktree (brief + "continue from .claude/handoff.md") when (m) or (l) finishes
+  (WORKFLOW "Usage limits": ≤ 2 agents at a time). History: the weekly limit stopped everything on 2026-10-14 08:14,
+  the session limit on 2026-10-15 11:21 and 15:09.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -31,9 +33,9 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
   3. Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
-  4. UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
+  4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
-  5. Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
+  5. ✅ (merged 2026-10-16) Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
 
 Shared contracts (still valid):
 - `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
@@ -174,13 +176,20 @@ Shared contracts (still valid):
       shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
       from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
       lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
-      - [ ] later: AI uses capture/pause/adjacency/dive; units leaving a factory don't avoid units parked at the exit
-        (8 s cap, then they repath); the Fatboy drops units at its back without a drive-out; nearby own units keep
-        shooting a unit being captured (no hold-fire state yet)
+      - [ ] later: AI uses capture/pause/adjacency/dive; the Fatboy drops units at its back without a drive-out
+        (done in wave 5n: factory exits skip sides with parked units; fire states, captured targets held)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
 ## Phase 4 — Scale and polish
-- [ ] 1024 maps with 4–8 players, 5k+ units at 60 FPS (instancing, LOD, culling)
+- [x] 1024 maps with 4–8 players, 5k+ units at 60 FPS (wave 5m, 2026-10-16; ARCHITECTURE "Performance & scale"):
+      Par worker pool without allocations, stage profiler (bench + client `--perf-log`), JIT warm-up thread + loops
+      optimized at once (tick spikes gone: 8 AIs on 1024 max 12 ms, was 217), nav grids at load + parallel graph
+      builds, goal-field array reuse (AI games 10 KB/tick, was ~125), intel 0.33 ms with 8 armies; client terrain
+      chunk LOD + skirts (GPU 8.2 → 2.8 ms whole 1024 map), instanced particles, deposit/minimap culling (4.8k units
+      in battle: CPU 1.6 ms/frame); 6/8-player maps on 512/1024 checked fair for every preset (`MapScaleTests`).
+      - [ ] later: one AI think costs ~11 ms on 1024 with 8 AIs (tick 2104 of `ai 40 1024 42 hard 0 8 plains`);
+            a region graph built mid-game (first unit of a new layer/size) costs ~14 ms on 1024; low-poly unit
+            LOD (units:gather 0.8 ms + GPU 1.8 ms at 3.3k units drawn); snapshot build ~0.3 ms avg
 - [x] Save/load, replays, desync detection (wave 4, agent i, 2026-10-14): automatic deep serializer of the whole sim
       (`Rts.Sim/Persistence`: IL codecs, shared refs, blueprint/terrain by id, per-type layout check, Brotli files;
       `[NoSave]` + `IAfterLoad` for caches), save → load → continue = identical state/hash (1 and 4 threads, test with
@@ -191,7 +200,21 @@ Shared contracts (still valid):
       timeline seek, fog per army or all, DESYNC banner), sandbox setups saveable, clear errors for damaged/incompatible
       files; `Rts.Bench replay <file>` / `savebench`. Late game (512 map, 4 AIs, 25 min, 6.6k units): save 1.8 MB,
       capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
-      - [ ] later: saves/replays don't survive sim code changes (no migration: the layout check refuses them);
-            "Load Game" in the pause menu; replay viewer: F7 fog toggle doesn't update the view selector, seek
-            checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
-- [ ] Lockstep multiplayer (deterministic math audit, desync detection via StateHash)
+      - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
+            the replay view selector
+      - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
+            seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
+- [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
+      relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),
+      faction, team, color, AI level, ready, host map options + live preview, chat, kick; one turn per player per
+      tick, input delay adaptive to ping (1..30 ticks), sim holds until every turn is in ("Waiting for X"); speed and
+      pause negotiated; StateHash at load + every 10 ticks → desync banner + replay dump; drop after 10 s silence →
+      AI takeover or defeat (host option), host lost → client continues offline; every MP game writes a normal
+      replay. Client: Multiplayer menu (Host / Join / LAN list), lobby, net loading, in-game chat (Enter), players +
+      pings panel, Esc menu without pause; CLI `--host [port]`, `--join ip:port`, `--name`, `--autostart`.
+      Tests: Rts.Net.Tests (21: framing, codecs, lobby, factions, 2–4 peer loopback matches with random commands,
+      drops, desync, speed, LAN), `Rts.Bench -- mp` (4 peers 1200 ticks in 1.3 s, all hashes equal; drop variant),
+      two windows on one machine. Float determinism review in ARCHITECTURE "Multiplayer".
+      - [ ] later: software trig in `DMath` (cross-OS games can desync: libm vs UCRT), reconnecting, observers,
+            host migration, saving/loading MP games, lobby pings per player, chat sounds, NAT traversal/relay server
+            (today: port forwarding), "Waiting for X" → vote to drop

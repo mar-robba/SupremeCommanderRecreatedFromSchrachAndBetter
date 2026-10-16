@@ -141,6 +141,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
 
         if (Gallery) AddGallery(time, teamCols);
 
+        FrameProfiler.Sub("units:gather");
         // 1) Shadow pass (units only).
         if (_shadow.Supported)
         {
@@ -157,6 +158,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             }
             _shadow.End();
         }
+        FrameProfiler.Sub("units:shadow");
 
         // 2) Opaque lit pass.
         var sp = Shaders.UnitLit;

@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Rendering;
 using Rts.Client.Input;
 using Rts.Sim.Snapshot;
 using Mode = Rts.Client.Input.SelectionController.CommandMode;
@@ -26,6 +27,8 @@ public sealed class Hud : IDisposable
     private readonly FactoryPanel _factory;
     private readonly UpgradePanel _upgrade;
     private readonly EnhancementPanel _enh;
+    private readonly HelpOverlay _help;
+    private readonly IdleButtons _idle;
     private UiStartup? _startup;
     private TechDemo? _techDemo;
 
@@ -46,18 +49,24 @@ public sealed class Hud : IDisposable
         _factory = new FactoryPanel(ctx, sel);
         _upgrade = new UpgradePanel(ctx, sel);
         _enh = new EnhancementPanel(ctx, sel);
+        _help = new HelpOverlay(ctx);
+        _idle = new IdleButtons(ctx, sel);
     }
+
+    /// <summary>The F1 help overlay is open (Esc closes it instead of opening the pause menu).</summary>
+    public bool HelpOpen => _help.Open;
 
     public Rectangle TopBarRect => _top;
 
     /// <summary>Frees GPU resources (minimap texture) when the game ends.</summary>
     public void Dispose() => _minimap.Dispose();
 
-    /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse) for automated screenshots.</summary>
+    /// <summary>CLI helpers (--select, --ui-demo, --ui-place, --mouse, --help-overlay) for automated screenshots.</summary>
     public void ApplyStartupOptions(ClientOptions o)
     {
         if (o.Select != null || o.UiDemo || o.UiPlace != null || o.MousePos != null) _startup = new UiStartup(_ctx, _sel, o);
         if (o.TechDemo) _techDemo = new TechDemo(_ctx, _sel, o);
+        if (o.HelpOverlay && !_help.Open) _help.Toggle();
     }
 
     /// <summary>True if the mouse is over a HUD panel (camera/selection should ignore it).</summary>
@@ -65,12 +74,12 @@ public sealed class Hud : IDisposable
     {
         PreFrame();
         Layout();
-        if (_sel.PendingSelfDestruct != null || _minimap.Dragging) return true;
+        if (_sel.PendingSelfDestruct != null || _minimap.Dragging || _help.Open) return true;
         var m = Ui.Mouse;
         // The outermost pixels belong to camera edge-scrolling, even over the top bar.
         if (m.X <= 3 || m.Y <= 3 || m.X >= Ui.Sw - 4 || m.Y >= Ui.Sh - 4) return false;
         bool Hit(Rectangle r) => r.Width > 0 && Raylib.CheckCollisionPointRec(m, r);
-        if (Hit(_top) || Hit(_mini)) return true;
+        if (Hit(_top) || Hit(_mini) || _idle.Hit(m)) return true;
         if (_showSelectionPanels && (Hit(_infoR) || (!_ctx.ReadOnly && Hit(_ordersR)))) return true;
         if (!_ctx.ReadOnly && _enh.Hit(m)) return true;
         return _buildKind != BuildKind.None && Hit(_buildR);
@@ -84,7 +93,8 @@ public sealed class Hud : IDisposable
         Ui.BeginFrame();
         _startup?.Update();
         _techDemo?.Update();
-        _sel.InputBlocked = _sel.PendingSelfDestruct != null;
+        _help.Update();
+        _sel.InputBlocked = _sel.PendingSelfDestruct != null || _help.Open;
     }
 
     private void Layout()
@@ -101,7 +111,7 @@ public sealed class Hud : IDisposable
             if (snap.TryGetUnit(h.Index, h.Generation, out _)) { _showSelectionPanels = true; break; }
 
         _infoR = new Rectangle(_mini.X + _mini.Width + gap, y, Ui.P(272), H);
-        _ordersR = new Rectangle(_infoR.X + _infoR.Width + gap, y, OrdersPanel.Width, H);
+        _ordersR = new Rectangle(_infoR.X + _infoR.Width + gap, y, _showSelectionPanels && !_ctx.ReadOnly ? _orders.Refresh(snap) : OrdersPanel.Width, H);
         float bx = _ordersR.X + _ordersR.Width + gap;
         float avail = Ui.Sw - m - bx;
         _buildKind = BuildKind.None;
@@ -112,6 +122,7 @@ public sealed class Hud : IDisposable
             else if (_upgrade.Refresh(snap)) { _buildKind = BuildKind.Upgrade; _buildR = new Rectangle(bx, y, MathF.Round(MathF.Min(avail, _upgrade.DesiredWidth())), H); }
         }
         _enh.Layout(snap, _showSelectionPanels && !_ctx.ReadOnly, bx, y - gap, Ui.Sw - m); // enhancement strip above the build panel
+        _idle.Layout(snap, _mini, gap);
     }
 
     public void Draw()
@@ -126,6 +137,7 @@ public sealed class Hud : IDisposable
         _sel.Placement.Draw3D(_sel.Selected);
         Raylib.EndMode3D();
         _sel.Placement.DrawOverlay();
+        FrameProfiler.Sub("hud:placement");
 
         bool dialog = _sel.PendingSelfDestruct != null;
         if (dialog) HandleDialogInput();
@@ -139,7 +151,10 @@ public sealed class Hud : IDisposable
         }
 
         DrawTopBar(snap);
+        FrameProfiler.Sub("hud:topbar");
         _minimap.Draw(_mini);
+        FrameProfiler.Sub("hud:minimap");
+        _idle.Draw(snap);
         if (_showSelectionPanels)
         {
             _info.Draw(_infoR, snap);
@@ -154,6 +169,7 @@ public sealed class Hud : IDisposable
         DrawEndOfGame(snap);
         if (dialog) DrawDialog();
         Ui.DrawTooltip();
+        _help.Draw();
         _frame++;
     }
 
@@ -169,9 +185,10 @@ public sealed class Hud : IDisposable
         // Help button (far right) and stats.
         float hs = r.Height - Ui.P(8);
         _helpR = new Rectangle(r.Width - hs - Ui.P(6), Ui.P(4), hs, hs);
-        var st = Ui.Button(_helpR);
+        var st = Ui.Button(_helpR, true, _help.Open);
         Ui.TextCentered("?", _helpR, Ui.F(13), Ui.TextColor, true);
-        if (st.Hover) Ui.Tooltip(_helpR, HelpLines(), above: false, maxWidth: 640);
+        if (st.Left) _help.Toggle();
+        if (st.Hover) Ui.Tooltip(_helpR, $"Controls  [{Hotkeys.Help.Label}]", "Every hotkey and mouse action", above: false);
 
         int fs = Ui.F(11.5f);
         string speed = $"x{_ctx.Runner.Speed:0.##}{(_ctx.Runner.Paused ? "  PAUSED" : "")}";
@@ -184,32 +201,6 @@ public sealed class Hud : IDisposable
             string shortStats = $"{Raylib.GetFPS()} fps · {speed}";
             Ui.Text(shortStats, _helpR.X - Ui.P(10) - Ui.Measure(shortStats, fs), (r.Height - fs) * 0.5f - 1, fs, Ui.TextDim);
         }
-    }
-
-    private static List<TipLine> HelpLines()
-    {
-        var c = Ui.TextColor;
-        var d = Ui.TextDim;
-        return
-        [
-            new("Controls", c, 14, true),
-            new("Left click / drag: select · double-click or Ctrl+click: all of that type on screen", d, 11.5f),
-            new("Right click: move / attack / assist · factory selected: set rally point · Shift: queue", d, 11.5f),
-            new("S stop · M move · A attack-move · P patrol · G guard/assist · Ctrl+K self-destruct", d, 11.5f),
-            new($"{UnitToggles.CaptureKeyName} capture (engineers / commander; right-click an enemy with only engineers selected) · {UnitToggles.PauseKeyName} pause / resume · {UnitToggles.DiveKeyName} dive / surface (subs)", d, 11.5f),
-            new("Shared keys: E = transport to when transports are selected, else capture · D = subs dive / surface and aircraft dock (both in a mixed selection)", d, 11.5f),
-            new("Build menu: Z X C V B N select · Tab / Shift+Tab category · R rotate · Esc / right click cancel", d, 11.5f),
-            new("Factory: Z X C V B N queue (+Shift: 5) · right-click a button: -1 · R repeat", d, 11.5f),
-            new("T / Shift+T: tech tier filter (build menu, factory) · U: upgrade selected structures (factory, mex, radar) · right-click the upgrade tile: cancel", d, 11.5f),
-            new("Transports: U unload (air carrier: launch) · E transport to · F ferry (beacon, then drop point) · D dock aircraft (nearest air staging / carrier)", d, 11.5f),
-            new("Right-click: units on a transport = board · transport on a unit = pick up · loaded transport on the ground = unload · aircraft on an air staging = dock", d, 11.5f),
-            new("Ctrl+0-9 set group · 0-9 recall group (Shift: add)", d, 11.5f),
-            new("Arrows / screen edge / middle drag: pan · wheel: zoom · minimap: click/drag", d, 11.5f),
-            new("+ / - game speed · Space pause · Esc (nothing selected) menu · F1 / F2 spawn tanks (debug, own / enemy)", d, 11.5f),
-            new("Engineers: right-click wreck = reclaim, damaged / unfinished unit = repair, factory = assist · M (nothing selected) or Ctrl+M mute · Ctrl+Shift+M music", d, 11.5f),
-            new("F7 fog of war on/off (debug: reveal all) · rings in the fog = radar contacts", d, 11.5f),
-            new("F5 quicksave · F6 quickload · Esc menu: Save Game · main menu: Load Game, Replays", d, 11.5f),
-        ];
     }
 
     // ------------------------------------------------------------------ mode hints
@@ -261,7 +252,7 @@ public sealed class Hud : IDisposable
     private bool MouseOverPanels()
     {
         var m = Ui.Mouse;
-        return Raylib.CheckCollisionPointRec(m, _mini) || Raylib.CheckCollisionPointRec(m, _top)
+        return Raylib.CheckCollisionPointRec(m, _mini) || Raylib.CheckCollisionPointRec(m, _top) || _idle.Hit(m)
             || (_showSelectionPanels && (Raylib.CheckCollisionPointRec(m, _infoR) || Raylib.CheckCollisionPointRec(m, _ordersR)))
             || (_buildKind != BuildKind.None && Raylib.CheckCollisionPointRec(m, _buildR)) || _enh.Hit(m);
     }

@@ -7,20 +7,25 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 
 ## Commands (run from repo root)
 - Build all: `dotnet build Rts.slnx`
-- Tests: `dotnet test tests/Rts.Sim.Tests` and `dotnet test tests/Rts.Client.Tests` (headless, must stay green)
-- Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads]`
+- Tests: `dotnet test tests/Rts.Sim.Tests`, `dotnet test tests/Rts.Client.Tests` and `dotnet test tests/Rts.Net.Tests` (headless, must stay green)
+- Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads] [mapSize] [armies]`
+  (env `BENCH_WARMUP=1` = JIT warm-up first, `BENCH_ALLOC=1` = allocations per stage; DEV_GUIDE "Profiling")
 - AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions]`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
   both also preset `--setup`)
-  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` show overlays;
-  `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`;
+  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
+  `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis) (scene positions are printed; aim with `--camera`))
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;
   `nuke x,z` fires a real strategic missile (anti-nukes can intercept it), `nuke instant x,z` = the blast at once;
   multi-word unit names use `_`, e.g. `spawn strategic_missile_launcher me at 100,128`)
+- Multiplayer (lockstep, ARCHITECTURE "Multiplayer"): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
+  --host [port] | --join ip[:port] [--name N] [--autostart]` (default port 47624; `--autostart`: clients Ready, host
+  starts with 2+ humans or with `--players N` AI slots). Headless self-test: `dotnet run -c Release --project
+  tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (exit 1 = desync).
 - Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
   `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
   (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`).
@@ -33,6 +38,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 ## Projects
 - `src/Rts.Sim` — deterministic simulation, NO rendering deps. Systems in `Systems/`, data model in `World/`, `Data/`, `Map/`.
 - `src/Rts.Client` — raylib renderer/UI/input (Raylib-cs 8.1 = raylib 6.0, OpenGL 3.3+ core, GLSL 330).
+- `src/Rts.Net` — lockstep multiplayer (TCP lobby/turns, LAN discovery, headless peer); no raylib. Tests: `tests/Rts.Net.Tests`.
 - `tests/Rts.Sim.Tests` — xUnit (test parallelization disabled because `Par.MaxThreads` is global).
 - `tools/Rts.Bench` — perf benchmark.
 - `data/blueprints/units/*.json` — unit definitions (like SupCom .bp). Add units here, not in code.

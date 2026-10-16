@@ -45,6 +45,7 @@ public static class SnapshotWriter
             v.Flags = u.Flags[i];
             v.FactoryRepeat = u.Factory[i].Repeat;
             v.Kills = u.Kills[i];
+            v.FireState = u.FireStates[i];
             ref readonly var econ = ref u.Econ[i];
             v.AdjMassProd = econ.AdjMassProd;
             v.AdjEnergyProd = econ.AdjEnergyProd;

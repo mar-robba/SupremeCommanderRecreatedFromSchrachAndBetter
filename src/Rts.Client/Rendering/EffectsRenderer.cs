@@ -112,8 +112,10 @@ public sealed partial class EffectsRenderer : IDisposable
         foreach (var e in newEffects) Spawn(e);
         if (FakeBattle) UpdateFakeBattle(dt, cur);
 
+        FrameProfiler.Sub("fx:spawn");
         _ps.Update(dt);
         _nuke.Update(dt);
+        FrameProfiler.Sub("fx:update");
         _proj.Begin();
         BeginNaval(dt);
         ProjectileCount = 0;
@@ -132,13 +134,16 @@ public sealed partial class EffectsRenderer : IDisposable
         _stale.Clear();
         foreach (var (id, t) in _trails) if (t.frame != _frame) _stale.Add(id);
         foreach (var id in _stale) _trails.Remove(id);
+        FrameProfiler.Sub("fx:proj");
 
         _ps.Additive.Begin();
         _ps.Alpha.Begin();
         _ps.Decals.Begin();
         _ps.Build(fv);
+        FrameProfiler.Sub("fx:build");
         NavalFrame(dt, cur, prev, alpha, fv); // wakes + underwater particles (EffectsRenderer.Naval.cs)
         _nuke.Build(fv);
+        FrameProfiler.Sub("fx:naval");
 
         var sp = Shaders.Particle;
         sp.Set("time", Atmosphere.Time);
@@ -146,15 +151,22 @@ public sealed partial class EffectsRenderer : IDisposable
         Rlgl.DisableBackfaceCulling();
         Rlgl.DisableDepthMask();
         Raylib.BeginBlendMode(BlendMode.Alpha);
+        ParticleInstances.BindShader(fv);
+        _ps.InstDecals.Draw();
         _ps.Decals.Draw();
         _uwAlpha?.Draw();
+        ParticleInstances.BindShader(fv);
+        _ps.InstAlpha.Draw();
         _ps.Alpha.Draw();
         Raylib.EndBlendMode();
         Raylib.BeginBlendMode(BlendMode.Additive);
+        ParticleInstances.BindShader(fv);
+        _ps.InstAdditive.Draw();
         _ps.Additive.Draw();
         _uwAdd?.Draw();
         _proj.Draw();
         Raylib.EndBlendMode();
+        Rlgl.DisableShader();
         Rlgl.EnableDepthMask();
         Rlgl.EnableBackfaceCulling();
     }
@@ -237,9 +249,9 @@ public sealed partial class EffectsRenderer : IDisposable
     private void HandleDebugKeys()
     {
         if (!DebugKeysEnabled) return;
-        if (Raylib.IsKeyPressed(KeyboardKey.F9)) FakeBattle = !FakeBattle;
+        if (Raylib.IsKeyPressed(Input.Hotkeys.DebugFakeBattle.Key)) FakeBattle = !FakeBattle;
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
-        if (Raylib.IsKeyPressed(KeyboardKey.F10) && _ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
+        if (Raylib.IsKeyPressed(Input.Hotkeys.DebugExplosion.Key) && _ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
             Spawn(new EffectEvent { Kind = shift ? EffectKind.Nuke : EffectKind.UnitDeath, Pos = g, Size = shift ? 40f : 4f, Army = 0, BlueprintIndex = -1 });
     }
 
