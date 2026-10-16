@@ -2,8 +2,8 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 ~11:00 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15). Tests: 355 sim + 199 client.
+## ▶ NEXT STEPS (updated 2026-10-16 ~11:30 — read this first in a new session)
+main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish (merged 2026-10-16). Tests: 376 sim + 211 client.
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
 Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
@@ -11,13 +11,12 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
-- 2026-10-16 ~10:50: **running** (n) UX polish (4th agent) in `agent-a141a5d33496dd4c3` and (o) lockstep MP
-  (3rd agent) in `agent-a4a312626d7228fe6`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
-  as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when the usage window allows
-  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (m) scale/perf `agent-a6794a8836fbb263d` (WIP a6e2a98: client perf +
-  8-player maps from its sub-agents B/C, uncommitted at the cut), (k) AI uses everything `agent-ac4c927c54a66ca1d`
-  (its CHECKPOINT WIP does not compile yet, see its note), (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
-  sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed). History: the weekly limit
+- 2026-10-16 ~11:30: **running** (o) lockstep MP (3rd agent) in `agent-a4a312626d7228fe6` and (m) scale/perf
+  (3rd agent) in `agent-a6794a8836fbb263d`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
+  as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when one of the two finishes
+  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
+  sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed), then (k) AI uses everything
+  `agent-ac4c927c54a66ca1d` (its CHECKPOINT WIP does not compile yet, see its note). History: the weekly limit
   stopped everything on 2026-10-14 08:14, the session limit on 2026-10-15 11:21 and 15:09.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
