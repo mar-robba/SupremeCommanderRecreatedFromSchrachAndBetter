@@ -656,3 +656,44 @@ numbers"; how to measure: DEV_GUIDE "Perf check" and "Profiling".
   - Safety net: `Loaded` hashes at start, `StateHash` every 10 ticks, desync banner + replay dump.
   - later: route all sim trig through `DMath` with software implementations (polynomials using only + − × ÷), verify
     Linux↔Windows↔ARM64 with `Rts.Bench -- replay` of the same file on each machine.
+
+## Cybran faction & stealth/EMP (wave 5l)
+
+**Data.** `data/factions/cybran.json` + 80 `cybran_*` blueprints (SupCom1 roster: ACU/SCU with enhancements,
+engineers T1–T3, land/air/naval T1–T3, Monkeylord, Soul Ripper, Scathis, full base set). Every required role is
+filled; Cybran-only optional roles: `light_assault_t1` (Hunter), `mobile_stealth_t2` (Deceiver), `shield_ed2_t2` …
+`shield_ed5_t3`. UEF-only roles stay empty, and `shield_t3` is empty (ED4/ED5 are upgrade-only, as in SupCom1).
+Balance mirrors the UEF unit of the same role (builders same speed; combat units a little faster). Every
+`Visual.Shape` starts with `cy_`; air factories reuse the land factory shapes. `CybranRosterTests` checks roles,
+in-faction build lists, reachability from the commander, `UpgradesTo` chains and the Cybran specifics.
+
+**Stealth, cloak, stealth fields** (`Intel/StealthSystem.cs`, `Intel/StealthState.cs`). Blueprint `Intel.RadarStealth`,
+`Intel.SonarStealth`, `Intel.Cloak`, `Intel.StealthFieldRadius`; ACU/SCU enhancements set the same via `Effects.*`
+(upkeep `Effects.MaintenanceEnergyAdd`).
+- Radar stealth: enemy radar doesn't detect the unit; sonar stealth: enemy sonar doesn't. Cloak = no vision either
+  (implies radar + sonar stealth, so no blip). Enemy **omni** beats all of them (blip on omni; full sight of a cloaked
+  unit only inside omni). A field gives radar + sonar stealth to every unit of the generator's team within the radius.
+- Active while complete, on the map (not carried), not Paused (intel toggle) and, with upkeep, while the army's energy
+  efficiency ≥ `StealthSystem.MinPowerEfficiency` (energy stall switches it off).
+- `StealthSystem.Run` (sequential, start of `IntelSystem.Run`) rebuilds a per-slot byte mask; `IntelService.StealthMask`
+  is null while nothing is active (zero cost for intel queries), and without any stealth blueprint the update is one
+  check. Ghosts respect it (`IsHiddenFromTeam`). Snapshot: `UnitView.Status` (`UnitStatus` flags RadarStealth,
+  SonarStealth, Cloaked, Stunned, StealthField) from `StealthSystem.StatusOf`.
+
+**EMP stun** (`Combat/EmpStun.cs`). Weapon `StunDuration` (s), `StunRadius` (0 = DamageRadius, else only the unit hit),
+`StunMaxTech` (default 3). Applied in the sequential impact phase (projectiles, beams) to enemy units on the weapon's
+target layers; commanders, aircraft and units above `StunMaxTech` are immune; a shield dome protects the units inside
+from an area stun fired from outside. `UnitFlags.Stunned` (bit 11): no move, acquire, fire, missile defense, build /
+assist / repair / reclaim / upgrade / produce / stockpile; shields, intel, economy and stealth keep working.
+`EmpStun.Expire` clears it at tick start; `EmpStunState` (until-tick + generation per slot) exists only after the first
+stun. Users: Medusa, SCU EMP array, Scathis/others per data.
+
+**Seabed walkers** (`Naval/Submarines.cs`). `Movement.Layer: "Amphibious"` units (Wagner, Monkeylord) walk under
+water; below the water level they hold every weapon except torpedo kinds and `FiresSubmerged` weapons, and are
+targeted like Layer Sub (torpedoes only; sonar/omni detection).
+
+**Shield chain.** ED1 → ED5 via `UpgradesTo` on the shield structures; no sim code: `UpgradeSystem.Complete` →
+`UnitLifecycle.OnSpawn` → `StrategicSystem.InitUnit` brings the dome up at the new blueprint's MaxHealth.
+
+**AI.** No AI change: the AI plays Cybran through the roles (AI_TUNING "Cybran vs UEF"). The AI doesn't use
+stealth/cloak/EMP deliberately yet (later).

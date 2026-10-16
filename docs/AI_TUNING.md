@@ -101,3 +101,14 @@ commander: a late-game push toward the commander's last known position, and snip
   Re-tune after it.
 - The AI doesn't use T2/T3 upgrades, navy, strategic weapons, experimentals, transports, capture, pause or
   adjacency yet (wave 5, agent "AI uses everything").
+
+## Cybran vs UEF (wave 5l, 2026-10-16)
+
+Both AIs play any faction through the roles (`cybran.json`); no AI code change was needed. 30 min, 256 maps,
+Hard vs Hard, seeds 1–3, plains / canyon / lakes, each faction on both sides (18 games):
+`Rts.Bench -- ai 30 256 <seed> hard,hard 2 2 <preset> cybran,uef` (and `uef,cybran`).
+- First run: Cybran builders (engineers, SCU, ACU) were 0.1 faster than UEF ones → more mex: Cybran 6 / UEF 4 / 3 draws
+  (plains + canyon only). Builder speeds set equal to UEF (combat units keep their small Cybran speed edge).
+- After: **Cybran 8 / UEF 5 / 5 draws** (the lakes draws are T1 stalemates). Not significant at this size; re-measure
+  with `tools/ai-lab` after the "AI uses everything" agent, when the AIs reach T2/T3 (today both field only T1:
+  `AI_ROSTER=1` prints the max alive units per blueprint per army; Cybran lean on the Medusa, like UEF on artillery).
