@@ -677,7 +677,7 @@ in-faction build lists, reachability from the commander, `UpgradesTo` chains and
   efficiency ≥ `StealthSystem.MinPowerEfficiency` (energy stall switches it off).
 - `StealthSystem.Run` (sequential, start of `IntelSystem.Run`) rebuilds a per-slot byte mask; `IntelService.StealthMask`
   is null while nothing is active (zero cost for intel queries), and without any stealth blueprint the update is one
-  check. Ghosts respect it (`IsHiddenFromTeam`). Snapshot: `UnitView.Status` (`UnitStatus` flags RadarStealth,
+  check. Ghosts respect it (`HiddenFromTeam`: no ghost of a cloaked unit; one in sight is forgotten). Snapshot: `UnitView.Status` (`UnitStatus` flags RadarStealth,
   SonarStealth, Cloaked, Stunned, StealthField) from `StealthSystem.StatusOf`.
 
 **EMP stun** (`Combat/EmpStun.cs`). Weapon `StunDuration` (s), `StunRadius` (0 = DamageRadius, else only the unit hit),
@@ -686,7 +686,7 @@ target layers; commanders, aircraft and units above `StunMaxTech` are immune; a 
 from an area stun fired from outside. `UnitFlags.Stunned` (bit 11): no move, acquire, fire, missile defense, build /
 assist / repair / reclaim / upgrade / produce / stockpile; shields, intel, economy and stealth keep working.
 `EmpStun.Expire` clears it at tick start; `EmpStunState` (until-tick + generation per slot) exists only after the first
-stun. Users: Medusa, SCU EMP array, Scathis/others per data.
+stun. Users in data: Medusa (`cybran_t1_artillery`), SCU EMP array (`cybran_scu`).
 
 **Seabed walkers** (`Naval/Submarines.cs`). `Movement.Layer: "Amphibious"` units (Wagner, Monkeylord) walk under
 water; below the water level they hold every weapon except torpedo kinds and `FiresSubmerged` weapons, and are
