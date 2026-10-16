@@ -123,14 +123,16 @@ The account hits usage limits about every 2–5 hours, and the agents stop where
 
 **How big a window is** (measured 2026-10-16 with `python3 -I tools/token-ledger/windows.py`, input-side tokens,
 mostly cache reads, of every session and agent of the project):
-- daytime 5-hour windows end at about **40–50M tokens** (400–650 model calls); evening windows (starting 19:00–22:30)
-  were 85–250M. The weekly limit (resets Thursday 10:00) came at about **716M tokens**.
+- every 5-hour window ended at about **40–60M tokens** (250–650 model calls), at any hour of the day or night:
+  steadiest measure, about **20–23 $** of input-side list price per window (cache reads 0.2 $/M, cache writes 5 $/M),
+  so bigger contexts mean fewer calls per window. (A first version of the script claimed bigger evening windows:
+  a bug with resets after midnight, fixed.) The weekly limit (resets Thursday 10:00) came at about **716M tokens**
+  (about 280 $), so roughly 13 windows per week.
 - On 2026-10-15 15:01, 12 agents resumed together (5 agents + 7 sub-agents, many with 200k contexts whose cache had
   expired) used the whole window in 9 minutes; on 11:00 the same five agents used it in 20 minutes.
 - A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window
   end sooner, and each one is cut and needs a resume (about 1 $ of start-up reading each, plus its cache rewrite).
-  So in the daytime run **at most 2 agents, without sub-agents**; keep bigger parallel waves for the evening windows,
-  and size each brief to finish within one window.
+  So run **at most 2 agents at a time, without sub-agents**, and size each brief to finish within one window.
 
 ## Resuming (new orchestrator session)
 

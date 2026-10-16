@@ -41,7 +41,7 @@ for (k,r,day),t in sorted(first.items(), key=lambda x:x[1]):
     if k=='session':
         mt=re.match(r"(\d+)(?::(\d+))?(am|pm)",r); h=int(mt.group(1))%12+(12 if mt.group(3)=='pm' else 0); mi=int(mt.group(2) or 0)
         reset=tl.replace(hour=h,minute=mi,second=0,microsecond=0)
-        if reset<tl: pass
+        if reset<=tl: reset+=dt.timedelta(days=1)  # a reset after midnight is the next day
         start=reset-dt.timedelta(hours=5)
         sel=[x for x in recs if start<=x[0].astimezone(rome)<=tl]
         cr=sum(x[1] for x in sel);cw=sum(x[2] for x in sel);inp=sum(x[3] for x in sel);n=len(sel)

@@ -14,7 +14,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 - 2026-10-16 ~10:50: **running** (n) UX polish (4th agent) in `agent-a141a5d33496dd4c3` and (o) lockstep MP
   (3rd agent) in `agent-a4a312626d7228fe6`. **Paused**, each with WIP committed and a `.claude/handoff.md`, to restart
   as fresh agents in their worktrees (brief + "continue from .claude/handoff.md") when the usage window allows
-  (WORKFLOW "Usage limits": daytime ≤ 2 agents): (m) scale/perf `agent-a6794a8836fbb263d` (WIP a6e2a98: client perf +
+  (WORKFLOW "Usage limits": ≤ 2 agents at a time): (m) scale/perf `agent-a6794a8836fbb263d` (WIP a6e2a98: client perf +
   8-player maps from its sub-agents B/C, uncommitted at the cut), (k) AI uses everything `agent-ac4c927c54a66ca1d`
   (its CHECKPOINT WIP does not compile yet, see its note), (l) Cybran `agent-a9df3acf3524c656f` (WIP 5b60644: stealth
   sim + Cybran models started; the blueprints/roster sub-agent B left nothing committed). History: the weekly limit
