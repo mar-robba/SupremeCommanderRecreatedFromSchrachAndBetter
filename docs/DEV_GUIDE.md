@@ -170,6 +170,7 @@ integrated GPU.
 | `tools/Rts.Bench` | Headless benchmark, AI matches, replay verification, save/load timings (commands in CLAUDE.md). AI debug switches: ARCHITECTURE "Skirmish AI". |
 | `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
-| `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert (WORKFLOW "Context limits and handoffs"). |
+| `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert with per-agent thresholds (WORKFLOW "Context limits and handoffs"). |
+| `tools/agents/handoffs.py` | Per purpose: attempts, CHECKPOINT hand-overs and "dead" attempts (read until the cap, no work) of agents and sub-agents (WORKFLOW "Fragmentation: does a small cap hurt the result?"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
 | `tools/token-ledger/` | Token ledger: tokens per session/agent and purpose, kept up to date by project hooks ([tokens/README.org](tokens/README.org)); `windows.py`: tokens used in each usage-limit window ([WORKFLOW.md](WORKFLOW.md) "Usage limits"). |

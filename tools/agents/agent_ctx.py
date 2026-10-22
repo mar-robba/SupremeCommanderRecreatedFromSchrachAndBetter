@@ -2,9 +2,11 @@
 
   python3 -I tools/agents/agent_ctx.py <agentId>...
       prints the last context size (tokens) of each agent
-  python3 -I tools/agents/agent_ctx.py --watch <tokens> [ignoredAgentId...]
+  python3 -I tools/agents/agent_ctx.py --watch <tokens> [agentId=tokens...] [ignoredAgentId...]
       polls every 60 s and exits, printing, when an ACTIVE agent (transcript written in the last 5 min) is above
-      <tokens>. It also covers sub-agents spawned by agents. Run it in the background.
+      <tokens>, or above its own threshold for agents given as `id=tokens` (agents whose cap was raised, see
+      docs/WORKFLOW.md "Sizing an agent's context cap"; an id prefix is enough). It also covers sub-agents spawned
+      by agents. Run it in the background.
 
 It reads only the API `usage` fields of the transcripts (input + cache read + cache creation tokens), never the
 text. The file size is useless: screenshots inflate the bytes.
@@ -53,7 +55,8 @@ def context(path):
     return last
 
 
-def watch(limit, ignored):
+def watch(limit, ignored, own=None):
+    own = own or {}
     while True:
         now = time.time()
         hits = []
@@ -61,9 +64,10 @@ def watch(limit, ignored):
             if now - os.path.getmtime(p) > 300:
                 continue
             agent = os.path.basename(p)[len("agent-"):-len(".jsonl")]
+            mine = next((v for k, v in own.items() if agent.startswith(k)), limit)
             c = None if agent in ignored else context(p)
-            if c and c > limit:
-                hits.append(f"agent {agent} context {c} > {limit}")
+            if c and c > mine:
+                hits.append(f"agent {agent} context {c} > {mine}")
         if hits:
             print("\n".join(hits))
             return
@@ -75,7 +79,8 @@ def main(args):
         print(__doc__)
         return
     if args[0] == "--watch":
-        watch(int(args[1]), set(args[2:]))
+        own = dict((a.split("=")[0], int(a.split("=")[1])) for a in args[2:] if "=" in a)
+        watch(int(args[1]), set(a for a in args[2:] if "=" not in a), own)
         return
     for agent in args:
         files = transcripts(agent)

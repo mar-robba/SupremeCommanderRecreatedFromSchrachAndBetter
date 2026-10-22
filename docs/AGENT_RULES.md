@@ -7,9 +7,12 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
 
 ## Rules for this job (read carefully)
 - Project: a Supreme Commander 1-like RTS in C#/.NET 10 + Raylib-cs. Main checkout: `/run/media/marco/Volume D/RTS`.
-  First read CLAUDE.md, docs/README.md and docs/ROADMAP.md. Read the docs/ARCHITECTURE.md sections for your area
-  in full and skim the rest, especially "Factions" and "Save/load & replays": every new sim field must be saveable.
-  Read docs/DEV_GUIDE.md before your first build.
+  CLAUDE.md is already in your context. Read ONLY what your job needs, by section (`grep -n '^## ' <file>`, then
+  read that range): reading all of docs/ costs ~50k tokens, a third of your cap. A resumed agent reads its
+  `.claude/handoff.md` and notes first, then only the sections they point to. A new agent reads its brief, the
+  docs/ARCHITECTURE.md sections of its area plus "Factions" and "Save/load & replays" (every new sim field must be
+  saveable), and docs/DEV_GUIDE.md "Building in a shared worktree" and "Sim pitfalls" before its first build. Never read docs/HISTORY.md, docs/ROADMAP.md
+  or docs/ARCHITECTURE.md whole.
 - You are one of `<N>` agents working in parallel (wave `<W>`), each in its own git worktree and branch:
   `<one line per agent: (letter) area (main folders)>`.
   Stay in your area. Keep edits to shared files minimal and additive. Shared files: GameApp.cs, GameSession.cs,
@@ -22,11 +25,12 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   - Contracts that still hold: `BuiltBy` and `UpgradesTo` (ARCHITECTURE "Data model"); factions/roles
     (ARCHITECTURE "Factions": sim/AI code never hard-codes `uef_*` ids, it asks the faction's roles).
   - New hotkeys: check the HUD help for free keys and list every new key in your report (keys clash at merge).
-- Context cap: HARD limit of 150k tokens of context (owner, 2026-10-16). Stay lean:
+- Context cap: HARD limit of `<CAP>`k tokens of context (default 150k; the orchestrator sizes it per task, WORKFLOW
+  "Sizing an agent's context cap": `Fragmentation sensitivity: <class>, because <reason>`). Stay lean:
   - don't read huge files whole (grep, then read ranges);
   - read few screenshots (at most ~6 in your whole run; prefer `--size 960x540`);
   - pipe long outputs through tail/grep.
-  At ~130k: commit, update your handoff note, and end your turn with the word CHECKPOINT. A fresh agent will
+  At `<CAP-20>`k: commit, update your handoff note, and end your turn with the word CHECKPOINT. A fresh agent will
   continue from your note.
 - Handoff note: keep `<your worktree>/.claude/handoff.md` up to date at every milestone: done / TODO in order /
   known bugs / key commands / bench numbers. Commit WIP at every milestone. Usage limits can stop you at any moment.
@@ -38,7 +42,8 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   - only ONE `dotnet build`/`dotnet test` may run at a time per worktree: everyone runs dotnet through
     `bash tools/agents/dn.sh <dotnet args>` (call it through `bash`: the volume is mounted without exec bits and git has `core.fileMode=false`);
   - they commit only their own files (`git commit -m "..." -- <files>`);
-  - give them the same 150k cap and ask for short reports;
+  - size each one's cap with WORKFLOW "Sizing an agent's context cap" (default 150k; more only when splitting the
+    piece would hurt its result) and write the class, reason and cap in its prompt; ask for short reports;
   - when a sub-agent finishes or stops (CHECKPOINT), it first writes the essentials of its piece (done + commits,
     what is left, decisions/pitfalls; under ~30 lines) to `<your worktree>/.claude/notes/<piece>.md`, and you add a
     one-line pointer to it in your handoff note, so the work can continue after a restart;
@@ -75,5 +80,7 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   - new hotkeys;
   - shared-file edits;
   - measured numbers (bench, sizes, win rates…);
-  - known issues and follow-ups.
+  - known issues and follow-ups;
+  - if you continued from a handoff note: "Handoff review", 2-4 lines: what the note lacked, what you had to
+    rediscover, what you redid or re-tried that was already done or ruled out, what was broken at the seam.
   Return the same short text as your final message. The orchestrator copies it into docs/HISTORY.md at merge.

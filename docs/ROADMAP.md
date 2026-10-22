@@ -12,6 +12,8 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-16 16:07: new orchestrator session started a fresh coordinator in each worktree below ((l) and (k)); ids in
+  `orchestrator/agents-wave5.md`. If this session is gone too, repeat the step below (their handoff notes are current).
 - 2026-10-16 16:10: the owner restarted the orchestrator. The last two wave 5 agents were told to CHECKPOINT
   (commit + short handoff) and stop with the old session; their ids are gone. **Start a fresh agent in each
   worktree** (absolute path, no isolation; brief in HISTORY "Wave 5" + "continue from `.claude/handoff.md` and the
