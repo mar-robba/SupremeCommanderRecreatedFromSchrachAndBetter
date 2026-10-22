@@ -123,6 +123,8 @@ public sealed partial class AiConfig
     /// <summary>Share of the mass income kept for the factories: eco/tech commitments wait while the rest is used
     /// (AiEconomy.Budget.cs).</summary>
     public float ArmyShare = 0.5f;
+    /// <summary>ArmyShare while pressured: own land strength below PressureRatio x the enemy's, or enemies at the base.</summary>
+    public float PressureArmyShare = 0f, PressureRatio = 0.6f; // off: 0.85 made NvN worse (40/96 vs 58), AI_TUNING
     /// <summary>More land factories (up to MaxLandFactoriesFloat) after CapacityTime while their capacity is below
     /// ArmyShare x CapacityMargin x mass income.</summary>
     public float CapacityTime = 420, CapacityMargin = 1.2f;
@@ -130,6 +132,11 @@ public sealed partial class AiConfig
     public float FloatMass = 1200, FloatSeconds = 30;
     /// <summary>Highest tier of combat units the factories make (experiments; engineers/structures use MaxTier).</summary>
     public int MaxUnitTier = 3;
+    /// <summary>Highest tier of the artillery role (T2 missile launchers and T3 artillery outrange the rest of the army).</summary>
+    public int ArtilleryTier = 3;
+    /// <summary>Siege push (AiMilitary.SiegePush): an attacking army that has not closed in on its objective for
+    /// SiegeTime seconds while stronger than SiegeMargin x the local threat attacks the nearest structure there. 0 = off.</summary>
+    public float SiegeTime = 0, SiegeMargin = 1.5f; // untested in a matrix yet: try 60 and 30
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>

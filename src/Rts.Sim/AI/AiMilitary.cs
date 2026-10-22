@@ -39,6 +39,10 @@ public sealed class AiGroup
     public bool Regroup;
     public int RegroupTick;
     public int EngageTick;
+    /// <summary>Siege-lock check (UpdateAttackingGroup): closest the centroid got to ProgressTarget, and when.</summary>
+    public float BestDist;
+    public int ProgressTick;
+    public Vector2 ProgressTarget;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
@@ -626,6 +630,7 @@ public sealed class AiMilitary
 
         Engage(g, 45f, g.Target);
         if (Cfg.FocusFire && local > 0) FocusFire(g, g.Target);
+        if (SiegePush(g, local)) return;
 
         // Position targets (sorties, last known positions) are done when the group idles there, or after a while
         // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.
@@ -691,6 +696,44 @@ public sealed class AiMilitary
         g.TargetUnit = th;
         g.NextObjectiveTick = W.Tick + 100;
         SetStaging(g, StagingFor(tpos, g.Anchor, g.Strength));
+    }
+
+    /// <summary>
+    /// Siege lock (wave 5k): a group that clearly outguns what is around it but stops short of its objective, because
+    /// fresh enemies keep walking into its (long, with T2 missiles / T3 artillery) weapon range, never reaches the base
+    /// and the game stalls. When the centroid has not closed in on the target for SiegeTime, the group attacks the
+    /// known enemy structure nearest to it around the objective (factories first): walking into range of the base.
+    /// </summary>
+    private bool SiegePush(AiGroup g, float local)
+    {
+        if (Cfg.SiegeTime <= 0 || g.Kind != AiGroupKind.Army) return false;
+        float d = Vector2.Distance(g.Centroid, g.Target);
+        if (g.ProgressTarget != g.Target || d < g.BestDist - 4f)
+        {
+            g.ProgressTarget = g.Target;
+            g.BestDist = d;
+            g.ProgressTick = W.Tick;
+            return false;
+        }
+        if (W.Tick - g.ProgressTick < Cfg.SiegeTime * SimWorld.TicksPerSecond || d > 110f || g.Strength < local * Cfg.SiegeMargin) return false;
+        g.ProgressTick = W.Tick;
+        g.BestDist = d;
+        var u = W.Units;
+        int best = -1;
+        float bd = float.MaxValue;
+        foreach (int s in V.EnemyStructures)
+        {
+            if (!u.IsActive(s) || Vector2.DistanceSquared(u.Pos[s], g.Target) > 60f * 60f) continue;
+            float ds = Vector2.Distance(u.Pos[s], g.Anchor);
+            if (_b.Perception.IsIdentified(s) && W.BpOf(s).Has(UnitCategory.Factory)) ds *= 0.6f;
+            if (ds < bd) { bd = ds; best = s; }
+        }
+        if (_b.Tracing) _b.Trace($"siege g{g.Id} n={g.Members.Count} d={d:F0} st={g.Strength:F0} local={local:F0} -> {(best >= 0 ? W.BpOf(best).Id : "move")}");
+        if (best >= 0) _b.Cmd.Order(g.Members, Order.AttackUnit(u.HandleOf(best)));
+        else _b.Cmd.Order(g.Members, Order.MoveTo(g.Target));
+        _b.Cmd.Order(g.Members, Order.AttackMoveTo(g.Target), queue: true);
+        g.OrderTick = W.Tick;
+        return true;
     }
 
     /// <summary>Idle members while known enemies are close (outranged by artillery, attack-move finished short of

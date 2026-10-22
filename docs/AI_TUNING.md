@@ -134,3 +134,18 @@ and its armies stayed half the size (27-35 land units vs 59) although its mass i
 | army-first budget (`AiEconomy.Budget.cs`, ArmyShare 0.5) | 57 |
 | … ArmyShare 0.4 / 0.6 / 0.7 | 47 / 53 / 56 |
 | + factory capacity rule, floating by absolute stored mass | 58 (capacity off 57, margin 1.6: 60) |
+| + MaxUnitTier=1 (T1 combat units only, tech eco kept) / MaxUnitTier=2 | 65 / 60 |
+| + MaxUnitTier=1 and no enhancements | 68 |
+| + ArtilleryTier=1 (T1 artillery instead of T2 missile launchers / T3 artillery) / ArtilleryTier=2 | 65 / 59 |
+| + ShieldTime=99999 (no base shields) | 58 |
+| + "pressure" rule (ArmyShare 0.85 when own land strength < 0.6 × enemy or base threatened) | 40 (worse: off) |
+
+Findings beyond the budget:
+- With T1 units only, army spending matches main by minute 20 (21.3k) and land counts are higher, yet only 65-68/96
+  end: the tech economy (upgraded extractors near home, high-HP structures) lets the losing side rebuild.
+- Many stalled games are lopsided (one side 10-18k army value and 2-4× the income at minute 28). Traced
+  (highlands seed 2, `AI_DUMP=1200:1:1`): the winning army sits 40-70 from the enemy base for 10+ minutes. Its long
+  range units (T2 missile launchers range 60, T1 artillery 30) keep a target in range (fresh units, engineers), and
+  attack-move stops while there is a target, so the army never walks in. The stuck check only fires while nothing
+  shoots at the group. Hence ArtilleryTier=1 helping, and the siege push (`AiMilitary.SiegePush`, `SiegeTime`).
+- Making the losing side all-in on army (pressure rule) prolongs games.

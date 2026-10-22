@@ -30,7 +30,17 @@ public sealed partial class AiEconomy
         foreach (int f in V.AirFactories) cap += FactoryWeight(f) * 4f;
         FactoryCapacity = cap;
         EcoSpend = MathF.Max(0f, MassDemand - fac);
+        // Losing the land war (or enemies at the base): tech waits, the mass goes to the army.
+        float enemy = MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate);
+        Pressured = _b.GameTime > 300 && (V.OwnLandStrength < Cfg.PressureRatio * enemy
+                                          || V.ThreatAt(_b.BasePos, Cfg.DefenseRadius) > V.OwnLandStrength * 0.5f + 50f);
     }
+
+    /// <summary>The enemy land army looks much stronger than ours, or threatens the base (see UpdateBudget).</summary>
+    public bool Pressured;
+
+    /// <summary>Share of the income kept for the factories now.</summary>
+    public float ArmyShareNow => Pressured ? MathF.Max(Cfg.ArmyShare, Cfg.PressureArmyShare) : Cfg.ArmyShare;
 
     private float FactoryDraw(int f)
     {
@@ -46,7 +56,7 @@ public sealed partial class AiEconomy
         get
         {
             float stored = W.Armies[_b.Army].Eco.Mass;
-            return MassIncome * (1f - Cfg.ArmyShare) + MathF.Max(0f, stored - 400f) / 60f - EcoSpend;
+            return MassIncome * (1f - ArmyShareNow) + MathF.Max(0f, stored - 400f) / 60f - EcoSpend;
         }
     }
 }

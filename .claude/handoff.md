@@ -9,18 +9,29 @@ Brief: docs/HISTORY.md "### (k) AI uses everything" + docs/AGENT_RULES.md (cap n
 Worktree = this dir, branch `worktree-agent-ac4c927c54a66ca1d`; main merged at ce1fd64. Always `bash tools/agents/dn.sh`.
 (l) Cybran in parallel: new roles append-only in FactionRoles.All AND Optional (none needed so far); no cybran files.
 
-## k6 (2026-10-22, coordinator 3, cap 250k) — state
+## k6 CHECKPOINT (2026-10-22, coordinator 3, context cap) — the stall fix, evidence chain
 - Lab (all under .claude/ai-lab/, gitignored): specs/{nvn,hvn,hvh}.txt; base/ = main + val= + spend tracker,
-  basebin/Rts.Bench (apphost); kbin/ = this branch's bench built with `-o` (safe while matrices use bin/);
-  cmp.py (`cmp.py runs/A runs/B [--spent|--mil] [--marks 8,12] [--diff Hard]`); sweep.sh <pfx> <specs> <bin> cfg...
-  (DIFF=Hard env for h2h). A NvN matrix takes ~2-3 min.
-- Bench: tools/Rts.Bench/SpendTracker.cs, status line `spent=army/eng/mex/mexUp/fac/facUp/power/store/def/other/enh`
-  (cumulative k mass by build progress). b3_nvn (main) 80/96, k4/k5_ (branch) 48/96.
-- FINDING: at min 16 main spent 15.3k on army, k 9.0k; k's extra: enhancements 3.9k, mexUp 2.3k, facUp 1.8k,
-  power +2.1k. From min 16-20 k puts ~60 % of income into eco/tech. Knobs alone (MaxMexUpgrades=1 43/96, PowerMargin,
-  SpendRatio, EnhanceTime) don't fix it.
-- FIX in progress: AiEconomy.Budget.cs (army-first budget: FactoryBudget floor ArmyShare*budget/4; EcoRoom gates
-  upgrades/enhancements/assist-upgrade/projects; first upgrade may overshoot room by 0.25*income). Sweep a1_*.
+  basebin/Rts.Bench (apphost, main baseline); kbin/ = this branch (rebuilt at the last commit, defaults below);
+  kbin2/kbin3 = stale experiment builds (ignore). cmp.py (`python3 -I .claude/ai-lab/cmp.py runs/A runs/B [--spent|--mil]
+  [--marks 8,12] [--diff Hard]`); `bash .claude/ai-lab/sweep.sh <pfx> <specs> <bin> cfg...` (cfg "-" = none, tag
+  becomes <pfx>__; DIFF=Hard env for h2h). One NvN matrix ~2-3 min. Nothing is running now.
+- Bench (committed): SpendTracker.cs `spent=army/eng/mex/mexUp/fac/facUp/power/store/def/other/enh` (k mass),
+  status `bud=FactorySpend/EcoSpend/FactoryBudget/UpgradeSpend`.
+- Code (committed): AiEconomy.Budget.cs (army-first: FactoryBudget floor ArmyShare*budget/4, EcoRoom gates
+  upgrades/enhancements/assist-upgrade/projects, first upgrade may overshoot room by 0.25*income), capacity rule in
+  WantLandFactory (CapacityTime/Margin), Floating also by stored mass (FloatMass/FloatSeconds), knobs MaxUnitTier,
+  ArtilleryTier, Pressure* (OFF), SiegeTime (OFF = 0; AiMilitary.SiegePush + AiGroup.BestDist/ProgressTick/ProgressTarget).
+- NvN finished/96 (main b3_nvn 80): old k 48 (k5_) | budget a1__ 57 (ArmyShare .4/.6/.7: 47/53/56) | +capacity+float
+  b1__ 58 | MaxUnitTier=1 65, =2 60, +no enh 68 (c1_*) | ArtilleryTier=1 65, =2 59, no shields 58 (c2_*) |
+  pressure 0.85 d1__ 40 (worse -> off). All in docs/AI_TUNING.md "Tech AI stalemates".
+- Diagnosis: (1) eco/tech took ~60 % of income (fixed partly by the budget); (2) lopsided games don't end: the
+  winning army stops 40-70 from the enemy base because long-range units (MML r60, T3 arty r80) always have a target
+  (attack-move stops), stuck check needs local<=0 (AiMilitary.UpdateAttackingGroup). Losing tech AIs keep upgrading.
+- NEXT (in order): a) sweep kbin "SiegeTime=60" "SiegeTime=30" "SiegeTime=60,ArtilleryTier=1" "ArtilleryTier=1" on
+  NvN; b) if siege helps, also make Engage/attack-move closing for indirect units (MML/arty follow tanks), or keep
+  ArtilleryTier lower / MML share small; c) no factory upgrades while units are T1-only? (facU 4-9k wasted when
+  MaxUnitTier=1); d) T3 dps buff within SupCom numbers (T3 dps/mass ~half of T1); e) then HvN (DIFF=Hard, hvn specs)
+  + HvH vs main (base_hvn 177-7-8, base_hvh 63/96) and set Normal/Hard defaults; then navy sub-agent (notes/navy.md).
 
 ## CHECKPOINT 4 (coordinator 2, context cap hit) — findings since ab30ce2
 - e4e257d: AiConfig is `partial` (navy/transport knobs go in AiConfig.Navy.cs / .Transport.cs); bench status line

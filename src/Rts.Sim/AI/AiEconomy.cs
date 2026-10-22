@@ -186,7 +186,7 @@ public sealed partial class AiEconomy
         // Budget in T1-land-factory equivalents (4 mass/s each); bigger factories weigh by build rate.
         FactoryBudget = MathF.Max(1f, (budget - engineerSpend * 0.7f - UpgradeSpend * 0.8f) / 4f);
         if (Floating) FactoryBudget += 2;
-        FactoryBudget = MathF.Max(FactoryBudget, budget * Cfg.ArmyShare / 4f); // army-first floor (Budget.cs)
+        FactoryBudget = MathF.Max(FactoryBudget, budget * ArmyShareNow / 4f); // army-first floor (Budget.cs)
         float slot = 0;
         bool airFirst = _b.Perception.EnemyAirCountMem > 4;
         if (airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, (slot += FactoryWeight(f)) <= FactoryBudget + 0.5f);
@@ -261,7 +261,8 @@ public sealed partial class AiEconomy
         }
         if (dA > dT)
         {
-            int b = Pick(fbp, tier >= 3 ? r.Artillery3 : -1, tier >= 2 ? r.Mml2 : -1, r.Artillery1);
+            int at = Math.Min(tier, Cfg.ArtilleryTier);
+            int b = Pick(fbp, at >= 3 ? r.Artillery3 : -1, at >= 2 ? r.Mml2 : -1, r.Artillery1);
             if (b >= 0) return b;
         }
         int heavy3 = tier >= 3 && V.Total(r.Siege3) * 2 < V.Total(r.Assault3) + 1 ? r.Siege3 : -1;
