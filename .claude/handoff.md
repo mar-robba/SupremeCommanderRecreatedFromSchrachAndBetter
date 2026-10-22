@@ -1,6 +1,6 @@
 # Handoff — agent (k) wave 5: AI uses everything
 
-**2026-10-22 (orchestrator): the machine rebooted, so every `/tmp/claude-1000/...scratchpad` path below is GONE**
+**2026-10-22: machine rebooted; old /tmp scratchpad paths are gone (lab now in .claude/ai-lab/).**
 (specs nvn/hvn/hvh.txt, cmp.py, s2.txt, the main `base` bench build). Run logs in `.claude/ai-lab/runs/` survived.
 Regenerate specs with `tools/ai-lab/specs.py` and keep ALL lab files under `.claude/ai-lab/` (survives reboots).
 k5 (16:21-16:26) was cut by the session limit after 5 minutes: nothing done since CHECKPOINT 4.
@@ -33,27 +33,10 @@ Worktree = this dir, branch `worktree-agent-ac4c927c54a66ca1d`; main merged at c
   MaxUnitTier=1); d) T3 dps buff within SupCom numbers (T3 dps/mass ~half of T1); e) then HvN (DIFF=Hard, hvn specs)
   + HvH vs main (base_hvn 177-7-8, base_hvh 63/96) and set Normal/Hard defaults; then navy sub-agent (notes/navy.md).
 
-## CHECKPOINT 4 (coordinator 2, context cap hit) — findings since ab30ce2
-- e4e257d: AiConfig is `partial` (navy/transport knobs go in AiConfig.Navy.cs / .Transport.cs); bench status line
-  ends with `val=<army>k/<defenses+shields>k/<other structures>k` (mass value of complete units).
-- NAVY SUB-AGENT IS RUNNING (started by coordinator 2) in this worktree: files AiNavy*.cs, AiConfig.Navy.cs,
-  tests/Rts.Sim.Tests/AiNavyTests.cs; gate `NavyEnabled=false` until its final commit (flips it true); builds its
-  bench to .claude/navybin, run tags navy_*; writes .claude/notes/navy.md. Don't edit its files; wait for its note.
-- k2 matrix (ab30ce2): NvN 48/96, HvN 76-17-99, HvH 36/96 (= k1). k3_nvn (e4e257d) 48/96. base2_nvn (main+val=) 80/96.
-- s1 NvN sweep (AI_CFG): MaxTier=1+Enhance/Shield/Tml/Strategic off -> **86/96**; EnhanceTime=99999 53; Shield+Tml
-  off 47; UpgradeShare=0.2 48; later MexT2/LandT2/LandT3 times 43. => cause is T2/T3 itself, not projects/timing.
-- s2_1 = AI_CFG MaxTier=2 (done): finished 37/96 (canyon 3/24 highlands 7/24 lakes 13/24 plains 14/24), mean 18.3 min; full output in /tmp/claude-1000/-run-media-marco-Volume-D-RTS/0e69024f-c17b-4125-928c-f021a6055ab1/scratchpad/s2.txt, logs .claude/ai-lab/runs/s2_1.
-- Symptoms (k2 vs base, NvN means): land units half (27-35 vs 59) with higher mass income (37-58 vs 28); pgens 42 vs
-  15 at min 20 (ProjectedEnergy over-estimates: engineers BR*4, T3 factories x2.2); fac stuck at 7; mass piles up
-  2-10k at min 25-30 (Floating needs MassRatio>0.75, broken with big storage); waves similar.
-- Lanchester value dps*hp/mass^2 (UEF): T1 tank 1.7, T1 arty 3.9, T2 heavy tank 2.4, T3 assault 1.1, T3 siege 0.7,
-  T3 arty 0.2, MML2 0.5 => T3 land units far less cost-efficient than T1/T2 (balance pass, TODO 3).
-- Next: compare val= k3_nvn vs base2_nvn at min 8-20 (extend /tmp/claude-1000/-run-media-marco-Volume-D-RTS/0e69024f-c17b-4125-928c-f021a6055ab1/scratchpad/cmp.py to parse val=); then try, one at a time:
-  Floating by absolute stored mass (more factories), cap ProjectedEnergy/pgens, prefer T2 heavy tanks over T3 in
-  ChooseLand (or buff T3 blueprints), maybe no factory upgrade while few factories. Measure each with sweep.
-- Tools: specs copied to /tmp/claude-1000/-run-media-marco-Volume-D-RTS/0e69024f-c17b-4125-928c-f021a6055ab1/scratchpad/{nvn,hvn,hvh}.txt; `bash /tmp/claude-1000/-run-media-marco-Volume-D-RTS/0e69024f-c17b-4125-928c-f021a6055ab1/scratchpad/sweep.sh <prefix> <specs> <diff|-> - "Cfg=.."` (one
-  run.py per config, prints finished/wins/tech); main bench with val=: `--bin /tmp/claude-1000/-run-media-marco-Volume-D-RTS/0e69024f-c17b-4125-928c-f021a6055ab1/scratchpad/base/tools/Rts.Bench/bin/Release/net10.0/Rts.Bench`
-  (apphost, NOT .dll). Never `pkill -f "Rts.Bench ai"` (kills your own shell).
+## Earlier findings (CHECKPOINT 4, still valid)
+- s1 NvN sweep: MaxTier=1 + Enhance/Shield/Tml/Strategic off -> 86/96; MaxTier=2 -> 37/96 (s2_1).
+- Lanchester dps*hp/mass^2 (UEF): T1 tank 1.7, T1 arty 3.9, T2 heavy tank 1.2, T3 assault 1.1, T3 siege 0.7, T3 arty 0.2.
+- Navy sub-agent of coordinator 2 stopped early: only AiConfig.Navy.cs knobs exist; plan in .claude/notes/navy.md.
 
 ## State (last commit ab30ce2, compiles; 393 sim tests green at 1f125cb+1)
 - AiRoster (roles by tier), AiEconomy.Tech.cs (upgrades, enhancements, tiered engineers/power/defense, projects:
