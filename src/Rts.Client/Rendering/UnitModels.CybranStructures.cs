@@ -261,7 +261,7 @@ public static partial class UnitModels
     {
         var r = RotY(a);
         Fin(b, 0, th, y0, r0, r1, ra, ya, col, r);
-        b.Box(CyRot(V(0, ya - 0.04f * (ya - y0), ra + 0.02f * (r1 - r0)), a), V(1.6f * th, 1.6f * th, 1.6f * th), CyRed, null, r);
+        b.Box(V(0, ya - 0.04f * (ya - y0), ra + 0.02f * (r1 - r0)), V(1.6f * th, 1.6f * th, 1.6f * th), CyRed, null, r);
     }
 
     /// <summary>
