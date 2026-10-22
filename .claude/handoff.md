@@ -27,6 +27,7 @@ Worktree = this dir, branch `worktree-agent-ac4c927c54a66ca1d`; main merged at c
 - Diagnosis: (1) eco/tech took ~60 % of income (fixed partly by the budget); (2) lopsided games don't end: the
   winning army stops 40-70 from the enemy base because long-range units (MML r60, T3 arty r80) always have a target
   (attack-move stops), stuck check needs local<=0 (AiMilitary.UpdateAttackingGroup). Losing tech AIs keep upgrading.
+- Tests NOT run on the k6 commits (2502c63..52c39f1): run Sim tests (determinism, SaveCoverage) first.
 - NEXT (in order): a) sweep kbin "SiegeTime=60" "SiegeTime=30" "SiegeTime=60,ArtilleryTier=1" "ArtilleryTier=1" on
   NvN; b) if siege helps, also make Engage/attack-move closing for indirect units (MML/arty follow tanks), or keep
   ArtilleryTier lower / MML share small; c) no factory upgrades while units are T1-only? (facU 4-9k wasted when
