@@ -80,7 +80,6 @@ public static partial class UnitModels
             case "cy_stealth": t = CyDeceiver(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 1.3f; break;
             case "cy_assault_bot": t = CyLoyalist(b, pivots, w, h, l); break;
             case "cy_heavy_artillery": t = CyTrebuchet(b, pivots, w, h, l); break;
-#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C): remove this guard once the air/naval/experimental/structure partials exist
             // ---- air (UnitModels.CybranAir.cs)
             case "cy_air_scout": CyAirScout(b, w, h, l); break;
             case "cy_interceptor": CyProwler(b, w, h, l); break;
@@ -103,6 +102,7 @@ public static partial class UnitModels
             case "cy_sonar": t = CySonar(b, pivots, w, h, l, 1); mode = TurretMode.Spin; spin = 1.5f; break;
             case "cy_sonar2": t = CySonar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 2.0f; break;
             case "cy_torpedo_launcher": t = CyTorpedoLauncher(b, pivots, w, h, l, hasWeapon); break;
+#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C2): remove this guard once the experimental/structure partials exist
             // ---- experimentals (UnitModels.CybranExperimental.cs)
             case "cy_monkeylord": t = CyMonkeylord(b, pivots, w, h, l); break;
             case "cy_soul_ripper": t = CySoulRipper(b, pivots, w, h, l); break;
@@ -340,7 +340,7 @@ public static partial class UnitModels
         float x = s * a.ArmX, y = a.ArmY;
         switch (visual)
         {
-            case "laser": // microwave laser: long emitter housing with red coils and a glowing lens
+            case "laser": case "microwave_laser": // microwave laser: long emitter housing with red coils and a glowing lens
                 m.BevelBox(V(x, y + 0.02f * h, 0.14f * l), V(0.18f * w, 0.16f * h, 0.4f * l), 0.04f * w, CyHullDark, CyHull);
                 for (int i = 0; i < 3; i++)
                     m.Cylinder(V(x, y + 0.02f * h, (0.36f + i * 0.07f) * l), Axis.Z, 0.03f * l, 0.07f * w, 0.07f * w, 6, (i & 1) == 0 ? CyRed : CyBlack);
@@ -361,7 +361,7 @@ public static partial class UnitModels
                 foreach (int k in (ReadOnlySpan<int>)[-1, 1])
                     m.Cylinder(V(x + s * 0.06f * w + k * 0.025f * w, y - 0.04f * h, 0.26f * l), Axis.Z, 0.06f * l, 0.02f * w, 0.02f * w, 6, CyBlack, CyRedDim);
                 return true;
-            case "coolant": // heat sink augmentation: finned radiator block along the gun arm
+            case "coolant": case "cooling": // heat sink augmentation: finned radiator block along the gun arm
                 for (int i = 0; i < 4; i++)
                     m.Box(V(x, y + 0.08f * h, (0.02f + i * 0.06f) * l), V(0.18f * w, 0.03f * h, 0.02f * l), i == 3 ? CyRed : CyHullLight);
                 return true;
