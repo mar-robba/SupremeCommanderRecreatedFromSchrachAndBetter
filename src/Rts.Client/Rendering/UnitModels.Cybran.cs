@@ -102,11 +102,11 @@ public static partial class UnitModels
             case "cy_sonar": t = CySonar(b, pivots, w, h, l, 1); mode = TurretMode.Spin; spin = 1.5f; break;
             case "cy_sonar2": t = CySonar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 2.0f; break;
             case "cy_torpedo_launcher": t = CyTorpedoLauncher(b, pivots, w, h, l, hasWeapon); break;
-#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C2): remove this guard once the experimental/structure partials exist
             // ---- experimentals (UnitModels.CybranExperimental.cs)
             case "cy_monkeylord": t = CyMonkeylord(b, pivots, w, h, l); break;
             case "cy_soul_ripper": t = CySoulRipper(b, pivots, w, h, l); break;
             case "cy_scathis": t = CyScathis(b, pivots, w, h, l); break;
+#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C2): remove this guard once the structure partial exists
             // ---- structures (UnitModels.CybranStructures.cs)
             case "cy_factory": CyFactory(b, w, h, l, air, 1); break;
             case "cy_factory2": CyFactory(b, w, h, l, air, 2); break;
