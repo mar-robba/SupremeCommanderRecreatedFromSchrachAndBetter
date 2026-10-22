@@ -106,7 +106,6 @@ public static partial class UnitModels
             case "cy_monkeylord": t = CyMonkeylord(b, pivots, w, h, l); break;
             case "cy_soul_ripper": t = CySoulRipper(b, pivots, w, h, l); break;
             case "cy_scathis": t = CyScathis(b, pivots, w, h, l); break;
-#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C2): remove this guard once the structure partial exists
             // ---- structures (UnitModels.CybranStructures.cs)
             case "cy_factory": CyFactory(b, w, h, l, air, 1); break;
             case "cy_factory2": CyFactory(b, w, h, l, air, 2); break;
@@ -122,6 +121,12 @@ public static partial class UnitModels
             case "cy_massfab": CyMassFab(b, w, h, l, 2); break;
             case "cy_massfab3": CyMassFab(b, w, h, l, 3); break;
             case "cy_storage": CyStorage(b, w, h, l, bp.Has(UnitCategory.EnergyStorage)); break;
+            case "cy_radar": t = CyRadar(b, pivots, w, h, l, 1); mode = TurretMode.Spin; spin = 1.2f; break;
+            case "cy_radar2": t = CyRadar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 1.6f; break;
+            case "cy_omni": t = CyOmni(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.9f; break;
+            case "cy_stealth_field": t = CyStealthField(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.7f; break;
+#if CYBRAN_MODELS_FULL // TODO (5l, sub-agent C2c): remove this guard once the defensive structures exist
+            // ---- defensive structures (UnitModels.CybranStructures.cs)
             case "cy_pd": t = CyPointDefense(b, pivots, w, h, l, 1); break;
             case "cy_pd2": t = CyPointDefense(b, pivots, w, h, l, 2); break;
             case "cy_aa_turret": t = CyAaTurret(b, pivots, w, h, l, 1); break;
@@ -133,10 +138,6 @@ public static partial class UnitModels
             case "cy_tmd": t = CyZapper(b, pivots, w, h, l); if (!hasWeapon) { mode = TurretMode.Spin; spin = 0.7f; } break;
             case "cy_antinuke": t = CyAntiNuke(b, pivots, w, h, l); break;
             case "cy_artillery_structure": t = CyArtilleryStructure(b, pivots, w, h, l, tier); break;
-            case "cy_radar": t = CyRadar(b, pivots, w, h, l, 1); mode = TurretMode.Spin; spin = 1.2f; break;
-            case "cy_radar2": t = CyRadar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 1.6f; break;
-            case "cy_omni": t = CyOmni(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.9f; break;
-            case "cy_stealth_field": t = CyStealthField(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.7f; break;
 #endif
             default: CyGeneric(b, w, h, l, bp.IsStructure); break;
         }
