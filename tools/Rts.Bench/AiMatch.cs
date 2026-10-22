@@ -238,7 +238,7 @@ public static class AiMatch
                     var role = brain.Info(i).Role;
                     if (role == AiRole.Pool) pool++; else if (role == AiRole.Defend) defend++; else if (role == AiRole.Attack) attack++;
                 }
-                mil = $" pool={pool} defend={defend} attack={attack}/{brain.Military.Groups.Count}g waves={brain.Military.WavesLaunched}";
+                mil = $" pool={pool} defend={defend} attack={attack}/{brain.Military.Groups.Count}g waves={brain.Military.WavesLaunched} bud={brain.Economy.FactorySpend:F0}/{brain.Economy.EcoSpend:F0}/{brain.Economy.FactoryBudget:F1}/{brain.Economy.UpgradeSpend:F0}";
                 if (Environment.GetEnvironmentVariable("AI_GROUPS") == "1")
                     foreach (var g in brain.Military.Groups)
                     {

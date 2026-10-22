@@ -101,3 +101,36 @@ commander: a late-game push toward the commander's last known position, and snip
   Re-tune after it.
 - The AI doesn't use T2/T3 upgrades, navy, strategic weapons, experimentals, transports, capture, pause or
   adjacency yet (wave 5, agent "AI uses everything").
+
+## Tech AI stalemates (wave 5k, 2026-10-16 → 22)
+
+The tech AI (upgrades, T2/T3 units, enhancements, projects) first ended far fewer games than the T1 AI on main:
+NvN 48/96 finished (main 80/96), Hard v Normal 76-17-99 (main 177-7-8), Hard v Hard 36/96 (main 63/96).
+
+### Where the mass goes: `spent=`
+
+The bench status line ends with `spent=army/eng/mex/mexUp/fac/facUp/power/store/def/other/enh`: cumulative mass
+(thousands) each army put into construction and upgrades, by what was built (build progress × cost, from
+`tools/Rts.Bench/SpendTracker.cs`). `.claude/ai-lab/cmp.py`-style comparisons (mean per minute mark over the alive
+armies of a matrix) showed the cause at once. NvN, minute 16, main vs tech AI: army 15.3k vs 9.0k; the tech AI's
+extra went to commander enhancements 3.9k, extractor upgrades 2.3k, factory upgrades 1.8k and power +2.1k
+(enhancements cost ~20 energy per mass). From minute 16 to 20 the tech AI put ~60 % of its income into eco/tech,
+and its armies stayed half the size (27-35 land units vs 59) although its mass income was higher (37-58 vs 28).
+
+### Experiments (NvN finished / 96; noise about ±6)
+
+| Change | Finished |
+|---|---|
+| main (T1 AI) | 80 |
+| tech AI as it was | 48 |
+| MaxTier=1 + no enhancements/shields/TML/strategic | 86 |
+| MaxTier=2 | 37 |
+| EnhanceTime=99999 (no enhancements) | 53 |
+| Shields + TML off | 47 |
+| UpgradeShare=0.2 / later tier times | 48 / 43 |
+| MaxMexUpgrades=1 | 43 |
+| PowerMargin=0.5 | 45 |
+| SpendRatio=1.5 | 48 |
+| army-first budget (`AiEconomy.Budget.cs`, ArmyShare 0.5) | 57 |
+| … ArmyShare 0.4 / 0.6 / 0.7 | 47 / 53 / 56 |
+| + factory capacity rule, floating by absolute stored mass | 58 (capacity off 57, margin 1.6: 60) |

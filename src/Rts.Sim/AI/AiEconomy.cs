@@ -87,7 +87,8 @@ public sealed partial class AiEconomy
         EnergyRatio = eco.EnergyMax > 0 ? eco.Energy / eco.EnergyMax : 0;
         EnergyStall = eco.EnergyEfficiency < 0.98f && EnergyRatio < 0.1f;
         MassStall = eco.MassEfficiency < 0.98f && MassRatio < 0.05f;
-        if (MassRatio > 0.75f && MassIncome > 8f) _floatThinks++;
+        // Floating: storage nearly full, or (big storages) a pile of mass worth Cfg.FloatSeconds of income.
+        if ((MassRatio > 0.75f || eco.Mass > MathF.Max(Cfg.FloatMass, MassIncome * Cfg.FloatSeconds)) && MassIncome > 8f) _floatThinks++;
         else _floatThinks = Math.Max(0, _floatThinks - 2);
         Thinks++;
         if (eco.EnergyEfficiency < 0.5f) DeepEnergyStallThinks++;
@@ -147,11 +148,15 @@ public sealed partial class AiEconomy
     {
         if (_b.BpLandFactory < 0) return false;
         int n = CountTiers(_b.R.LandFactory) + _b.Placement.ReservedCount(_b.BpLandFactory);
-        int cap = Floating ? Math.Min(Cfg.MaxLandFactoriesFloat, Math.Max(Cfg.MaxLandFactories + 3, (int)(MassIncome / 4.5f) + 1)) : Cfg.MaxLandFactories;
+        // Factory capacity short of the army's share of the income (T2/T3 factories upgrade slowly and cost much
+        // more per build power than a new T1 factory): allow more factories, like when floating.
+        bool shortCapacity = _b.GameTime > Cfg.CapacityTime && FactoryCapacity < MassIncome * Cfg.ArmyShare * Cfg.CapacityMargin;
+        int cap = Floating || shortCapacity ? Math.Min(Cfg.MaxLandFactoriesFloat, Math.Max(Cfg.MaxLandFactories + 3, (int)(MassIncome / 4.5f) + 1)) : Cfg.MaxLandFactories;
         if (n >= cap) return false;
         if (n == 0) return true;
         if (InProgress(_b.BpLandFactory) > 0 || EnergyStall || EnergyRatio < 0.25f) return false;
         if (n < Cfg.MaxLandFactories && MassIncome >= 4.5f * n + 1f) return true;
+        if (shortCapacity && (MassRatio > 0.3f || W.Armies[_b.Army].Eco.Mass > 600f) && EnergyRatio > 0.4f) return true;
         return (Floating || MassRatio > 0.7f) && EnergyRatio > 0.5f && _b.GameTime > 90;
     }
 
@@ -233,7 +238,7 @@ public sealed partial class AiEconomy
             return _b.BpScout;
         }
         var fbp = W.BpOf(factory);
-        int tier = Math.Min(MaxTier, fbp.Tech);
+        int tier = Math.Min(Math.Min(MaxTier, Cfg.MaxUnitTier), fbp.Tech);
         var r = _b.R;
         float airMem = _b.Perception.EnemyAirStrengthMem;
         bool enemyAir = _b.Perception.EnemyAirCountMem > 0.5f || V.EnemyHasAirFactory;
@@ -287,7 +292,7 @@ public sealed partial class AiEconomy
         int transport = _b.Transport.ChooseAir(factory);
         if (transport >= 0) return transport;
         var fbp = W.BpOf(factory);
-        int tier = Math.Min(MaxTier, fbp.Tech);
+        int tier = Math.Min(Math.Min(MaxTier, Cfg.MaxUnitTier), fbp.Tech);
         var r = _b.R;
         int inter = V.Total(r.Interceptor1) + V.Total(r.AirSuperiority3);
         int bomb = V.Total(r.Bomber1) + V.Total(r.Gunship2) + V.Total(r.FighterBomber2) + V.Total(r.StratBomber3);

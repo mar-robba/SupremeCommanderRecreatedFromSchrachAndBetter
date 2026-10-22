@@ -123,6 +123,13 @@ public sealed partial class AiConfig
     /// <summary>Share of the mass income kept for the factories: eco/tech commitments wait while the rest is used
     /// (AiEconomy.Budget.cs).</summary>
     public float ArmyShare = 0.5f;
+    /// <summary>More land factories (up to MaxLandFactoriesFloat) after CapacityTime while their capacity is below
+    /// ArmyShare x CapacityMargin x mass income.</summary>
+    public float CapacityTime = 420, CapacityMargin = 1.2f;
+    /// <summary>Floating also when stored mass exceeds max(FloatMass, FloatSeconds x income) (big storages).</summary>
+    public float FloatMass = 1200, FloatSeconds = 30;
+    /// <summary>Highest tier of combat units the factories make (experiments; engineers/structures use MaxTier).</summary>
+    public int MaxUnitTier = 3;
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>

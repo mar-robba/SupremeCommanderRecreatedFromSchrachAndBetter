@@ -14,6 +14,8 @@ public sealed partial class AiEconomy
     /// <summary>Mass per second requested by everything else (engineers, upgrades, enhancements): smoothed demand
     /// minus <see cref="FactorySpend"/>.</summary>
     public float EcoSpend;
+    /// <summary>Mass per second the land and air factories could draw when all are busy.</summary>
+    public float FactoryCapacity;
 
     private void UpdateBudget()
     {
@@ -23,6 +25,10 @@ public sealed partial class AiEconomy
         foreach (int f in V.NavalFactories) fac += FactoryDraw(f);
         foreach (int f in V.Gateways) fac += FactoryDraw(f);
         FactorySpend = fac;
+        float cap = 0;
+        foreach (int f in V.LandFactories) cap += FactoryWeight(f) * 4f;
+        foreach (int f in V.AirFactories) cap += FactoryWeight(f) * 4f;
+        FactoryCapacity = cap;
         EcoSpend = MathF.Max(0f, MassDemand - fac);
     }
 
