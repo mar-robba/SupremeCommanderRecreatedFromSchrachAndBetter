@@ -42,6 +42,7 @@ public static class AiMatch
         // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).
         int statusEvery = Math.Max(1, (int)(float.Parse(Environment.GetEnvironmentVariable("AI_STATUS_SECONDS") ?? "60", System.Globalization.CultureInfo.InvariantCulture) * SimWorld.TicksPerSecond));
         var deaths = new int[players];
+        _spend = new SpendTracker(players);
         // Where units die (diagnostics): per army, [0] own base, [1] enemy base, [2] field; mobile and structures.
         var deathZoneMobile = new int[players, 3];
         var deathZoneStruct = new int[players, 3];
@@ -81,6 +82,7 @@ public static class AiMatch
                     else deathZoneMobile[fx.Army, zone]++;
                 }
             w.Events.Effects.Clear();
+            if (w.Tick % 5 == 0) _spend.Scan(w);
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
@@ -194,6 +196,8 @@ public static class AiMatch
 
     private static string Fmt(float seconds) => $"{(int)seconds / 60}:{(int)seconds % 60:D2}";
 
+    private static SpendTracker? _spend;
+
     private static void PrintStatus(SimWorld w, int[] deaths)
     {
         var u = w.Units;
@@ -246,7 +250,7 @@ public static class AiMatch
                     }
             }
             line.Append($" | {army.Name}{(army.Defeated ? " DEFEATED" : "")}: n={army.UnitCount} mex={mex} pg={pgen} fac={fac} def={def} eng={eng} land={land} air={air} " +
-                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil} val={armyM / 1000f:F1}k/{defM / 1000f:F1}k/{ecoM / 1000f:F1}k");
+                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil} val={armyM / 1000f:F1}k/{defM / 1000f:F1}k/{ecoM / 1000f:F1}k{_spend?.Format(a)}");
         }
         Console.WriteLine(line.ToString());
     }

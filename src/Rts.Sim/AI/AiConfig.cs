@@ -120,6 +120,9 @@ public sealed partial class AiConfig
     public float LandT2Time = 480, LandT3Time = 1020, AirT2Time = 720, AirT3Time = 1200;
     /// <summary>Share of the mass income that running upgrades may take.</summary>
     public float UpgradeShare = 0.35f;
+    /// <summary>Share of the mass income kept for the factories: eco/tech commitments wait while the rest is used
+    /// (AiEconomy.Budget.cs).</summary>
+    public float ArmyShare = 0.5f;
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>

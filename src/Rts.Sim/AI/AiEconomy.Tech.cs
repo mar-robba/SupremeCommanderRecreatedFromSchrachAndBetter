@@ -115,7 +115,7 @@ public sealed partial class AiEconomy
         ManageFabs();
         if (V.Commander >= 0) ManageEnhancements(V.Commander);
         if (MassStall || EnergyStall || EnergyIncome < EnergyDemand * 0.9f) return;
-        float room = MassIncome * Cfg.UpgradeShare - UpgradeSpend;
+        float room = MathF.Min(MassIncome * Cfg.UpgradeShare - UpgradeSpend, EcoRoom);
         if (room <= 0) return;
         // Factories first when their tier time has come (they unlock units, engineers and T2/T3 structures).
         if (TryUpgradeFactory(V.LandFactories, LandWant(), ref room)) return;
@@ -170,7 +170,7 @@ public sealed partial class AiEconomy
         if (best < 0) return false;
         var te = W.Blueprints[W.BpOf(best).UpgradesToIndex].Economy;
         float rate = te.BuildCostMass / MathF.Max(1f, te.BuildTime / UpgradeSystem.SelfRate(W.BpOf(best)));
-        if (rate > room && UpgradeSpend > 0) return false;
+        if (rate > room + (UpgradeSpend > 0 ? 0f : MassIncome * 0.25f)) return false;
         _b.Cmd.Upgrade(best);
         _factoryUpgrades++;
         UpgradeSpend += rate;
@@ -204,7 +204,7 @@ public sealed partial class AiEconomy
         if (best < 0) return;
         var te = W.Blueprints[W.BpOf(best).UpgradesToIndex].Economy;
         float rate = te.BuildCostMass / MathF.Max(1f, te.BuildTime / UpgradeSystem.SelfRate(W.BpOf(best)));
-        if (rate > room && UpgradeSpend > 0) return;
+        if (rate > room + (UpgradeSpend > 0 ? 0f : MassIncome * 0.25f)) return;
         // Energy for the upgraded extractor's upkeep and the upgrade itself.
         if (EnergyIncome - EnergyDemand < te.BuildCostEnergy / MathF.Max(1f, te.BuildTime / UpgradeSystem.SelfRate(W.BpOf(best))) * 0.5f
             && EnergyRatio < 0.5f) return;
@@ -247,6 +247,7 @@ public sealed partial class AiEconomy
         if (pick < 0 || !EnhancementSystem.CanStart(W, c, pick)) return;
         var ex = bp.Enhancements[pick];
         float time = ex.BuildTime / MathF.Max(1f, bp.Economy.BuildRate);
+        if (ex.BuildCostMass / time > EcoRoom + MassIncome * 0.25f) return; // army-first budget (Budget.cs)
         if (EnergyIncome - EnergyDemand < ex.BuildCostEnergy / time * 0.4f && EnergyRatio < 0.6f) return;
         _b.Cmd.Enhance(c, ex.Id);
         info.Task = AiTask.None;
@@ -343,7 +344,7 @@ public sealed partial class AiEconomy
             && CountBp(Ro.Tmd) < Math.Min(3, 1 + V.EnemyTml))
             if (TryBuildAt(unit, Ro.Tmd, CoreCenter() + Vector2.Normalize(V.EnemyTmlPos - _b.BasePos + new Vector2(0.01f, 0)) * 8f, 2, maxR)) return true;
         if (TryMassStorageAdjacent(unit, ubp)) return true;
-        if (MassRatio < 0.05f) return false;
+        if (MassRatio < 0.05f || EcoRoom <= 0) return false;
         // Shields over the base core.
         if (t >= Cfg.ShieldTime && MassIncome > 22f)
         {
@@ -447,7 +448,7 @@ public sealed partial class AiEconomy
     /// <summary>Engineers help own structures that are upgrading (extractors first, near the builder).</summary>
     private bool TryAssistUpgrade(int unit, bool isCommander)
     {
-        if (MassStall || EnergyStall || V.Upgrading == 0) return false;
+        if (MassStall || EnergyStall || V.Upgrading == 0 || EcoRoom <= 0) return false;
         var u = W.Units;
         int best = -1;
         float bd = float.MaxValue;

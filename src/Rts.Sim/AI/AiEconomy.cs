@@ -58,6 +58,7 @@ public sealed partial class AiEconomy
         if (_workedStamp.Length != W.Units.Capacity) _workedStamp = new int[W.Units.Capacity];
         _assignedThisThink = 0;
         UpdateAverages();
+        UpdateBudget();
         _b.Placement.Cleanup();
         MarkWorkedSites();
         ManageTech();
@@ -180,6 +181,7 @@ public sealed partial class AiEconomy
         // Budget in T1-land-factory equivalents (4 mass/s each); bigger factories weigh by build rate.
         FactoryBudget = MathF.Max(1f, (budget - engineerSpend * 0.7f - UpgradeSpend * 0.8f) / 4f);
         if (Floating) FactoryBudget += 2;
+        FactoryBudget = MathF.Max(FactoryBudget, budget * Cfg.ArmyShare / 4f); // army-first floor (Budget.cs)
         float slot = 0;
         bool airFirst = _b.Perception.EnemyAirCountMem > 4;
         if (airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, (slot += FactoryWeight(f)) <= FactoryBudget + 0.5f);
