@@ -57,14 +57,35 @@ public static partial class UnitModels
         b.Slab(p, deck + 0.001f, deck + 0.004f, CyPad);
     }
 
-    /// <summary>Team stripe and a red seam on both topsides between z0 and z1 (fractions of l, where the hull is near full width).</summary>
+    /// <summary>CyShipHull station positions (fractions of l) and widths (fractions of w): the topsides are linear between them.</summary>
+    private static readonly float[] CyHullZ = [-0.5f, -0.4f, -0.12f, 0.16f, 0.36f, 0.5f], CyHullW = [0.72f, 0.92f, 1f, 0.96f, 0.62f, 0.05f];
+
+    /// <summary>Team stripe and a red seam on both topsides between z0 and z1 (fractions of l), lofted along the
+    /// CyShipHull stations so they stay on the hull side where it narrows.</summary>
     private static void CySideMarks(MeshBuilder b, float w, float h, float l, float deck, float z0, float z1)
     {
-        float zc = (z0 + z1) * 0.5f * l, len = (z1 - z0) * l;
         foreach (int sd in (ReadOnlySpan<int>)[-1, 1])
         {
-            b.Box(V(sd * 0.494f * w, deck - 0.05f * h, zc), V(0.012f * w, 0.05f * h, len), CyTeam);
-            b.Box(V(sd * 0.495f * w, deck - 0.12f * h, zc + 0.1f * len), V(0.01f * w, 0.012f * h, 0.7f * len), CyRedDim);
+            Strip(z0, z1, 0.012f * w, 0.05f * h, deck - 0.05f * h, CyTeam);
+            float s0 = z0 + 0.25f * (z1 - z0);
+            Strip(s0, s0 + 0.7f * (z1 - z0), 0.01f * w, 0.012f * h, deck - 0.12f * h, CyRedDim);
+
+            void Strip(float a, float c, float thick, float ht, float y, Raylib_cs.Color col)
+            {
+                var st = new List<Station>();
+                void Add(float zf)
+                {
+                    int k = 1;
+                    while (k < CyHullZ.Length - 1 && zf > CyHullZ[k]) k++;
+                    float u = (zf - CyHullZ[k - 1]) / (CyHullZ[k] - CyHullZ[k - 1]);
+                    float half = 0.5f * w * (CyHullW[k - 1] + (CyHullW[k] - CyHullW[k - 1]) * u);
+                    st.Add(new Station(zf * l, 1, 1, sd * (half + 0.004f * w - thick * 0.5f), y));
+                }
+                Add(a);
+                foreach (float k in CyHullZ) if (k > a && k < c) Add(k);
+                Add(c);
+                b.Loft(MeshBuilder.Rect(thick, ht), st.ToArray(), Axis.Z, col);
+            }
         }
     }
 
@@ -202,8 +223,8 @@ public static partial class UnitModels
         foreach (float zf in (ReadOnlySpan<float>)[0.1f, -0.24f])
         {
             float z = zf * l;
-            CyLeg(b, V(sd * 0.44f * w, deck - 0.04f * h, z), V(sd * 0.6f * w, deck + 0.12f * h, z - 0.03f * l),
-                  V(sd * 0.56f * w, -0.08f * h, z - 0.08f * l), 0.035f * w, CyHull, CyHullDark, CyTeam);
+            CyLeg(b, V(sd * 0.44f * w, deck - 0.04f * h, z), V(sd * 0.54f * w, deck + 0.1f * h, z - 0.03f * l),
+                  V(sd * 0.5f * w, 0.02f * h, z - 0.08f * l), 0.035f * w, CyHull, CyHullDark, CyTeam);
         }
         if (!hasWeapon) return null;
         pivots.Add(V(0, deck + 0.01f * h, 0.31f * l));
@@ -254,7 +275,8 @@ public static partial class UnitModels
         }
         b.Cylinder(V(0, deck - 0.02f * h, 0.19f * l), Axis.Y, 0.17f * h, 0.2f * w, 0.18f * w, 6, CyHullDark, CyBlack);
         b.Cylinder(V(0, deck + 0.08f * h, 0.19f * l), Axis.Y, 0.03f * h, 0.19f * w, 0.187f * w, 6, CyTeam);
-        CyWedge(b, 0, deck - 0.01f * h, 0.5f * w, 0.08f * h, -0.21f * l, -0.1f * l, CyHullDark, CyHull, 0, 0.8f);
+        CyWedge(b, 0, deck - 0.01f * h, 0.5f * w, 0.08f * h, -0.195f * l, -0.1f * l, CyHullDark, CyHull, 0, 0.8f);
+        b.Cylinder(V(0, deck - 0.02f * h, -0.35f * l), Axis.Y, 0.06f * h, 0.2f * w, 0.18f * w, 6, CyHullDark, CyBlack); // aft barbette
         CyBridge(b, w, h, l, deck, -0.13f * l, 0.12f * l, 0.3f * h, 0.05f, 0.8f * h);
         Spike(b, V(-0.12f * w, deck + 0.4f * h, -0.08f * l), V(-0.2f * w, deck + 0.95f * h, -0.14f * l), 0.03f * w, CyHullDark);
         b.Box(V(-0.185f * w, deck + 0.85f * h, -0.13f * l), V(0.02f * w, 0.02f * w, 0.02f * w), CyRed);
@@ -270,7 +292,7 @@ public static partial class UnitModels
         if (!hasWeapon) return null;
         pivots.Add(V(0, deck + 0.01f * h, 0.31f * l));
         pivots.Add(V(0, deck + 0.15f * h, 0.19f * l));
-        pivots.Add(V(0, deck + 0.01f * h, -0.34f * l));
+        pivots.Add(V(0, deck + 0.03f * h, -0.35f * l)); // raised: the barrels clear the deckhouse and the torpedo tubes
         return CyShipGun(0.17f * w, 0.11f * l, 3);
     }
 

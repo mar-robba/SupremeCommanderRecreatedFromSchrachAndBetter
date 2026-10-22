@@ -80,6 +80,7 @@ public sealed class GameSession : IDisposable
         else if (cfg.Scene == NavalScene.Name) NavalScene.Spawn(sim, cfg);
         else if (cfg.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.Setup(sim, cfg);
         else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);
+        else if (cfg.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.Setup(sim, cfg);
         return sim;
     }
 
