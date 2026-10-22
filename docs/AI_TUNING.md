@@ -139,6 +139,10 @@ and its armies stayed half the size (27-35 land units vs 59) although its mass i
 | + ArtilleryTier=1 (T1 artillery instead of T2 missile launchers / T3 artillery) / ArtilleryTier=2 | 65 / 59 |
 | + ShieldTime=99999 (no base shields) | 58 |
 | + "pressure" rule (ArmyShare 0.85 when own land strength < 0.6 × enemy or base threatened) | 40 (worse: off) |
+| baseline re-run (2026-10-22, same defaults) | 58 |
+| + siege push SiegeTime=60 / 30 / 60 with ArtilleryTier=1 | 55 / 44 / 58 (no help: off) |
+| + snipe with indirect-fire members too (SnipeIndirect) / also CommanderSnipe from the start | 57 / 44 |
+| + EnhanceTime=99999 (re-run on the budget baseline) | 57 |
 
 Findings beyond the budget:
 - With T1 units only, army spending matches main by minute 20 (21.3k) and land counts are higher, yet only 65-68/96

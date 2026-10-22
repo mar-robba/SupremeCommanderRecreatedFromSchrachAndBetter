@@ -39,7 +39,7 @@ public sealed class AiGroup
     public bool Regroup;
     public int RegroupTick;
     public int EngageTick;
-    /// <summary>Siege-lock check (UpdateAttackingGroup): closest the centroid got to ProgressTarget, and when.</summary>
+    /// <summary>Stall check (AiMilitary.FallBack): closest the centroid got to ProgressTarget, and when.</summary>
     public float BestDist;
     public int ProgressTick;
     public Vector2 ProgressTarget;
@@ -521,6 +521,7 @@ public sealed class AiMilitary
         g.CheckTick = W.Tick;
         g.StuckThinks = 0;
         g.Reissues = 0;
+        g.ProgressTarget = default; // FallBack: a fresh attack starts a fresh stall check
         g.Target = target;
         g.TargetUnit = th;
         if (!resume) g.InitialStrength = g.Strength;
@@ -630,7 +631,7 @@ public sealed class AiMilitary
 
         Engage(g, 45f, g.Target);
         if (Cfg.FocusFire && local > 0) FocusFire(g, g.Target);
-        if (SiegePush(g, local)) return;
+        if (FallBack(g)) return;
 
         // Position targets (sorties, last known positions) are done when the group idles there, or after a while
         // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.
@@ -699,14 +700,14 @@ public sealed class AiMilitary
     }
 
     /// <summary>
-    /// Siege lock (wave 5k): a group that clearly outguns what is around it but stops short of its objective, because
-    /// fresh enemies keep walking into its (long, with T2 missiles / T3 artillery) weapon range, never reaches the base
-    /// and the game stalls. When the centroid has not closed in on the target for SiegeTime, the group attacks the
-    /// known enemy structure nearest to it around the objective (factories first): walking into range of the base.
+    /// Attrition stall (wave 5k): an army that has not closed in on its objective for StallTime while weaker than
+    /// StallMargin x what the objective needs is being fed into the defenses piecemeal (reinforcement batches walk in
+    /// one by one and die; traced: 650 units lost in an enemy base over 15 minutes). It falls back to a staging point
+    /// out of range and gathers the whole army again (reinforcements go to the staging point) before the next attack.
     /// </summary>
-    private bool SiegePush(AiGroup g, float local)
+    private bool FallBack(AiGroup g)
     {
-        if (Cfg.SiegeTime <= 0 || g.Kind != AiGroupKind.Army) return false;
+        if (Cfg.StallTime <= 0 || g.Kind != AiGroupKind.Army || Cfg.StageDistance <= 0) return false;
         float d = Vector2.Distance(g.Centroid, g.Target);
         if (g.ProgressTarget != g.Target || d < g.BestDist - 4f)
         {
@@ -715,24 +716,16 @@ public sealed class AiMilitary
             g.ProgressTick = W.Tick;
             return false;
         }
-        if (W.Tick - g.ProgressTick < Cfg.SiegeTime * SimWorld.TicksPerSecond || d > 110f || g.Strength < local * Cfg.SiegeMargin) return false;
+        if (W.Tick - g.ProgressTick < Cfg.StallTime * SimWorld.TicksPerSecond) return false;
         g.ProgressTick = W.Tick;
-        g.BestDist = d;
-        var u = W.Units;
-        int best = -1;
-        float bd = float.MaxValue;
-        foreach (int s in V.EnemyStructures)
-        {
-            if (!u.IsActive(s) || Vector2.DistanceSquared(u.Pos[s], g.Target) > 60f * 60f) continue;
-            float ds = Vector2.Distance(u.Pos[s], g.Anchor);
-            if (_b.Perception.IsIdentified(s) && W.BpOf(s).Has(UnitCategory.Factory)) ds *= 0.6f;
-            if (ds < bd) { bd = ds; best = s; }
-        }
-        if (_b.Tracing) _b.Trace($"siege g{g.Id} n={g.Members.Count} d={d:F0} st={g.Strength:F0} local={local:F0} -> {(best >= 0 ? W.BpOf(best).Id : "move")}");
-        if (best >= 0) _b.Cmd.Order(g.Members, Order.AttackUnit(u.HandleOf(best)));
-        else _b.Cmd.Order(g.Members, Order.MoveTo(g.Target));
-        _b.Cmd.Order(g.Members, Order.AttackMoveTo(g.Target), queue: true);
-        g.OrderTick = W.Tick;
+        float required = RequiredStrength(g.Target);
+        if (g.Strength >= required * Cfg.StallMargin) return false;
+        if (_b.Tracing) _b.Trace($"fallback g{g.Id} n={g.Members.Count} d={d:F0} st={g.Strength:F0} req={required:F0}");
+        g.State = AiGroupState.Assemble;
+        g.StateTick = W.Tick;
+        g.Regroup = false;
+        g.NextObjectiveTick = W.Tick + 100;
+        SetStaging(g, StagingFor(g.Target, g.Anchor, g.Strength));
         return true;
     }
 
@@ -872,8 +865,10 @@ public sealed class AiMilitary
             foreach (int i in g.Members)
             {
                 var bp = W.BpOf(i);
-                if (bp.HasAny(UnitCategory.IndirectFire | UnitCategory.AntiAir) || bp.Weapons.Length == 0) continue;
-                if (Vector2.Distance(u.Pos[i], cp) < Cfg.SnipeRadius + 5f) _tmp.Add(i);
+                if (bp.Weapons.Length == 0 || bp.Has(UnitCategory.AntiAir)) continue;
+                bool indirect = bp.Has(UnitCategory.IndirectFire);
+                if (indirect && !Cfg.SnipeIndirect) continue;
+                if (Vector2.Distance(u.Pos[i], cp) < Cfg.SnipeRadius + (indirect ? 30f : 5f)) _tmp.Add(i);
             }
             if (_tmp.Count < 3) continue;
             g.SnipeTick = W.Tick;

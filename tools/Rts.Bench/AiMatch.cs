@@ -43,6 +43,7 @@ public static class AiMatch
         int statusEvery = Math.Max(1, (int)(float.Parse(Environment.GetEnvironmentVariable("AI_STATUS_SECONDS") ?? "60", System.Globalization.CultureInfo.InvariantCulture) * SimWorld.TicksPerSecond));
         var deaths = new int[players];
         _spend = new SpendTracker(players);
+        _kills = new KillTracker(players);
         // Where units die (diagnostics): per army, [0] own base, [1] enemy base, [2] field; mobile and structures.
         var deathZoneMobile = new int[players, 3];
         var deathZoneStruct = new int[players, 3];
@@ -83,6 +84,7 @@ public static class AiMatch
                 }
             w.Events.Effects.Clear();
             if (w.Tick % 5 == 0) _spend.Scan(w);
+            _kills!.Scan(w);
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
@@ -101,6 +103,7 @@ public static class AiMatch
         for (int a = 0; a < players; a++)
             Console.WriteLine($"  {w.Armies[a].Name} deaths by zone (own base / enemy base / field): mobile {deathZoneMobile[a, 0]}/{deathZoneMobile[a, 1]}/{deathZoneMobile[a, 2]}, " +
                               $"structures {deathZoneStruct[a, 0]}/{deathZoneStruct[a, 1]}/{deathZoneStruct[a, 2]} (mex {mexLost[a]})");
+        for (int a = 0; a < players; a++) Console.WriteLine($"  {w.Armies[a].Name} kills by: {_kills!.Format(a)}");
         foreach (var army in w.Armies)
         {
             var s = army.Stats;
@@ -197,6 +200,7 @@ public static class AiMatch
     private static string Fmt(float seconds) => $"{(int)seconds / 60}:{(int)seconds % 60:D2}";
 
     private static SpendTracker? _spend;
+    private static KillTracker? _kills;
 
     private static void PrintStatus(SimWorld w, int[] deaths)
     {

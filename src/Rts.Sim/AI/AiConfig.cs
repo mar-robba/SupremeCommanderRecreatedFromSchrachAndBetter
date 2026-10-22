@@ -105,6 +105,9 @@ public sealed partial class AiConfig
     public bool CommanderSnipe;
     /// <summary>Snipes look for the enemy commander this far from the army.</summary>
     public float SnipeRadius = 40f;
+    /// <summary>Indirect-fire members (missile launchers, artillery) join the snipe too (wave 5k: enhanced commanders
+    /// with shields and engineering HP outlast the few direct-fire units of an artillery-heavy army).</summary>
+    public bool SnipeIndirect;
     /// <summary>Micro: direct-fire units of a fighting group spread their fire over the weakest enemies in range
     /// (enough damage on each to kill it, then the next) instead of each shooting the nearest one.</summary>
     public bool FocusFire;
@@ -134,9 +137,9 @@ public sealed partial class AiConfig
     public int MaxUnitTier = 3;
     /// <summary>Highest tier of the artillery role (T2 missile launchers and T3 artillery outrange the rest of the army).</summary>
     public int ArtilleryTier = 3;
-    /// <summary>Siege push (AiMilitary.SiegePush): an attacking army that has not closed in on its objective for
-    /// SiegeTime seconds while stronger than SiegeMargin x the local threat attacks the nearest structure there. 0 = off.</summary>
-    public float SiegeTime = 0, SiegeMargin = 1.5f; // untested in a matrix yet: try 60 and 30
+    /// <summary>Attrition stall (AiMilitary.FallBack): an attacking army that has not closed in on its objective for
+    /// StallTime seconds while weaker than StallMargin x the strength the objective needs gathers again. 0 = off.</summary>
+    public float StallTime = 0, StallMargin = 1f;
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>
