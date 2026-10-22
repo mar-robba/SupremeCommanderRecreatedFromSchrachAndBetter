@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-16 16:10, before an orchestrator restart — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-22 21:55 — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
 2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
@@ -12,6 +12,12 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-22 21:55 (session cb4473f4, after a reboot: every /tmp scratchpad is wiped): the 2026-10-16 16:26 session
+  limit had cut both coordinators and the (l) client sub-agent C1; its WIP is committed as 8d78f74 (Cybran air models
+  + client hooks; naval models missing, the client does NOT compile; state at the bottom of (l) `notes/C-client.md`).
+  Fresh coordinators started in both worktrees (ids in `orchestrator/agents-wave5.md`): (l) cap 200k (medium:
+  integration), (k) cap 250k (high: stall diagnosis by matrices). Same brief and TODO as below. If this session is gone
+  too, start them again the same way (their handoff notes are current).
 - 2026-10-16 16:07: new orchestrator session started a fresh coordinator in each worktree below ((l) and (k)); ids in
   `orchestrator/agents-wave5.md`. If this session is gone too, repeat the step below (their handoff notes are current).
 - 2026-10-16 16:10: the owner restarted the orchestrator. The last two wave 5 agents were told to CHECKPOINT
