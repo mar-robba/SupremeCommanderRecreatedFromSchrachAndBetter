@@ -285,6 +285,106 @@ the T2 amphibious tanks weak from 2000 up (0.19-0.48). (4) **T3 assault bots los
 0.33, Cybran 0.00 at 2000), and the UEF siege bot falls to 0.10 at 6000 (5 units vs swarms); only T3 mobile artillery
 holds up at big mass (0.73 UEF at 6000).
 
+### AFTER (2026-10-23, balance pass)
+
+Same tool, masses and seeds (blueprints of this pass; unit table: `duelmatrix uef cybran`).
+
+| uef vs uef | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.50 (-0.02) | 0.23 (-0.40) | 0.69 (+0.21) | 0.81 (+0.28) | 0.10 (-0.41) | 0.44\* (-0.07) | 0.94\* (+0.64) | 0.29 (-0.23) |
+| 2000 | 0.40 (-0.13) | 0.40 (-0.18) | 0.67 (+0.13) | 0.58 (+0.12) | 0.10 (-0.36) | 0.94 (+0.38) | 0.65 (+0.15) | 0.27 (-0.12) |
+| 6000 | 0.42 (-0.20) | 0.31 (-0.19) | 0.73 (+0.14) | 0.75 (+0.20) | 0.06 (-0.28) | 0.71 (+0.18) | 0.73 (+0.17) | 0.29 (-0.01) |
+
+| cybran vs cybran | tank1 | lgt1 | art1 | hvy2 | amph2 | mml2 | asl3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.50 (+0.00) | 0.40 (-0.18) | 0.15 (-0.50) | 0.77 (+0.31) | 0.73 (+0.28) | 0.29 (-0.20) | 0.94\* (+0.57) | 0.23 (-0.29) |
+| 2000 | 0.50 (+0.03) | 0.44 (-0.05) | 0.31 (-0.37) | 0.88 (+0.28) | 0.65 (+0.20) | 0.08 (-0.28) | 0.85 (+0.37) | 0.29 (-0.18) |
+| 6000 | 0.54 (-0.03) | 0.38 (-0.21) | 0.31 (-0.21) | 0.81 (+0.25) | 0.65 (+0.20) | 0.13 (-0.23) | 0.94 (+0.34) | 0.25 (-0.11) |
+
+| uef unit vs all cybran | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.44 (-0.06) | 0.27 (-0.41) | 0.63 (+0.20) | 0.69 (+0.26) | 0.13 (-0.43) | 0.50\* (-0.09) | 1.00\* (+0.67) | 0.23 (-0.28) |
+| 2000 | 0.50 (-0.02) | 0.29 (-0.30) | 0.77 (+0.24) | 0.63 (+0.20) | 0.13 (-0.29) | 1.00 (+0.47) | 0.88 (+0.29) | 0.27 (-0.15) |
+| 6000 | 0.48 (-0.07) | 0.29 (-0.17) | 0.77 (+0.25) | 0.85 (+0.32) | 0.10 (-0.21) | 0.77 (+0.28) | 0.85 (+0.28) | 0.33 (-0.09) |
+
+Full shareA grids at mass 2000:
+
+```
+uef vs uef
+  shareA tank1   art1   hvy2  amph2   mml2   asl3  sieg3   art3   avg
+  tank1   0.50   1.00   0.00   0.00   1.00   0.00   0.00   0.67   0.40
+  art1    0.00   0.50   0.00   0.00   1.00   0.00   0.67   1.00   0.40
+  hvy2    1.00   1.00   0.50   1.00   1.00   0.00   0.33   0.50   0.67
+  amph2   1.00   1.00   0.00   0.50   1.00   0.00   0.33   0.83   0.58
+  mml2    0.00   0.00   0.00   0.00   0.50   0.00   0.00   0.33   0.10
+  asl3    1.00   1.00   1.00   1.00   1.00   0.50   1.00   1.00   0.94
+  sieg3   1.00   0.33   0.67   0.67   1.00   0.00   0.50   1.00   0.65
+  art3    0.33   0.00   0.50   0.17   0.67   0.00   0.00   0.50   0.27
+  B avg   0.40   0.40   0.67   0.58   0.10   0.94   0.65   0.27
+cybran vs cybran
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.50   1.00   1.00   0.00   0.00   1.00   0.00   0.50   0.50
+  lgt1    0.00   0.50   1.00   0.00   0.00   1.00   0.00   1.00   0.44
+  art1    0.00   0.00   0.50   0.00   0.00   1.00   0.00   1.00   0.31
+  hvy2    1.00   1.00   1.00   0.50   1.00   1.00   0.67   0.83   0.88
+  amph2   1.00   1.00   1.00   0.00   0.50   1.00   0.00   0.67   0.65
+  mml2    0.00   0.00   0.00   0.00   0.00   0.50   0.00   0.17   0.08
+  asl3    1.00   1.00   1.00   0.33   1.00   1.00   0.50   1.00   0.85
+  art3    0.50   0.00   0.00   0.17   0.33   0.83   0.00   0.50   0.29
+  B avg   0.50   0.44   0.31   0.88   0.65   0.08   0.85   0.29
+uef (rows) vs cybran (columns)
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.33   1.00   1.00   0.00   0.00   1.00   0.00   0.67   0.50
+  art1    0.00   0.00   0.33   0.00   0.00   1.00   0.00   1.00   0.29
+  hvy2    1.00   1.00   1.00   0.33   0.83   1.00   0.67   0.33   0.77
+  amph2   1.00   1.00   1.00   0.00   0.00   1.00   0.00   1.00   0.63
+  mml2    0.00   0.00   0.00   0.00   0.00   0.67   0.00   0.33   0.13
+  asl3    1.00   1.00   1.00   1.00   1.00   1.00   1.00   1.00   1.00
+  sieg3   1.00   1.00   0.67   1.00   0.67   1.00   0.67   1.00   0.88
+  art3    0.33   0.00   0.00   0.33   0.17   0.83   0.00   0.50   0.27
+  B avg   0.42   0.38   0.38   0.67   0.67   0.06   0.71   0.27
+```
+
+Blueprint changes (energy cost and build time scale with mass, so mass / build time stays as before: 0.20, UEF amph2
+0.18, siege bot 0.256; with factory BuildRate 20/40/90 a T1/T2/T3 factory turns out about 4/8/18 mass per second):
+
+| unit | changes (old -> new) | eff (hp x dps / mass^2) |
+|---|---|---|
+| uef_t1_artillery | mass 36 -> 40 (energy 180 -> 200, build time 180 -> 200), MaxHealth 200 -> 165, MuzzleVelocity 20 -> 45, Spread 1.5 -> 3 | 3.86 -> 2.58 |
+| cybran_t1_artillery | mass 36 -> 40 (200 / 200), MaxHealth 190 -> 150, MuzzleVelocity 20 -> 45, Spread 1.5 -> 3 | 3.30 -> 2.11 |
+| cybran_t1_light_bot | MaxHealth 140 -> 120, Damage 7 -> 6 (dps 10.5 -> 9) | 2.17 -> 1.60 |
+| uef_t2_heavy_tank | MaxHealth 1550 -> 1250 | 2.37 -> 1.91 |
+| cybran_t2_heavy_tank | MaxHealth 1200 -> 880 | 2.49 -> 1.83 |
+| uef_t2_amphibious_tank | MaxHealth 900 -> 1100, Damage 8 -> 9 (dps 40 -> 45) | 1.41 -> 1.93 |
+| cybran_t2_amphibious_tank | MaxHealth 1000 -> 1150, Damage 40 -> 44 | 1.47 -> 1.86 |
+| uef_t2_mobile_missile | MaxHealth 500 -> 450, DamageRadius 1.5 -> 1 | 0.51 -> 0.46 |
+| cybran_t2_mobile_missile | MaxHealth 450 -> 400, DamageRadius 1.5 -> 1 | 0.47 -> 0.42 |
+| uef_t3_assault_bot | mass 480 -> 420 (5400 -> 4725, 2400 -> 2100), MaxHealth 2600 -> 2800, Damage 50 -> 54 (dps 100 -> 108) | 1.13 -> 1.71 |
+| cybran_t3_assault_bot | mass 450 -> 400 (5000 -> 4450, 2200 -> 1960), MaxHealth 2500 -> 2550, Damage 52 -> 54 (dps 104 -> 108) | 1.28 -> 1.72 |
+| uef_t3_heavy_bot | mass 1280 -> 960 (12800 -> 9600, 5000 -> 3750), Damage 450 -> 600 (dps 180 -> 240) | 0.71 -> 1.69 |
+| uef_t3_mobile_artillery | MaxHealth 1200 -> 950, MuzzleVelocity 32 -> 40, Spread 3 -> 5.5 | 0.21 -> 0.17 |
+| cybran_t3_mobile_artillery | MuzzleVelocity 32 -> 40, Spread 3 -> 5.5 | 0.19 (same) |
+
+T1 tanks/bots unchanged (UEF 1.72, Cybran 1.73). Targets met: art1 vs tank1 0.00 at 2000 and 6000 in all three
+matrices (0.00-0.17 at 600), art1 row 0.15-0.40; hvy2/amph2/asl3/sieg3 vs tank1 (and lgt1) 1.00 at 2000/6000 (asl3
+0.00 at 600: one 420-mass bot vs 11 tanks); hvy2 vs asl3 about even (0.00-0.67), sieg3 > hvy2; mml2 and art3 vs
+tank1/hvy2/asl3 <= 0.50 at 2000/6000; cross-faction same-role margins within +-0.1 at 2000/6000
+except amph2 (-0.13/+0.14) and asl3 (+0.18 at 2000: 5 UEF bots = 2100 mass vs 2000).
+
+Findings: (1) **Shells lead moving targets perfectly** (WeaponSystem solves the arc 3 times with the target's velocity
+and turn rate), but in a duel they mostly land on units that already stopped at their own range, so aiming at the
+current position instead changed nothing (tried and dropped; no new blueprint field). **Flight time is the lever**:
+indirect fire takes the high arc, so a higher MuzzleVelocity means a longer flight (art1 20 -> 45: about 3.7 s -> 9 s
+at range 30, apex ~100): volleys fired at approaching units land where they were going, and shells keep falling on
+targets that already died. Spread barely matters against clumps, and cost alone did not do it (art1 at twice the cost
+still won at 6000). (2) **Range and footprint win big fights**: at 6000 only the front rows of a T1 blob reach the
+enemy while longer-ranged or fewer, bigger units all fire, so higher tiers win at equal eff (hvy2 1.91 beats tank1 1.72
+by margin +0.4..+0.5; asl3 1.71 ~ hvy2 1.91). (3) Open: higher tiers beat T1 clearly (margins +0.4..+0.7, not
+"slightly"); MML and T3 artillery are weak in the open (rows 0.06-0.33: siege only); UEF asl3 wins every 2000 cell
+(5 x 420 = 2100 mass). shareA stays nearly binary, so same-role cross cells read 0.00/1.00 even at margin +-0.05.
+(4) The reference match `ai 30 256 42 hard,normal` now ends "WINNER: AI 1 (Normal) after 15:50" (was Hard at 11:30),
+hash 9724216772093A2E: check AI matches before trusting the AI on these numbers.
+
 ## Navy and transports (wave 5 k-navy, 2026-10-23)
 
 How it works: ARCHITECTURE "Skirmish AI" (Navy, Transports bullets). Knobs in `src/Rts.Sim/AI/AiConfig.Navy.cs`

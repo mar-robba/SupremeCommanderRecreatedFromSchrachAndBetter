@@ -10,7 +10,7 @@
     "Artillery",
     "Tech3"
   ],
-  "MaxHealth": 1200,
+  "MaxHealth": 950,
   "Radius": 1.0,
   "Economy": {
     "BuildCostMass": 700,
@@ -32,14 +32,14 @@
       "Range": 80,
       "Damage": 700,
       "RateOfFire": 0.125,
-      "MuzzleVelocity": 32,
+      "MuzzleVelocity": 40,
       "TargetLayers": [
         "Land",
         "Water"
       ],
       "Ballistic": true,
       "DamageRadius": 4,
-      "Spread": 3,
+      "Spread": 5.5,
       "MinRange": 10,
       "TurretTurnRate": 40
     }

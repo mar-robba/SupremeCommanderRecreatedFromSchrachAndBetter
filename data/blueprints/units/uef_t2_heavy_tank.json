@@ -9,7 +9,7 @@
     "DirectFire",
     "Tech2"
   ],
-  "MaxHealth": 1550,
+  "MaxHealth": 1250,
   "Radius": 0.8,
   "Economy": {
     "BuildCostMass": 198,
