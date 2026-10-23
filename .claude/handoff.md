@@ -22,19 +22,13 @@ perf check; final merge main; .claude/agent-report.md with "Handoff review".
   factory upgrades (factory idle while upgrading), enhancements, mex upgrades at 5.5 min. Try on the tech seat only
   (tc.sh 4th arg goes to the tech seat): EnhanceTime=99999, LandT2Time later, ArmyShare .6, ArtilleryTier=1.
 
-## Running at CHECKPOINT (background, may die with me): chain writing .claude/ai-lab/e2.out then tc.out
- e2 (kbin6): "ArtilleryTier=1,ScoutRebuildTime=91" (noise check), "+LeadArmyShare=0.8,LeadRatio=1.2",
- "+ReinforceBatch=3,ReinforceWait=20"; then tc0 (defaults) and tc1 (ArtilleryTier=1) tech-vs-T1, 45 min.
- If incomplete: `MIN=45 bash .claude/ai-lab/sweep.sh e2 .claude/ai-lab/specs/nvn.txt .claude/ai-lab/kbin6/Rts.Bench cfg...`
- and `MIN=45 bash .claude/ai-lab/tc.sh tc0 .claude/ai-lab/specs/nvn.txt .claude/ai-lab/kbin6/Rts.Bench [cfg]`.
-
-## NEXT (in order)
-1. Read e2/tc results, record in AI_TUNING. Likely set ArtilleryTier=1 as Normal/Hard default (+LeadArmyShare if it
-   adds); then HvN (specs/hvn.txt, DIFF=Hard) and HvH at 45 min; Cybran v UEF: `python3 -I tools/ai-lab/run.py cvu 45 14
-   @.claude/ai-lab/specs/cvu.txt --quiet --bin .claude/ai-lab/kbin6/Rts.Bench` then `python3 -I .claude/ai-lab/cvu.py .claude/ai-lab/runs/cvu`.
-2. Goal (c) levers on the tech seat. 3. Balance: T1 arty (36 m, 100 dmg/4 s, r30, spread 1.5) too efficient; a
-   bench `duel` mode would help (DataPaths finds data/ above the binary: copy a bin + data dir to experiment safely).
-4. Re-check AiTechTests (seed-2 timings) after default changes. 5. Docs/scripts/report (see Goals).
+## Coordinator 9 (2026-10-23): orchestrator says BALANCE BEFORE MORE AI LEVERS
+e2 done (rows in AI_TUNING): ArtilleryTier=1 rerun 80 (60) 14/73; +LeadArmyShare .8 80 (65) 22/77. tc0/tc1 never ran.
+Plan: (1) sub-agent "duel tool" (bench `duel` + matrix over land roles, notes .claude/notes/duel.md) -> (2) balance
+pass on data/blueprints (T2/T3 >= T1 at equal mass, T1 arty no tank-killer, MML/T3 arty siege; Cybran same; before/
+after tables in AI_TUNING "Unit balance"; new reference hash) -> (3) re-run (c) tc.sh, NvN 45 (a)/(b), HvN, HvH, CvU;
+set defaults -> (4) AiTechTests timings, docs, lab scripts to tools/ai-lab, Client/Net tests, perf, merge main, report.
+Only ONE sub-agent at a time; while it works I wait (no matrices).
 
 ## Lab (.claude/ai-lab/, gitignored)
 specs/{nvn,hvn,hvh,cvu}.txt; kbin6 = current branch build (rebuild after every merge: old bins CRASH on new data);
