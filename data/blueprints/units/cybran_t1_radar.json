@@ -1,0 +1,36 @@
+{
+  "Id": "cybran_t1_radar",
+  "Name": "T1 Radar",
+  "Description": "Detects units at long range.",
+  "Tech": 1,
+  "UpgradesTo": "cybran_t2_radar",
+  "Categories": [
+    "Structure",
+    "Intel",
+    "Radar",
+    "Tech1"
+  ],
+  "MaxHealth": 200,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 40,
+    "BuildCostEnergy": 300,
+    "BuildTime": 100,
+    "MaintenanceEnergy": 5
+  },
+  "Intel": {
+    "VisionRadius": 20,
+    "RadarRadius": 115
+  },
+  "Visual": {
+    "Shape": "cy_radar",
+    "Size": [
+      1.4,
+      3.0,
+      1.4
+    ],
+    "Icon": "intel"
+  }
+}

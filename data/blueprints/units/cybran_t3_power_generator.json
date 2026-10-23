@@ -1,0 +1,34 @@
+{
+  "Id": "cybran_t3_power_generator",
+  "Name": "T3 Power Generator",
+  "Description": "Produces 2500 energy/s.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Economy",
+    "PowerGenerator",
+    "Tech3"
+  ],
+  "MaxHealth": 6000,
+  "Radius": 3.0,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 3240,
+    "BuildCostEnergy": 57600,
+    "BuildTime": 6800,
+    "ProductionEnergy": 2500
+  },
+  "Intel": {
+    "VisionRadius": 12
+  },
+  "Visual": {
+    "Shape": "cy_pgen3",
+    "Size": [
+      5.6,
+      4.0,
+      5.6
+    ],
+    "Icon": "eco_energy"
+  }
+}

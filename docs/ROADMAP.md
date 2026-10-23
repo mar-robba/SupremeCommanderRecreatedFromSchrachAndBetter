@@ -2,16 +2,21 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-22 21:55 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-23 13:50 — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
-2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
-`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
-(the reference for agents that must not change sim results).
+2026-10-16) + (l) Cybran faction (merged 2026-10-23). Tests: 416 sim + 227 client + 21 net (`tests/Rts.Net.Tests`).
+`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EC8B7A06DF52317E
+(the reference for agents that must not change sim results; before the Cybran data it was EDCA8A729F29736E, same game).
 Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
 the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-23 13:55: (l) Cybran merged into main (f727ced). Running: (k) coordinator 8 in `agent-ac4c927c54a66ca1d`
+  and the new (k-navy) agent in `.claude/worktrees/ai-navy` (branch `wave5-ai-navy`, from the (k) branch at 701ea45):
+  navy + transports AI (owns AiNavy*, AiTransport*, AiConfig.Navy.cs, their tests); it merges the (k) branch into its
+  own at the end. Merge order: (k) into main, then `wave5-ai-navy` (or navy into (k) first). If cut off: fresh agent
+  in the same worktree from its `.claude/handoff.md`.
 - 2026-10-23 13:15 (session 1d992d8d): the disk came back at `/run/media/marco/RTS` (WORKFLOW "Incidents"); the
   10-22 ~23:00 usage limit had cut both coordinators ((k) WIP committed as ceacaa1, (l) C3a WIP 606a2b7). Fresh
   coordinators started (ids in `orchestrator/agents-wave5.md`): (l) cap 200k: C3a leftovers, C3b status visuals,
@@ -55,7 +60,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 - Owner question (2026-10-15) "would Rust have been better than .NET?": answered, stay on .NET (WORKFLOW "Owner decisions").
 - Housekeeping: a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
 
-**Next waves (owner: "everything must be done"):**
+**Next waves (owner: "everything must be done"; 2026-10-23: two factions, UEF + Cybran, are enough, no further factions):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
   1. AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
      anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
@@ -197,7 +202,13 @@ Shared contracts (still valid):
       `Army.Faction` from the setup (random = from the seed), faction commander; AI + strategic code use roles (no
       `uef_*` ids in the sim); client: FACTION column in the skirmish setup, `--faction`/`--factions`, sandbox FACTION
       filter, saved in client data/save headers; bench `[factions]` arg; ARCHITECTURE "Factions" contract
-- [ ] Second faction (Cybran-like) with distinct visuals and units
+- [x] Second faction: Cybran (2026-10-23, wave 5l; ARCHITECTURE "Cybran faction & stealth/EMP"): `cybran.json` + 80
+      `cybran_*` blueprints (full SupCom1 roster, ACU/SCU enhancements, Monkeylord, Soul Ripper, Scathis, ED1→ED5
+      shield chain); sim: radar/sonar stealth, cloak, stealth fields (omni beats them), EMP stun (Medusa, SCU),
+      seabed walkers (Wagner, Monkeylord); distinct `cy_*` models for every unit; status visuals (own cloaked units
+      translucent, stun sparks, stealth-field ring); `--scene cybran[:group]`; Cybran vs UEF AI 8/5/5 (AI_TUNING)
+  - [ ] later: AI uses stealth/cloak/EMP deliberately (Deceiver escorts, cloaked ACU, Medusa vs groups); Cybran
+        T2/T3 and experimentals in AI matches once (k) "AI uses everything" lands
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs
       ships); sub dive/surface (D); adjacency bonus (pgens cut energy use, storages boost mex/pgens; placement lines);

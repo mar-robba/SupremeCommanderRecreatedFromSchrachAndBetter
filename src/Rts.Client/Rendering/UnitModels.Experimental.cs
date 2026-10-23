@@ -30,6 +30,7 @@ public static partial class UnitModels
     private static void FinishModel(UnitBlueprint bp, MeshBuilder b, MeshBuilder? t, float w, float h, float l, ref float radius)
     {
         if (bp.Visual.Shape == "mavor") radius = MathF.Max(radius, 1.9f * l);
+        radius = CybranCullRadius(bp.Visual.Shape, w, h, l, radius);
         if (bp.Installed.Length > 0) AddEnhancementAttachments(bp, b, t, w, h, l);
     }
 
@@ -306,7 +307,7 @@ public static partial class UnitModels
         var m = t ?? b;
         var saved = m.Transform;
         if (t == null) m.Transform = T(0, 0.5f * h, 0);
-        var a = AnchorsFor(bp.Visual.Shape, w, h, l);
+        var a = IsCybranShape(bp.Visual.Shape) ? CybranAnchors(bp.Visual.Shape, w, h, l) : AnchorsFor(bp.Visual.Shape, w, h, l);
         for (int slot = 0; slot < bp.Installed.Length; slot++)
         {
             int e = bp.Installed[slot];
@@ -323,6 +324,7 @@ public static partial class UnitModels
                 case "shield": EnhShield(m, a, w, h, l); break;
                 case "shield_field": EnhShieldField(m, a, w, h, l); break;
                 case "missile_pack": EnhMissilePack(m, a, w, h, l); break;
+                default: CybranEnhancement(en.Visual, m, a, s, w, h, l); break; // UnitModels.Cybran.cs
             }
         }
         m.Transform = saved;

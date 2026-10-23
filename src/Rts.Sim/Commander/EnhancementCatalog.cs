@@ -121,6 +121,10 @@ public static class EnhancementCatalog
         v.Economy.ProductionEnergy += fx.ProductionEnergyAdd;
         v.Economy.MaintenanceEnergy += fx.MaintenanceEnergyAdd;
         v.Intel.VisionRadius += fx.VisionRadiusAdd;
+        v.Intel.RadarStealth |= fx.RadarStealth; // stealth/cloak: OR-ed along the chain, field radius replaces
+        v.Intel.SonarStealth |= fx.SonarStealth;
+        v.Intel.Cloak |= fx.Cloak;
+        if (fx.StealthFieldRadius > 0) v.Intel.StealthFieldRadius = fx.StealthFieldRadius;
         if (fx.BuildListFrom.Length > 0) v.BuildListFrom = [.. v.BuildListFrom, .. fx.BuildListFrom];
     }
 

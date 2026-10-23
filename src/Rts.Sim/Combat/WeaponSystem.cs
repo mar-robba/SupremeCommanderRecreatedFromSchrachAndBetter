@@ -70,7 +70,7 @@ public static class WeaponSystem
     {
         var u = w.Units;
         s.Engaged[i] = 0;
-        if (!u.IsActive(i) || !u.IsComplete(i)) return;
+        if (!u.IsActive(i) || !u.IsComplete(i) || (u.Flags[i] & UnitFlags.Stunned) != 0) return; // EMP stun: no firing
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];
@@ -78,7 +78,7 @@ public static class WeaponSystem
         var pos = u.Pos[i];
         float elev = u.Elevation[i];
         bool engaged = false;
-        bool submerged = Naval.Submarines.IsSubmerged(w, i); // divers (Atlantis): only torpedoes work under water
+        bool submerged = Naval.Submarines.WeaponsUnderwater(w, i); // divers (Atlantis), seabed walkers: only torpedoes + FiresSubmerged
 
         for (int wi = 0; wi < info.Weapons.Length; wi++)
         {
@@ -89,7 +89,7 @@ public static class WeaponSystem
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
             if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
-            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind))
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp))
             {
                 ws.Target = UnitHandle.None; // own slot (parallel-safe); re-acquired after surfacing
                 ws.TurretHeading = DMath.RotateTowards(ws.TurretHeading, u.Heading[i], winfo.TurnRate * dt);
@@ -129,7 +129,7 @@ public static class WeaponSystem
                 continue;
             }
 
-            var muzzle = new Vector3(pos.X, elev + info.MuzzleHeight, pos.Y);
+            var muzzle = new Vector3(pos.X, submerged ? Naval.Submarines.UnderwaterMuzzleY(w, elev + info.MuzzleHeight, winfo.Kind) : elev + info.MuzzleHeight, pos.Y);
             Vector3 aim, launch;
             float flight;
             bool solution = true;
@@ -352,6 +352,7 @@ public static class WeaponSystem
             var hitPos = u.IsActive(shot.Target) ? CombatState.Of(w).Center(u, shot.Target.Index) : shot.TargetPos;
             // Enemy shield domes between the muzzle and the target absorb the beam (Strategic module).
             if (Strategic.ShieldSystem.TryBlockInstant(w, shot.Army, shot.Pos, hitPos, shot.Damage, shot.Bp, shot.Weapon)) return;
+            EmpStun.OnImpact(w, shot.Bp, shot.Weapon, shot.Army, new Vector2(hitPos.X, hitPos.Z), u.IsActive(shot.Target) ? shot.Target.Index : -1);
             if (shot.DamageRadius > 0)
             {
                 w.Events.AreaDamage.Add(new AreaDamageEvent

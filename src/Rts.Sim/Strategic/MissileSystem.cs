@@ -181,7 +181,7 @@ public static class MissileSystem
             ref var d = ref s.Defense[i];
             d.Cooldown -= dt;
             if (d.Cooldown < -dt) d.Cooldown = -dt;
-            if (d.Cooldown > 1e-4f || !u.IsComplete(i) || (u.Flags[i] & UnitFlags.Paused) != 0) continue;
+            if (d.Cooldown > 1e-4f || !u.IsComplete(i) || (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0) continue;
             if (md.UsesStockpile && s.Silo[i].Stock <= 0) continue;
             var want = md.Intercepts == InterceptKind.Strategic ? MissileRole.Strategic : MissileRole.Tactical;
             var pos = u.Pos[i];

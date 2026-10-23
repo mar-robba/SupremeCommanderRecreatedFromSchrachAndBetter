@@ -1,0 +1,67 @@
+{
+  "Id": "cybran_t1_frigate",
+  "Name": "Trident Frigate",
+  "Description": "T1 frigate: proton cannon and nanodart anti-air, radar and sonar. Can't hit submarines.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "DirectFire",
+    "AntiAir",
+    "Tech1"
+  ],
+  "MaxHealth": 1700,
+  "Radius": 1.1,
+  "Economy": {
+    "BuildCostMass": 240,
+    "BuildCostEnergy": 1600,
+    "BuildTime": 950
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 5.3,
+    "Acceleration": 2.5,
+    "TurnRate": 60
+  },
+  "Intel": {
+    "VisionRadius": 32,
+    "RadarRadius": 70,
+    "SonarRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Proton Cannon",
+      "Range": 30,
+      "Damage": 70,
+      "RateOfFire": 0.5,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 90,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    },
+    {
+      "Name": "Nanodart Launcher",
+      "Range": 26,
+      "Damage": 8,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TurretTurnRate": 240,
+      "FiringTolerance": 15,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_frigate",
+    "Size": [
+      2.0,
+      2.0,
+      6.0
+    ],
+    "Icon": "naval"
+  }
+}

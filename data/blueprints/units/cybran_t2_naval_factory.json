@@ -1,0 +1,43 @@
+{
+  "Id": "cybran_t2_naval_factory",
+  "Name": "T2 Naval Factory",
+  "Description": "Builds T1-T2 ships: destroyers and cruisers. Upgrade of the T1 naval factory.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Factory",
+    "Tech2"
+  ],
+  "MaxHealth": 8550,
+  "Radius": 4.5,
+  "FootprintX": 10,
+  "FootprintZ": 10,
+  "MinWaterDepth": 1.0,
+  "Economy": {
+    "BuildCostMass": 950,
+    "BuildCostEnergy": 5800,
+    "BuildTime": 1400,
+    "BuildRate": 40
+  },
+  "Intel": {
+    "VisionRadius": 24,
+    "SonarRadius": 40
+  },
+  "Visual": {
+    "Shape": "cy_naval_factory",
+    "Size": [
+      10,
+      3.0,
+      10
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "cybran_t1_frigate",
+    "cybran_t1_sub",
+    "cybran_t2_destroyer",
+    "cybran_t2_cruiser"
+  ],
+  "UpgradesTo": "cybran_t3_naval_factory"
+}

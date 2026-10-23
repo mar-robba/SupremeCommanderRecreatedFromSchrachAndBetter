@@ -275,7 +275,9 @@ public class UpgradeTests
             {
                 var to = db[bp.UpgradesToIndex];
                 Assert.True(bp.IsStructure && to.IsStructure, bp.Id);
-                Assert.Equal(bp.Tech + 1, to.Tech);
+                // One tier up; shield chains (Cybran ED1..ED5) may also step within a tier.
+                if (bp.Has(UnitCategory.Shield)) Assert.True(to.Tech == bp.Tech || to.Tech == bp.Tech + 1, bp.Id);
+                else Assert.Equal(bp.Tech + 1, to.Tech);
             }
         }
         // The upgrade chains of this wave.

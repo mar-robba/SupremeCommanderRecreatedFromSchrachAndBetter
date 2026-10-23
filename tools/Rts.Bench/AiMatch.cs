@@ -86,6 +86,7 @@ public static class AiMatch
             if (w.Tick % 5 == 0) _spend.Scan(w);
             _kills!.Scan(w);
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
+            if (w.Tick % statusEvery == 0 && AiRoster.Enabled) AiRoster.Sample(w);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
             if (Environment.GetEnvironmentVariable("AI_BASE") is { } baseSpec) DumpBase(w, baseSpec);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
@@ -94,6 +95,7 @@ public static class AiMatch
         }
 
         Console.WriteLine();
+        if (AiRoster.Enabled) { AiRoster.Sample(w); AiRoster.Print(w); }
         if (w.WinningTeam >= 0)
         {
             var winners = w.Armies.Where(a => a.Team == w.WinningTeam).Select(a => $"{a.Name} ({(a.IsAI ? a.AiDifficulty.ToString() : "passive")})");

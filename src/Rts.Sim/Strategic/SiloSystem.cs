@@ -67,7 +67,7 @@ public static class SiloSystem
             st.PendingWork = 0;
 
             // 2) Request this tick's work.
-            bool canBuild = u.IsComplete(i) && (u.Flags[i] & UnitFlags.Paused) == 0 && st.Stock < sb.MaxStorage;
+            bool canBuild = u.IsComplete(i) && (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) == 0 && st.Stock < sb.MaxStorage;
             if (canBuild)
             {
                 float work = MathF.Min(dt / MathF.Max(0.1f, sb.MissileBuildTime), 1f - st.Progress);
@@ -119,7 +119,7 @@ public static class SiloSystem
             int i = h.Index;
             if ((uint)u.Army[i] >= (uint)instant.Length || !instant[u.Army[i]]) continue;
             var sb = w.BpOf(i).Silo;
-            if (sb == null || !u.IsComplete(i) || (u.Flags[i] & UnitFlags.Paused) != 0) continue;
+            if (sb == null || !u.IsComplete(i) || (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0) continue;
             ref var st = ref s.Silo[i];
             if (st.Stock >= sb.MaxStorage) continue;
             st.Stock++;

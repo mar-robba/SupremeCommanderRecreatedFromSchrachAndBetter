@@ -1,0 +1,36 @@
+{
+  "Id": "cybran_t3_omni_sensor",
+  "Name": "T3 Omni Sensor",
+  "Description": "Huge radar range plus omni sensor (reveals everything nearby). Upgrade of the T2 radar.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Intel",
+    "Radar",
+    "Tech3"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 1200,
+    "BuildCostEnergy": 20000,
+    "BuildTime": 1800,
+    "MaintenanceEnergy": 100
+  },
+  "Intel": {
+    "VisionRadius": 30,
+    "RadarRadius": 400,
+    "OmniRadius": 150
+  },
+  "Visual": {
+    "Shape": "cy_omni",
+    "Size": [
+      1.8,
+      4.4,
+      1.8
+    ],
+    "Icon": "intel"
+  }
+}

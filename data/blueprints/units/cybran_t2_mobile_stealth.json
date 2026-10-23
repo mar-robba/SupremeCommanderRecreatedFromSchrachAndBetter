@@ -1,0 +1,43 @@
+{
+  "Id": "cybran_t2_mobile_stealth",
+  "Name": "Deceiver",
+  "Description": "T2 mobile stealth field generator: hides allied units within 20 from enemy radar and sonar. Unarmed. Needs 30 energy/s.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Intel",
+    "Tech2"
+  ],
+  "MaxHealth": 300,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 80,
+    "BuildCostEnergy": 800,
+    "BuildTime": 700,
+    "MaintenanceEnergy": 30
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.8,
+    "Acceleration": 2.5,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 22,
+    "StealthFieldRadius": 20
+  },
+  "Visual": {
+    "Shape": "cy_stealth",
+    "Size": [
+      1.0,
+      1.0,
+      1.2
+    ],
+    "Icon": "intel"
+  },
+  "BuiltBy": [
+    "cybran_t2_land_factory",
+    "cybran_t3_land_factory"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "Id": "cybran_t1_land_factory",
+  "Name": "T1 Land Factory",
+  "Description": "Builds T1 land units.",
+  "Tech": 1,
+  "UpgradesTo": "cybran_t2_land_factory",
+  "Categories": [
+    "Structure",
+    "Land",
+    "Factory",
+    "Tech1"
+  ],
+  "MaxHealth": 3000,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 240,
+    "BuildCostEnergy": 2100,
+    "BuildTime": 300,
+    "BuildRate": 20
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Visual": {
+    "Shape": "cy_factory",
+    "Size": [
+      6,
+      2.2,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "cybran_t1_engineer",
+    "cybran_t1_light_bot",
+    "cybran_t1_assault_bot",
+    "cybran_t1_artillery",
+    "cybran_t1_mobile_aa",
+    "cybran_t1_scout"
+  ]
+}

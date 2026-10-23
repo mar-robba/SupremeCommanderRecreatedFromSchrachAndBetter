@@ -1,0 +1,43 @@
+{
+  "Id": "cybran_t2_shield_ed3",
+  "Name": "ED3 Shield Generator",
+  "Description": "Shield dome (radius 16, 6000 HP). Upgrade of the ED2; upgrades to ED4. Needs 200 energy/s.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "Shield",
+    "Tech2"
+  ],
+  "MaxHealth": 2000,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 230,
+    "BuildCostEnergy": 3000,
+    "BuildTime": 1100,
+    "MaintenanceEnergy": 200
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Shield": {
+    "Radius": 16,
+    "HeightScale": 0.7,
+    "MaxHealth": 6000,
+    "RegenRate": 42,
+    "RegenDelay": 2,
+    "RechargeTime": 28
+  },
+  "Visual": {
+    "Shape": "cy_shield",
+    "Size": [
+      1.8,
+      2.7,
+      1.8
+    ],
+    "Icon": "shield"
+  },
+  "UpgradesTo": "cybran_t3_shield_ed4"
+}

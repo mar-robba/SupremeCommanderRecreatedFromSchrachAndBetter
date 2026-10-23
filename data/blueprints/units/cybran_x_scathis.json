@@ -1,0 +1,70 @@
+{
+  "Id": "cybran_x_scathis",
+  "Name": "Scathis",
+  "Description": "Experimental mobile rapid-fire artillery: very long range (750), inaccurate, devastating shells. Slow; needs intel on targets.",
+  "Tech": 4,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Experimental",
+    "IndirectFire",
+    "Artillery"
+  ],
+  "MaxHealth": 16000,
+  "Radius": 3.0,
+  "FootprintX": 6,
+  "FootprintZ": 7,
+  "Economy": {
+    "BuildCostMass": 40000,
+    "BuildCostEnergy": 700000,
+    "BuildTime": 90000
+  },
+  "Intel": {
+    "VisionRadius": 36
+  },
+  "Weapons": [
+    {
+      "Name": "Proton Artillery",
+      "Range": 750,
+      "MinRange": 60,
+      "Damage": 1100,
+      "DamageRadius": 5,
+      "RateOfFire": 0.4,
+      "MuzzleVelocity": 100,
+      "Spread": 20,
+      "Ballistic": true,
+      "HighArcWhenBlocked": true,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 20,
+      "FiringTolerance": 3
+    }
+  ],
+  "Experimental": {
+    "DeathDamage": 3000,
+    "DeathRadius": 12,
+    "DeathDelay": 1.5
+  },
+  "WreckMassFraction": 0.9,
+  "Visual": {
+    "Shape": "cy_scathis",
+    "Size": [
+      6.0,
+      4.5,
+      7.0
+    ],
+    "Icon": "experimental"
+  },
+  "BuiltBy": [
+    "cybran_t3_engineer"
+  ],
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 1.2,
+    "Acceleration": 0.6,
+    "TurnRate": 25,
+    "MaxSlope": 0.6
+  }
+}

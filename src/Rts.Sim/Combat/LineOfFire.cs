@@ -33,6 +33,7 @@ public static class LineOfFire
         var u = w.Units;
         var p = u.Pos[shooter];
         var muzzle = new Vector3(p.X, u.Elevation[shooter] + s.Catalog.Units[u.Bp[shooter]].MuzzleHeight, p.Y);
+        if (Naval.Submarines.WeaponsUnderwater(w, shooter)) muzzle.Y = Naval.Submarines.UnderwaterMuzzleY(w, muzzle.Y, winfo.Kind); // FiresSubmerged gun
         var tc = s.Center(u, target);
         if (winfo.Kind == WeaponKind.Ballistic)
             return Ballistics.SolveArc(muzzle, tc, wbp.MuzzleVelocity, Ballistics.Gravity, winfo.HighArc, out _, out _);

@@ -1,0 +1,95 @@
+{
+  "Id": "cybran_x_monkeylord",
+  "Name": "Monkeylord",
+  "Description": "Experimental spider assault bot: heavy microwave laser, electron bolters and anti-air. Walks on the seabed (its guns stay silent under water). Crushes small units.",
+  "Tech": 4,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Experimental",
+    "DirectFire",
+    "AntiAir"
+  ],
+  "MaxHealth": 20000,
+  "Radius": 3.0,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 20000,
+    "BuildCostEnergy": 250000,
+    "BuildTime": 36000
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 1.8,
+    "Acceleration": 0.9,
+    "TurnRate": 40,
+    "MaxSlope": 0.7
+  },
+  "Intel": {
+    "VisionRadius": 40,
+    "SonarRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Heavy Microwave Laser",
+      "Range": 32,
+      "Damage": 300,
+      "RateOfFire": 2.5,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "laser",
+      "TurretTurnRate": 60,
+      "FiringTolerance": 10
+    },
+    {
+      "Name": "Electron Bolters",
+      "Range": 26,
+      "Damage": 60,
+      "ProjectilesPerShot": 2,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 38,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 120,
+      "ProjectileVisual": "laser"
+    },
+    {
+      "Name": "Nanodart Launcher",
+      "Range": 34,
+      "Damage": 30,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile",
+      "TurretTurnRate": 240
+    }
+  ],
+  "Experimental": {
+    "CrushRadius": 3.6,
+    "CrushDamage": 5000,
+    "DeathDamage": 2500,
+    "DeathRadius": 10,
+    "DeathDelay": 1.5
+  },
+  "WreckMassFraction": 0.9,
+  "Visual": {
+    "Shape": "cy_monkeylord",
+    "Size": [
+      6.5,
+      3.2,
+      6.5
+    ],
+    "Icon": "experimental"
+  },
+  "BuiltBy": [
+    "cybran_t3_engineer"
+  ]
+}

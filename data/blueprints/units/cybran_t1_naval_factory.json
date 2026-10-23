@@ -1,0 +1,47 @@
+{
+  "Id": "cybran_t1_naval_factory",
+  "Name": "T1 Naval Factory",
+  "Description": "Builds T1 ships and submarines. Must be built on deep water.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Factory",
+    "Tech1"
+  ],
+  "MaxHealth": 3800,
+  "Radius": 4.5,
+  "FootprintX": 10,
+  "FootprintZ": 10,
+  "MinWaterDepth": 1.0,
+  "Economy": {
+    "BuildCostMass": 300,
+    "BuildCostEnergy": 1500,
+    "BuildTime": 400,
+    "BuildRate": 20
+  },
+  "Intel": {
+    "VisionRadius": 22,
+    "SonarRadius": 30
+  },
+  "Visual": {
+    "Shape": "cy_naval_factory",
+    "Size": [
+      10,
+      2.6,
+      10
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "cybran_t1_frigate",
+    "cybran_t1_sub"
+  ],
+  "BuiltBy": [
+    "cybran_commander",
+    "cybran_t1_engineer",
+    "cybran_t2_engineer",
+    "cybran_t3_engineer"
+  ],
+  "UpgradesTo": "cybran_t2_naval_factory"
+}

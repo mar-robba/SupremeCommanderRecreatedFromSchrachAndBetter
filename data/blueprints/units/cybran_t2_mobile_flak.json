@@ -1,0 +1,52 @@
+{
+  "Id": "cybran_t2_mobile_flak",
+  "Name": "Banger",
+  "Description": "T2 mobile flak: area anti-air.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 650,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 110,
+    "BuildCostEnergy": 650,
+    "BuildTime": 650
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.9,
+    "Acceleration": 3,
+    "TurnRate": 110
+  },
+  "Intel": {
+    "VisionRadius": 26
+  },
+  "Weapons": [
+    {
+      "Name": "Electron Flak",
+      "Range": 36,
+      "Damage": 22,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "DamageRadius": 2.5,
+      "ProjectileVisual": "flak",
+      "TurretTurnRate": 180
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_flak",
+    "Size": [
+      1.2,
+      0.9,
+      1.6
+    ],
+    "Icon": "land_aa"
+  }
+}

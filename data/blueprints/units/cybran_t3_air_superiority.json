@@ -1,0 +1,53 @@
+{
+  "Id": "cybran_t3_air_superiority",
+  "Name": "Gemini",
+  "Description": "T3 air-superiority fighter: fast, deadly against aircraft.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Fighter",
+    "AntiAir",
+    "Tech3"
+  ],
+  "MaxHealth": 1850,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 340,
+    "BuildCostEnergy": 6800,
+    "BuildTime": 2500
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 21,
+    "Acceleration": 10,
+    "TurnRate": 120,
+    "Altitude": 20
+  },
+  "Intel": {
+    "VisionRadius": 34
+  },
+  "Weapons": [
+    {
+      "Name": "Nanodart Missiles",
+      "Range": 30,
+      "Damage": 40,
+      "RateOfFire": 2.5,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile",
+      "FiringTolerance": 25
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_asf",
+    "Size": [
+      1.8,
+      0.6,
+      2.2
+    ],
+    "Icon": "air_fighter"
+  }
+}

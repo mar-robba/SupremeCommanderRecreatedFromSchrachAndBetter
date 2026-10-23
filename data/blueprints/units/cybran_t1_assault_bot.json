@@ -1,0 +1,51 @@
+{
+  "Id": "cybran_t1_assault_bot",
+  "Name": "Mantis",
+  "Description": "T1 assault bot: pulse laser, quicker than tanks.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 275,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 52,
+    "BuildCostEnergy": 260,
+    "BuildTime": 260
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 3.2,
+    "Acceleration": 3,
+    "TurnRate": 120
+  },
+  "Intel": {
+    "VisionRadius": 20
+  },
+  "Weapons": [
+    {
+      "Name": "Pulse Laser",
+      "Range": 18,
+      "Damage": 17,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_bot",
+    "Size": [
+      0.9,
+      1.0,
+      1.0
+    ],
+    "Icon": "land_direct"
+  }
+}
