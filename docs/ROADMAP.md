@@ -12,6 +12,11 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-23 13:55: (l) Cybran merged into main (f727ced). Running: (k) coordinator 8 in `agent-ac4c927c54a66ca1d`
+  and the new (k-navy) agent in `.claude/worktrees/ai-navy` (branch `wave5-ai-navy`, from the (k) branch at 701ea45):
+  navy + transports AI (owns AiNavy*, AiTransport*, AiConfig.Navy.cs, their tests); it merges the (k) branch into its
+  own at the end. Merge order: (k) into main, then `wave5-ai-navy` (or navy into (k) first). If cut off: fresh agent
+  in the same worktree from its `.claude/handoff.md`.
 - 2026-10-23 13:15 (session 1d992d8d): the disk came back at `/run/media/marco/RTS` (WORKFLOW "Incidents"); the
   10-22 ~23:00 usage limit had cut both coordinators ((k) WIP committed as ceacaa1, (l) C3a WIP 606a2b7). Fresh
   coordinators started (ids in `orchestrator/agents-wave5.md`): (l) cap 200k: C3a leftovers, C3b status visuals,
