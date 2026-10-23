@@ -149,7 +149,7 @@ public sealed partial class AiConfig
     public float StallTime = 0, StallMargin = 1f;
     /// <summary>Creeping advance (AiMilitary.Advance): every AdvanceInterval seconds an attacking army at least
     /// AdvanceMargin x stronger than the known enemy strength at its objective and at its front steps its front
-    /// AdvanceStep closer and brings the members that stopped behind (long-range units) up to it. 0 = off.</summary>
+    /// AdvanceStep closer (0 = it stays) and brings indirect-fire members that stopped far behind up to it. 0 = off.</summary>
     public float AdvanceInterval = 0, AdvanceMargin = 2f, AdvanceStep = 20f;
     /// <summary>Objective value bonus per tier above 1 for extractors and factories (upgraded ones carry the economy).</summary>
     public float TierValue = 0;

@@ -33,6 +33,13 @@ DIFF=Hard SPECS="$(python3 -I tools/ai-lab/specs.py hard,normal 1-24 --both-side
 - `h2h.py <run dir> <Difficulty>`: wins / losses / no winner for that difficulty, mean end time, and its mass income
   vs the opponent at minutes 3/5/8.
 - `stats.py <run dir> [marks]`: mean mex, land units, engineers, factories, losses and mass income per difficulty.
+- 45-minute work (wave 5k) uses `run.py` with fixed game lists in `tools/ai-lab/specs/` (`nvn` 96 Normal mirrors,
+  `hvn` Hard v Normal both seats, `hvh`, `cvu` Cybran v UEF both seats; spec field 6 = factions):
+  `MIN=45 bash tools/ai-lab/specsweep.sh <prefix> tools/ai-lab/specs/nvn.txt <bin> - "Field=v"` (one status line per
+  cfg; `DIFF=Hard` for head-to-heads), `bash tools/ai-lab/tc.sh <prefix> <specs> <bin> [tech cfg]` (goal (c): tech vs
+  T1-only, both seats), `python3 -I tools/ai-lab/cvu.py <run dir>` (wins per faction), `cmp.py <run dirs> [--diff D]`
+  (mean status numbers per minute mark, one row per run), `lop.py <run dir>` (lists the lopsided-stalled games with
+  both sides' state). Run a copy of the binary (+ `data/` next to its parent dirs) so builds don't change it mid-run.
 - Debugging one game: `AI_TRACE=1 AI_GROUPS=1 AI_STATUS_SECONDS=30 tools/Rts.Bench/bin/Release/net10.0/Rts.Bench ai
   30 256 7 normal,normal 1 2 highlands`. All switches: ARCHITECTURE "Skirmish AI".
 
@@ -101,6 +108,20 @@ commander: a late-game push toward the commander's last known position, and snip
   Re-tune after it.
 - The AI doesn't use T2/T3 upgrades, navy, strategic weapons, experimentals, transports, capture, pause or
   adjacency yet (wave 5, agent "AI uses everything").
+
+## Cybran vs UEF (wave 5l, 2026-10-16)
+
+Both AIs play any faction through the roles (`cybran.json`); no AI code change was needed. 30 min, 256 maps,
+Hard vs Hard, seeds 1–3, plains / canyon / lakes, each faction on both sides (18 games):
+`Rts.Bench -- ai 30 256 <seed> hard,hard 2 2 <preset> cybran,uef` (and `uef,cybran`).
+- First run: Cybran builders (engineers, SCU, ACU) were 0.1 faster than UEF ones → more mex: Cybran 6 / UEF 4 / 3 draws
+  (plains + canyon only). Builder speeds set equal to UEF (combat units keep their small Cybran speed edge).
+- After: **Cybran 8 / UEF 5 / 5 draws** (the lakes draws are T1 stalemates). Not significant at this size; re-measure
+  with `tools/ai-lab` after the "AI uses everything" agent, when the AIs reach T2/T3 (today both field only T1:
+  `AI_ROSTER=1` prints the max alive units per blueprint per army; Cybran lean on the Medusa, like UEF on artillery).
+- 2026-10-23 recheck before the merge (client-only changes since): same games (seed 1 plains cybran,uef → UEF 18:07;
+  seed 2 canyon uef,cybran → Cybran 13:14). New seeds: 4 plains cybran,uef and 5 canyon uef,cybran are draws at
+  30:00; seed 4 with a 60 min limit → UEF 37:55.
 
 ## Tech AI stalemates (wave 5k, 2026-10-16 → 22)
 
@@ -173,20 +194,96 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 |---|---|---|
 | tech AI defaults (2026-10-23) | 65 (59) | 24/69 |
 | + creeping advance (`AiMilitary.Advance`: every AdvanceInterval s a group >= AdvanceMargin × the known enemy at its objective/front moves its stopped members forward) 15 s / margin 1.3 / 10 s step 30 | 68 (49) / 58 (47) / 62 (51) | 31/74 / 33/73 / 34/70 (worse: off) |
+| + ArtilleryTier=1 (artillery role = T1 artillery only: no T2 missile launchers, no T3 mobile artillery) | 78 (65) | 13/68 |
+| + LeadArmyShare 0.8, LeadRatio 1.2 | 72 (66) | 21/76 |
+| + ShieldTime=99999 (no base shields) | 73 (58) | 21/69 |
+| + ArtilleryShare 0.15 (Normal default 0.25) | 69 (58) | 18/65 |
+| + AaGroundFactor 0.3 (anti-air-only members count 30 % in group strength) | 64 (53) | 27/71 |
+| + AaShareMin 0.05, AaShareMax 0.25 (mobile AA share of the mix; default 0.12-0.4) | 64 (54) | 22/68 |
+| + StallTime=60, StallMargin=10 (fall back and gather whenever an attack stops closing in for 60 s) | 63 (55) | 25/71 |
+| + Reinforce=false (fresh units wait for the next wave) | 40 (27) | 60/80 (much worse) |
+| + follow mode (Advance with AdvanceStep 0: only indirect-fire members stopped far behind the front move up to it) margin 0 / 1.5 | 69 (58) / 66 (55) | 24/68 / 25/72 (no help) |
+| + ArtilleryTier=2 (T2 missile launchers, no T3 mobile artillery) | 66 (60) | 27/71 |
+| ArtilleryTier=1 again (noise check, with a no-op override) | 80 (60) | 14/73 |
+| ArtilleryTier=1 + LeadArmyShare 0.8, LeadRatio 1.2 | 80 (65) | 22/77 (no gain on stalls) |
 
-## Cybran vs UEF (wave 5l, 2026-10-16)
+## Unit balance
 
-Both AIs play any faction through the roles (`cybran.json`); no AI code change was needed. 30 min, 256 maps,
-Hard vs Hard, seeds 1–3, plains / canyon / lakes, each faction on both sides (18 games):
-`Rts.Bench -- ai 30 256 <seed> hard,hard 2 2 <preset> cybran,uef` (and `uef,cybran`).
-- First run: Cybran builders (engineers, SCU, ACU) were 0.1 faster than UEF ones → more mex: Cybran 6 / UEF 4 / 3 draws
-  (plains + canyon only). Builder speeds set equal to UEF (combat units keep their small Cybran speed edge).
-- After: **Cybran 8 / UEF 5 / 5 draws** (the lakes draws are T1 stalemates). Not significant at this size; re-measure
-  with `tools/ai-lab` after the "AI uses everything" agent, when the AIs reach T2/T3 (today both field only T1:
-  `AI_ROSTER=1` prints the max alive units per blueprint per army; Cybran lean on the Medusa, like UEF on artillery).
-- 2026-10-23 recheck before the merge (client-only changes since): same games (seed 1 plains cybran,uef → UEF 18:07;
-  seed 2 canyon uef,cybran → Cybran 13:14). New seeds: 4 plains cybran,uef and 5 canyon uef,cybran are draws at
-  30:00; seed 4 with a 60 min limit → UEF 37:55.
+Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`
+(`tools/Rts.Bench/Duel.cs`, ~5 s per matrix on 16 threads, deterministic). Method: equal mass of each unit type
+(count = round(mass / mass cost), at least 1) in rows on flat ground, front rows just out of the longer weapon range,
+both groups attack-move at each other in the real sim (accuracy, area damage, turning, veterancy; no fog, no AI);
+idle units re-attack-move to the enemy centroid every 5 s. **shareA** = A's share of the surviving value
+(mass x hp/maxhp): 1.00 = A wins at full hp, 0.00 = B wins. **margin** = A's surviving fraction minus B's (-1..+1;
+fair when the counts round unevenly). Each cell = 3 seeds x both sides (A west and A east). `*` = a side's real mass is
+>20% off the budget (one UEF T3 siege bot = 1280 mass at budget 600 or 2000). Mobile AA (no ground weapon) is skipped.
+
+### BEFORE (2026-10-23, blueprints at fd3eaca)
+
+Role average per mass: mean shareA of the row unit vs every unit of the other side (margin in brackets).
+
+| uef vs uef | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.33 (-0.26) | 0.75 (+0.26) | 0.63 (+0.21) | 0.48 (-0.11) | 0.08 (-0.37) | 0.31 (-0.28) | 0.94\* (+0.53) | 0.48 (+0.01) |
+| 2000 | 0.33 (-0.22) | 0.94 (+0.42) | 0.71 (+0.21) | 0.21 (-0.26) | 0.25 (-0.15) | 0.31 (-0.22) | 0.67\* (+0.01) | 0.58 (+0.21) |
+| 6000 | 0.29 (-0.24) | 0.94 (+0.44) | 0.71 (+0.23) | 0.48 (-0.12) | 0.54 (+0.10) | 0.21 (-0.28) | 0.10 (-0.40) | 0.73 (+0.28) |
+
+| cybran vs cybran | tank1 | lgt1 | art1 | hvy2 | amph2 | mml2 | asl3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.25 (-0.22) | 0.42 (-0.10) | 0.71 (+0.26) | 0.94 (+0.45) | 0.65 (+0.06) | 0.46 (-0.05) | 0.19 (-0.31) | 0.40 (-0.10) |
+| 2000 | 0.38 (-0.20) | 0.60 (+0.02) | 0.94 (+0.43) | 0.79 (+0.32) | 0.27 (-0.25) | 0.31 (-0.08) | 0.29 (-0.23) | 0.42 (-0.01) |
+| 6000 | 0.33 (-0.22) | 0.21 (-0.27) | 0.94 (+0.45) | 0.77 (+0.26) | 0.35 (-0.23) | 0.48 (+0.07) | 0.46 (-0.16) | 0.46 (+0.09) |
+
+| uef unit vs all cybran | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.25 (-0.25) | 0.77 (+0.29) | 0.79 (+0.29) | 0.52 (-0.06) | 0.10 (-0.32) | 0.31 (-0.28) | 1.00\* (+0.58) | 0.48 (+0.03) |
+| 2000 | 0.35 (-0.24) | 0.96 (+0.41) | 0.63 (+0.19) | 0.19 (-0.30) | 0.48 (-0.01) | 0.35 (-0.18) | 0.71\* (+0.02) | 0.58 (+0.13) |
+| 6000 | 0.21 (-0.27) | 0.96 (+0.45) | 0.67 (+0.20) | 0.33 (-0.17) | 0.42 (+0.08) | 0.13 (-0.31) | 0.02 (-0.45) | 0.54 (+0.19) |
+
+Full shareA grids at mass 2000 (row = unit A, column = unit B; `B avg` = the column unit's mean share vs all rows):
+
+```
+uef vs uef
+  shareA tank1   art1   hvy2  amph2   mml2   asl3  sieg3   art3   avg
+  tank1   0.50   0.00   0.00   1.00   0.50   0.67   0.00*  0.00   0.33
+  art1    1.00   0.50   1.00   1.00   1.00   1.00   1.00*  1.00   0.94
+  hvy2    1.00   0.00   0.50   1.00   1.00   1.00   1.00*  0.17   0.71
+  amph2   0.00   0.00   0.00   0.50   0.50   0.00   0.17*  0.50   0.21
+  mml2    0.50   0.00   0.00   0.50   0.50   0.50   0.00*  0.00   0.25
+  asl3    0.33   0.00   0.00   1.00   0.50   0.50   0.00*  0.17   0.31
+  sieg3   1.00*  0.00*  0.00*  0.83*  1.00*  1.00*  0.50*  1.00*  0.67
+  art3    1.00   0.00   0.83   0.50   1.00   0.83   0.00*  0.50   0.58
+  B avg   0.33   0.94   0.71   0.21   0.25   0.31   0.67   0.58
+cybran vs cybran
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.50   0.00   0.00   0.00   0.67   0.17   1.00   0.67   0.38
+  lgt1    1.00   0.50   0.00   0.00   1.00   0.67   0.67   1.00   0.60
+  art1    1.00   1.00   0.50   1.00   1.00   1.00   1.00   1.00   0.94
+  hvy2    1.00   1.00   0.00   0.50   1.00   1.00   1.00   0.83   0.79
+  amph2   0.33   0.00   0.00   0.00   0.50   0.50   0.83   0.00   0.27
+  mml2    0.83   0.33   0.00   0.00   0.50   0.50   0.33   0.00   0.31
+  asl3    0.00   0.33   0.00   0.00   0.17   0.67   0.50   0.67   0.29
+  art3    0.33   0.00   0.00   0.17   1.00   1.00   0.33   0.50   0.42
+  B avg   0.38   0.60   0.94   0.79   0.27   0.31   0.29   0.42
+uef (rows) vs cybran (columns)
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.33   0.33   0.00   0.00   1.00   0.00   1.00   0.17   0.35
+  art1    1.00   1.00   0.67   1.00   1.00   1.00   1.00   1.00   0.96
+  hvy2    1.00   1.00   0.00   0.00   1.00   1.00   1.00   0.00   0.63
+  amph2   0.00   0.00   0.00   0.00   0.00   0.33   0.50   0.67   0.19
+  mml2    1.00   0.33   0.00   0.00   0.83   0.83   0.67   0.17   0.48
+  asl3    0.00   0.83   0.00   0.00   0.00   0.67   0.50   0.83   0.35
+  sieg3   1.00*  0.67*  0.00*  0.00*  1.00*  1.00*  1.00*  1.00*  0.71
+  art3    0.33   0.00   0.17   0.67   1.00   1.00   0.83   0.67   0.58
+  B avg   0.42   0.48   0.90   0.79   0.27   0.27   0.19   0.44
+```
+
+Findings: (1) **T1 artillery beats every land unit at equal mass** from 2000 up (row 0.94-0.96, keeps ~40% of its mass
+more than the enemy); hp x dps / mass^2 is 3.9 (UEF) / 3.3 (Cybran) against 1.7 for the T1 tanks, and it wins 1.00 vs T1
+tanks at every mass. (2) **T1 tanks are the weakest per mass** (0.21-0.38). (3) **T2 heavy tanks are strong** (0.63-0.94),
+the T2 amphibious tanks weak from 2000 up (0.19-0.48). (4) **T3 assault bots lose per mass** to T1/T2 (0.13-0.46; UEF asl3 vs tank1
+0.33, Cybran 0.00 at 2000), and the UEF siege bot falls to 0.10 at 6000 (5 units vs swarms); only T3 mobile artillery
+holds up at big mass (0.73 UEF at 6000).
 
 ## Navy and transports (wave 5 k-navy, 2026-10-23)
 
