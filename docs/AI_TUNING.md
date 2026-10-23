@@ -206,3 +206,81 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 | + ArtilleryTier=2 (T2 missile launchers, no T3 mobile artillery) | 66 (60) | 27/71 |
 | ArtilleryTier=1 again (noise check, with a no-op override) | 80 (60) | 14/73 |
 | ArtilleryTier=1 + LeadArmyShare 0.8, LeadRatio 1.2 | 80 (65) | 22/77 (no gain on stalls) |
+
+## Unit balance
+
+Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`
+(`tools/Rts.Bench/Duel.cs`, ~5 s per matrix on 16 threads, deterministic). Method: equal mass of each unit type
+(count = round(mass / mass cost), at least 1) in rows on flat ground, front rows just out of the longer weapon range,
+both groups attack-move at each other in the real sim (accuracy, area damage, turning, veterancy; no fog, no AI);
+idle units re-attack-move to the enemy centroid every 5 s. **shareA** = A's share of the surviving value
+(mass x hp/maxhp): 1.00 = A wins at full hp, 0.00 = B wins. **margin** = A's surviving fraction minus B's (-1..+1;
+fair when the counts round unevenly). Each cell = 3 seeds x both sides (A west and A east). `*` = a side's real mass is
+>20% off the budget (one UEF T3 siege bot = 1280 mass at budget 600 or 2000). Mobile AA (no ground weapon) is skipped.
+
+### BEFORE (2026-10-23, blueprints at fd3eaca)
+
+Role average per mass: mean shareA of the row unit vs every unit of the other side (margin in brackets).
+
+| uef vs uef | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.33 (-0.26) | 0.75 (+0.26) | 0.63 (+0.21) | 0.48 (-0.11) | 0.08 (-0.37) | 0.31 (-0.28) | 0.94\* (+0.53) | 0.48 (+0.01) |
+| 2000 | 0.33 (-0.22) | 0.94 (+0.42) | 0.71 (+0.21) | 0.21 (-0.26) | 0.25 (-0.15) | 0.31 (-0.22) | 0.67\* (+0.01) | 0.58 (+0.21) |
+| 6000 | 0.29 (-0.24) | 0.94 (+0.44) | 0.71 (+0.23) | 0.48 (-0.12) | 0.54 (+0.10) | 0.21 (-0.28) | 0.10 (-0.40) | 0.73 (+0.28) |
+
+| cybran vs cybran | tank1 | lgt1 | art1 | hvy2 | amph2 | mml2 | asl3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.25 (-0.22) | 0.42 (-0.10) | 0.71 (+0.26) | 0.94 (+0.45) | 0.65 (+0.06) | 0.46 (-0.05) | 0.19 (-0.31) | 0.40 (-0.10) |
+| 2000 | 0.38 (-0.20) | 0.60 (+0.02) | 0.94 (+0.43) | 0.79 (+0.32) | 0.27 (-0.25) | 0.31 (-0.08) | 0.29 (-0.23) | 0.42 (-0.01) |
+| 6000 | 0.33 (-0.22) | 0.21 (-0.27) | 0.94 (+0.45) | 0.77 (+0.26) | 0.35 (-0.23) | 0.48 (+0.07) | 0.46 (-0.16) | 0.46 (+0.09) |
+
+| uef unit vs all cybran | tank1 | art1 | hvy2 | amph2 | mml2 | asl3 | sieg3 | art3 |
+|---|---|---|---|---|---|---|---|---|
+| 600 | 0.25 (-0.25) | 0.77 (+0.29) | 0.79 (+0.29) | 0.52 (-0.06) | 0.10 (-0.32) | 0.31 (-0.28) | 1.00\* (+0.58) | 0.48 (+0.03) |
+| 2000 | 0.35 (-0.24) | 0.96 (+0.41) | 0.63 (+0.19) | 0.19 (-0.30) | 0.48 (-0.01) | 0.35 (-0.18) | 0.71\* (+0.02) | 0.58 (+0.13) |
+| 6000 | 0.21 (-0.27) | 0.96 (+0.45) | 0.67 (+0.20) | 0.33 (-0.17) | 0.42 (+0.08) | 0.13 (-0.31) | 0.02 (-0.45) | 0.54 (+0.19) |
+
+Full shareA grids at mass 2000 (row = unit A, column = unit B; `B avg` = the column unit's mean share vs all rows):
+
+```
+uef vs uef
+  shareA tank1   art1   hvy2  amph2   mml2   asl3  sieg3   art3   avg
+  tank1   0.50   0.00   0.00   1.00   0.50   0.67   0.00*  0.00   0.33
+  art1    1.00   0.50   1.00   1.00   1.00   1.00   1.00*  1.00   0.94
+  hvy2    1.00   0.00   0.50   1.00   1.00   1.00   1.00*  0.17   0.71
+  amph2   0.00   0.00   0.00   0.50   0.50   0.00   0.17*  0.50   0.21
+  mml2    0.50   0.00   0.00   0.50   0.50   0.50   0.00*  0.00   0.25
+  asl3    0.33   0.00   0.00   1.00   0.50   0.50   0.00*  0.17   0.31
+  sieg3   1.00*  0.00*  0.00*  0.83*  1.00*  1.00*  0.50*  1.00*  0.67
+  art3    1.00   0.00   0.83   0.50   1.00   0.83   0.00*  0.50   0.58
+  B avg   0.33   0.94   0.71   0.21   0.25   0.31   0.67   0.58
+cybran vs cybran
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.50   0.00   0.00   0.00   0.67   0.17   1.00   0.67   0.38
+  lgt1    1.00   0.50   0.00   0.00   1.00   0.67   0.67   1.00   0.60
+  art1    1.00   1.00   0.50   1.00   1.00   1.00   1.00   1.00   0.94
+  hvy2    1.00   1.00   0.00   0.50   1.00   1.00   1.00   0.83   0.79
+  amph2   0.33   0.00   0.00   0.00   0.50   0.50   0.83   0.00   0.27
+  mml2    0.83   0.33   0.00   0.00   0.50   0.50   0.33   0.00   0.31
+  asl3    0.00   0.33   0.00   0.00   0.17   0.67   0.50   0.67   0.29
+  art3    0.33   0.00   0.00   0.17   1.00   1.00   0.33   0.50   0.42
+  B avg   0.38   0.60   0.94   0.79   0.27   0.31   0.29   0.42
+uef (rows) vs cybran (columns)
+  shareA tank1   lgt1   art1   hvy2  amph2   mml2   asl3   art3   avg
+  tank1   0.33   0.33   0.00   0.00   1.00   0.00   1.00   0.17   0.35
+  art1    1.00   1.00   0.67   1.00   1.00   1.00   1.00   1.00   0.96
+  hvy2    1.00   1.00   0.00   0.00   1.00   1.00   1.00   0.00   0.63
+  amph2   0.00   0.00   0.00   0.00   0.00   0.33   0.50   0.67   0.19
+  mml2    1.00   0.33   0.00   0.00   0.83   0.83   0.67   0.17   0.48
+  asl3    0.00   0.83   0.00   0.00   0.00   0.67   0.50   0.83   0.35
+  sieg3   1.00*  0.67*  0.00*  0.00*  1.00*  1.00*  1.00*  1.00*  0.71
+  art3    0.33   0.00   0.17   0.67   1.00   1.00   0.83   0.67   0.58
+  B avg   0.42   0.48   0.90   0.79   0.27   0.27   0.19   0.44
+```
+
+Findings: (1) **T1 artillery beats every land unit at equal mass** from 2000 up (row 0.94-0.96, keeps ~40% of its mass
+more than the enemy); hp x dps / mass^2 is 3.9 (UEF) / 3.3 (Cybran) against 1.7 for the T1 tanks, and it wins 1.00 vs T1
+tanks at every mass. (2) **T1 tanks are the weakest per mass** (0.21-0.38). (3) **T2 heavy tanks are strong** (0.63-0.94),
+the T2 amphibious tanks weak from 2000 up (0.19-0.48). (4) **T3 assault bots lose per mass** to T1/T2 (0.13-0.46; UEF asl3 vs tank1
+0.33, Cybran 0.00 at 2000), and the UEF siege bot falls to 0.10 at 6000 (5 units vs swarms); only T3 mobile artillery
+holds up at big mass (0.73 UEF at 6000).

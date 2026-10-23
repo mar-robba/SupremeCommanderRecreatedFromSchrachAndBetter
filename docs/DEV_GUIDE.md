@@ -177,6 +177,7 @@ integrated GPU.
 | Tool | What for |
 |---|---|
 | `tools/Rts.Bench` | Headless benchmark, AI matches, replay verification, save/load timings (commands in CLAUDE.md). AI debug switches: ARCHITECTURE "Skirmish AI". |
+| `Rts.Bench -- duel` / `duelmatrix` | Unit balance: equal-mass duels of two unit types on flat ground (real sim), and role x role grids of the surviving-mass share per faction pair, ~5 s per matrix on 16 threads (`Duel.cs`; method and BEFORE grids in [AI_TUNING.md](AI_TUNING.md) "Unit balance"). |
 | `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert with per-agent thresholds (WORKFLOW "Context limits and handoffs"). |
