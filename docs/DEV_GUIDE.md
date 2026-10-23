@@ -95,14 +95,18 @@ Things learned while building the project that are not about how a system works 
   enhancement variant gets its own mesh with its attachments.
 - Sounds longer than 4 s fail `SynthTests` (the nuke explosion is 3.9 s played at a lower pitch to sound longer).
 - The perf overlay is on in screenshots and covers the right end of the sandbox console header.
+- In the model partials (`UnitModels.*.cs`) `Color` is ambiguous inside local functions: write `Raylib_cs.Color`.
 
 ## Visual checks
 
 - Command: CLAUDE.md "Visual check". Use `--size 960x540` to save context. Every screenshot you Read costs context,
   so take a few good ones (an agent's whole run: at most ~6).
 - Test scenes put things where the camera can see them: `--scene strategic[:shields|:tml|:nuke]`, `--scene naval`,
-  `--scene experimental[:mavor|:fog]`, `--scene transport`, `--tech-demo`. They print positions; aim with
-  `--camera x,z,dist`.
+  `--scene experimental[:mavor|:fog]`, `--scene transport`, `--scene cybran[:group]`, `--tech-demo`. They print
+  positions; aim with `--camera x,z,dist`.
+- Enhancement variants spawn by their exact id in the sandbox (`spawn cybran_commander+cloakinggenerator me at x,z`).
+  For EMP sparks use the EMP SCU (`cybran_scu+empcharge`, 3 s stun every 5 s): Medusa stuns last 1 s and rarely land
+  on the screenshot frame.
 - `--select <blueprint id>` (or `any:<id>` in the sandbox) pre-selects units; `--ui-place id@x,z` shows a placement
   ghost; the sandbox `--exec "spawn ...; wait 30; ..."` builds any situation.
 

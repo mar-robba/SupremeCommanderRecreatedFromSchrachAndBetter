@@ -695,5 +695,16 @@ targeted like Layer Sub (torpedoes only; sonar/omni detection).
 **Shield chain.** ED1 → ED5 via `UpgradesTo` on the shield structures; no sim code: `UpgradeSystem.Complete` →
 `UnitLifecycle.OnSpawn` → `StrategicSystem.InitUnit` brings the dome up at the new blueprint's MaxHealth.
 
+**Client.** Models in `Rendering/UnitModels.Cybran*.cs` (`Cybran.cs` = shape dispatch `IsCybranShape`/`CybranShape`,
+`BaseShape` maps `cy_air_staging`/naval shapes to the UEF names that cargo, icons and naval code check; `CybranAir`,
+`CybranNaval`, `CybranStructures`, `CybranDefense`, `CybranExperimental`); one `case` line in `UnitModels.Build`.
+Status visuals (`Rendering/StatusFx.cs` = pure logic, `UnitRenderer.Status.cs` = `DrawStatus`, called after
+`DrawSubmerged`) from `UnitView.Status`: cloaked units skip the opaque pass and are drawn with a translucent fresnel
+shimmer (no depth writes, no shadow; a cloaked unit under water stays a normal submerged unit); stunned units get
+blue-white spark bolts; a stealth field shows a violet terrain-following ring at `bp.Intel.StealthFieldRadius`
+(enhancements are blueprint variants, so `UnitView.Bp` carries their radius). Radar/sonar stealth alone has no visual.
+`--scene cybran[:land|:air|:naval|:structures1..3|:experimental]` (`CybranScene.cs`) lays out every Cybran blueprint.
+Tests: `CybranModelTests`, `CybranSceneTests`, `StatusFxTests`.
+
 **AI.** No AI change: the AI plays Cybran through the roles (AI_TUNING "Cybran vs UEF"). The AI doesn't use
 stealth/cloak/EMP deliberately yet (later).
