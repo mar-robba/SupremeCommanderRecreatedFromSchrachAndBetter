@@ -192,7 +192,7 @@ mostly cache reads, of every session and agent of the project):
 1. Read ROADMAP "▶ NEXT STEPS", especially its "ON RESUME" list.
 2. Make sure no other orchestrator session is running. It happened on 2026-10-14: a second session found main
    moving under it. Check `ps -eo etime,args | grep claude`, `git log --oneline -5` and the times of the recent
-   session transcripts in `~/.claude/projects/-run-media-marco-Volume-D-RTS/`.
+   session transcripts in `~/.claude/projects/-run-media-marco-RTS/` (before 2026-10-23: `-run-media-marco-Volume-D-RTS`).
 3. `git log --oneline -5`, `git worktree list`, `git branch`.
 4. For each worktree: is it finished (report written, clean tree, final commit) or does it need a fresh agent
    (read its `.claude/handoff.md`)?
@@ -219,7 +219,7 @@ Sub-agents cannot write outside their worktree, e.g. the orchestrator's private 
 | Screenshots, saves, replays | `screenshots/`, `saves/`, `replays/` | local only (gitignored) |
 | AI matrix logs | `<worktree>/.claude/ai-lab/runs/<tag>/` | local only |
 | Token ledger (tokens per session/agent and purpose) | `docs/tokens/`, written by `tools/token-ledger/ledger.py` from the hooks in `.claude/settings.json` | yes, in git (the hooks file is local) |
-| Session transcripts, private memory | `~/.claude/projects/-run-media-marco-Volume-D-RTS/` | private. Memory holds only pointers to these docs and how-to-work preferences. |
+| Session transcripts, private memory | `~/.claude/projects/-run-media-marco-RTS/` (older sessions: `-run-media-marco-Volume-D-RTS/`) | private. Memory holds only pointers to these docs and how-to-work preferences. |
 | Scratchpads | `/tmp/claude-1000/...` | **wiped on reboot**: never keep anything important there |
 
 ## Incidents worth remembering
@@ -231,3 +231,9 @@ Sub-agents cannot write outside their worktree, e.g. the orchestrator's private 
   processes was left to the owner.
 - **Two orchestrators (2026-10-14):** a new session started while the previous orchestrator was still merging into
   main. Hence step 2 of "Resuming".
+- **Disk remounted (2026-10-23):** the data partition, mounted until then at `/run/media/marco/Volume D` (owner marco),
+  came up at `/run/media/marco` as root (`fuseblk`, `user_id=0`), so the repo moved to `/run/media/marco/RTS`. Git
+  refused it ("dubious ownership": fixed with `git config --global --add safe.directory <path>` for main and each
+  worktree), the worktrees pointed at the old path (`git worktree repair <new paths>` from main), and Claude Code
+  filed the transcripts under a new project key (`-run-media-marco-RTS`; the ledger and `handoffs.py` also read the
+  old folder). New worktrees need their own `safe.directory` entry.

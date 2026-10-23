@@ -93,7 +93,10 @@ def main(args):
     if "--tag" in args:
         tag = args[args.index("--tag") + 1]
     rows = []
-    for p in glob.glob(os.path.join(project_dir(), "*", "subagents", "agent-*.jsonl")):
+    # Also the transcripts of the old checkout path (disk mounted at "/run/media/marco/Volume D" until 2026-10-22).
+    legacy = os.path.expanduser("~/.claude/projects/-run-media-marco-Volume-D-RTS")
+    for p in sorted(set(glob.glob(os.path.join(project_dir(), "*", "subagents", "agent-*.jsonl"))
+                        + glob.glob(os.path.join(legacy, "*", "subagents", "agent-*.jsonl")))):
         meta_path = p[:-len(".jsonl")] + ".meta.json"
         desc = ""
         if os.path.exists(meta_path):

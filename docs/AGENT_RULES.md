@@ -6,7 +6,7 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
 ---
 
 ## Rules for this job (read carefully)
-- Project: a Supreme Commander 1-like RTS in C#/.NET 10 + Raylib-cs. Main checkout: `/run/media/marco/Volume D/RTS`.
+- Project: a Supreme Commander 1-like RTS in C#/.NET 10 + Raylib-cs. Main checkout: `/run/media/marco/RTS` (until 2026-10-22 `/run/media/marco/Volume D/RTS`).
   CLAUDE.md is already in your context. Read ONLY what your job needs, by section (`grep -n '^## ' <file>`, then
   read that range): reading all of docs/ costs ~50k tokens, a third of your cap. A resumed agent reads its
   `.claude/handoff.md` and notes first, then only the sections they point to. A new agent reads its brief, the

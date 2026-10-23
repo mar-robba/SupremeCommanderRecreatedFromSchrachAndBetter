@@ -7,11 +7,18 @@ main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) locks
 2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
 (the reference for agents that must not change sim results).
-Agent ids: `~/.claude/projects/-run-media-marco-Volume-D-RTS/orchestrator/agents-wave5.md` (ids are valid only in
+Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
 the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-23 13:15 (session 1d992d8d): the disk came back at `/run/media/marco/RTS` (WORKFLOW "Incidents"); the
+  10-22 ~23:00 usage limit had cut both coordinators ((k) WIP committed as ceacaa1, (l) C3a WIP 606a2b7). Fresh
+  coordinators started (ids in `orchestrator/agents-wave5.md`): (l) cap 200k: C3a leftovers, C3b status visuals,
+  D integration + report. (k) cap 250k with **new stall goals** (orchestrator decision: the 30-min 80/96 target
+  measured T1-only play): (a) lopsided games must end (winning army stops 40-70 from the base), (b) finished games
+  at a 45-min cap: NvN >= 80/96, HvH >= 85 %, Hard v Normal >= main, (c) tech beats a T1-only config head-to-head
+  (>= 65 %); timeboxed. Navy + transports AI go to a separate agent (new worktree from the (k) branch) after (l) merges.
 - 2026-10-22 21:55 (session cb4473f4, after a reboot: every /tmp scratchpad is wiped): the 2026-10-16 16:26 session
   limit had cut both coordinators and the (l) client sub-agent C1; its WIP is committed as 8d78f74 (Cybran air models
   + client hooks; naval models missing, the client does NOT compile; state at the bottom of (l) `notes/C-client.md`).
