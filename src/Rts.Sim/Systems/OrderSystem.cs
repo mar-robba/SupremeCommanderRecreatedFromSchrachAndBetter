@@ -76,6 +76,9 @@ public static class OrderSystem
             }
             case OrderType.Patrol:
             {
+                // Builder busy with a patrol job (State != 0: repair/assist/reclaim, Economy/EngineerPatrol): it drives
+                // movement (ConstructionSystem); don't advance the patrol meanwhile.
+                if (o.State != 0) return;
                 var dest = w.Terrain.Clamp(o.Destination);
                 if (AnyWeaponEngaged(u, i, bp)) { if (!ChaseEngagedTarget(w, i, bp, ref mv)) mv.HasGoal = false; return; }
                 if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp) + 1f) || MovementSystem.ArrivedAt(mv, dest))

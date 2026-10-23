@@ -181,6 +181,7 @@ public static class ConstructionSystem
             e.ReclaimEnergy = 0;
             if (!complete || (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0 || q.IsEmpty)
             {
+                if (!q.IsEmpty && q.Current.Type == OrderType.Patrol) EngineerPatrol.ClearJob(ref q.Current); // paused: just walk
                 Idle(w, i);
                 continue;
             }
@@ -193,6 +194,7 @@ public static class ConstructionSystem
                 case OrderType.Reclaim: ExecReclaim(w, i, bp, q, ref o); break;
                 case OrderType.Guard: ExecGuardAssist(w, i, bp, ref o); break;
                 case OrderType.Capture: ExecCapture(w, i, bp, q, ref o); break;
+                case OrderType.Patrol: EngineerPatrol.Exec(w, i, bp, ref o); break; // repair / assist / reclaim on the way
                 default: Idle(w, i); break;
             }
         }
@@ -330,9 +332,25 @@ public static class ConstructionSystem
             o.State = 1;
         }
         if (!props.IsActive(o.Spawned)) { Finish(w, i, q); return; }
-        int pi = o.Spawned.Index;
-        float range = BuildRangeBase + props.Radius[pi] + (bp.Has(UnitCategory.Commander) ? CommanderRangeBonus : 0);
-        if (!MoveIntoRange(w, i, range, props.Pos[pi])) { Idle(w, i); return; }
+        if (ReclaimProp(w, i, bp, o.Spawned.Index) == PropReclaim.Done) Finish(w, i, q);
+    }
+
+    internal enum PropReclaim : byte { Moving, Draining, Done }
+
+    /// <summary>
+    /// Builder i reclaims live prop pi this tick: steers into range (Idle, <see cref="PropReclaim.Moving"/>), else drains
+    /// it into the builder's reclaim income; <see cref="PropReclaim.Done"/> = used up (reclaim effect emitted, prop freed).
+    /// Shared by the Reclaim order and engineer patrol (<see cref="EngineerPatrol"/>). SEQUENTIAL.
+    /// </summary>
+    internal static PropReclaim ReclaimProp(SimWorld w, int i, UnitBlueprint bp, int pi)
+    {
+        var u = w.Units;
+        var props = w.Props;
+        float dt = SimWorld.Dt;
+        float rate = bp.Economy.BuildRate;
+        ref var e = ref u.Econ[i];
+        float range = PropRange(bp, props.Radius[pi]);
+        if (!MoveIntoRange(w, i, range, props.Pos[pi])) { Idle(w, i); return PropReclaim.Moving; }
         float time = MathF.Max(MinPropReclaimTime, MathF.Max(
             props.MassMax[pi] / (rate * PropReclaimMassPerRate),
             props.EnergyMax[pi] / (rate * PropReclaimEnergyPerRate)));
@@ -347,9 +365,14 @@ public static class ConstructionSystem
         {
             EmitReclaim(w, props.Pos[pi], w.Terrain.GetHeight(props.Pos[pi]), props.Radius[pi], u.Army[i], props.BlueprintIndex[pi]);
             props.Free(pi);
-            Finish(w, i, q);
+            return PropReclaim.Done;
         }
+        return PropReclaim.Draining;
     }
+
+    /// <summary>Reclaim range to a prop of radius <paramref name="propRadius"/> (like <see cref="BuildRange"/>).</summary>
+    internal static float PropRange(UnitBlueprint builder, float propRadius) =>
+        BuildRangeBase + propRadius + (builder.Has(UnitCategory.Commander) ? CommanderRangeBonus : 0);
 
     /// <summary>Capture the enemy unit o.Target (see <see cref="CaptureSystem"/>): move into build range, then
     /// spend energy on capture progress; the order completes when the unit is ours (or can't be captured).</summary>
@@ -486,7 +509,7 @@ public static class ConstructionSystem
     }
 
     /// <summary>Returns true if within range (and stops moving); otherwise steers toward the point.</summary>
-    private static bool MoveIntoRange(SimWorld w, int i, float range, Vector2 point)
+    internal static bool MoveIntoRange(SimWorld w, int i, float range, Vector2 point)
     {
         ref var mv = ref w.Units.Move[i];
         if (Vector2.DistanceSquared(w.Units.Pos[i], point) <= range * range)
