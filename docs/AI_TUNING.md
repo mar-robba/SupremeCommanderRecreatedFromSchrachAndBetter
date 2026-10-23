@@ -268,6 +268,23 @@ firing time). Focus fire still hurts with a threat-weighted pick, so the cost is
 AttackUnit order per member every think; not measured: stops, turning, chasing), not the choice of target; the code
 stayed as it was.
 
+#### Final numbers of agent (k) (2026-10-24: UEF T1 tank fix + Hard preset above, 45-minute cap)
+
+| goal | target | result | |
+|---|---|---|---|
+| (a) lopsided games end | ~0 stalled | NvN 21/69, HvN 33/115, HvH 17/48 stalled | unmet (see "Experiments" for every lever tried) |
+| (b) NvN finished | >= 80/96 | 64/96 (52 by 30 min) | unmet (a37b799: 70; noise about ±6) |
+| (b) HvH finished | >= 85 % | 76/96 = 79 % (67 by 30 min) | unmet (a37b799: 68) |
+| (b) Hard v Normal | >= main's 96 % | 102 - 52 = 66 % (154/192 finished) | unmet ("Hard's edge") |
+| (c) tech v T1-only | >= 65 % | 104 - 70 = 60 % | unmet (a37b799: 64 %; the faster UEF tank shells help the T1-only AI) |
+| Cybran v UEF | even | 39 - 35 (22 draws) | met (was 51 - 21) |
+
+Reference match `ai 30 256 42 hard,normal`: "WINNER: Player (Hard) after 15:35", hash 4E3F22FD0F8EED11. Runs:
+`.claude/ai-lab/runs/k11*` in the (k) worktree (not in git). What is left is the stall problem: equal mirror AIs with
+T2/T3, shields and point defense trade at the front for a long time, and no army-control lever tried so far ends those
+games without losing more elsewhere; the next step is an AI decision change (siege of a fortified front with artillery
+and T3 units, a real "break the stalemate" mode), not more config values.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`

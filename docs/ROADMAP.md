@@ -8,7 +8,7 @@ main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) locks
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EC8B7A06DF52317E
 (the reference for agents that must not change sim results; before the Cybran data it was EDCA8A729F29736E, same game).
 After the land balance pass (AI_TUNING "Unit balance" AFTER) it is "WINNER: AI 1 (Normal) after 15:50", hash 9724216772093A2E.
-With the (k) AI defaults after the balance (a37b799) it is "WINNER: Player (Hard) after 15:58", hash 74E2EB7D333190A4.
+With the final (k) AI (Hard preset and UEF T1 tank fix, 2026-10-24) it is "WINNER: Player (Hard) after 15:35", hash 4E3F22FD0F8EED11.
 Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
 the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
@@ -324,6 +324,13 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       fog ViewArmy = local human (defeated player "Keep Watching" = fog off); settings: master/effects/music
       volumes (saved) on an app-wide `AudioSystem` (menus: clicks + music); end screen `ArmyStats`
       - [x] AI on new presets: builds and fights everywhere; most NvN games end by commander kill (see Skirmish AI)
+      - [x] AI uses everything (wave 5 k, 2026-10-24): T2/T3 tech with budget/pressure switch, shields, TML, strategic
+            projects, enhancements, SCUs, air T2/T3; duel tool (`Rts.Bench duel/duelmatrix`), land balance pass, Cybran/UEF
+            parity (UEF T1 tank shells 30 -> 40: CvU 51-21 -> 39-35), Normal defaults + Hard preset (HvN 102-52 at 45 min),
+            lab scripts `tools/ai-lab`. Numbers: AI_TUNING "Final numbers of agent (k)".
+      - [ ] later: stalled mirror games (NvN 64/96 finished at 45 min, goal 80): an AI "break the stalemate" mode
+      - [ ] later: Hard only ~2:1 vs Normal (main had 96 % with the T1 artillery exploit): better decisions, focus fire
+            that does not cost firing time; tech AI vs T1-only 60 % (goal 65 %)
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed

@@ -167,6 +167,7 @@ integrated GPU.
 | Save, 512 map, 4 AIs, 25 min, 6641 units | file 1.8 MB (raw 29.5 MB); capture 86 ms on the sim thread; encode 99 ms in the background; load 0.3 s | wave 4 |
 | Replay of that game | 165 KB; headless verify 1493 ticks/s; recording 0.009 ms/tick | wave 4 |
 | 96 AI games of 30 min (256 maps) | ≈ 60 s wall with `tools/ai-lab` | wave 4 |
+| 96 AI games of 45 min with T2/T3 (256 maps, 15 parallel) | ≈ 8–12 min wall (192-game HvN ≈ 8 min when many end early); a whole `duelmatrix` 5 masses x 4 seeds ≈ 9 s | wave 5k |
 | `Rts.Bench 2000 300` | avg 1.7–2.0 ms/tick, p95 2.4–2.9, max ≈ 10 (main before 5m, same runs: 3.5–4.5 / 5.8–9.2 / 25) | wave 5m |
 | `Rts.Bench 700 400 0 1024 8` (8 armies, 4.6k units) | avg 2.4, p95 4.5–4.9, intel 0.33 (before: 3.9–4.6 / 10.6–12.3 / 1.1–1.35); with warm-up avg 2.0, p95 3.8, max 8.5, first tick 15 ms (before ≈ 210) | wave 5m |
 | `ai 40 1024 42 hard 0 8 plains` (8 AIs, 40 min) | avg 0.96, p95 2.21, max 12.1 (one AI think), 10 KB/tick (before: 1.64 / 3.68 / 217 / ≈ 125 KB) | wave 5m |
