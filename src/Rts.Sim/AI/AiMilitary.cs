@@ -905,6 +905,7 @@ public sealed class AiMilitary
                 : bp.Has(UnitCategory.MassExtractor) ? 30f
                 : bp.HasAny(UnitCategory.PowerGenerator | UnitCategory.MassFabricator) ? 20f
                 : bp.Has(UnitCategory.Defense) ? 5f : 10f;
+            if (bp.HasAny(UnitCategory.Factory | UnitCategory.MassExtractor)) value += Cfg.TierValue * (bp.Tech - 1);
             float d = Vector2.Distance(from, ks.Pos);
             float score = value - d * 0.25f;
             float defense = V.ThreatAt(ks.Pos, 24f);

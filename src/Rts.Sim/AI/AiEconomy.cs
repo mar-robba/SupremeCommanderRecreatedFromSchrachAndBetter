@@ -150,7 +150,7 @@ public sealed partial class AiEconomy
         int n = CountTiers(_b.R.LandFactory) + _b.Placement.ReservedCount(_b.BpLandFactory);
         // Factory capacity short of the army's share of the income (T2/T3 factories upgrade slowly and cost much
         // more per build power than a new T1 factory): allow more factories, like when floating.
-        bool shortCapacity = _b.GameTime > Cfg.CapacityTime && FactoryCapacity < MassIncome * Cfg.ArmyShare * Cfg.CapacityMargin;
+        bool shortCapacity = _b.GameTime > Cfg.CapacityTime && FactoryCapacity < MassIncome * ArmyShareNow * Cfg.CapacityMargin;
         int cap = Floating || shortCapacity ? Math.Min(Cfg.MaxLandFactoriesFloat, Math.Max(Cfg.MaxLandFactories + 3, (int)(MassIncome / 4.5f) + 1)) : Cfg.MaxLandFactories;
         if (n >= cap) return false;
         if (n == 0) return true;

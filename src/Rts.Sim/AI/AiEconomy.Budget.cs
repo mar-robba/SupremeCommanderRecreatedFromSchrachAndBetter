@@ -34,13 +34,19 @@ public sealed partial class AiEconomy
         float enemy = MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate);
         Pressured = _b.GameTime > 300 && (V.OwnLandStrength < Cfg.PressureRatio * enemy
                                           || V.ThreatAt(_b.BasePos, Cfg.DefenseRadius) > V.OwnLandStrength * 0.5f + 50f);
+        // Winning the land war: press the advantage (the leader's army grows faster, so lopsided games end).
+        Leading = Cfg.LeadArmyShare > 0 && _b.GameTime > Cfg.LeadTime && V.OwnLandStrength > Cfg.LeadRatio * enemy + 200f;
     }
+
+    /// <summary>Our land army is well ahead of the enemy's (see UpdateBudget, <see cref="AiConfig.LeadArmyShare"/>).</summary>
+    public bool Leading;
 
     /// <summary>The enemy land army looks much stronger than ours, or threatens the base (see UpdateBudget).</summary>
     public bool Pressured;
 
     /// <summary>Share of the income kept for the factories now.</summary>
-    public float ArmyShareNow => Pressured ? MathF.Max(Cfg.ArmyShare, Cfg.PressureArmyShare) : Cfg.ArmyShare;
+    public float ArmyShareNow => Pressured ? MathF.Max(Cfg.ArmyShare, Cfg.PressureArmyShare)
+        : Leading ? MathF.Max(Cfg.ArmyShare, Cfg.LeadArmyShare) : Cfg.ArmyShare;
 
     private float FactoryDraw(int f)
     {

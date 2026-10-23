@@ -143,6 +143,7 @@ and its armies stayed half the size (27-35 land units vs 59) although its mass i
 | + siege push SiegeTime=60 / 30 / 60 with ArtilleryTier=1 | 55 / 44 / 58 (no help: off) |
 | + snipe with indirect-fire members too (SnipeIndirect) / also CommanderSnipe from the start | 57 / 44 |
 | + EnhanceTime=99999 (re-run on the budget baseline) | 57 |
+| + attrition fall-back (`AiMilitary.FallBack`: no progress for StallTime s while weaker than required → gather again) StallTime=40 / 60 / 90 / 60 with margin 0.7 | 54 / 55 / 53 / 56 (off) |
 
 Findings beyond the budget:
 - With T1 units only, army spending matches main by minute 20 (21.3k) and land counts are higher, yet only 65-68/96

@@ -128,6 +128,8 @@ public sealed partial class AiConfig
     public float ArmyShare = 0.5f;
     /// <summary>ArmyShare while pressured: own land strength below PressureRatio x the enemy's, or enemies at the base.</summary>
     public float PressureArmyShare = 0f, PressureRatio = 0.6f; // off: 0.85 made NvN worse (40/96 vs 58), AI_TUNING
+    /// <summary>ArmyShare while leading: own land strength above LeadRatio x the enemy's (+200) after LeadTime. 0 = off.</summary>
+    public float LeadArmyShare = 0f, LeadRatio = 1.5f, LeadTime = 600;
     /// <summary>More land factories (up to MaxLandFactoriesFloat) after CapacityTime while their capacity is below
     /// ArmyShare x CapacityMargin x mass income.</summary>
     public float CapacityTime = 420, CapacityMargin = 1.2f;
@@ -140,6 +142,8 @@ public sealed partial class AiConfig
     /// <summary>Attrition stall (AiMilitary.FallBack): an attacking army that has not closed in on its objective for
     /// StallTime seconds while weaker than StallMargin x the strength the objective needs gathers again. 0 = off.</summary>
     public float StallTime = 0, StallMargin = 1f;
+    /// <summary>Objective value bonus per tier above 1 for extractors and factories (upgraded ones carry the economy).</summary>
+    public float TierValue = 0;
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>
