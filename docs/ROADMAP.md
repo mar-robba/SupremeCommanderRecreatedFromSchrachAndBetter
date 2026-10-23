@@ -87,6 +87,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save
      migrations.
   5. ✅ (merged 2026-10-16) Lockstep multiplayer: LAN/Internet lobby on top of the replay command log and desync hashes.
+- **Wave 6+**: gap table, waves 6-10 (2 agents each) and owner questions in "Wave 6+ plan (audit 2026-10-23)" below.
 
 Shared contracts (still valid):
 - `BuiltBy`: a blueprint adds itself to builders' lists; unknown ids are ignored.
@@ -94,6 +95,143 @@ Shared contracts (still valid):
 - Enums are append-only; edits to shared files stay minimal and additive.
 - New models go in new partial files, with only a `case` line in UnitModels.cs.
 - Sim state must stay serializable for agent (i): plain fields/arrays/lists, no stored delegates, no static mutable state.
+
+## Wave 6+ plan (audit 2026-10-23)
+Audit of main (bfbb5f4) against Supreme Commander 1 (vanilla; FA = Forged Alliance only), for the two factions the
+owner wants (UEF + Cybran). Not listed: what (k) "AI uses everything" and (k-navy) deliver. Checked by grep: rosters
+(158 blueprints), hotkey table, setup/lobby/settings screens, victory code, alerts, save paths. Already there (no gap):
+teams + shared team vision, team victory, per-army unit cap in the sim (1000, not shown or settable), terrain line of
+fire (the Phase 1 "terrain blocking direct fire" later line is stale), reclaim of living units, strategic zoom, chat.
+Size: S < 1k lines, M ~1-3k (one agent-window), L = several windows. Prio: 1 = needed for a complete SupCom1
+experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to have.
+
+| # | Gap | SC1/FA | Size | Area / files | Depends on | Prio |
+|---|---|---|---|---|---|---|
+| G1 | ACU **Overcharge** (energy-fed shot, damage from stored energy; order button + key) | SC1 | M | `Rts.Sim/Combat`, `Commander`, commander blueprints, OrdersPanel | — | 1 |
+| G2 | **Commander death explosion** (nuke-like blast, hurts everyone near) | SC1 | S | `Commander` (death hook), Experimental death blast, NukeFx | — | 1 |
+| G3 | **Engineer patrol automation**: patrolling engineers/ACU/SCU reclaim wrecks, repair, assist builds in range | SC1 | S-M | `Economy/ConstructionSystem`, OrderSystem Patrol case | — | 1 |
+| G4 | **Game options**: victory assassination / supremacy / annihilation / sandbox; unit cap 250-1000 (+ HUD "units 123/500"); start resources; fog explored/none; game speed normal/fast/adjustable; cheats; prebuilt units | SC1 | M | GameSetup, CleanupSystem, Army; SkirmishSetupScreen, LobbyScreen, NetGameConfig, `Rts.Net/Lobby` codec; Hud | — | 1 |
+| G5 | **Team play**: give units and mass/energy to allies, allied overflow sharing, allies-only chat | SC1 | M | UnitTransfer, new `Economy/EconomyShare.cs`, new `Orders/DiplomacyCommands.cs`, new `UI/DiplomacyPanel` | G4 | 1 |
+| G6 | Score history (income, units, kills every 30 s) + end-screen graphs, score column in the players panel | SC1 | S | ArmyStats (saveable), EndScreen | G4 | 3 |
+| G7 | Missing enhancements: Personal Teleporter (both ACUs), UEF Engineering Drones (C-D1/C-D2), UEF SCU Radar Jammer | SC1 | M | `Commander`, blueprints, client models/fx | — | 2 |
+| G8 | Missing units: UEF Mech Marine (T1 bot); T3 strategic missile subs (UEF Ace, Cybran; nuke + TML from a submerged hull); Cybran T3 aircraft carrier; T3 sonar platforms; UEF T2 stealth field generator (verify vanilla); Salem destroyer walks on land | SC1 | M | `data/blueprints`, faction json (optional roles), `Naval`, `Strategic` (mobile silo), `Transport` (carrier), models | — | 2 |
+| G9 | **Walls** (T1 wall sections, both factions: block movement and shots, Shift-drag lines) | SC1 | S-M | data, Pathfinding blocked cells, Combat projectile hits | — | 2 |
+| G10 | Map props: trees (energy) and rocks (mass) to reclaim; trees fall / burn | SC1 | M | PropStore kinds, `Map/` generator, PropRenderer | — | 2 |
+| G11 | Leftovers: Atlantis dive (Sub layer), swap an occupied enhancement slot in one click, mobile TML moves into range, shield HP kept on enhancement swap, Mavor arc/priority, crush animation, emergency drop, staging repair cost, fog wrecks/deposits, sandbox selects enemies | SC1 | M (many S) | various | — | 3 |
+| G12 | Pathing: exact unit clearance, per-unit MaxSlope, ships steering in narrow channels | SC1 | M | Pathfinding, MovementSystem | — | 3 |
+| G13 | FA-only units for UEF/Cybran (Broadsword, Wailer, Continental, Novax, Megalith, Brick, Hoplite, Kennel/Hive); some FA units exist (Percival, Janus, Ravager) | FA | L | data + models | owner Q8 | 3 |
+| G14 | Selection/camera keys: all of a type on the map, all land / air / naval / engineers, ACU (select + center), camera bookmarks, jump to last alert | SC1 | S | Hotkeys (new entries), SelectionController, new `Input/SelectionFilters.cs` | — | 2 |
+| G15 | Formation move with facing (right-drag), waypoint editing (drag / delete queued order markers), ferry route editing | SC1 | M | Input, new `Orders/QueueEditCommands.cs` (+ one CommandSystem line) | — | 2 |
+| G16 | Notifications: minimap flash where attacked, structure lost, construction/upgrade done, unit cap reached, ally under attack | SC1 | S | GameAudio alerts, Minimap, Toasts | — | 2 |
+| G17 | Map pings / markers (alert, move, attack; map + minimap; allies and MP; in replays) | SC1 | M | new `UI/Pings`, sim command (additive) | — | 2 |
+| G18 | Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
+| G19 | Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
+| G20 | Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
+| G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
+| G22 | Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
+| G23 | Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
+| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected") | SC1 | M | Audio + voice assets | owner Q7 | 3 |
+| G25 | TTF font (raylib's default font has no è/à) | — | S | Ui text | G28 | 2 if G28 |
+| G26 | Map files + curated map pack: save/load maps (heightmap, water, deposits, starts, props), 8-12 named maps with thumbnails, map picker in setup/lobby (host sends the map) | SC1 | M-L | `Rts.Sim/Map`, Menus setup/lobby, `Rts.Net` transfer | G10 | 2 |
+| G27 | Terrain biomes (temperate, desert, tundra, lava, tropical) | SC1 | S-M | TerrainRenderer palettes + generator option | — | 3 |
+| G28 | Italian localization (string table, language setting, UI/tooltips/help/unit names) | — | M-L | whole client + blueprint names | owner Q4, G25 | Q |
+| G29 | Map editor (SupCom1 had none in game) | — | L | — | owner Q2 | 3 |
+| G30 | AI personalities (Rush / Turtle / Tech / Horde / Adaptive), per slot | SC1 | M | `Rts.Sim/AI` presets, AiDifficulty append, AI LEVEL column | (k) | 2 |
+| G31 | AI team play: allied AIs attack together, defend an ally, answer pings, share overflow | SC1 | M | AI | G5, G17, (k) | 2 |
+| G32 | AI uses the new mechanics: overcharge, teleport snipes, stealth/cloak/EMP on purpose, capture, missile subs, carrier, walls | SC1 | M | AI | G1, G7, G8, (k) | 2 |
+| G33 | AI think ~11 ms on 1024 with 8 AIs; mid-game region graph ~14 ms | — | S-M | AI, Pathfinding | (k) | 2 |
+| G34 | Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
+| G35 | Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
+| G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
+| G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
+| G38 | NAT traversal / relay server (today: port forwarding) | SC1 | L | `Rts.Net` + a hosted server | owner Q6 | 3 |
+| G39 | Vote to drop, host migration, per-player lobby pings, chat sounds | — | S-M | `Rts.Net`, Net menus | — | 3 |
+| G40 | Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
+| G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
+| G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | Q |
+| G43 | Campaign (UEF + Cybran operations: scripted missions, dialogue, handmade maps) | SC1 | XL | scenario system, maps, AI scripts | G42, G26 | Q |
+| G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | Q |
+| G45 | **Release packaging**: self-contained Release build (linux-x64; win-x64 zip optional), data next to the exe, saves/replays/settings/screenshots in the user folder (today `saves/` = current dir), icon, `.desktop` launcher + desktop shortcut, version in the main menu, crash log | — | S-M | new `tools/package/`, csproj, SaveStore dirs, Program.cs | — | 1 |
+
+### Proposed waves (2 agents each, disjoint files, one usage window each; start after (k) and (k-navy) merge)
+Free keys today: O, I, J, W, F2-F4, F11, F12 (`HotkeyTableTests`). Each agent: AGENT_RULES block, cap 150k.
+Agents that change sim results document the new reference hash of `Rts.Bench -- ai 30 256 42 hard,normal`.
+
+**Wave 6: core SupCom mechanics (P1)**
+- 6a Commander & engineers (G1, G2, G3; G7 if time). Overcharge (energy cost, damage from storage, ACU only, key O,
+  order button, fx/sound), commander death blast (hook in `Commander/`, NOT CleanupSystem: 6b owns it), patrol
+  automation in a new `Economy/EngineerPatrol.cs` (+ the Patrol case), then teleporter + UEF drones + SCU jammer. Owns
+  `Rts.Sim/Commander`, `Combat` (new OverchargeSystem file), ConstructionSystem, commander/SCU blueprints, client
+  order button + model partials. Tests: OC damage/energy, blast radius, patrol reclaim/repair/assist, teleport, save
+  coverage. Screenshots: OC shot, death blast, teleport.
+- 6b Game options & team play (G4, G5; G6 if time). Victory modes, unit cap option + HUD counter + "cap reached",
+  start resources, fog, speed lock, cheats, prebuilt units in setup AND lobby (lobby codec in `Rts.Net`); give
+  units/resources, allied overflow, allies-only chat, diplomacy panel; score graphs. Owns GameSetup, CleanupSystem,
+  Army (append), UnitTransfer, new EconomyShare/DiplomacyCommands, setup/lobby screens, NetGameConfig, Hud,
+  EndScreen. Tests: each victory mode, cap, transfers, overflow, codec round trip, MP loopback with options.
+
+**Wave 7: something the owner can launch + everyday UX**
+- 7a Release, settings, autosave (G45, G18, G40). `tools/package/` script (dotnet publish Release self-contained,
+  data copied, icon, `.desktop` + desktop shortcut, Windows zip optional), user-folder paths for saves/replays/
+  settings/screenshots, version label, crash log; graphics + gameplay settings and Settings in the pause menu;
+  autosave. Owns tools/package, csproj, SaveStore dirs, Program.cs, SettingsScreen, AppSettings, InGameScreen, menus.
+  Tests: paths + settings round trip; launch the packaged build from the shortcut (screenshot); DEV_GUIDE section.
+- 7b Orders & selection UX (G14, G15, G16, G17; G20 if time). Selection filters, ACU key, camera bookmarks, jump to
+  alert; right-drag formation facing; drag/delete waypoints, ferry route editing; notification pass with minimap
+  flashes; pings (sim command, replays + MP). Owns `Input/`, Hotkeys (new entries), SelectionController, Minimap,
+  GameAudio alerts, new overlay, new sim `Orders/QueueEditCommands.cs` + ping command (additive). Tests: hotkey
+  table, queue-edit + ping sim tests, ping in replay/MP loopback. Screenshots.
+
+**Wave 8: content (P2)**
+- 8a Missing units & walls (G8, G9; Atlantis dive from G11). Mech Marine, both strategic missile subs (submerged
+  launch), Cybran carrier (reuse the Atlantis cargo/factory), T3 sonar platforms, UEF stealth field generator, Salem
+  on land, wall sections. Owns `data/blueprints`, faction json (optional roles: AI ignores what it doesn't know),
+  `Naval`, `Strategic`, `Transport`, Pathfinding blocked cells, model partials + `case` lines. Tests: roster tests,
+  submerged launch, walls block paths/shots, carrier; `--scene` group; screenshots.
+- 8b Maps (G10, G26; G27 if time). Trees/rocks props (reclaim, fall/burn), map file format + 8-12 curated named maps
+  with thumbnails, map picker in setup/lobby, host sends the map in MP; biomes. Owns PropStore (additive kinds),
+  `Map/` (new MapFile, props placement), PropRenderer, TerrainRenderer palettes, map picker UI, `Rts.Net` map
+  transfer. Tests: file round trip, props reclaim, MP map hash, MapScaleTests; screenshots per biome.
+
+**Wave 9: AI on top of the new features + visual polish**
+- 9a AI (G30, G31, G32, G33). Personalities as AiConfig presets (setup/lobby column), allied coordination with AIs
+  and humans (pings, defend ally, share), uses overcharge/teleport/stealth/cloak/EMP/capture/new units, think cost
+  on 1024 8p. Owns `Rts.Sim/AI`, AI_TUNING, the AI LEVEL column. Tests: AI tests + standard matrices (AI_TUNING).
+- 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes). Terrain shadows, unit LOD, death animations,
+  ACU warp-in, minimap options. Owns `Rendering/`, `Audio/`, Minimap. Perf: `--perf-log` before/after; screenshots.
+
+**Wave 10: multiplayer robustness + keybindings**
+- 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash
+  change, golden-value tests), observers, MP save/load, vote to drop, lobby pings, chat sounds. Owns `Rts.Sim` math
+  call sites, `Rts.Net`, Net menus. Tests: Net tests, `Rts.Bench -- mp`, replays still verify.
+- 10b Keybindings & client leftovers (G19; G21 if the owner wants it, else G11 client items and G20/G22 leftovers).
+  Owns Hotkeys.cs, new KeyBindingsScreen, the listed client files. Tests: rebinding + clash tests; screenshots.
+
+**Wave 11+ (depends on the owner's answers)**: Italian localization (G28 + G25: touches every UI file, so pair it
+with a sim-only agent: G12 pathing + G41 save migration); tutorial/scenario system (G42) then campaign (G43); mod
+support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
+
+### Questions for the owner
+1. **Campaign / story missions?** Recommendation: not now. First a short interactive tutorial (G42, one window) on a
+   small scripted-scenario system that a campaign could reuse later; a full SupCom1-style campaign (2 × 6 missions,
+   handmade maps, dialogue) costs many windows.
+2. **Map editor?** Recommendation: no full editor; map files + a curated map pack (wave 8) and seed browsing cover
+   play variety; terrain brushes in the sandbox later if you want to shape maps.
+3. **Mod support?** Recommendation: yes but small (S-M), after packaging: `mods/<name>/` folders that add or override
+   unit/faction JSON, an enable list, the same mods checked in MP. No script mods.
+4. **Italian localization?** Recommendation: yes, as its own agent in wave 11 when the UI has settled (every UI
+   string goes to a table, plus a font with accents); English stays available, docs stay English.
+5. **How big a release step?** Recommendation (wave 7): a Linux Release folder + desktop shortcut + icon, saves in
+   your user folder; a Windows zip as a cheap extra; no installer, Steam or itch.io for now.
+6. **Online play outside the LAN / with Windows friends?** Recommendation: today Tailscale or ZeroTier (no code, acts
+   as a LAN) or port forwarding; `DMath` (wave 10) only matters if Windows players join; a relay server needs a
+   hosted machine (running cost): skip unless you want games with strangers.
+7. **Voice announcer?** Recommendation: keep beeps + on-screen messages (all audio is synthesized, no asset files);
+   a voice would mean the first recorded/generated audio assets (Italian or English?): your taste.
+8. **Forged Alliance units for UEF/Cybran** (Broadsword, Wailer, Continental, Novax, Megalith, Brick...)?
+   Recommendation: not until the SupCom1 list (G1-G45) is done.
+9. **Split screen / second monitor?** Recommendation: skip (L cost, little use on one screen) unless you play on two
+   monitors.
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
