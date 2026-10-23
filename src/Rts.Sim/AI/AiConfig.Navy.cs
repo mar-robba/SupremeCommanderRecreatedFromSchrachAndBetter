@@ -5,7 +5,7 @@ namespace Rts.Sim.AI;
 public sealed partial class AiConfig
 {
     /// <summary>Master switch of the navy (naval factories, ships, torpedo defense, sonar).</summary>
-    public bool NavyEnabled = false;
+    public bool NavyEnabled = true;
     /// <summary>Coast search radius around the base for the naval factory (scaled by sqrt(map size / 256)).</summary>
     public float NavalSiteRadius = 70f;
     /// <summary>Earliest first naval factory when the enemy is also reachable by land (Lakes). Without a land path

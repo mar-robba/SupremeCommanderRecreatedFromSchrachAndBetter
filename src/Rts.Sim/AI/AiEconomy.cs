@@ -188,11 +188,13 @@ public sealed partial class AiEconomy
         if (Floating) FactoryBudget += 2;
         FactoryBudget = MathF.Max(FactoryBudget, budget * ArmyShareNow / 4f); // army-first floor (Budget.cs)
         float slot = 0;
+        // Navy first when no enemy is reachable by land (Archipelago: land units can't get there).
+        if (_b.Navy.Priority) _b.Navy.ManageFactories(ref slot, FactoryBudget + 0.5f);
         bool airFirst = _b.Perception.EnemyAirCountMem > 4;
         if (airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, (slot += FactoryWeight(f)) <= FactoryBudget + 0.5f);
         foreach (int f in V.LandFactories) Factory(f, air: false, (slot += FactoryWeight(f)) <= FactoryBudget + 0.5f);
         if (!airFirst) foreach (int f in V.AirFactories) Factory(f, air: true, (slot += FactoryWeight(f)) <= FactoryBudget + 0.5f);
-        _b.Navy.ManageFactories(ref slot, FactoryBudget + 0.5f);
+        if (!_b.Navy.Priority) _b.Navy.ManageFactories(ref slot, FactoryBudget + 0.5f);
         ManageGateways(ref slot);
     }
 
