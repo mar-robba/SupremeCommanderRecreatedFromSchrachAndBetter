@@ -240,6 +240,7 @@ public static class ProjectileSystem
         float radius = P.DamageRadius[p];
         int army = P.Army[p];
         int bp = P.SourceBp[p];
+        EmpStun.OnImpact(w, bp, P.WeaponIndex[p], army, new Vector2(imp.Pos.X, imp.Pos.Z), imp.Unit); // EMP weapons
         if (radius > 0)
         {
             w.Events.AreaDamage.Add(new AreaDamageEvent

@@ -1,0 +1,56 @@
+{
+  "Id": "cybran_t3_heavy_artillery",
+  "Name": "Disruptor",
+  "Description": "T3 heavy artillery installation (range 400): slow, very inaccurate, devastating proton shells.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "IndirectFire",
+    "Artillery",
+    "Tech3"
+  ],
+  "MaxHealth": 8500,
+  "Radius": 2.0,
+  "FootprintX": 4,
+  "FootprintZ": 4,
+  "Economy": {
+    "BuildCostMass": 5800,
+    "BuildCostEnergy": 78000,
+    "BuildTime": 14500
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Strategic Artillery Shell",
+      "Range": 400,
+      "MinRange": 40,
+      "Damage": 3000,
+      "DamageRadius": 5,
+      "RateOfFire": 0.1,
+      "MuzzleVelocity": 70,
+      "Spread": 12,
+      "Ballistic": true,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 15,
+      "FiringTolerance": 2
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_artillery_structure",
+    "Size": [
+      3.6,
+      3.2,
+      3.6
+    ],
+    "Icon": "artillery"
+  },
+  "BuiltBy": [
+    "cybran_t3_engineer"
+  ]
+}

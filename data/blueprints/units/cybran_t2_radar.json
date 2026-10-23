@@ -1,0 +1,36 @@
+{
+  "Id": "cybran_t2_radar",
+  "Name": "T2 Radar",
+  "Description": "Detects units at very long range. Upgrade of the T1 radar.",
+  "Tech": 2,
+  "UpgradesTo": "cybran_t3_omni_sensor",
+  "Categories": [
+    "Structure",
+    "Intel",
+    "Radar",
+    "Tech2"
+  ],
+  "MaxHealth": 600,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 180,
+    "BuildCostEnergy": 3600,
+    "BuildTime": 500,
+    "MaintenanceEnergy": 25
+  },
+  "Intel": {
+    "VisionRadius": 25,
+    "RadarRadius": 200
+  },
+  "Visual": {
+    "Shape": "cy_radar2",
+    "Size": [
+      1.6,
+      3.9,
+      1.6
+    ],
+    "Icon": "intel"
+  }
+}

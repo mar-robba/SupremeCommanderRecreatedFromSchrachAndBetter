@@ -33,6 +33,31 @@ public static class Submarines
     /// and SAMs (the Atlantis') hold fire and drop their targets.</summary>
     public static bool FiresSubmerged(Combat.WeaponKind kind) => kind is Combat.WeaponKind.Torpedo or Combat.WeaponKind.AntiTorpedo;
 
+    /// <summary>Kind-based rule above, or the weapon blueprint's <c>FiresSubmerged</c> flag (any kind).</summary>
+    public static bool FiresSubmerged(Combat.WeaponKind kind, WeaponBlueprint wb) => FiresSubmerged(kind) || wb.FiresSubmerged;
+
+    /// <summary>
+    /// Seabed walker under water: a <c>Movement.Layer == Amphibious</c> unit (engineers, Cybran Wagner/Monkeylord)
+    /// standing below the water level. Like a dived sub it is on the Sub layer (<see cref="OrderSystem.LayerOf"/>:
+    /// only Sub-layer weapons such as torpedoes hit it, only sonar/omni see it) and only its
+    /// <see cref="FiresSubmerged(Combat.WeaponKind, WeaponBlueprint)"/> weapons work. Reads only unit i (thread-safe).
+    /// </summary>
+    public static bool IsOnSeabed(SimWorld w, int i) =>
+        w.BpOf(i).Movement.Layer == MotionLayer.Amphibious && w.Terrain.IsUnderwater(w.Units.Pos[i]);
+
+    /// <summary>Under water for its weapons: a submerged diver (<see cref="IsSubmerged"/>) or a seabed walker
+    /// (<see cref="IsOnSeabed"/>). Targeting and WeaponSystem then hold every weapon that doesn't fire submerged.</summary>
+    public static bool WeaponsUnderwater(SimWorld w, int i) => IsSubmerged(w, i) || IsOnSeabed(w, i);
+
+    /// <summary>Height above the water surface where a non-torpedo <c>FiresSubmerged</c> weapon of a unit under water
+    /// fires from (the gun breaks the surface; shots never travel under water).</summary>
+    public const float SurfaceMuzzleClearance = 0.5f;
+
+    /// <summary>Muzzle height of a weapon of a unit under water: torpedoes stay at <paramref name="y"/>, any other
+    /// (FiresSubmerged) weapon fires from just above the water surface.</summary>
+    public static float UnderwaterMuzzleY(SimWorld w, float y, Combat.WeaponKind kind) =>
+        FiresSubmerged(kind) ? y : MathF.Max(y, w.Terrain.WaterLevel + SurfaceMuzzleClearance);
+
     /// <summary>
     /// Layer of a sub for intel and targeting: decided by its depth, not by the toggle, so a dive/surface takes
     /// effect once the hull is halfway (<see cref="NavalMotion.SubElevation"/> eases it): a diving sub stays exposed

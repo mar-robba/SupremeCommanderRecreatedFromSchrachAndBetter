@@ -24,6 +24,8 @@ public enum UnitFlags : ushort
     /// <summary>Inside a carrier (transport / air staging / Atlantis): off the map. Not in AliveList (so not in the
     /// spatial grid, untargetable, no weapons/intel/economy); moved with the carrier by Transport.TransportSystem.</summary>
     Carried = 1 << 10,
+    /// <summary>EMP-stunned (Combat/EmpStun): no moving, firing, building or producing until the stun ends.</summary>
+    Stunned = 1 << 11,
 }
 
 /// <summary>Movement module state (owned by MovementSystem / PathSystem).</summary>

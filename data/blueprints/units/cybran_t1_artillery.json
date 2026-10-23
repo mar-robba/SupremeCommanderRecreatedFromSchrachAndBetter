@@ -1,0 +1,58 @@
+{
+  "Id": "cybran_t1_artillery",
+  "Name": "Medusa",
+  "Description": "T1 mobile light artillery; its EMP shells stun T1 units for 1 s.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "IndirectFire",
+    "Artillery",
+    "Tech1"
+  ],
+  "MaxHealth": 190,
+  "Radius": 0.6,
+  "Economy": {
+    "BuildCostMass": 36,
+    "BuildCostEnergy": 180,
+    "BuildTime": 180
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.7,
+    "Acceleration": 2.5,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Weapons": [
+    {
+      "Name": "EMP Artillery Shell",
+      "Range": 30,
+      "Damage": 90,
+      "RateOfFire": 0.25,
+      "MuzzleVelocity": 20,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 1.5,
+      "Spread": 1.5,
+      "MinRange": 5,
+      "StunDuration": 1,
+      "StunRadius": 1.5,
+      "StunMaxTech": 1
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_artillery",
+    "Size": [
+      1.0,
+      0.7,
+      1.4
+    ],
+    "Icon": "land_artillery"
+  }
+}

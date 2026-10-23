@@ -1,0 +1,48 @@
+{
+  "Id": "cybran_t2_aa_flak",
+  "Name": "T2 Anti-Air Flak Artillery",
+  "Description": "T2 anti-air flak cannon: area damage against aircraft.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 1900,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 300,
+    "BuildCostEnergy": 2400,
+    "BuildTime": 400
+  },
+  "Intel": {
+    "VisionRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Flak Cannon",
+      "Range": 44,
+      "Damage": 30,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 55,
+      "TargetLayers": [
+        "Air"
+      ],
+      "DamageRadius": 3,
+      "ProjectileVisual": "flak",
+      "TurretTurnRate": 180
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_aa_turret2",
+    "Size": [
+      1.9,
+      1.8,
+      1.9
+    ],
+    "Icon": "defense"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "Id": "cybran_t1_transport",
+  "Name": "Skyhook",
+  "Description": "T1 air transport: carries 6 small (T1) land units, 3 medium (T2) or 1 large (T3 / commander). Unarmed.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Transport",
+    "Tech1"
+  ],
+  "MaxHealth": 400,
+  "Radius": 1.4,
+  "Economy": {
+    "BuildCostMass": 110,
+    "BuildCostEnergy": 2800,
+    "BuildTime": 680
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 10.5,
+    "Acceleration": 4,
+    "TurnRate": 90,
+    "Altitude": 12
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Cargo": {
+    "Layer": "Land",
+    "Capacity": 6,
+    "LoadRange": 3,
+    "HoverHeight": 1.5
+  },
+  "Visual": {
+    "Shape": "cy_transport",
+    "Size": [
+      2.4,
+      1.0,
+      3.8
+    ],
+    "Icon": "air_transport"
+  },
+  "BuiltBy": [
+    "cybran_t1_air_factory",
+    "cybran_t2_air_factory",
+    "cybran_t3_air_factory"
+  ]
+}

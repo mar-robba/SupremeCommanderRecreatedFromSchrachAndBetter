@@ -82,6 +82,7 @@ public static class AiMatch
                 }
             w.Events.Effects.Clear();
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
+            if (w.Tick % statusEvery == 0 && AiRoster.Enabled) AiRoster.Sample(w);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
                 for (int a = 0; a < players; a++)
@@ -89,6 +90,7 @@ public static class AiMatch
         }
 
         Console.WriteLine();
+        if (AiRoster.Enabled) { AiRoster.Sample(w); AiRoster.Print(w); }
         if (w.WinningTeam >= 0)
         {
             var winners = w.Armies.Where(a => a.Team == w.WinningTeam).Select(a => $"{a.Name} ({(a.IsAI ? a.AiDifficulty.ToString() : "passive")})");

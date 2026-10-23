@@ -1,0 +1,234 @@
+{
+  "Id": "cybran_commander",
+  "Name": "Cybran Armored Command Unit",
+  "Description": "Commander. Builds the base; if it dies you lose. Disintegrator laser; stealth and cloak enhancements.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "Commander",
+    "Engineer",
+    "DirectFire"
+  ],
+  "MaxHealth": 10500,
+  "RegenRate": 10,
+  "Radius": 1.2,
+  "Economy": {
+    "BuildCostMass": 18000,
+    "BuildCostEnergy": 5000000,
+    "BuildTime": 60000,
+    "BuildRate": 10,
+    "ProductionMass": 1,
+    "ProductionEnergy": 20,
+    "StorageMass": 650,
+    "StorageEnergy": 4000
+  },
+  "Movement": {
+    "Layer": "Amphibious",
+    "MaxSpeed": 1.7,
+    "Acceleration": 1.8,
+    "TurnRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 26
+  },
+  "Weapons": [
+    {
+      "Name": "Disintegrator Pulse Laser",
+      "Range": 22,
+      "Damage": 100,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 35,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_commander",
+    "Size": [
+      2.0,
+      2.6,
+      2.0
+    ],
+    "Icon": "commander"
+  },
+  "Builds": [
+    "cybran_t1_land_factory",
+    "cybran_t1_air_factory",
+    "cybran_t1_mass_extractor",
+    "cybran_t1_power_generator",
+    "cybran_t1_hydrocarbon",
+    "cybran_t1_mass_storage",
+    "cybran_t1_energy_storage",
+    "cybran_t1_point_defense",
+    "cybran_t1_aa_turret",
+    "cybran_t1_radar"
+  ],
+  "Enhancements": [
+    {
+      "Id": "CoolingUpgrade",
+      "Name": "Heat Sink Augmentation",
+      "Description": "+75% rate of fire and +4 range for the Disintegrator laser.",
+      "Slot": "RightArm",
+      "BuildCostMass": 500,
+      "BuildCostEnergy": 10000,
+      "BuildTime": 600,
+      "Visual": "cooling",
+      "Icon": "HSA",
+      "Effects": {
+        "Weapons": [
+          {
+            "Weapon": 0,
+            "RateOfFireMult": 1.75,
+            "RangeAdd": 4
+          }
+        ]
+      }
+    },
+    {
+      "Id": "MicrowaveLaserGenerator",
+      "Name": "Microwave Laser Generator",
+      "Description": "Adds a continuous microwave laser (range 30, 360 damage/s).",
+      "Slot": "RightArm",
+      "BuildCostMass": 1500,
+      "BuildCostEnergy": 30000,
+      "BuildTime": 1200,
+      "Visual": "microwave_laser",
+      "Icon": "MLG",
+      "Effects": {
+        "AddWeapons": [
+          {
+            "Name": "Microwave Laser",
+            "Range": 30,
+            "Damage": 120,
+            "RateOfFire": 3,
+            "MuzzleVelocity": 0,
+            "TargetLayers": [
+              "Land",
+              "Water"
+            ],
+            "ProjectileVisual": "laser",
+            "TurretTurnRate": 90,
+            "FiringTolerance": 10
+          }
+        ]
+      }
+    },
+    {
+      "Id": "AdvancedEngineering",
+      "Name": "Advanced Engineering",
+      "Description": "Builds T2 structures. +15 build rate, +2500 health.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 800,
+      "BuildCostEnergy": 16000,
+      "BuildTime": 700,
+      "Visual": "engineering",
+      "Icon": "T2E",
+      "Effects": {
+        "BuildRateAdd": 15,
+        "MaxHealthAdd": 2500,
+        "BuildListFrom": [
+          "cybran_t2_engineer"
+        ]
+      }
+    },
+    {
+      "Id": "T3Engineering",
+      "Name": "T3 Engineering",
+      "Description": "Builds T3 structures and experimentals. +35 build rate, +2500 health.",
+      "Slot": "LeftArm",
+      "Prerequisite": "AdvancedEngineering",
+      "BuildCostMass": 2500,
+      "BuildCostEnergy": 50000,
+      "BuildTime": 1800,
+      "Visual": "engineering3",
+      "Icon": "T3E",
+      "Effects": {
+        "BuildRateAdd": 35,
+        "MaxHealthAdd": 2500,
+        "BuildListFrom": [
+          "cybran_t3_engineer"
+        ]
+      }
+    },
+    {
+      "Id": "ResourceAllocation",
+      "Name": "Resource Allocation System",
+      "Description": "+11 mass/s and +1000 energy/s.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 1800,
+      "BuildCostEnergy": 36000,
+      "BuildTime": 1500,
+      "Visual": "resource",
+      "Icon": "RAS",
+      "Effects": {
+        "ProductionMassAdd": 11,
+        "ProductionEnergyAdd": 1000
+      }
+    },
+    {
+      "Id": "NaniteTorpedoLauncher",
+      "Name": "Nanite Torpedo Launcher",
+      "Description": "Adds a torpedo launcher against ships and submarines; it fires from the seabed too.",
+      "Slot": "LeftArm",
+      "BuildCostMass": 400,
+      "BuildCostEnergy": 8000,
+      "BuildTime": 600,
+      "Visual": "torpedo",
+      "Icon": "NTL",
+      "Effects": {
+        "AddWeapons": [
+          {
+            "Name": "Nanite Torpedo",
+            "Range": 30,
+            "Damage": 150,
+            "RateOfFire": 0.25,
+            "MuzzleVelocity": 9,
+            "TurretTurnRate": 720,
+            "FiringTolerance": 45,
+            "TargetLayers": [
+              "Water",
+              "Sub"
+            ],
+            "ProjectileVisual": "torpedo"
+          }
+        ]
+      }
+    },
+    {
+      "Id": "StealthGenerator",
+      "Name": "Personal Stealth Generator",
+      "Description": "Hidden from enemy radar and sonar (vision and omni still see it). Upkeep 50 energy/s.",
+      "Slot": "Back",
+      "BuildCostMass": 300,
+      "BuildCostEnergy": 6000,
+      "BuildTime": 500,
+      "Visual": "stealth",
+      "Icon": "STL",
+      "Effects": {
+        "RadarStealth": true,
+        "SonarStealth": true,
+        "MaintenanceEnergyAdd": 50
+      }
+    },
+    {
+      "Id": "CloakingGenerator",
+      "Name": "Personal Cloaking Generator",
+      "Description": "Replaces the stealth generator: invisible to enemy vision, radar and sonar; only omni sensors reveal it. Upkeep +950 energy/s.",
+      "Slot": "Back",
+      "Prerequisite": "StealthGenerator",
+      "BuildCostMass": 1500,
+      "BuildCostEnergy": 30000,
+      "BuildTime": 1500,
+      "Visual": "cloak",
+      "Icon": "CLK",
+      "Effects": {
+        "Cloak": true,
+        "MaintenanceEnergyAdd": 950
+      }
+    }
+  ]
+}

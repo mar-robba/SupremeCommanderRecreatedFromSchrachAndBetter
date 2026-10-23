@@ -1,0 +1,56 @@
+{
+  "Id": "cybran_t3_mobile_artillery",
+  "Name": "Trebuchet",
+  "Description": "T3 mobile heavy artillery: very long range area bombardment.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "IndirectFire",
+    "Artillery",
+    "Tech3"
+  ],
+  "MaxHealth": 1000,
+  "Radius": 1.0,
+  "Economy": {
+    "BuildCostMass": 650,
+    "BuildCostEnergy": 8500,
+    "BuildTime": 3400
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.1,
+    "Acceleration": 2,
+    "TurnRate": 80
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Weapons": [
+    {
+      "Name": "Proton Artillery",
+      "Range": 80,
+      "Damage": 650,
+      "RateOfFire": 0.125,
+      "MuzzleVelocity": 32,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 4,
+      "Spread": 3,
+      "MinRange": 10,
+      "TurretTurnRate": 40
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_heavy_artillery",
+    "Size": [
+      1.6,
+      1.1,
+      2.4
+    ],
+    "Icon": "land_artillery"
+  }
+}

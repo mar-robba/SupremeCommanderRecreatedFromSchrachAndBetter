@@ -45,11 +45,11 @@ public static class TargetingSystem
     {
         var u = w.Units;
         if (!u.IsActive(i) || !u.IsComplete(i)) return;
-        if ((u.Flags[i] & UnitFlags.Carried) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold
+        if ((u.Flags[i] & (UnitFlags.Carried | UnitFlags.Stunned)) != 0) return; // boarded this tick (still in the AliveList): no shooting from the hold; EMP-stunned (Combat/EmpStun)
         var info = s.Catalog.Units[u.Bp[i]];
         if (info.Weapons.Length == 0) return;
         var bp = w.Blueprints[u.Bp[i]];
-        bool submerged = Naval.Submarines.IsSubmerged(w, i); // dived Atlantis: only torpedoes (WeaponSystem holds the rest)
+        bool submerged = Naval.Submarines.WeaponsUnderwater(w, i); // dived Atlantis / seabed walker: only torpedoes + FiresSubmerged
 
         var forced = UnitHandle.None;
         var q = u.Orders[i];
@@ -69,7 +69,7 @@ public static class TargetingSystem
             if (winfo.Kind == WeaponKind.Manual) continue; // silo / missile defense (Strategic module)
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
             if (winfo.Kind == WeaponKind.AntiTorpedo) { ws.Target = UnitHandle.None; continue; } // torpedo defense: never targets units
-            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind)) { ws.Target = UnitHandle.None; continue; }
+            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp)) { ws.Target = UnitHandle.None; continue; }
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
             // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.

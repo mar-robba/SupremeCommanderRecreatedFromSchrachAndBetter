@@ -103,7 +103,9 @@ public class FactionTests
     [Fact]
     public void BlueprintFactionDefaultsToTheIdPrefix()
     {
-        Assert.All(Db.All, b => Assert.Equal("uef", b.Faction));
+        Assert.All(Db.All, b => Assert.Equal(BlueprintDb.FactionOfId(b.Id), b.Faction));
+        Assert.Equal("uef", Db["uef_t1_tank"].Faction);
+        Assert.Equal("cybran", Db["cybran_t1_assault_bot"].Faction);
         Assert.Equal("cybran", BlueprintDb.FactionOfId("cybran_t1_tank"));
         Assert.Equal("uef", BlueprintDb.FactionOfId("UEF_x"));
         Assert.Equal("", BlueprintDb.FactionOfId("tank"));

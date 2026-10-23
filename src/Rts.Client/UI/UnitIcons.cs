@@ -104,7 +104,7 @@ public static class UnitIcons
     }
 
     /// <summary>Ship class label: by hull shape, else by layer/tech (sub, frigate, destroyer/cruiser, battleship).</summary>
-    private static string NavalLabel(UnitBlueprint bp) => bp.Visual.Shape switch
+    private static string NavalLabel(UnitBlueprint bp) => Rendering.UnitModels.BaseShape(bp.Visual.Shape) switch
     {
         "frigate" => "FRIG",
         "sub" => "SUB",
