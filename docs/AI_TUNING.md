@@ -242,6 +242,32 @@ Final check with the new Normal defaults and Hard preset (a37b799, 45 min): NvN 
 (the T1-only seat now also has the pressure switch). Reference match `ai 30 256 42 hard,normal`: Hard at 15:58, hash
 74E2EB7D333190A4.
 
+#### Hard's edge (2026-10-24, after the UEF T1 tank fix)
+
+HvN, 192 games, 45 min, Hard - Normal wins (finished, lopsided stalled). Each line adds to the Hard preset of a37b799.
+
+| Hard override | Hard - Normal | finished | stalled |
+|---|---|---|---|
+| none (preset a37b799 with the tank fix) | 90 - 49 | 139 | 55/140 |
+| FocusFire on, target = highest (enemy land dps + 1) / health left instead of lowest health | 69 - 57 | 126 | 44/131 |
+| ArtilleryShare 0.05 | 98 - 51 | 149 | 38/110 |
+| ArtilleryShare 0 | 92 - 51 | 143 | 49/101 |
+| 0.05 + Normal's MaxShields 3 / MaxTml 1 / MaxScus 2 | 98 - 51 (identical games: the caps are never reached) | 149 | 38/110 |
+| 0.05 + CommanderSnipe off | 100 - 50 | 150 | 34/120 |
+| 0.05 + MaxLandFactories 8 / Float 18 ("B") | 101 - 47 | 148 | 42/119 |
+| B + AttackMargin 1.6 | 97 - 54 | 151 | 45/125 |
+| **B + ArmyShare 0.6** -> the Hard preset | **102 - 52** | **154** | **33/115** |
+| B + UpgradeShare 0.25 | 95 - 53 | 148 | 31/112 |
+| B + EconInterval 2, MilitaryInterval 4 | 93 - 54 | 147 | 45/126 |
+
+Every lever lands at about 2:1 (64-68 % of decided games): Hard is Normal with a few more factories, raids and faster
+thinking, and with the unit balance no unit mix wins outright any more. Main's 177-7-8 (96 %) came from the T1
+artillery exploit (ArtilleryShare 0.55 when T1 artillery won every fight) and is not reachable with config values;
+a real gap needs better decisions (engagement choice, retreat of losing groups, focus fire that does not cost
+firing time). Focus fire still hurts with a threat-weighted pick, so the cost is probably the orders themselves (an
+AttackUnit order per member every think; not measured: stops, turning, chasing), not the choice of target; the code
+stayed as it was.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`

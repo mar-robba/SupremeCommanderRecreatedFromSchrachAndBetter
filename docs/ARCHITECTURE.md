@@ -426,8 +426,9 @@ interpolates prev/cur by time
   waits while the army is losing (tech vs a T1-only AI: 51 % -> 74 % of decided games). Unit choice by faction roles;
   caps `MaxTier` (structures/engineers), `MaxUnitTier` (combat units), `ArtilleryTier`. Off by default (AI_TUNING):
   `StallTime` fall-back, `AdvanceInterval` creeping advance, `LeadArmyShare`. Since the 2026-10-23 unit balance Hard
-  no longer uses the 0.55 artillery share, focus fire or the unit pull-back (they lost to Normal); numbers and the
-  open stall problem: AI_TUNING "New goals" and "Unit balance".
+  no longer uses the 0.55 artillery share, focus fire or the unit pull-back (they lost to Normal); its edge is now 8
+  land factories, raids, faster thinking, army share 0.6 and artillery 0.05 (about 2:1 vs Normal). Numbers and the
+  open stall problem: AI_TUNING "New goals", "Hard's edge" and "Unit balance".
 - Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset] [factions]`
   (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
   `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`

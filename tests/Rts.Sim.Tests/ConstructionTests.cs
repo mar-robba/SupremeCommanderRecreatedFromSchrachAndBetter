@@ -199,13 +199,14 @@ public class ConstructionTests
         w.Units.Health[tank.Index] = 100;
         sim.Step();
         w.Armies[0].Eco.Mass = 100;
-        // Repair 2/3 of 300 HP at 5/280 of max health per second => ~37 s.
+        // Repair 2/3 of the tank's ~300 HP at 5/280 of max health per second => ~37 s.
         const int ticks = 420;
+        float max = w.Blueprints[w.Units.Bp[tank.Index]].MaxHealth;
         TestUtil.Run(sim, ticks, new IssueOrderCommand(0, [eng], Order.RepairUnit(tank), false));
-        Assert.Equal(300f, w.Units.Health[tank.Index], 2);
+        Assert.Equal(max, w.Units.Health[tank.Index], 2);
         Assert.True(w.Units.Orders[eng.Index].IsEmpty);
         // Commander income minus repair cost (2/3 of the tank's mass x RepairCostFraction).
-        float expected = 100 + ticks * SimWorld.Dt - 56f * 2f / 3f * Systems.ConstructionSystem.RepairCostFraction;
+        float expected = 100 + ticks * SimWorld.Dt - 56f * (max - 100f) / max * Systems.ConstructionSystem.RepairCostFraction;
         Assert.InRange(w.Armies[0].Eco.Mass, expected - 0.3f, expected + 0.3f);
     }
 

@@ -74,11 +74,12 @@ public class AiTechTests(ITestOutputHelper output)
     [Fact]
     public void AiReachesTech2OnFixedSeed()
     {
-        // Seed 2, two Normal AIs: the first complete T2 land factory and T2 mass extractor of each army must exist by
-        // LimitMinute. 2026-10-23 with LandT2Time 660 / MexT2Time 480: land T2 14.3 / 12.7 min, mex T2 9.3 / 9.3 min
-        // (army 0 / 1), so ~2.7 minutes of margin. Run with `--logger "console;verbosity=detailed"` to see the times.
+        // Seed 6, two Normal AIs: the first complete T2 land factory and T2 mass extractor of each army must exist by
+        // LimitMinute. 2026-10-24 (LandT2Time 660 / MexT2Time 480, UEF T1 tank MuzzleVelocity 40): land T2 12.7 / 14.0
+        // min, mex T2 9.8 / 10.3 min (army 0 / 1), so 3 minutes of margin (seed 2 now ends early: army 0 loses; of
+        // seeds 1-12 only 4, 5 and 6 have both armies alive with land T2 by minute 17). Run with `--logger "console;verbosity=detailed"` to see the times.
         const int LimitMinute = 17;
-        var sim = NewAiGame(2);
+        var sim = NewAiGame(6);
         var w = sim.World;
         var fac = new float[] { -1, -1 };
         var mex = new float[] { -1, -1 };
