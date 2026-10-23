@@ -220,6 +220,22 @@ When the games end decides it: the T1-only AI wins early (81 of its 88 wins befo
 tech AI wins late (58 of 92 after minute 25). The tech AI is weakest between ~5 and ~20 minutes, while extractor and
 factory upgrades and enhancements take mass from the army.
 
+Levers for the tech seat of (c) (192 games each, tech share of decided games): PressureArmyShare 0.85 + PressureRatio
+0.8 63 %; MexT2Time 480 + LandT2Time 660 53 %; EnhanceTime 900 58 %; ArmyShare 0.6 55 %; UpgradeShare 0.2 48 %;
+**all of the first three together 74 % (66-23 and 69-24 by seat; plains 25-21, lakes 36-11, highlands 33-10,
+canyon 41-5)** -> made the Normal defaults (`AiConfig`: MexT2Time 480, LandT2Time 660, EnhanceTime 900,
+PressureArmyShare 0.85, PressureRatio 0.8). NvN 45 with them: 70 (49) finished, stalled 25/77 (without the pressure
+switch 63/30; + ArtilleryTier=1 67/31, so ArtilleryTier stays 3).
+
+Hard v Normal (hvn, 192 games, 45 min; wins Hard-Normal) with those Normal defaults: the old Hard preset lost 18-81.
+ArtilleryShare 0.25 49-75, 0.4 44-77; + Normal's tech times 60-71; + Normal's upgrade/project values 60-69; + ArtilleryShare
+0.1 69-75 (= "C"). On top of C: raids off 58-88 (raids help), PullBackHealth 0 67-77, **FocusFire off 90-48**, Normal
+attack timing (FirstAttackTime 240, AttackMargin 1.3, AssembleTimeout 150) 79-67; FocusFire + pull-back off + Normal
+attack timing + Normal engineers (10/4), 1 radar, no air scout, 3 expansion PDs: **92-55, stalled 42/129** -> the new
+Hard preset. At minute 8 the old Hard had 40 land units vs Normal's 53 at the same income (mass demand 41 vs 30: too
+many commitments) and lost extractors. Focus fire hurts since the balance pass (not investigated: overkill or units
+stopping to re-target?). Main's 177-7-8 (30 min) was T1-only play with the old T1 artillery; not reached.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`
