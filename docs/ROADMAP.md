@@ -13,8 +13,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 
 **ON RESUME:**
 - **2026-10-23 ~20:20 — orchestrator restart (session 1d992d8d ended at 244k). Do this first:**
-  1. Both running agents were told to CHECKPOINT and stop with the session (commit + `.claude/handoff.md`). If a
-     worktree is dirty, commit it as WIP. Start a **fresh coordinator in each worktree** (absolute path, no isolation;
+  1. Both running agents CHECKPOINTed cleanly (trees clean, handoff notes current). Start a **fresh coordinator in each worktree** (absolute path, no isolation;
      prompt = the brief below + "continue from `.claude/handoff.md` and `.claude/notes/`"), at most 2 active agents;
      coordinators run ONE sub-agent at a time and wait while it works. Agent tags: `[IA usa tutto (5k)] ...`,
      `[Comandante e ingegneri (6a)] ...`. Context watcher: `agent_ctx.py --watch 135000 <id>=<cap-15k> ...`.
@@ -22,15 +21,19 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
      `worktree-agent-ac4c927c54a66ca1d`), class high, cap 250k (CHECKPOINT 230k). Goals (orchestrator decision
      2026-10-23): (a) lopsided games end, (b) finished games at a 45-min cap: NvN >= 80/96, HvH >= 85 %, Hard v Normal
      win share >= main's (main 177-7-8), (c) tech beats a T1-only config >= 65 %; timeboxed (record numbers, pick best
-     defaults, move on). Done: duel tool + unit balance pass (7650459), new defaults (1a1b1f8). **Open: Cybran v UEF
-     51-21 after the balance pass (was even), Hard v Normal only 92-55.** Then: AiTechTests timings, docs, lab
+     defaults, move on). Done (CHECKPOINT 79f4ece, tests Sim 419/Client 227/Net 21): duel tool, unit balance pass
+     (7650459), new Normal defaults, new Hard preset (focus fire off), branch reference hash 74E2EB7D333190A4 (Hard
+     15:58). Numbers at 45 min: (c) 64 % (112-61), NvN 70/96, lopsided stalled 25/77, HvH 68/96, Hard v Normal 92-55.
+     **Next: Cybran/UEF parity first (51-21; `duelmatrix uef cybran` role by role), then Hard's edge, stalls
+     documented if no lever helps.** Then: AiTechTests timings, docs, lab
      scripts in tools/ai-lab, Client/Net tests, perf, final merge main, report with "Handoff review". Coordinators
      8/9 reached 240k in ~40 min: keep outputs tiny. Its branch tracks no `.claude/` files any more.
   3. **(k-navy) DONE** — branch `wave5-ai-navy` (worktree `.claude/worktrees/ai-navy`, 0d0f4b0, report in its
      `.claude/agent-report.md`). Merge into main AFTER (k): first `git merge` the final (k) branch into it (conflicts
      only in AI_TUNING.md), all tests, then merge. Copy both reports into HISTORY, remove worktrees + branches.
   4. **(6a) Commander & engineers** — worktree `.claude/worktrees/wave6a` (branch `wave6a-commander`, from main
-     03bda94), class medium, cap 200k, sub-agents low 150k. Brief: "Wave 6+ plan" section, row 6a (G1 Overcharge,
+     03bda94), class medium, cap 200k, sub-agents low 150k. CHECKPOINT before any code: its handoff has the G3
+     design checked against the code and the piece order (G3, G1, G2, G7). Brief: "Wave 6+ plan" section, row 6a (G1 Overcharge,
      G2 commander death blast in `Commander/` not CleanupSystem, G3 engineer patrol automation in
      `Economy/EngineerPatrol.cs`, G7 teleporter / UEF drones / SCU jammer if time); both factions via roles; tests,
      screenshots, docs, new reference hash documented, report.
