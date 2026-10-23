@@ -248,11 +248,13 @@ public sealed partial class AiTransport
         float best = float.MinValue;
         var pos = TargetPos;
         var cmd = CommanderPos;
+        // Hard raids: extractors (away from the commander) before the factories.
+        float mexValue = Cfg.Difficulty == AiDifficulty.Hard ? Cfg.DropMexValueHard : Cfg.DropMexValue;
         for (int k = 0; k < structs.Count; k++)
         {
             var ks = structs[k];
             var bp = db[ks.Bp];
-            float value = bp.Has(UnitCategory.Factory) ? 60f : bp.Has(UnitCategory.MassExtractor) ? 50f
+            float value = bp.Has(UnitCategory.Factory) ? 60f : bp.Has(UnitCategory.MassExtractor) ? mexValue
                 : bp.Has(UnitCategory.PowerGenerator) ? 30f : bp.Weapons.Length > 0 ? 25f : 10f;
             float score = value - Vector2.Distance(from, ks.Pos) * 0.25f
                 - Cfg.DropCommanderAvoid * MathF.Max(0, 40f - Vector2.Distance(ks.Pos, cmd));

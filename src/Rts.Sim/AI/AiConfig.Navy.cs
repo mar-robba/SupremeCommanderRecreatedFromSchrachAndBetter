@@ -44,6 +44,9 @@ public sealed partial class AiConfig
     /// <summary>Landing zone / landed objective penalty per world unit inside 60 (LZ) / 40 (objective) of the enemy
     /// commander's last seen position (it kills most drop units).</summary>
     public float DropCommanderAvoid = 3f;
+    /// <summary>Landed objective value of a mass extractor (factory 60, power generator 30); Hard raids extractors first.</summary>
+    public float DropMexValue = 50f;
+    public float DropMexValueHard = 80f;
     /// <summary>Earliest air staging for the transports (T2 engineers).</summary>
     public float DropStagingTime = 600f;
 }
