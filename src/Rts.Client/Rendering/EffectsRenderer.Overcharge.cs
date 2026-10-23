@@ -101,7 +101,7 @@ public sealed partial class EffectsRenderer
         _proj.Streak(pos, dir, 4.2f * zs, 0.9f * zs, fv.CamPos, outer with { A = 200 }, PShape.Streak, 0);
         _proj.Billboard(pos, 1.3f * zs, 0, fv.CamRight, fv.CamUp, new Color(255, 250, 225, 255), PShape.Glow, 0);
         _proj.Streak(pos, dir, 2.4f * zs, 0.35f * zs, fv.CamPos, new Color(255, 255, 240, 240), PShape.Streak, 0);
-        EnergyTrail(id, pos, 0.35f, o, 0.55f * zs);
+        EnergyTrail(id, pos, 0.22f, o, 1.0f * zs);
     }
 
     /// <summary>Additive glow puffs along the path travelled since last frame (shares the smoke trails' table).</summary>
@@ -112,15 +112,15 @@ public sealed partial class EffectsRenderer
             var d = pos - last.pos;
             float len = d.Length();
             if (len > 30f) { _trails[id] = (pos, _frame); return; }
-            int n = Math.Min(24, (int)(len / spacing));
+            int n = Math.Min(32, (int)(len / spacing));
             if (n == 0) { _trails[id] = (last.pos, _frame); return; }
             for (int k = 1; k <= n; k++)
             {
                 ref var p = ref _ps.Emit();
                 p.Pos = last.pos + d * (k / (float)n) + _ps.RandDir() * 0.08f;
                 p.Vel = _ps.RandDir() * 0.3f;
-                p.Life = _ps.Range(0.25f, 0.45f); p.Size0 = size; p.Size1 = size * 0.25f; p.Drag = 2f;
-                p.C0 = color with { W = 0.7f }; p.C1 = color with { W = 0 }; p.Shape = PShape.Glow; p.Blend = PBlend.Additive;
+                p.Life = _ps.Range(0.35f, 0.6f); p.Size0 = size; p.Size1 = size * 0.3f; p.Drag = 2f;
+                p.C0 = color with { W = 0.85f }; p.C1 = color with { W = 0 }; p.Shape = PShape.Glow; p.Blend = PBlend.Additive;
             }
             _trails[id] = (pos, _frame);
         }
