@@ -23,4 +23,19 @@ public sealed partial class AiConfig
     public float FleetRetreatShare = 0.3f;
     /// <summary>Torpedo launchers at the base coast once enemy ships came near (Easy -1, Hard +1).</summary>
     public int MaxTorpedoDefenses = 2;
+
+    // ---- drops (AiTransport; MaxTransports is in AiConfig.cs)
+    /// <summary>Idle land units needed before the first transport is built (island maps only).</summary>
+    public int DropMinUnits = 6;
+    /// <summary>One more transport (up to 2 x MaxTransports) per this many idle land units.</summary>
+    public int DropUnitsPerTransport = 30;
+    /// <summary>Pool units that stay home (base defense) instead of boarding.</summary>
+    public int DropKeepHome = 4;
+    /// <summary>Landed units that attack at once; fewer attack after DropGatherTime seconds at the landing zone.</summary>
+    public int DropWave = 16;
+    public float DropGatherTime = 120f;
+    /// <summary>Enemy threat in the base (DefenseRadius) that sends the units waiting for a transport back to defend.</summary>
+    public float DropDefendThreat = 150f;
+    /// <summary>Earliest air staging for the transports (T2 engineers).</summary>
+    public float DropStagingTime = 600f;
 }
