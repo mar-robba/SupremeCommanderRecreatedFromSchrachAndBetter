@@ -190,7 +190,13 @@ Shared contracts (still valid):
       `Army.Faction` from the setup (random = from the seed), faction commander; AI + strategic code use roles (no
       `uef_*` ids in the sim); client: FACTION column in the skirmish setup, `--faction`/`--factions`, sandbox FACTION
       filter, saved in client data/save headers; bench `[factions]` arg; ARCHITECTURE "Factions" contract
-- [ ] Second faction (Cybran-like) with distinct visuals and units
+- [x] Second faction: Cybran (2026-10-23, wave 5l; ARCHITECTURE "Cybran faction & stealth/EMP"): `cybran.json` + 80
+      `cybran_*` blueprints (full SupCom1 roster, ACU/SCU enhancements, Monkeylord, Soul Ripper, Scathis, ED1→ED5
+      shield chain); sim: radar/sonar stealth, cloak, stealth fields (omni beats them), EMP stun (Medusa, SCU),
+      seabed walkers (Wagner, Monkeylord); distinct `cy_*` models for every unit; status visuals (own cloaked units
+      translucent, stun sparks, stealth-field ring); `--scene cybran[:group]`; Cybran vs UEF AI 8/5/5 (AI_TUNING)
+  - [ ] later: AI uses stealth/cloak/EMP deliberately (Deceiver escorts, cloaked ACU, Medusa vs groups); Cybran
+        T2/T3 and experimentals in AI matches once (k) "AI uses everything" lands
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs
       ships); sub dive/surface (D); adjacency bonus (pgens cut energy use, storages boost mex/pgens; placement lines);
