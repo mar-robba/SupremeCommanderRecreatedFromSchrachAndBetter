@@ -39,7 +39,7 @@ public sealed partial class AiTransport
     }
 
     /// <summary>Where the enemy commander probably is: last seen (5 min memory), else the enemy start.</summary>
-    private Vector2 CommanderPos => W.Tick - _cmdTick < 3000 ? _cmdPos : TargetPos;
+    public Vector2 CommanderPos => W.Tick - _cmdTick < 3000 ? _cmdPos : TargetPos;
 
     // ------------------------------------------------------------------ target
 
@@ -151,7 +151,7 @@ public sealed partial class AiTransport
             var dir = toLz.LengthSquared() > 1f ? Vector2.Normalize(toLz) : _b.EnemyDir;
             var bc = _b.FindStandable(_b.Rally + dir * 8f, MotionLayer.Land);
             Beacon = LandComp(bc, 2) == _homeComp ? bc : _b.Rally;
-            if (_b.Tracing) _b.Trace($"drop: LZ ({Lz.X:F0},{Lz.Y:F0}) score {best:F0} beacon ({Beacon.X:F0},{Beacon.Y:F0})");
+            if (_b.Tracing) _b.Trace($"drop: LZ ({Lz.X:F0},{Lz.Y:F0}) score {best:F0} commander {Vector2.Distance(Lz, cmd):F0} away, beacon ({Beacon.X:F0},{Beacon.Y:F0})");
         }
     }
 

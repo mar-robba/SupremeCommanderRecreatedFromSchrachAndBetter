@@ -418,11 +418,12 @@ interpolates prev/cur by time
   - Transports (`AiTransport.cs`, `AiTransport.Drop.cs`): island mode = no enemy start reachable on foot. Builds
     transports (hook `ManageFactories` before the land factories; an air factory job before the mass-stall gate),
     picks a landing zone on the target's island (rings 30-100 x 16 around the enemy start, scored by ground/air
-    threat, anti-air along the flight, enemy defense radius, nearness to enemy structures, bad-LZ memory), runs a
+    threat, anti-air along the flight, enemy defense radius, nearness to enemy structures and to the enemy commander's
+    last seen position (it kills most drop units), bad-LZ memory), runs a
     ferry route (`TransportOrders.Ferry(beacon, LZ)`) and sends idle Pool/army units to the beacon (Role Transport,
     Group 1000002: the military code ignores them; released to Pool if the base is attacked). Landed units gather
     until DropWave units and 0.7x the enemy land estimate (or DropGatherTime), then attack-move the best known
-    structure on that island. Above DropIdleCap idle land units the land/air factories get no budget. Air staging
+    structure on that island (factories first, away from the enemy commander; Hard: extractors first). Above DropIdleCap idle land units the land/air factories get no budget. Air staging
     (T2) + Dock for low-fuel transports. Knobs: `AiConfig.Navy.cs` (Drop*, fleet), `MaxTransports` (AiConfig.cs).
   - T2/T3/strategic weapons: see the wave 5k AI_TUNING sections.
 - Results (bench, 30 min, 256 maps, 4 land presets): Normal vs Normal ends by commander kill in ~86 % of games

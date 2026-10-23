@@ -131,9 +131,12 @@ Shared contracts (still valid):
             commander kill in ~86 %, Hard beats Normal in 86 % (166-8-18 of 192), Easy loses 23/24; 4p FFAs on 512 end
       - [ ] later: Highlands/Canyon NvN stalemates (equal armies trading), Hard vs Hard ends only ~69 %; T1 artillery
             looks too cost-efficient (balance); AI uses T2/T3, navy, strategic weapons, experimentals, transports
-            (navy + drops done 2026-10-23, k-navy: Archipelago 256 NvN ends 2/6 by 30 min, was 0/6)
-      - [ ] later (k-navy): island drops lose to big home armies on small islands (no LZ outside the enemy defense
-            radius); harass drops on extractors (Hard), engineer ferries, drops on land maps with cliffs
+            (navy + drops done 2026-10-23, k-navy: Archipelago 256 NvN ends 2/6 by 30 min, was 0/6; k-navy 3: LZ and
+            landed objectives avoid the enemy commander: 7/24 by 30 min after the land balance pass, 4/24 without)
+      - [ ] later (k-navy): island drops still lose to big home armies on small islands (synchronized waves, pausing
+            contested LZs and LZ freezing were tried and hurt, AI_TUNING "Navy and transports"); Hard builds few land
+            units on islands (drops 3x fewer than Normal, loses 7 of 8 finished games to Normal); drops on land maps
+            with cliffs. Engineer ferries not needed (engineers are amphibious).
 - [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
 - [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
