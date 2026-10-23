@@ -1,0 +1,50 @@
+{
+  "Id": "cybran_t3_land_factory",
+  "Name": "T3 Land Factory",
+  "Description": "Builds T1, T2 and T3 land units. Upgrade of the T2 land factory.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Land",
+    "Factory",
+    "Tech3"
+  ],
+  "MaxHealth": 8500,
+  "Radius": 3.5,
+  "FootprintX": 6,
+  "FootprintZ": 6,
+  "Economy": {
+    "BuildCostMass": 3300,
+    "BuildCostEnergy": 22000,
+    "BuildTime": 4400,
+    "BuildRate": 90
+  },
+  "Intel": {
+    "VisionRadius": 24
+  },
+  "Visual": {
+    "Shape": "cy_factory3",
+    "Size": [
+      6,
+      3.2,
+      6
+    ],
+    "Icon": "factory"
+  },
+  "Builds": [
+    "cybran_t1_engineer",
+    "cybran_t1_light_bot",
+    "cybran_t1_assault_bot",
+    "cybran_t1_artillery",
+    "cybran_t1_mobile_aa",
+    "cybran_t1_scout",
+    "cybran_t2_engineer",
+    "cybran_t2_heavy_tank",
+    "cybran_t2_amphibious_tank",
+    "cybran_t2_mobile_missile",
+    "cybran_t2_mobile_flak",
+    "cybran_t3_engineer",
+    "cybran_t3_assault_bot",
+    "cybran_t3_mobile_artillery"
+  ]
+}

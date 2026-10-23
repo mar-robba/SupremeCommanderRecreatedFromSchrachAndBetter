@@ -107,6 +107,12 @@ public sealed class EnhancementEffects
     public ShieldBlueprint? Shield;
     /// <summary>Missile silo; <c>WeaponIndex</c> is relative to this effect's <see cref="AddWeapons"/>.</summary>
     public SiloBlueprint? Silo;
+    /// <summary>Intel stealth/cloak granted by the enhancement (OR-ed along the prerequisite chain; see IntelBlueprint).</summary>
+    public bool RadarStealth;
+    public bool SonarStealth;
+    public bool Cloak;
+    /// <summary>&gt; 0: stealth field radius (replaces the base value).</summary>
+    public float StealthFieldRadius;
 }
 
 /// <summary>Changes one existing weapon (by index in the base blueprint's Weapons).</summary>

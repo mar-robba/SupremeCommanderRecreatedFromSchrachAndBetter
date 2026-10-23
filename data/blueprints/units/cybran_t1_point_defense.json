@@ -1,0 +1,47 @@
+{
+  "Id": "cybran_t1_point_defense",
+  "Name": "T1 Point Defense",
+  "Description": "Direct-fire defensive turret: rapid pulse laser.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 170,
+    "BuildCostEnergy": 1000,
+    "BuildTime": 240
+  },
+  "Intel": {
+    "VisionRadius": 28
+  },
+  "Weapons": [
+    {
+      "Name": "Pulse Laser",
+      "Range": 26,
+      "Damage": 14,
+      "RateOfFire": 3,
+      "MuzzleVelocity": 45,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_pd",
+    "Size": [
+      1.6,
+      1.6,
+      1.6
+    ],
+    "Icon": "defense"
+  }
+}

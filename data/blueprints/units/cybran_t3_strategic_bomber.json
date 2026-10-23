@@ -1,0 +1,55 @@
+{
+  "Id": "cybran_t3_strategic_bomber",
+  "Name": "Revenant",
+  "Description": "T3 strategic bomber: devastating proton bombs.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Bomber",
+    "Tech3"
+  ],
+  "MaxHealth": 3700,
+  "Radius": 1.4,
+  "Economy": {
+    "BuildCostMass": 1000,
+    "BuildCostEnergy": 40000,
+    "BuildTime": 5800
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 12.5,
+    "Acceleration": 4,
+    "TurnRate": 60,
+    "Altitude": 22
+  },
+  "Intel": {
+    "VisionRadius": 36
+  },
+  "Weapons": [
+    {
+      "Name": "Proton Bomb",
+      "Range": 5,
+      "Damage": 2400,
+      "RateOfFire": 0.16,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 5,
+      "ProjectileVisual": "bomb",
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_strat_bomber",
+    "Size": [
+      3.6,
+      0.9,
+      3.0
+    ],
+    "Icon": "air_bomber"
+  }
+}

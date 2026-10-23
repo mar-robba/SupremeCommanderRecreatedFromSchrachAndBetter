@@ -1,0 +1,44 @@
+{
+  "Id": "cybran_t1_sonar",
+  "Name": "T1 Sonar",
+  "Description": "Detects ships and submarines at long range. Must be built on water.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Intel",
+    "Sonar",
+    "Tech1"
+  ],
+  "MaxHealth": 250,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "MinWaterDepth": 0.3,
+  "Economy": {
+    "BuildCostMass": 60,
+    "BuildCostEnergy": 400,
+    "BuildTime": 120,
+    "MaintenanceEnergy": 4
+  },
+  "Intel": {
+    "VisionRadius": 20,
+    "SonarRadius": 115
+  },
+  "Visual": {
+    "Shape": "cy_sonar",
+    "Size": [
+      1.4,
+      2.2,
+      1.4
+    ],
+    "Icon": "intel"
+  },
+  "BuiltBy": [
+    "cybran_commander",
+    "cybran_t1_engineer",
+    "cybran_t2_engineer",
+    "cybran_t3_engineer"
+  ],
+  "UpgradesTo": "cybran_t2_sonar"
+}

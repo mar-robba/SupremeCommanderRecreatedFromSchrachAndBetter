@@ -1,0 +1,52 @@
+{
+  "Id": "cybran_t1_interceptor",
+  "Name": "Prowler",
+  "Description": "T1 interceptor (air superiority): electron autocannon.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Fighter",
+    "AntiAir",
+    "Tech1"
+  ],
+  "MaxHealth": 260,
+  "Radius": 0.7,
+  "Economy": {
+    "BuildCostMass": 48,
+    "BuildCostEnergy": 1250,
+    "BuildTime": 290
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 15.5,
+    "Acceleration": 8,
+    "TurnRate": 110,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Electron Autocannon",
+      "Range": 22,
+      "Damage": 12,
+      "RateOfFire": 2.5,
+      "MuzzleVelocity": 60,
+      "TargetLayers": [
+        "Air"
+      ],
+      "FiringTolerance": 20
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_interceptor",
+    "Size": [
+      1.4,
+      0.5,
+      1.6
+    ],
+    "Icon": "air_fighter"
+  }
+}

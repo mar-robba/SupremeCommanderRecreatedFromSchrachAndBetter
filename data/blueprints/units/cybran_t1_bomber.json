@@ -1,0 +1,57 @@
+{
+  "Id": "cybran_t1_bomber",
+  "Name": "Zeus",
+  "Description": "T1 bomber: drops neutron cluster bombs on ground targets.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Air",
+    "Bomber",
+    "Tech1"
+  ],
+  "MaxHealth": 330,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 100,
+    "BuildCostEnergy": 2200,
+    "BuildTime": 480
+  },
+  "Movement": {
+    "Layer": "Air",
+    "MaxSpeed": 11.5,
+    "Acceleration": 5,
+    "TurnRate": 80,
+    "Altitude": 18
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Neutron Cluster Bomb",
+      "Range": 4,
+      "Damage": 110,
+      "ProjectilesPerShot": 3,
+      "Spread": 2,
+      "RateOfFire": 0.25,
+      "MuzzleVelocity": 0,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "Ballistic": true,
+      "DamageRadius": 2,
+      "ProjectileVisual": "bomb",
+      "FiringTolerance": 30
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_bomber",
+    "Size": [
+      1.8,
+      0.6,
+      2.0
+    ],
+    "Icon": "air_bomber"
+  }
+}

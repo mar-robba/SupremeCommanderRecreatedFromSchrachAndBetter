@@ -1,0 +1,50 @@
+{
+  "Id": "cybran_t2_point_defense",
+  "Name": "Cerberus",
+  "Description": "T2 point defense: triple electron bolter, outranges T1 units.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 3300,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 480,
+    "BuildCostEnergy": 3900,
+    "BuildTime": 560
+  },
+  "Intel": {
+    "VisionRadius": 40
+  },
+  "Weapons": [
+    {
+      "Name": "Triple Electron Bolter",
+      "Range": 44,
+      "Damage": 36,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectilesPerShot": 3,
+      "Spread": 0.5,
+      "TurretTurnRate": 130,
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_pd2",
+    "Size": [
+      1.9,
+      2.0,
+      1.9
+    ],
+    "Icon": "defense"
+  }
+}

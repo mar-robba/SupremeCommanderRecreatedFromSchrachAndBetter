@@ -101,7 +101,7 @@ public static class FactorySystem
             e.MassRequest = 0;
             e.EnergyRequest = 0;
             ref var f = ref u.Factory[i];
-            if (!u.IsComplete(i) || (u.Flags[i] & UnitFlags.Paused) != 0)
+            if (!u.IsComplete(i) || (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) != 0)
             {
                 ConstructionSystem.Idle(w, i);
                 continue;

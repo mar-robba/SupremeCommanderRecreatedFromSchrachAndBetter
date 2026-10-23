@@ -51,6 +51,11 @@ public static class FactionRoles
     // Experimentals
     public const string ExpLand = "exp_land", ExpLand2 = "exp_land_2", ExpAir = "exp_air", ExpNaval = "exp_naval",
         ExpArtillery = "exp_artillery";
+    // Added by the Cybran faction (wave 5 l). Light assault bot (Cybran Hunter). Upgrade-only shield steps: engineers
+    // build shield_t2 (Cybran ED1); ED2..ED5 are reached only by in-place upgrades (UpgradesTo), never built directly.
+    public const string LightAssaultT1 = "light_assault_t1";
+    public const string ShieldEd2T2 = "shield_ed2_t2", ShieldEd3T2 = "shield_ed3_t2", ShieldEd4T3 = "shield_ed4_t3",
+        ShieldEd5T3 = "shield_ed5_t3";
 
     /// <summary>Every known role, in the documented order.</summary>
     public static readonly string[] All =
@@ -68,6 +73,7 @@ public static class FactionRoles
         Tml, Tmd, ArtilleryInstallationT2, ArtilleryInstallationT3, NukeSilo, AntiNuke,
         RadarT1, RadarT2, OmniT3, SonarT1, SonarT2, StealthFieldT2,
         ExpLand, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
+        LightAssaultT1, ShieldEd2T2, ShieldEd3T2, ShieldEd4T3, ShieldEd5T3,
     ];
 
     /// <summary>
@@ -78,6 +84,7 @@ public static class FactionRoles
     [
         MobileShieldT2, MobileStealthT2, SiegeT3, SniperT3, FighterBomberT2, GunshipT3, CarrierT3,
         PdT3, TorpedoT2, ShieldT3, StealthFieldT2, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
+        LightAssaultT1, ShieldEd2T2, ShieldEd3T2, ShieldEd4T3, ShieldEd5T3,
     ];
 
     /// <summary>Roles every faction must fill (<see cref="All"/> minus <see cref="Optional"/>): AI/sim code may rely on them.</summary>

@@ -30,6 +30,7 @@ public sealed class Simulation
         var pf = Profile;
         pf.Begin();
         w.Tick++;
+        Combat.EmpStun.Expire(w); // EMP stuns that ran out (Combat/EmpStun)
 
         CommandSystem.Run(w, commands);
         pf.Lap(SimProfile.Stage.Commands);

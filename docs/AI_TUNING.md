@@ -173,3 +173,17 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 |---|---|---|
 | tech AI defaults (2026-10-23) | 65 (59) | 24/69 |
 | + creeping advance (`AiMilitary.Advance`: every AdvanceInterval s a group >= AdvanceMargin × the known enemy at its objective/front moves its stopped members forward) 15 s / margin 1.3 / 10 s step 30 | 68 (49) / 58 (47) / 62 (51) | 31/74 / 33/73 / 34/70 (worse: off) |
+
+## Cybran vs UEF (wave 5l, 2026-10-16)
+
+Both AIs play any faction through the roles (`cybran.json`); no AI code change was needed. 30 min, 256 maps,
+Hard vs Hard, seeds 1–3, plains / canyon / lakes, each faction on both sides (18 games):
+`Rts.Bench -- ai 30 256 <seed> hard,hard 2 2 <preset> cybran,uef` (and `uef,cybran`).
+- First run: Cybran builders (engineers, SCU, ACU) were 0.1 faster than UEF ones → more mex: Cybran 6 / UEF 4 / 3 draws
+  (plains + canyon only). Builder speeds set equal to UEF (combat units keep their small Cybran speed edge).
+- After: **Cybran 8 / UEF 5 / 5 draws** (the lakes draws are T1 stalemates). Not significant at this size; re-measure
+  with `tools/ai-lab` after the "AI uses everything" agent, when the AIs reach T2/T3 (today both field only T1:
+  `AI_ROSTER=1` prints the max alive units per blueprint per army; Cybran lean on the Medusa, like UEF on artillery).
+- 2026-10-23 recheck before the merge (client-only changes since): same games (seed 1 plains cybran,uef → UEF 18:07;
+  seed 2 canyon uef,cybran → Cybran 13:14). New seeds: 4 plains cybran,uef and 5 canyon uef,cybran are draws at
+  30:00; seed 4 with a 60 min limit → UEF 37:55.

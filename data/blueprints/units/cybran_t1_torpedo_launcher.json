@@ -1,0 +1,58 @@
+{
+  "Id": "cybran_t1_torpedo_launcher",
+  "Name": "T1 Torpedo Launcher",
+  "Description": "Naval defense: fires nanite torpedoes at ships and submarines. Must be built on water.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Defense",
+    "AntiNaval",
+    "Tech1"
+  ],
+  "MaxHealth": 1400,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "MinWaterDepth": 0.5,
+  "Economy": {
+    "BuildCostMass": 200,
+    "BuildCostEnergy": 1000,
+    "BuildTime": 250
+  },
+  "Intel": {
+    "VisionRadius": 26,
+    "SonarRadius": 42
+  },
+  "Weapons": [
+    {
+      "Name": "Torpedo Launcher",
+      "Range": 40,
+      "Damage": 120,
+      "RateOfFire": 0.33,
+      "MuzzleVelocity": 9,
+      "TurretTurnRate": 180,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "torpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_torpedo_launcher",
+    "Size": [
+      1.6,
+      1.0,
+      1.6
+    ],
+    "Icon": "defense"
+  },
+  "BuiltBy": [
+    "cybran_commander",
+    "cybran_t1_engineer",
+    "cybran_t2_engineer",
+    "cybran_t3_engineer"
+  ]
+}

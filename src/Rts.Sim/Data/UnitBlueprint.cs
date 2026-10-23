@@ -159,6 +159,18 @@ public sealed class IntelBlueprint
     public float RadarRadius;
     public float SonarRadius;
     public float OmniRadius;
+    /// <summary>Hidden from enemy radar while active (omni and vision still see it). See Intel/Stealth.</summary>
+    public bool RadarStealth;
+    /// <summary>Hidden from enemy sonar while active (omni still sees it).</summary>
+    public bool SonarStealth;
+    /// <summary>Cloak: hidden from enemy vision while active, unless enemy omni covers it. Implies radar + sonar stealth
+    /// (a cloaked unit leaves no blip either; only omni reveals it).</summary>
+    public bool Cloak;
+    /// <summary>&gt; 0: projects a stealth field: allied units within this radius (itself included) get radar + sonar
+    /// stealth while it is active.</summary>
+    public float StealthFieldRadius;
+    // Stealth/cloak/fields are active while the unit is complete, not Paused (H toggles them) and the army's energy is
+    // not stalled; their upkeep is Economy.MaintenanceEnergy (or the enhancement's MaintenanceEnergyAdd).
 }
 
 public sealed class WeaponBlueprint
@@ -191,6 +203,15 @@ public sealed class WeaponBlueprint
     public string ProjectileVisual = "shell";
     /// <summary>Energy needed per shot (e.g. some T2+ weapons). 0 = free.</summary>
     public float EnergyPerShot;
+    /// <summary>EMP: seconds the units hit are stunned (no move, fire or build). 0 = no stun. See Combat/EmpStun.</summary>
+    public float StunDuration;
+    /// <summary>EMP stun radius around the impact (0 = the hit unit, or DamageRadius for area weapons).</summary>
+    public float StunRadius;
+    /// <summary>Highest tech the stun affects (experimentals are Tech 4, so 3 = they are immune). Commanders are immune.</summary>
+    public int StunMaxTech = 3;
+    /// <summary>Can fire while its unit is submerged (an amphibious walker on the seabed). Torpedoes always can;
+    /// other weapons only with this flag.</summary>
+    public bool FiresSubmerged;
 }
 
 public sealed class VisualBlueprint

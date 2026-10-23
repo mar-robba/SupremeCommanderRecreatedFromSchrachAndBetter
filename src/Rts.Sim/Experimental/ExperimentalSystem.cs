@@ -153,7 +153,7 @@ public static class ExperimentalSystem
         var u = w.Units;
         float total = 0;
         bool any = false;
-        bool working = complete && (u.Flags[i] & UnitFlags.Paused) == 0;
+        bool working = complete && (u.Flags[i] & (UnitFlags.Paused | UnitFlags.Stunned)) == 0;
         int b = i * UnitStore.MaxWeapons;
         for (int wi = 0; wi < bp.Weapons.Length && wi < UnitStore.MaxWeapons; wi++)
         {

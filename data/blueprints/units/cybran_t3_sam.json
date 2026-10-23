@@ -1,0 +1,49 @@
+{
+  "Id": "cybran_t3_sam",
+  "Name": "T3 SAM Launcher",
+  "Description": "T3 surface-to-air missile launcher: long-range homing nanodart missiles.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "AntiAir",
+    "Tech3"
+  ],
+  "MaxHealth": 5700,
+  "Radius": 1.3,
+  "FootprintX": 3,
+  "FootprintZ": 3,
+  "Economy": {
+    "BuildCostMass": 800,
+    "BuildCostEnergy": 9000,
+    "BuildTime": 1000
+  },
+  "Intel": {
+    "VisionRadius": 50
+  },
+  "Weapons": [
+    {
+      "Name": "SAM",
+      "Range": 60,
+      "Damage": 110,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 45,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectilesPerShot": 2,
+      "ProjectileVisual": "missile",
+      "FiringTolerance": 20,
+      "TurretTurnRate": 150
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_aa_turret3",
+    "Size": [
+      2.6,
+      2.4,
+      2.6
+    ],
+    "Icon": "defense"
+  }
+}

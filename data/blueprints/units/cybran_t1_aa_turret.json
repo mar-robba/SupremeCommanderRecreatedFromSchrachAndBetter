@@ -1,0 +1,47 @@
+{
+  "Id": "cybran_t1_aa_turret",
+  "Name": "T1 Anti-Air Turret",
+  "Description": "Shoots down aircraft with an electron flak gun.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Defense",
+    "AntiAir",
+    "Tech1"
+  ],
+  "MaxHealth": 850,
+  "Radius": 0.8,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 80,
+    "BuildCostEnergy": 600,
+    "BuildTime": 150
+  },
+  "Intel": {
+    "VisionRadius": 30
+  },
+  "Weapons": [
+    {
+      "Name": "Electron Flak",
+      "Range": 32,
+      "Damage": 12,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 50,
+      "TargetLayers": [
+        "Air"
+      ],
+      "DamageRadius": 1.5,
+      "ProjectileVisual": "flak"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_aa_turret",
+    "Size": [
+      1.6,
+      1.4,
+      1.6
+    ],
+    "Icon": "defense"
+  }
+}

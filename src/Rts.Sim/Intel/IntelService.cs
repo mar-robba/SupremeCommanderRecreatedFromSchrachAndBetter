@@ -61,6 +61,8 @@ public sealed class IntelService
     public int Version { get; internal set; }
     /// <summary>Duration of the last IntelSystem update (ms), for benchmarks.</summary>
     [field: Persistence.NoSave] public double LastUpdateMs { get; internal set; }
+    /// <summary>Per unit slot: active stealth/cloak bits (<see cref="StealthSystem"/>); null while no unit has any.</summary>
+    internal byte[]? StealthMask;
 
     public IntelService(SimWorld w, float cellSize = DefaultCellSize)
     {
@@ -118,6 +120,7 @@ public sealed class IntelService
         var ti = Teams[t];
         int c = BitIndex(u.Pos[unitIndex]);
         if (!Test(ti.Vision, c)) return false;
+        if (StealthMask is { } sm && sm[unitIndex] != 0 && StealthSystem.HiddenFromVision(_w, ti, c, sm[unitIndex], unitIndex)) return false;
         if (_canSubmerge[u.Bp[unitIndex]] && OrderSystem.LayerOf(_w, unitIndex) == LayerMask.Sub)
             return (ti.SonarUsed && Test(ti.Sonar, c)) || (ti.OmniUsed && Test(ti.Omni, c));
         return true;
@@ -136,6 +139,7 @@ public sealed class IntelService
         if (ti.OmniUsed && Test(ti.Omni, c)) return true;
         bool radar = ti.RadarUsed && Test(ti.Radar, c);
         bool sonar = ti.SonarUsed && Test(ti.Sonar, c);
+        if (StealthMask is { } sm && sm[unitIndex] != 0) StealthSystem.Jam(sm[unitIndex], ref radar, ref sonar);
         if (!radar && !sonar) return false;
         var layer = OrderSystem.LayerOf(_w, unitIndex);
         return (radar && (layer & (LayerMask.Land | LayerMask.Air | LayerMask.Water)) != 0)

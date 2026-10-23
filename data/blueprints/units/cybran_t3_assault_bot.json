@@ -1,0 +1,52 @@
+{
+  "Id": "cybran_t3_assault_bot",
+  "Name": "Loyalist",
+  "Description": "T3 assault bot: fast front-line walker with a disintegrator pulse laser.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 2500,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 450,
+    "BuildCostEnergy": 5000,
+    "BuildTime": 2200
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 3.1,
+    "Acceleration": 3,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 26
+  },
+  "Weapons": [
+    {
+      "Name": "Disintegrator Pulse Laser",
+      "Range": 24,
+      "Damage": 52,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "TurretTurnRate": 160,
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_assault_bot",
+    "Size": [
+      1.4,
+      2.0,
+      1.3
+    ],
+    "Icon": "land_direct"
+  }
+}

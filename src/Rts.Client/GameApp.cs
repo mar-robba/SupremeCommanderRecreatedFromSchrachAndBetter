@@ -30,7 +30,7 @@ public sealed class ClientOptions
     public string? Faction;
     public string[]? Factions;
     public bool Demo;
-    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) or "transport" (TransportScene).</summary>
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) "transport" (TransportScene) or "cybran[:land|:air|:naval|:structures|:experimental]" (CybranScene).</summary>
     public string? Scene;
     public int Width = 1600;
     public int Height = 900;
@@ -186,6 +186,7 @@ public sealed class ClientOptions
         if (o.Scene == NavalScene.Name) NavalScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(ExperimentalScene.Name) == true) ExperimentalScene.ApplyDefaults(o);
         else if (o.Scene == TransportScene.Name) TransportScene.ApplyDefaults(o);
+        else if (o.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.ApplyDefaults(o);
         return o;
     }
 }

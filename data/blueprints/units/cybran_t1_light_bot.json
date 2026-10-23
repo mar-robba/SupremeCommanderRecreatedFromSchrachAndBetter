@@ -1,0 +1,51 @@
+{
+  "Id": "cybran_t1_light_bot",
+  "Name": "Hunter",
+  "Description": "T1 light assault bot: cheap, fast raider with a pulse laser.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 140,
+  "Radius": 0.5,
+  "Economy": {
+    "BuildCostMass": 26,
+    "BuildCostEnergy": 130,
+    "BuildTime": 130
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 3.6,
+    "Acceleration": 4,
+    "TurnRate": 140
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Weapons": [
+    {
+      "Name": "Pulse Laser",
+      "Range": 15,
+      "Damage": 7,
+      "RateOfFire": 1.5,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_light_bot",
+    "Size": [
+      0.7,
+      0.8,
+      0.7
+    ],
+    "Icon": "land_direct"
+  }
+}

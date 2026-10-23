@@ -1,0 +1,53 @@
+{
+  "Id": "cybran_t2_heavy_tank",
+  "Name": "Rhino",
+  "Description": "T2 heavy tank: twin electron bolters; faster and lighter than other heavy tanks.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech2"
+  ],
+  "MaxHealth": 1200,
+  "Radius": 0.8,
+  "Economy": {
+    "BuildCostMass": 170,
+    "BuildCostEnergy": 850,
+    "BuildTime": 850
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 2.9,
+    "Acceleration": 2.5,
+    "TurnRate": 100
+  },
+  "Intel": {
+    "VisionRadius": 22
+  },
+  "Weapons": [
+    {
+      "Name": "Electron Bolter",
+      "Range": 23,
+      "Damage": 30,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 34,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectilesPerShot": 2,
+      "TurretTurnRate": 140,
+      "ProjectileVisual": "laser"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_heavy_tank",
+    "Size": [
+      1.4,
+      0.95,
+      1.9
+    ],
+    "Icon": "land_direct"
+  }
+}

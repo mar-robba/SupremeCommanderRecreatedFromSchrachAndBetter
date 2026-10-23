@@ -1,0 +1,82 @@
+{
+  "Id": "cybran_t2_cruiser",
+  "Name": "Siren Cruiser",
+  "Description": "T2 cruiser: cruise missiles, strong nanodart anti-air, wide radar.",
+  "Tech": 2,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "DirectFire",
+    "AntiAir",
+    "Tech2"
+  ],
+  "MaxHealth": 3800,
+  "Radius": 1.6,
+  "Economy": {
+    "BuildCostMass": 1650,
+    "BuildCostEnergy": 11000,
+    "BuildTime": 4600
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 4.7,
+    "Acceleration": 2,
+    "TurnRate": 45
+  },
+  "Intel": {
+    "VisionRadius": 40,
+    "RadarRadius": 150,
+    "SonarRadius": 50
+  },
+  "Weapons": [
+    {
+      "Name": "Loa Cruise Missile",
+      "Range": 70,
+      "Damage": 130,
+      "RateOfFire": 0.3,
+      "MuzzleVelocity": 14,
+      "TurretTurnRate": 120,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Nanodart Launcher",
+      "Range": 48,
+      "Damage": 42,
+      "DamageRadius": 1.2,
+      "RateOfFire": 1.2,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 240,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Proton Cannon",
+      "Range": 30,
+      "Damage": 30,
+      "RateOfFire": 1,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 120,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_cruiser",
+    "Size": [
+      3.0,
+      3.0,
+      10.0
+    ],
+    "Icon": "naval"
+  }
+}

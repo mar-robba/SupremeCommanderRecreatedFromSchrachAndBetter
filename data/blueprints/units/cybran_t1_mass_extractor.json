@@ -1,0 +1,37 @@
+{
+  "Id": "cybran_t1_mass_extractor",
+  "Name": "T1 Mass Extractor",
+  "Description": "Extracts mass from a mass deposit.",
+  "Tech": 1,
+  "UpgradesTo": "cybran_t2_mass_extractor",
+  "Categories": [
+    "Structure",
+    "Economy",
+    "MassExtractor",
+    "Tech1"
+  ],
+  "MaxHealth": 600,
+  "Radius": 1.0,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 36,
+    "BuildCostEnergy": 360,
+    "BuildTime": 60,
+    "ProductionMass": 2,
+    "MaintenanceEnergy": 2,
+    "RequiresMassDeposit": true
+  },
+  "Intel": {
+    "VisionRadius": 8
+  },
+  "Visual": {
+    "Shape": "cy_mex",
+    "Size": [
+      1.8,
+      1.2,
+      1.8
+    ],
+    "Icon": "eco_mass"
+  }
+}
