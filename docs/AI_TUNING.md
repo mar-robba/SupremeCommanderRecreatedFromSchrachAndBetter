@@ -197,3 +197,5 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 | + Reinforce=false (fresh units wait for the next wave) | 40 (27) | 60/80 (much worse) |
 | + follow mode (Advance with AdvanceStep 0: only indirect-fire members stopped far behind the front move up to it) margin 0 / 1.5 | 69 (58) / 66 (55) | 24/68 / 25/72 (no help) |
 | + ArtilleryTier=2 (T2 missile launchers, no T3 mobile artillery) | 66 (60) | 27/71 |
+| ArtilleryTier=1 again (noise check, with a no-op override) | 80 (60) | 14/73 |
+| ArtilleryTier=1 + LeadArmyShare 0.8, LeadRatio 1.2 | 80 (65) | 22/77 (no gain on stalls) |
