@@ -419,3 +419,23 @@ by margin +0.4..+0.5; asl3 1.71 ~ hvy2 1.91). (3) Open: higher tiers beat T1 cle
 (5 x 420 = 2100 mass). shareA stays nearly binary, so same-role cross cells read 0.00/1.00 even at margin +-0.05.
 (4) The reference match `ai 30 256 42 hard,normal` now ends "WINNER: AI 1 (Normal) after 15:50" (was Hard at 11:30),
 hash 9724216772093A2E: check AI matches before trusting the AI on these numbers.
+
+### Faction parity after the balance pass (2026-10-24)
+
+The balance pass left Cybran v UEF (cvu, 96 games, 45 min, Normal v Normal, both seats, four presets) at **Cybran 51 -
+UEF 21, 24 draws**. Both factions were even until minute 6-8 (same mex, income, land value), then the UEF fell behind
+(minute 15: land value 2.2k vs 2.7k, mex 9.2 vs 10.9). The cross matrix (`duelmatrix uef cybran 300,600,1200,2000,4000
+4`) had every same-role pair near 0 except the one that matters most, **T1 tank vs T1 tank: margin -0.34 / -0.15 /
+-0.19 / -0.01 / -0.15** (eff 1.72 vs 1.73, but the Cybran bot is faster, 3.2 vs 3.0, and its laser flies at 40
+against the Gauss shell's 30, so more UEF shots miss moving targets).
+
+| uef_t1_tank change | tank1 vs tank1 margin (600 / 1200 / 2000 / 4000) | cvu Cybran - UEF (draws) |
+|---|---|---|
+| none | -0.15 / -0.19 / -0.01 / -0.15 | 51 - 21 (24) |
+| MuzzleVelocity 30 -> 40, MaxHealth 300 -> 315 | +0.04 / -0.01 / +0.18 / +0.07 | 34 - 41 (21): UEF wins early (25 of 41 before minute 20), Cybran late |
+| **MuzzleVelocity 30 -> 40, MaxHealth 300 -> 305** | -0.07 / -0.16 / +0.08 / -0.11 | **39 - 35 (22)** -> kept |
+
+MaxHealth 305 takes the same 18 Cybran laser hits as 300 (it only changes kills by mixed damage), so the duel grid is
+the MuzzleVelocity 40 one. Left: in games that last past minute 25 Cybran still fields more T2/T3 (max alive heavy tanks
+15 vs 5, assault bots 17 vs 4): the UEF spends part of its T2/T3 mass on roles Cybran lacks (mobile shields 6 %,
+one siege bot per two assault bots, fighter-bombers), so late games lean Cybran and early ones UEF.

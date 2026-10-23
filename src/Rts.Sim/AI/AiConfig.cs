@@ -193,7 +193,7 @@ public sealed partial class AiConfig
             // Hard = faster reactions, more factories, raids, commander snipes, more shields/TML/SCUs - no bonuses.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
-            MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
+            MaxLandFactories = 8, MaxLandFactoriesFloat = 18, MaxAirFactories = 1, AirFactoryTime = 330,
             PowerMargin = 0.8f, MexChain = 1, MaxMassStorage = 2, MaxEnergyStorage = 1,
             BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 3, QueueDepth = 2, SpendRatio = 1.1f,
             LandScouts = 2, AirScouts = 0, ScoutRebuildTime = 60, MaxRadars = 1, RadarTime = 150,
@@ -207,7 +207,10 @@ public sealed partial class AiConfig
             // (18-81 of 192 at 45 min); Normal's tech times + these values: 92-55.
             MexT2Time = 480, MexT3Time = 840, LandT2Time = 660, LandT3Time = 1020, AirT2Time = 660, AirT3Time = 1080,
             MaxShields = 4, MaxTml = 2, MaxScus = 3, MaxNavalFactories = 3, MaxTransports = 3,
-            ArtilleryShare = 0.1f, // pre-balance matrix (T1 artillery won every fight): 0.55 -> 86 % wins vs Normal
+            ArtilleryShare = 0.05f, // pre-balance matrix (T1 artillery won every fight): 0.55 -> 86 % wins vs Normal
+            // 2026-10-24 (AI_TUNING "Hard's edge"): artillery 0.1 -> 0.05, 8/18 land factories, army share 0.6:
+            // 90-49 -> 102-52 at 45 min (154 of 192 finished instead of 139); every lever tried stays near 2:1.
+            ArmyShare = 0.6f,
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
     };
