@@ -1,8 +1,8 @@
 # Handoff — agent (k) wave 5: AI uses everything (coordinator 8, started 2026-10-23)
 
 Repo moved to /run/media/marco/RTS (old "Volume D" paths are stale). Worktree = this dir, branch
-`worktree-agent-ac4c927c54a66ca1d`. Always `bash tools/agents/dn.sh <dotnet args>`. main merged at 0427eb6;
-393 Sim tests green there. Cap 250k (CHECKPOINT 230k).
+`worktree-agent-ac4c927c54a66ca1d`. Always `bash tools/agents/dn.sh <dotnet args>`. main (with Cybran 79b5e37) merged at 6503874;
+393 Sim tests green at 0427eb6. Cap 250k (CHECKPOINT 230k).
 
 ## Goals (orchestrator 2026-10-23, replaces "NvN 80/96 at 30 min")
 (a) lopsided games must end: metric `lopsided stalled X/Y` (run.py summary; lv=/val= >= 2x and >= 2k for 5 status
@@ -32,7 +32,8 @@ centroid drifts back (183,200)->(142,153) as long-range members stop at max rang
 - Advance (AiMilitary.Advance.cs, knobs off): worse (31-34 stalled). Knobs added (off): AaShareMin/Max,
   AaGroundFactor. Running: b2 (ArtilleryTier=1, LeadArmyShare, ShieldTime off, ArtilleryShare .15), then c2
   (AaGroundFactor .3, AaShare .05-.25, StallTime=60+StallMargin=10, Reinforce=false); outputs .claude/ai-lab/{b2,c2}.out.
-- Sub-agent: AiTechTests (tests/Rts.Sim.Tests/AiTechTests.cs), note -> .claude/notes/aitech-tests.md.
+- AiTechTests DONE (4bf8ca6, seed 2: T2 by min 13, anti-nuke after SML sighting, save/load at min 12); note
+  .claude/notes/aitech-tests.md (re-check timings when defaults change).
 - Leader at 36 min (hl21): 12 land factories, no shields/gateway/exp (projects starved: MassRatio<.05/EcoRoom);
   11 interceptors + 8 flak idle at home; 19 T1 mobile AA in the attack at min 30 (AA share >= 12 % by mass).
 - tc.sh <pfx> <specs> <bin> [cfg]: goal (c) tech vs T1-only both seats (prints tech share).
