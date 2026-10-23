@@ -3,89 +3,99 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-10-23 11:39 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-10-23 18:08 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.063,4 milioni di token, 530,2 $, 17 sessioni e 107 agenti.
-Output: 24 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,66).
+1.160,5 milioni di token, 579,5 $, 18 sessioni e 115 agenti.
+Output: 33 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,82).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 57     | 452,0     | 2.579      | 234,0 | 44,1    | 2026-10-23      |
-| Esperienza client      | 19     | 189,0     | 1.063      | 84,5  | 15,9    | 2026-10-16      |
-| Avversario IA          | 17     | 172,9     | 772        | 73,7  | 13,9    | 2026-10-23      |
-| Coordinamento          | 0      | 98,8      | 548        | 59,6  | 11,2    | 2026-10-23      |
-| Infrastruttura tecnica | 14     | 119,9     | 807        | 58,8  | 11,1    | 2026-10-16      |
-| Documentazione         | 0      | 30,8      | 270        | 19,6  | 3,7     | 2026-10-15      |
+| Gameplay SupCom        | 57     | 452,1     | 2.684      | 236,0 | 40,7    | 2026-10-23      |
+| Avversario IA          | 23     | 244,5     | 1.244      | 108,2 | 18,7    | 2026-10-23      |
+| Esperienza client      | 19     | 189,0     | 1.101      | 85,3  | 14,7    | 2026-10-16      |
+| Coordinamento          | 0      | 116,9     | 610        | 66,7  | 11,5    | 2026-10-23      |
+| Infrastruttura tecnica | 14     | 119,9     | 833        | 59,3  | 10,2    | 2026-10-16      |
+| Documentazione         | 0      | 32,0      | 286        | 20,6  | 3,5     | 2026-10-23      |
+| Da classificare        | 2      | 6,1       | 63         | 3,4   | 0,6     | 2026-10-23      |
 
 * Per scopo
 | Scopo                                           | Agenti | Token (M) | Output (k) | $    | % costo | Ultima attività |
 |-------------------------------------------------+--------+-----------+------------+------+---------+-----------------|
-| Orchestrazione (sessioni principali)            | 0      | 69,5      | 396        | 46,0 | 8,7     | 2026-10-16      |
-| Fazione Cybran (5l)                             | 20     | 88,6      | 565        | 45,6 | 8,6     | 2026-10-23      |
-| Rifinitura SupCom (4f)                          | 9      | 79,5      | 421        | 41,7 | 7,9     | 2026-10-14      |
-| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 403        | 40,1 | 7,6     | 2026-10-14      |
-| IA usa tutto (5k)                               | 10     | 82,4      | 369        | 33,6 | 6,3     | 2026-10-23      |
-| Navale (3c)                                     | 4      | 61,0      | 237        | 31,7 | 6,0     | 2026-10-12      |
-| Mappe, menu, flusso (onda 2)                    | 3      | 64,8      | 238        | 24,7 | 4,7     | 2026-10-11      |
-| Armi strategiche (3b)                           | 6      | 45,7      | 263        | 22,4 | 4,2     | 2026-10-12      |
-| Sperimentali e comandanti (4g)                  | 5      | 38,4      | 240        | 22,2 | 4,2     | 2026-10-13      |
-| Scala e prestazioni (5m)                        | 6      | 49,9      | 225        | 21,0 | 4,0     | 2026-10-16      |
-| Trasporti (4h)                                  | 4      | 37,9      | 233        | 20,3 | 3,8     | 2026-10-14      |
-| UX (5n)                                         | 7      | 42,8      | 234        | 18,9 | 3,6     | 2026-10-16      |
-| Salvataggi e replay (4i)                        | 3      | 30,9      | 216        | 16,9 | 3,2     | 2026-10-14      |
-| Multigiocatore lockstep (5o)                    | 5      | 35,1      | 211        | 15,8 | 3,0     | 2026-10-16      |
-| Sandbox (3e)                                    | 5      | 28,2      | 219        | 14,6 | 2,7     | 2026-10-12      |
-| Nebbia di guerra e intel (onda 2)               | 2      | 30,9      | 139        | 12,8 | 2,4     | 2026-10-11      |
-| Documentazione                                  | 0      | 15,2      | 156        | 11,4 | 2,2     | 2026-10-15      |
-| Tecnologia T2/T3 (3a)                           | 2      | 22,2      | 124        | 10,5 | 2,0     | 2026-10-12      |
-| Grafica client (onda 1)                         | 1      | 20,7      | 164        | 9,9  | 1,9     | 2026-10-10      |
-| Audio e rifinitura (onda 2)                     | 2      | 20,6      | 109        | 9,8  | 1,8     | 2026-10-11      |
-| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 130        | 8,9  | 1,7     | 2026-10-10      |
-| Orchestrazione wave 5 (ripresa 16/10)           | 0      | 19,1      | 93         | 8,7  | 1,6     | 2026-10-16      |
-| Documentazione e analisi costi                  | 0      | 15,6      | 114        | 8,2  | 1,5     | 2026-10-15      |
-| Combattimento (onda 1)                          | 1      | 11,9      | 68         | 7,3  | 1,4     | 2026-10-10      |
-| UI e HUD (onda 1)                               | 1      | 12,0      | 99         | 6,6  | 1,2     | 2026-10-10      |
-| Economia e costruzione (onda 1)                 | 1      | 6,7       | 79         | 5,5  | 1,0     | 2026-10-10      |
-| Infrastruttura fazioni (j)                      | 2      | 11,0      | 82         | 5,1  | 1,0     | 2026-10-14      |
-| Fondazione (sessione principale)                | 0      | 3,9       | 156        | 5,1  | 1,0     | 2026-10-10      |
-| Orchestrazione wave 5 (ripresa l Cybran + k IA) | 0      | 5,5       | 30         | 2,6  | 0,5     | 2026-10-22      |
-| Orchestrazione wave 5 (ripresa 23/10)           | 0      | 4,7       | 30         | 2,3  | 0,4     | 2026-10-23      |
+| IA usa tutto (5k)                               | 16     | 153,9     | 823        | 67,8 | 11,7    | 2026-10-23      |
+| Fazione Cybran (5l)                             | 20     | 88,6      | 586        | 46,0 | 7,9     | 2026-10-23      |
+| Orchestrazione (sessioni principali)            | 0      | 69,5      | 396        | 46,0 | 7,9     | 2026-10-16      |
+| Rifinitura SupCom (4f)                          | 9      | 79,5      | 443        | 42,1 | 7,3     | 2026-10-14      |
+| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 421        | 40,4 | 7,0     | 2026-10-14      |
+| Navale (3c)                                     | 4      | 61,0      | 246        | 31,8 | 5,5     | 2026-10-12      |
+| Mappe, menu, flusso (onda 2)                    | 3      | 64,8      | 247        | 24,9 | 4,3     | 2026-10-11      |
+| Armi strategiche (3b)                           | 6      | 45,7      | 274        | 22,7 | 3,9     | 2026-10-12      |
+| Sperimentali e comandanti (4g)                  | 5      | 38,4      | 251        | 22,5 | 3,9     | 2026-10-13      |
+| Scala e prestazioni (5m)                        | 6      | 50,0      | 236        | 21,2 | 3,7     | 2026-10-16      |
+| Trasporti (4h)                                  | 4      | 37,9      | 242        | 20,5 | 3,5     | 2026-10-14      |
+| UX (5n)                                         | 7      | 42,8      | 246        | 19,1 | 3,3     | 2026-10-16      |
+| Salvataggi e replay (4i)                        | 3      | 31,0      | 223        | 17,1 | 2,9     | 2026-10-14      |
+| Multigiocatore lockstep (5o)                    | 5      | 35,1      | 217        | 15,9 | 2,8     | 2026-10-16      |
+| Sandbox (3e)                                    | 5      | 28,2      | 229        | 14,8 | 2,5     | 2026-10-12      |
+| Nebbia di guerra e intel (onda 2)               | 2      | 30,9      | 143        | 12,9 | 2,2     | 2026-10-11      |
+| Documentazione                                  | 0      | 15,2      | 156        | 11,4 | 2,0     | 2026-10-15      |
+| Tecnologia T2/T3 (3a)                           | 2      | 22,2      | 128        | 10,6 | 1,8     | 2026-10-12      |
+| Grafica client (onda 1)                         | 1      | 20,7      | 167        | 10,0 | 1,7     | 2026-10-10      |
+| Audio e rifinitura (onda 2)                     | 2      | 20,6      | 112        | 9,8  | 1,7     | 2026-10-11      |
+| Orchestrazione wave 5 (ripresa 23/10)           | 0      | 22,8      | 92         | 9,4  | 1,6     | 2026-10-23      |
+| Documentazione e analisi costi                  | 0      | 16,8      | 130        | 9,1  | 1,6     | 2026-10-23      |
+| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 133        | 9,0  | 1,5     | 2026-10-10      |
+| Orchestrazione wave 5 (ripresa 16/10)           | 0      | 19,1      | 93         | 8,7  | 1,5     | 2026-10-16      |
+| Combattimento (onda 1)                          | 1      | 12,0      | 70         | 7,3  | 1,3     | 2026-10-10      |
+| UI e HUD (onda 1)                               | 1      | 12,0      | 101        | 6,7  | 1,1     | 2026-10-10      |
+| Economia e costruzione (onda 1)                 | 1      | 6,7       | 81         | 5,5  | 1,0     | 2026-10-10      |
+| Infrastruttura fazioni (j)                      | 2      | 11,0      | 86         | 5,2  | 0,9     | 2026-10-14      |
+| Fondazione (sessione principale)                | 0      | 3,9       | 156        | 5,1  | 0,9     | 2026-10-10      |
+| Pianificazione wave 6                           | 1      | 4,9       | 57         | 2,7  | 0,5     | 2026-10-23      |
+| Orchestrazione wave 5 (ripresa l Cybran + k IA) | 0      | 5,5       | 30         | 2,6  | 0,4     | 2026-10-22      |
+| Comandante e ingegneri (6a)                     | 1      | 1,1       | 6          | 0,6  | 0,1     | 2026-10-23      |
 
 * Per giorno
 | Giorno     | Token (M) | $     | Agenti |
 |------------+-----------+-------+--------|
-| 2026-10-10 | 89,8      | 52,3  | 9      |
-| 2026-10-11 | 192,0     | 84,1  | 9      |
-| 2026-10-12 | 204,4     | 105,9 | 29     |
-| 2026-10-13 | 142,5     | 82,9  | 20     |
-| 2026-10-14 | 91,7      | 46,1  | 14     |
-| 2026-10-15 | 115,4     | 61,4  | 18     |
-| 2026-10-16 | 138,5     | 57,2  | 14     |
-| 2026-10-22 | 54,7      | 25,5  | 8      |
-| 2026-10-23 | 34,3      | 14,8  | 4      |
+| 2026-10-10 | 89,8      | 52,6  | 9      |
+| 2026-10-11 | 192,0     | 84,6  | 9      |
+| 2026-10-12 | 204,4     | 106,8 | 29     |
+| 2026-10-13 | 142,5     | 83,6  | 20     |
+| 2026-10-14 | 91,8      | 46,5  | 14     |
+| 2026-10-15 | 115,4     | 61,9  | 18     |
+| 2026-10-16 | 138,5     | 57,7  | 14     |
+| 2026-10-22 | 54,7      | 25,8  | 8      |
+| 2026-10-23 | 131,2     | 60,1  | 12     |
 
 * Ultime attività
 | Fine (UTC)       | Tipo     | Scopo                                           | Descrizione                                        | Token (M) | $    | Output  |
 |------------------+----------+-------------------------------------------------+----------------------------------------------------+-----------+------+---------|
-| 2026-10-23 11:39 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] AiTechTests                    | 2,9       | 1.68 | esatto  |
-| 2026-10-23 11:39 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 8, stalls new goal | 15,2      | 5.53 | esatto  |
-| 2026-10-23 11:35 | sessione | Orchestrazione wave 5 (ripresa 23/10)           | continua                                           | 4,7       | 2.31 | esatto  |
+| 2026-10-23 18:08 | sessione | Orchestrazione wave 5 (ripresa 23/10)           | continua                                           | 22,8      | 9.36 | esatto  |
+| 2026-10-23 18:08 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 9, balance first   | 15,5      | 9.80 | esatto  |
+| 2026-10-23 18:08 | agente   | Comandante e ingegneri (6a)                     | [Comandante e ingegneri (6a)] coordinator          | 1,1       | 0.63 | esatto  |
+| 2026-10-23 17:08 | agente   | Pianificazione wave 6                           | [Pianificazione wave 6] SupCom1 gap audit          | 4,9       | 2.72 | esatto  |
+| 2026-10-23 16:55 | ripresa  | IA usa tutto (5k)                               | [IA usa tutto (5k)] navy agent 3, finish           | 13,1      | 5.64 | esatto  |
+| 2026-10-23 16:29 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] unit balance pass              | 8,8       | 4.23 | esatto  |
+| 2026-10-23 16:16 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] navy agent 2, transports       | 13,6      | 5.95 | esatto  |
+| 2026-10-23 12:04 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] duel tool                      | 6,1       | 2.89 | esatto  |
+| 2026-10-23 11:57 | sessione | Documentazione e analisi costi                  | confronta quanto la progettazione della ai sta con | 1,2       | 0.96 | esatto  |
+| 2026-10-23 11:53 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] navy + transports agent        | 7,6       | 3.46 | esatto  |
+| 2026-10-23 11:48 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 8, stalls new goal | 21,8      | 7.35 | esatto  |
+| 2026-10-23 11:44 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] AiTechTests                    | 3,2       | 1.80 | esatto  |
 | 2026-10-23 11:34 | ripresa  | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] coordinator C3+D finish      | 5,3       | 2.59 | esatto  |
 | 2026-10-23 11:28 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C3b status visuals           | 6,2       | 2.71 | esatto  |
 | 2026-10-22 21:01 | sessione | Orchestrazione wave 5 (ripresa l Cybran + k IA) | continua                                           | 5,5       | 2.56 | esatto  |
-| 2026-10-22 21:01 | ripresa  | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] coordinator resume C+D       | 4,2       | 3.61 | stimato |
-| 2026-10-22 21:01 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C3a scene cybran + review    | 5,1       | 2.24 | stimato |
-| 2026-10-22 21:01 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C2c defense models + tests   | 3,7       | 2.37 | stimato |
-| 2026-10-22 21:01 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 7, stalls (siege p | 10,4      | 3.43 | stimato |
-| 2026-10-22 20:29 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C2b structure models         | 2,7       | 1.63 | stimato |
-| 2026-10-22 20:29 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 6, fix stalls      | 17,9      | 5.84 | stimato |
-| 2026-10-22 20:17 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C2a experimental models      | 2,8       | 1.69 | stimato |
-| 2026-10-22 20:04 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C1b naval models             | 2,5       | 2.16 | stimato |
-| 2026-10-16 14:26 | sessione | Orchestrazione (sessioni principali)            | continua                                           | 5,2       | 2.92 | stimato |
-| 2026-10-16 14:26 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] client C1 air naval hooks    | 1,7       | 1.20 | stimato |
-| 2026-10-16 14:26 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 5, fix stalls      | 2,4       | 1.05 | stimato |
-| 2026-10-16 14:22 | ripresa  | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator resume, fix stalls | 6,8       | 2.54 | stimato |
-| 2026-10-16 14:22 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] navy                           | 4,6       | 1.92 | stimato |
-| 2026-10-16 14:20 | ripresa  | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] coordinator resume C+D       | 5,8       | 2.22 | stimato |
+| 2026-10-22 21:01 | ripresa  | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] coordinator resume C+D       | 4,2       | 3.64 | stimato |
+| 2026-10-22 21:01 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C3a scene cybran + review    | 5,1       | 2.27 | stimato |
+| 2026-10-22 21:01 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C2c defense models + tests   | 3,7       | 2.39 | stimato |
+| 2026-10-22 21:01 | agente   | IA usa tutto (5k)                               | [IA usa tutto (5k)] coordinator 7, stalls (siege p | 10,4      | 3.47 | stimato |
+| 2026-10-22 20:29 | agente   | Fazione Cybran (5l)                             | [Fazione Cybran (5l)] C2b structure models         | 2,7       | 1.66 | stimato |
+
+* Da classificare
+Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l'area dello scopo in
+~tools/token-ledger/purposes.json~, oppure dare agli agenti una descrizione che inizi con ~[scopo]~.
+
+- Comandante e ingegneri (6a): [Comandante e ingegneri (6a)] coordinator
+- Pianificazione wave 6: [Pianificazione wave 6] SupCom1 gap audit
