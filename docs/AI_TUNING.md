@@ -33,6 +33,13 @@ DIFF=Hard SPECS="$(python3 -I tools/ai-lab/specs.py hard,normal 1-24 --both-side
 - `h2h.py <run dir> <Difficulty>`: wins / losses / no winner for that difficulty, mean end time, and its mass income
   vs the opponent at minutes 3/5/8.
 - `stats.py <run dir> [marks]`: mean mex, land units, engineers, factories, losses and mass income per difficulty.
+- 45-minute work (wave 5k) uses `run.py` with fixed game lists in `tools/ai-lab/specs/` (`nvn` 96 Normal mirrors,
+  `hvn` Hard v Normal both seats, `hvh`, `cvu` Cybran v UEF both seats; spec field 6 = factions):
+  `MIN=45 bash tools/ai-lab/specsweep.sh <prefix> tools/ai-lab/specs/nvn.txt <bin> - "Field=v"` (one status line per
+  cfg; `DIFF=Hard` for head-to-heads), `bash tools/ai-lab/tc.sh <prefix> <specs> <bin> [tech cfg]` (goal (c): tech vs
+  T1-only, both seats), `python3 -I tools/ai-lab/cvu.py <run dir>` (wins per faction), `cmp.py <run dirs> [--diff D]`
+  (mean status numbers per minute mark, one row per run), `lop.py <run dir>` (lists the lopsided-stalled games with
+  both sides' state). Run a copy of the binary (+ `data/` next to its parent dirs) so builds don't change it mid-run.
 - Debugging one game: `AI_TRACE=1 AI_GROUPS=1 AI_STATUS_SECONDS=30 tools/Rts.Bench/bin/Release/net10.0/Rts.Bench ai
   30 256 7 normal,normal 1 2 highlands`. All switches: ARCHITECTURE "Skirmish AI".
 
