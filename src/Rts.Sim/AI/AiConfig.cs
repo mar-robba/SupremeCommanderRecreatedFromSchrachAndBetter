@@ -98,6 +98,11 @@ public sealed partial class AiConfig
     public float PositionTargetTime = 60f;
     /// <summary>Share of artillery in the land mix (after the opening).</summary>
     public float ArtilleryShare = 0.25f;
+    /// <summary>Mass share of mobile anti-air in the land mix once the enemy has air: 0.1 + enemy air / (air + land),
+    /// clamped to [AaShareMin, AaShareMax].</summary>
+    public float AaShareMin = 0.12f, AaShareMax = 0.4f;
+    /// <summary>Weight of anti-air-only members in a group's strength (attack and retreat decisions are ground fights).</summary>
+    public float AaGroundFactor = 1f;
     /// <summary>Raiding parties against weakly defended enemy extractors (size, max simultaneous; 0 = none).</summary>
     public int RaidSize = 0;
     public int MaxRaids = 0;

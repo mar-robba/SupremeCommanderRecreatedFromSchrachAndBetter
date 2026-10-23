@@ -28,9 +28,14 @@ Front tanks hold (attack-move) on factories ~20 away; MMLs hold 60 away on a PD 
 reinforcement batches stream in; defender's MMLs (168 kills), PD (111), ACU (72) win the attrition; the group
 centroid drifts back (183,200)->(142,153) as long-range members stop at max range. 650 attacker deaths in the base.
 
-## Experiments this session
-- Advance (AiMilitary.Advance.cs, AdvanceInterval/Margin/Step, AiGroup.AdvanceTick): dominant army steps the
-  front forward and pulls stopped rear members up. Measuring (n45 baseline running).
+## Experiments this session (all in AI_TUNING "New goals" table; NvN 45-min baseline 65 (59 by 30), stalled 24/69)
+- Advance (AiMilitary.Advance.cs, knobs off): worse (31-34 stalled). Knobs added (off): AaShareMin/Max,
+  AaGroundFactor. Running: b2 (ArtilleryTier=1, LeadArmyShare, ShieldTime off, ArtilleryShare .15), then c2
+  (AaGroundFactor .3, AaShare .05-.25, StallTime=60+StallMargin=10, Reinforce=false); outputs .claude/ai-lab/{b2,c2}.out.
+- Sub-agent: AiTechTests (tests/Rts.Sim.Tests/AiTechTests.cs), note -> .claude/notes/aitech-tests.md.
+- Leader at 36 min (hl21): 12 land factories, no shields/gateway/exp (projects starved: MassRatio<.05/EcoRoom);
+  11 interceptors + 8 flak idle at home; 19 T1 mobile AA in the attack at min 30 (AA share >= 12 % by mass).
+- tc.sh <pfx> <specs> <bin> [cfg]: goal (c) tech vs T1-only both seats (prints tech share).
 
 ## Pitfalls
 - Upgraded/enhanced units change Bp: count by category/tier. Any order cancels a commander enhancement.

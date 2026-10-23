@@ -87,6 +87,7 @@ public static class AiMatch
             _kills!.Scan(w);
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
+            if (Environment.GetEnvironmentVariable("AI_BASE") is { } baseSpec) DumpBase(w, baseSpec);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
                 for (int a = 0; a < players; a++)
                     if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) Console.Write($"  deposits seen by {w.Armies[a].Name}:\n{br.Economy.DescribeDeposits()}");
@@ -146,6 +147,46 @@ public static class AiMatch
                     Console.WriteLine($"  cfg a{a}: {f.Name}={f.GetValue(br.Cfg)}");
                 }
             }
+        }
+    }
+
+    /// <summary>AI_BASE="seconds:army[,...]": the army's armed units and structures within 50 of its start (type,
+    /// position, health) and the enemy units within 100 of it by type (count, how many stand still).</summary>
+    private static void DumpBase(SimWorld w, string spec)
+    {
+        foreach (var part in spec.Split(','))
+        {
+            var f = part.Split(':');
+            if (f.Length < 2 || w.Tick != (int)(float.Parse(f[0], System.Globalization.CultureInfo.InvariantCulture) * 10)) continue;
+            int army = int.Parse(f[1]);
+            var c = w.Terrain.StartPositions[army % w.Terrain.StartPositions.Length];
+            var u = w.Units;
+            var mine = new SortedDictionary<string, string>();
+            var foes = new SortedDictionary<string, (int n, int still, float dmin)>();
+            for (int k = 0; k < u.AliveCount; k++)
+            {
+                int i = u.AliveList[k];
+                if (!u.IsActive(i) || !u.IsComplete(i)) continue;
+                var bp = w.BpOf(i);
+                float d = System.Numerics.Vector2.Distance(u.Pos[i], c);
+                if (u.Army[i] == army && d < 50f && (bp.Weapons.Length > 0 || bp.Has(UnitCategory.Factory) || bp.Has(UnitCategory.Shield)))
+                {
+                    string key = bp.Id;
+                    string v = $"({u.Pos[i].X:F0},{u.Pos[i].Y:F0}){u.Health[i] / bp.MaxHealth * 100:F0}%";
+                    mine[key] = mine.TryGetValue(key, out var old) ? old + " " + v : v;
+                }
+                else if (u.Army[i] != army && d < 100f && bp.IsMobile)
+                {
+                    var e = foes.TryGetValue(bp.Id, out var x) ? x : (n: 0, still: 0, dmin: 999f);
+                    e.n++;
+                    if (!u.Move[i].HasGoal) e.still++;
+                    e.dmin = MathF.Min(e.dmin, d);
+                    foes[bp.Id] = e;
+                }
+            }
+            Console.WriteLine($"  base a{army} at ({c.X:F0},{c.Y:F0}) t={Fmt(w.GameTime)}");
+            foreach (var kv in mine) Console.WriteLine($"    own {kv.Key}: {kv.Value}");
+            foreach (var kv in foes) Console.WriteLine($"    foe {kv.Key}: n={kv.Value.n} still={kv.Value.still} nearest={kv.Value.dmin:F0}");
         }
     }
 

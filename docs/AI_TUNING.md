@@ -172,3 +172,4 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 | NvN, 45-minute cap | Finished (by 30) | Lopsided stalled |
 |---|---|---|
 | tech AI defaults (2026-10-23) | 65 (59) | 24/69 |
+| + creeping advance (`AiMilitary.Advance`: every AdvanceInterval s a group >= AdvanceMargin × the known enemy at its objective/front moves its stopped members forward) 15 s / margin 1.3 / 10 s step 30 | 68 (49) / 58 (47) / 62 (51) | 31/74 / 33/73 / 34/70 (worse: off) |

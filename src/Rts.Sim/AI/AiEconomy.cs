@@ -242,7 +242,7 @@ public sealed partial class AiEconomy
         var r = _b.R;
         float airMem = _b.Perception.EnemyAirStrengthMem;
         bool enemyAir = _b.Perception.EnemyAirCountMem > 0.5f || V.EnemyHasAirFactory;
-        float aa = enemyAir ? Math.Clamp(0.1f + airMem / (airMem + MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate) + 200f), 0.12f, 0.4f) : 0f;
+        float aa = enemyAir ? Math.Clamp(0.1f + airMem / (airMem + MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate) + 200f), Cfg.AaShareMin, Cfg.AaShareMax) : 0f;
         float arty = _b.GameTime > 150 ? Cfg.ArtilleryShare : 0.1f;
         float shield = tier >= 2 && AiRoster.CanBuild(fbp, r.MobileShield2) ? 0.06f : 0f;
         float tank = 1f - aa - arty - shield;

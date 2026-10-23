@@ -158,7 +158,14 @@ public sealed partial class AiMilitary
         }
     }
 
-    private float StrengthOf(int i) => AiPerception.Strength(W, i, W.BpOf(i));
+    private float StrengthOf(int i)
+    {
+        var bp = W.BpOf(i);
+        float s = AiPerception.Strength(W, i, bp);
+        // Anti-air only units add little to a ground fight (AiConfig.AaGroundFactor).
+        if (Cfg.AaGroundFactor < 1f && (AiPerception.TargetsOf(bp) & (LayerMask.Land | LayerMask.Water)) == 0) s *= Cfg.AaGroundFactor;
+        return s;
+    }
 
     // ------------------------------------------------------------------ threats
 
