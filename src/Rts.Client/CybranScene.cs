@@ -18,7 +18,7 @@ namespace Rts.Client;
 /// water structures, structures in one block per tech (rows by size), experimentals (the Soul Ripper orbits above them). Three army 1 land
 /// units next to the land group show the other team colour; every unit holds fire, so nothing fights.
 /// Archipelago preset (map 512 unless given), 2 players, no AI, fog off; army 0 has infinite resources (sandbox
-/// state). The suffix only picks the default camera (no suffix = overview). Every group's position and a
+/// state). The suffix only picks the default camera (no suffix = the land group). Every group's position and a
 /// <c>--camera x,z,dist</c> for it are printed to the console.
 /// </summary>
 public static class CybranScene
@@ -237,22 +237,21 @@ public static class CybranScene
             if (carrier.IsNone || plane.IsNone || !TransportSystem.CanCarry(w, carrier.Index, plane.Index)) continue;
             TransportSystem.Board(w, carrier.Index, plane.Index);
             w.Cargo.Fuel[plane.Index] = 0;
+            w.Units.Health[plane.Index] = w.BpOf(plane.Index).MaxHealth * 0.2f; // repairs for ~16 s: stays parked on the pad
         }
         for (int a = 0; a < 2 && a < w.Armies.Length; a++)
             if (spawned[a].Count > 0) cmds.Add(new SetFireStateCommand(a, spawned[a].ToArray(), FireState.HoldFire));
         sim.Step(cmds);
         for (int k = 0; k < 20; k++) sim.Step();
 
-        // Default camera: the group named by the suffix, or an overview of every group.
-        var min = new Vector2(float.MaxValue);
-        var max = new Vector2(float.MinValue);
-        foreach (var (mn, mx) in taken) { min = Vector2.Min(min, mn); max = Vector2.Max(max, mx); }
-        var overview = taken.Count > 0 ? (min + max) * 0.5f : mid;
-        var cam = new Vector3(overview.X, overview.Y + 8f, taken.Count > 0 ? Math.Clamp(0.75f * MathF.Max(max.X - min.X, max.Y - min.Y), 40f, 220f) : 80f);
+        // Default camera: the group named by the suffix; no suffix = the land group (the groups are spread over the
+        // islands, an overview of all of them is too far away to see the models).
+        var cam = new Vector3(mid.X, mid.Y + 8f, 80f);
+        string want = variant == "" ? "land" : variant;
         foreach (var (name, at, dist) in cams)
         {
             Console.WriteLine($"cybran scene: {name} at {at.X:0},{at.Y:0} (--camera {at.X:0},{at.Y + 2:0},{dist:0})");
-            if (name == variant) cam = new Vector3(at.X, at.Y + 2f, dist);
+            if (name == want) cam = new Vector3(at.X, at.Y + 2f, dist);
         }
         if (flyers.Count > 0) Console.WriteLine($"cybran scene: flying (not docked): {string.Join(", ", flyers.Select(b => b.Id))}");
         cfg.SceneCamera = cam;
