@@ -14,6 +14,10 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- **2026-10-24 00:45 (session fa417db4):** the 20:14 session limit had cut the restarted coordinators k10 (only `git merge
+  main`, bf5ef6b) and 6a coord 2 (nothing). Fresh ones started after the 23:00 reset with the same briefs: (k) coordinator 11
+  and (6a) coordinator 3 (ids in `orchestrator/agents-wave5.md`). The plan below still holds; if this session is gone too,
+  repeat step 1 below.
 - **2026-10-23 ~20:20 — orchestrator restart (session 1d992d8d ended at 244k). Do this first:**
   1. Both running agents CHECKPOINTed cleanly (trees clean, handoff notes current). Start a **fresh coordinator in each worktree** (absolute path, no isolation;
      prompt = the brief below + "continue from `.claude/handoff.md` and `.claude/notes/`"), at most 2 active agents;
