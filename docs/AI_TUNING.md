@@ -187,3 +187,32 @@ Hard vs Hard, seeds 1–3, plains / canyon / lakes, each faction on both sides (
 - 2026-10-23 recheck before the merge (client-only changes since): same games (seed 1 plains cybran,uef → UEF 18:07;
   seed 2 canyon uef,cybran → Cybran 13:14). New seeds: 4 plains cybran,uef and 5 canyon uef,cybran are draws at
   30:00; seed 4 with a 60 min limit → UEF 37:55.
+
+## Navy and transports (wave 5 k-navy, 2026-10-23)
+
+How it works: ARCHITECTURE "Skirmish AI" (Navy, Transports bullets). Knobs in `src/Rts.Sim/AI/AiConfig.Navy.cs`
+(all overridable with `AI_CFG`, e.g. `AI_CFG="DropTransportCap=6,DropUnitsPerTransport=6"`).
+Bench: `Rts.Bench ai 30 256 <seed> normal,normal 1 2 archipelago uef,cybran`; the `tech:` line has `navy=` (ships
+queued) and `drops=` (thinks in which units landed); `AI_TRACE=1` prints `navy:` and `drop:` lines (LZ, boarding,
+landed group attacks/lost, transports queued).
+
+- Land presets are unchanged: plains seed 3 hard,normal 12 min hash 1D9784B1AC58A30A, highlands seed 5 NvN 12 min
+  419351D31ADAC8B2 (same before/after); Lakes 256 (3 games) identical results (no naval site reaches the enemy
+  there, no island mode).
+- Before (navy only, k-navy 1): Archipelago 256 NvN 0/6 finished in 30 min; 100-300 land units idle per AI.
+- Archipelago 256 NvN 30 min, seeds 1-4, uef/cybran mixes: **2/6 finished** (19-22 min, by drops), drops 3-56 per
+  AI, navy 6-30 ships. 512 (2 games): no finish in 30 min, drops 37-57 and 25-41 ships per AI.
+- AI cost ≤ 0.022 ms/tick per AI (256 and 512).
+
+What mattered:
+- No air factory on island maps (the economy's WantAirFactory rarely passes there, and the engineer job after the
+  mass-stall gate never ran): air factory job before the gate (`TryAirFactory`).
+- Transports were queued only into empty air-factory queues (interceptors kept them full): queue behind them.
+- Ferries flying over the enemy fleet were shot down by frigates: LZ score includes anti-air along the flight.
+- Landing at the edge of the enemy base (islands are small: 40-60 from the start) loses the drop in 15-30 s to the
+  home army; gather until 0.7x the enemy land estimate helps only where an LZ outside the defense radius exists.
+- More transports (`DropTransportCap=6,DropUnitsPerTransport=6`) did not change the finish rate (6 games).
+
+Open: small-island drops vs big home armies (synchronized mass waves, drop on expansions first, naval bombardment
+support); Hard harass drops on extractors; engineer ferries; cliff maps (highlands plateaus) where transports could
+also help (kept off: island mode needs no land path to any enemy start).
