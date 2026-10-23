@@ -12,6 +12,16 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-23 18:50 (session 1d992d8d, orchestrator near its context limit): state for a restart.
+  - (k) coordinator 9 running in `agent-ac4c927c54a66ca1d`: unit balance pass done (7650459, duel tool f71a222,
+    AI_TUNING "Unit balance"), now re-measuring goals (a)(b)(c). When it finishes: merge it FIRST.
+  - (k-navy) DONE: branch `wave5-ai-navy` (0d0f4b0, worktree `.claude/worktrees/ai-navy`, report in its
+    `.claude/agent-report.md`), contains (k) up to 9f0b1e5. Merge it AFTER (k) (it may need `git merge` of the final
+    (k) first: conflicts only in AI_TUNING.md). Then HISTORY reports for both, remove worktrees/branches.
+  - Wave 6 audit agent running in `.claude/worktrees/wave6-audit` (branch `wave6-audit`): writes "Wave 6+ plan" in
+    ROADMAP (gap table, waves of 2 agents, questions for the owner). Merge it, then ask the owner the questions
+    (in Italian) and start wave 6 after (k) merges.
+  - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root).
 - 2026-10-23 18:25: (k-navy) 2 stopped at its cap with navy + transports written, tested (Sim 423) and documented,
   (k) and main merged in (d2f9b24); k-navy 3 finishes it (re-measure, landing-zone weakness, Hard harass drops, perf,
   report). Its branch merges into main AFTER (k). (k) coordinator 9 runs the unit balance sub-agent.
