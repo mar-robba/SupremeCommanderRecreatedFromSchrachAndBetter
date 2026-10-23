@@ -184,6 +184,7 @@ public sealed partial class AiTransport
         UpdateTarget();
         Validate();
         if (!_hasTarget) return;
+        TrackCommander();
         UpdateLz();
         if (_hasLz)
         {

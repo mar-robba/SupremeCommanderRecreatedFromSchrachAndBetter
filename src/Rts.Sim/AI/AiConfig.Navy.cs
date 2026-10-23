@@ -41,6 +41,9 @@ public sealed partial class AiConfig
     public float DropGatherTime = 240f;
     /// <summary>Enemy threat in the base (DefenseRadius) that sends the units waiting for a transport back to defend.</summary>
     public float DropDefendThreat = 150f;
+    /// <summary>Landing zone / landed objective penalty per world unit inside 60 (LZ) / 40 (objective) of the enemy
+    /// commander's last seen position (it kills most drop units).</summary>
+    public float DropCommanderAvoid = 3f;
     /// <summary>Earliest air staging for the transports (T2 engineers).</summary>
     public float DropStagingTime = 600f;
 }

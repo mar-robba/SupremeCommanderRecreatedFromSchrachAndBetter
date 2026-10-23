@@ -20,6 +20,26 @@ public sealed partial class AiTransport
     private int _targetComp = -1;
     private int _nextTargetTick, _nextLzTick, _nextObjectiveTick, _firstLandTick = -1, _orderTick;
     private readonly List<(Vector2 pos, int until)> _badLz = new();
+    /// <summary>Last seen enemy commander on the target island (it kills most drops): landing zones and objectives
+    /// keep away from it.</summary>
+    private Vector2 _cmdPos;
+    private int _cmdTick = int.MinValue / 4;
+
+    private void TrackCommander()
+    {
+        var u = W.Units;
+        foreach (int e in V.EnemyMobile)
+        {
+            if (!W.BpOf(e).Has(UnitCategory.Commander) || !_b.Perception.IsIdentified(e)) continue;
+            if (LandComp(u.Pos[e], 3) != _targetComp) continue;
+            _cmdPos = u.Pos[e];
+            _cmdTick = W.Tick;
+            return;
+        }
+    }
+
+    /// <summary>Where the enemy commander probably is: last seen (5 min memory), else the enemy start.</summary>
+    private Vector2 CommanderPos => W.Tick - _cmdTick < 3000 ? _cmdPos : TargetPos;
 
     // ------------------------------------------------------------------ target
 
@@ -93,6 +113,7 @@ public sealed partial class AiTransport
         float s = Scale;
         float defR = Cfg.DefenseRadius + 10f;
         var structs = _b.Perception.Structures;
+        var cmd = CommanderPos;
         for (int ring = 0; ring < 8; ring++)
         {
             float r = (30f + ring * 10f) * s;
@@ -112,6 +133,7 @@ public sealed partial class AiTransport
                     if (d2 < near2) near2 = d2;
                 }
                 score += (35f - MathF.Sqrt(near2)) * 6f;
+                score += Cfg.DropCommanderAvoid * MathF.Max(0, 60f * s - Vector2.Distance(q, cmd));
                 foreach (var bad in _badLz)
                     if (Vector2.DistanceSquared(bad.pos, q) < 25f * 25f) score += 2000f;
                 if (score >= best) continue;
@@ -225,13 +247,15 @@ public sealed partial class AiTransport
         var db = W.Blueprints;
         float best = float.MinValue;
         var pos = TargetPos;
+        var cmd = CommanderPos;
         for (int k = 0; k < structs.Count; k++)
         {
             var ks = structs[k];
             var bp = db[ks.Bp];
             float value = bp.Has(UnitCategory.Factory) ? 60f : bp.Has(UnitCategory.MassExtractor) ? 50f
                 : bp.Has(UnitCategory.PowerGenerator) ? 30f : bp.Weapons.Length > 0 ? 25f : 10f;
-            float score = value - Vector2.Distance(from, ks.Pos) * 0.25f;
+            float score = value - Vector2.Distance(from, ks.Pos) * 0.25f
+                - Cfg.DropCommanderAvoid * MathF.Max(0, 40f - Vector2.Distance(ks.Pos, cmd));
             if (score <= best) continue;
             int half = (int)MathF.Ceiling(MathF.Max(bp.FootprintX, bp.FootprintZ) * 0.5f) + 3;
             if (LandComp(ks.Pos, half) != _targetComp) continue;
