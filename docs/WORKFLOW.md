@@ -25,6 +25,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-15 | Track how many tokens go to each purpose, for this project only: the token ledger in [tokens/](tokens/README.org) is filled by project hooks; agents get a `[purpose]` tag in their description; sessions are tagged with `ledger.py tag`. |
 | 2026-10-16 | Context cap lowered: **150k tokens per agent and sub-agent** (CHECKPOINT at ~130k). Every agent and sub-agent, when it finishes or stops, saves only the essentials of its work (done + commits, what is left, decisions/pitfalls) in a short note in its worktree (`.claude/handoff.md`, sub-agents `.claude/notes/<piece>.md`), so the work continues after a restart of the orchestrator. |
 | 2026-10-16 | The 150k cap is the **default, not a fixed size**: before starting an agent or sub-agent, judge from the task's requirements how much splitting it across fresh agents would hurt the *result* (not the token cost); when it would hurt a lot, give that agent a proportionally higher cap (up to 300k). Keep evaluating how much the small-context approach harms the success of the work. See "Sizing an agent's context cap" and "Fragmentation: does a small cap hurt the result?". |
+| 2026-10-23 | **Two factions are enough** (UEF + Cybran): don't create further factions (no Aeon/Seraphim). "Everything must be done" means the full feature set for these two. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves

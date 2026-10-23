@@ -55,7 +55,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 - Owner question (2026-10-15) "would Rust have been better than .NET?": answered, stay on .NET (WORKFLOW "Owner decisions").
 - Housekeeping: a stray `.gitignore` rewrite patch is in `orchestrator/stray-main-gitignore.patch`.
 
-**Next waves (owner: "everything must be done"):**
+**Next waves (owner: "everything must be done"; 2026-10-23: two factions, UEF + Cybran, are enough, no further factions):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
   1. AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
      anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
