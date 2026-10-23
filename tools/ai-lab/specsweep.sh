@@ -8,6 +8,7 @@ ROOT=$(git -C "$(dirname "$0")" rev-parse --show-toplevel); cd "$ROOT"
 P=$1; S=$2; BIN=$3; shift 3
 for c in "$@"; do
   tag="${P}_$(echo "$c" | sed 's/[^A-Za-z0-9.]/_/g')"; cc=$c; [ "$cc" = "-" ] && cc=""
+  [ ${#tag} -gt 100 ] && tag="${P}_$(echo -n "$c" | md5sum | cut -c1-10)" && echo "$tag = $c"   # long cfgs: hashed dir name
   if [ -n "$DIFF" ]; then
     env "AI_CFG_$DIFF=$cc" python3 -I tools/ai-lab/run.py $tag ${MIN:-30} ${PAR:-14} @$S --quiet --bin $BIN --diff $DIFF | head -2 | paste -sd' ' | sed "s|^|$tag: |"
   else
