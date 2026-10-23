@@ -35,5 +35,11 @@ public class CybranSceneTests
         }
         // Naval units and water structures need the water the archipelago map has.
         Assert.Contains(roster, r => r.Group == CybranScene.Group.Naval);
+        // The small aircraft are parked on the stagings (they stay docked while they repair).
+        int docked = 0;
+        for (int i = 0; i < w.Units.Capacity; i++)
+            if (w.Units.IsActive(i) && Db[w.Units.Bp[i]].Visual.Shape == "cy_air_staging")
+                docked += w.Cargo.Count(i);
+        Assert.True(docked >= 4, $"{docked} aircraft docked on the stagings");
     }
 }
