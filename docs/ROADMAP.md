@@ -19,8 +19,11 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
     `.claude/agent-report.md`), contains (k) up to 9f0b1e5. Merge it AFTER (k) (it may need `git merge` of the final
     (k) first: conflicts only in AI_TUNING.md). Then HISTORY reports for both, remove worktrees/branches.
   - Wave 6 audit merged (820b2e4): "Wave 6+ plan" below. Its 9 owner questions were asked on 2026-10-23 ~19:05;
-    record the answers in WORKFLOW "Owner decisions" and adjust the plan. Start wave 6 (6a commander & engineers,
-    6b game options & team play) after (k) and (k-navy) merge.
+    record the answers in WORKFLOW "Owner decisions" and adjust the plan.
+  - 2026-10-23 20:10: wave 6a (commander & engineers: Overcharge, death blast, patrol automation, then teleport/drones/
+    jammer) started early, in parallel with (k) (disjoint files): coordinator in `.claude/worktrees/wave6a` (branch
+    `wave6a-commander`). Start 6b (game options & team play) when (k) finishes. (k) was told: Cybran v UEF 51-21 and
+    Hard v Normal 92-55 after the balance pass must be fixed.
   - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root).
 - 2026-10-23 18:25: (k-navy) 2 stopped at its cap with navy + transports written, tested (Sim 423) and documented,
   (k) and main merged in (d2f9b24); k-navy 3 finishes it (re-measure, landing-zone weakness, Hard harass drops, perf,
