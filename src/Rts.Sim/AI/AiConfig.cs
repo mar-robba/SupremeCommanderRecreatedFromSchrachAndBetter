@@ -142,6 +142,10 @@ public sealed partial class AiConfig
     /// <summary>Attrition stall (AiMilitary.FallBack): an attacking army that has not closed in on its objective for
     /// StallTime seconds while weaker than StallMargin x the strength the objective needs gathers again. 0 = off.</summary>
     public float StallTime = 0, StallMargin = 1f;
+    /// <summary>Creeping advance (AiMilitary.Advance): every AdvanceInterval seconds an attacking army at least
+    /// AdvanceMargin x stronger than the known enemy strength at its objective and at its front steps its front
+    /// AdvanceStep closer and brings the members that stopped behind (long-range units) up to it. 0 = off.</summary>
+    public float AdvanceInterval = 0, AdvanceMargin = 2f, AdvanceStep = 20f;
     /// <summary>Objective value bonus per tier above 1 for extractors and factories (upgraded ones carry the economy).</summary>
     public float TierValue = 0;
     public int MaxMexUpgrades = 2;

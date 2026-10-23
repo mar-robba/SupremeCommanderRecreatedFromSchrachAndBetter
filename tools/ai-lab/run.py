@@ -63,7 +63,48 @@ def main():
     summarize(out, quiet, diff)
 
 
+LOP_MIN = 2.0  # k mass: the stronger army must be at least this big for a lopsided minute
+
+
+def lopsided(s):
+    """Goal (a) of the stall work: the first time one army's land value (bench `lv=`, else `val=` army value) has been
+    >= 2x the other's (and >= LOP_MIN k) for 5 status minutes in a row at minute t: "ended" if the game ended by t+10,
+    "stalled" if it was still running at t+10, None if never lopsided or the cap came first (2-player games only)."""
+    end = re.search(r"^WINNER: .* after (\d+):(\d+)", s, re.M)
+    end = int(end.group(1)) + int(end.group(2)) / 60 if end else None
+    streak, side, last, event = 0, -1, 0, None
+    for line in s.splitlines():
+        mm = re.match(r"\[(\d+):00\]", line)
+        if not mm:
+            continue
+        parts = line.split(" | ")[1:]
+        if len(parts) != 2:
+            return None
+        v = []
+        for part in parts:
+            x = re.search(r"\blv=([\d.]+)k", part) or re.search(r"val=([\d.]+)k", part)
+            v.append(float(x.group(1)) if x and "DEFEATED" not in part else 0.0)
+        last = int(mm.group(1))
+        hi, lo, sd = max(v), min(v), 0 if v[0] >= v[1] else 1
+        if hi >= LOP_MIN and hi >= 2 * lo:
+            streak = streak + 1 if sd == side else 1
+            side = sd
+        else:
+            streak, side = 0, -1
+        if streak == 5 and event is None:
+            event = last
+    if event is None:
+        return None
+    if end is not None and end <= event + 10:
+        return "ended"
+    if (end is not None and end > event + 10) or (end is None and last >= event + 10):
+        return "stalled"
+    return None
+
+
 def summarize(out, quiet=False, diff=None):
+    lop = defaultdict(int)
+    fin30 = 0
     fin = defaultdict(int)
     tot = defaultdict(int)
     times = []
@@ -80,6 +121,8 @@ def summarize(out, quiet=False, diff=None):
         if m:
             fin[preset] += 1
             times.append(int(m.group(2)) + int(m.group(3)) / 60)
+            if times[-1] <= 30:
+                fin30 += 1
             if md:
                 wins[md.group(1)] += 1
             line = f"{m.group(1):18s} {m.group(2)}:{m.group(3)}"
@@ -88,6 +131,10 @@ def summarize(out, quiet=False, diff=None):
         else:
             errors += 1
             line = "ERROR " + s[-160:].replace("\n", " ")
+        ls = lopsided(s)
+        if ls:
+            lop[ls] += 1
+            line += f"  lopsided:{ls}"
         if diff is not None:
             if not m:
                 n += 1
@@ -104,7 +151,8 @@ def summarize(out, quiet=False, diff=None):
     tt = sum(tot.values())
     per = " ".join(f"{p} {fin[p]}/{tot[p]}" for p in sorted(tot))
     print(f"finished {ft}/{tt} ({per})" + (f", mean {sum(times) / len(times):.1f} min" if times else "")
-          + (f", errors {errors}" if errors else ""))
+          + (f", errors {errors}" if errors else "") + (f", by 30 min {fin30}" if times and max(times) > 30 else "")
+          + f"; lopsided stalled {lop['stalled']}/{lop['stalled'] + lop['ended']}")
     if wins:
         print("wins: " + ", ".join(f"{k} {v}" for k, v in sorted(wins.items())))
     if diff is not None:

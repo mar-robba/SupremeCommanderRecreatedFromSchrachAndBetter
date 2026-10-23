@@ -43,6 +43,8 @@ public sealed class AiGroup
     public float BestDist;
     public int ProgressTick;
     public Vector2 ProgressTarget;
+    /// <summary>Last creeping-advance step (AiMilitary.Advance).</summary>
+    public int AdvanceTick;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
@@ -67,7 +69,7 @@ public sealed class AiGroup
 /// sortie of the assembling army. Hard also raids weakly defended extractors and snipes exposed commanders. Air:
 /// interceptors patrol the base, bombers raid eco. Scouting: <see cref="AiScouting"/>.
 /// </summary>
-public sealed class AiMilitary
+public sealed partial class AiMilitary
 {
     private readonly AiBrain _b;
     public readonly List<AiGroup> Groups = new();
@@ -632,6 +634,7 @@ public sealed class AiMilitary
         Engage(g, 45f, g.Target);
         if (Cfg.FocusFire && local > 0) FocusFire(g, g.Target);
         if (FallBack(g)) return;
+        Advance(g);
 
         // Position targets (sorties, last known positions) are done when the group idles there, or after a while
         // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.

@@ -144,6 +144,7 @@ and its armies stayed half the size (27-35 land units vs 59) although its mass i
 | + snipe with indirect-fire members too (SnipeIndirect) / also CommanderSnipe from the start | 57 / 44 |
 | + EnhanceTime=99999 (re-run on the budget baseline) | 57 |
 | + attrition fall-back (`AiMilitary.FallBack`: no progress for StallTime s while weaker than required → gather again) StallTime=40 / 60 / 90 / 60 with margin 0.7 | 54 / 55 / 53 / 56 (off) |
+| + LeadArmyShare 0.8 (army share while leading: own land strength > LeadRatio × enemy) / with LeadRatio 1.2 / 0.95 with 1.2 | 57 / 66 / 63 |
 
 Findings beyond the budget:
 - With T1 units only, army spending matches main by minute 20 (21.3k) and land counts are higher, yet only 65-68/96
@@ -154,3 +155,20 @@ Findings beyond the budget:
   attack-move stops while there is a target, so the army never walks in. The stuck check only fires while nothing
   shoots at the group. Hence ArtilleryTier=1 helping, and the siege push (`AiMilitary.SiegePush`, `SiegeTime`).
 - Making the losing side all-in on army (pressure rule) prolongs games.
+
+### New goals (2026-10-23) and the lopsided metric
+
+The 30-minute NvN count was the wrong yardstick (main's 80/96 is T1-only play; mirror games with T2/T3, shields and
+point defense naturally last longer, in SupCom too). New goals: (a) lopsided games must end; (b) finished games at a
+45-minute cap (NvN >= 80/96, HvH >= 85 %, Hard's win share vs Normal >= main's); (c) the tech AI beats a T1-only AI
+(MaxTier=1, MaxUnitTier=1, no enhancements/shields/TML/strategic) in >= 65 % of decided games, both seats.
+
+`tools/ai-lab/run.py` prints `lopsided stalled X/Y`: Y = games where one army's land value (bench `lv=`, mass of
+complete mobile land combat units; older logs: `val=` army value) was >= 2x the other's and >= 2k for 5 status
+minutes in a row; X = those of them still running 10 minutes after that (games where the cap came first don't
+count). Retro on 30-minute runs: main 1/61, tech AI defaults 6/51. `.claude/ai-lab/tc.sh`-style head-to-heads use the
+bench's per-army override (`AI_CFG0` / `AI_CFG1`).
+
+| NvN, 45-minute cap | Finished (by 30) | Lopsided stalled |
+|---|---|---|
+| tech AI defaults (2026-10-23) | 65 (59) | 24/69 |
