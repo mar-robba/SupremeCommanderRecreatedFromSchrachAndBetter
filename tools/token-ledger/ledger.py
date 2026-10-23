@@ -51,9 +51,15 @@ def project_key(path):
     return re.sub(r'[^A-Za-z0-9]', '-', path)
 
 
+# Transcript folders of earlier checkout paths (the disk was mounted at "/run/media/marco/Volume D" until 2026-10-22).
+LEGACY_KEYS = ['-run-media-marco-Volume-D-RTS']
+
+
 def transcript_dirs():
-    prefix = project_key(REPO)
-    return sorted(d for d in glob.glob(os.path.join(PROJECTS, prefix + '*')) if os.path.isdir(d))
+    dirs = []
+    for prefix in [project_key(REPO)] + LEGACY_KEYS:
+        dirs += [d for d in glob.glob(os.path.join(PROJECTS, prefix + '*')) if os.path.isdir(d)]
+    return sorted(set(dirs))
 
 
 # ---------------------------------------------------------------- parsing (cached per file by size + mtime)
