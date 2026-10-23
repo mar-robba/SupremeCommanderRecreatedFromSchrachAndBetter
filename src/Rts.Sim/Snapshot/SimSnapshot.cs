@@ -60,6 +60,8 @@ public struct ProjectileView
     public int Army;
     public int SourceBp;
     public int WeaponIndex;
+    /// <summary>Behaviour bits (e.g. <see cref="ProjectileFlags.Overcharge"/>: draw it bigger).</summary>
+    public ProjectileFlags Flags;
 }
 
 /// <summary>

@@ -35,6 +35,7 @@
   "Weapons": [
     {
       "Name": "Disintegrator Pulse Laser",
+      "Overcharge": {},
       "Range": 22,
       "Damage": 100,
       "RateOfFire": 1,

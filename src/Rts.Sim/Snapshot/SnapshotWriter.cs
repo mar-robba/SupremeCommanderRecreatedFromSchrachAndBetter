@@ -111,7 +111,7 @@ public static class SnapshotWriter
             if (view != null && !IntelSnapshotWriter.ProjectileVisible(w, viewArmy, p.Army[i], p.Pos[i])) continue;
             s.Projectiles[s.ProjectileCount++] = new ProjectileView
             {
-                Id = p.Id[i], Pos = p.Pos[i], Vel = p.Vel[i], Army = p.Army[i], SourceBp = p.SourceBp[i], WeaponIndex = p.WeaponIndex[i],
+                Id = p.Id[i], Pos = p.Pos[i], Vel = p.Vel[i], Army = p.Army[i], SourceBp = p.SourceBp[i], WeaponIndex = p.WeaponIndex[i], Flags = p.Flags[i],
             };
         }
 

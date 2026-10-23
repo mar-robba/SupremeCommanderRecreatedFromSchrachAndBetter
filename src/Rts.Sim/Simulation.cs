@@ -63,6 +63,7 @@ public sealed class Simulation
         Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         pf.Lap(SimProfile.Stage.Special);
+        Combat.OverchargeSystem.Run(w); // ACU Overcharge: arm the next shot from army energy storage
         TargetingSystem.Run(w);
         pf.Lap(SimProfile.Stage.Targeting);
         WeaponSystem.Run(w);
@@ -116,6 +117,7 @@ public sealed class Simulation
         Mix(Strategic.StrategicSystem.Hash(w));
         Mix(Transport.TransportSystem.Hash(w));
         Mix(Experimental.ExperimentalSystem.Hash(w));
+        Mix(Combat.OverchargeSystem.Hash(w));
         return h;
     }
 }

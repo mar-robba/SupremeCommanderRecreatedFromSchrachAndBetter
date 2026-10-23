@@ -187,10 +187,12 @@ public static class WeaponSystem
             if (ws.Cooldown > CooldownEps || !solution) continue;
             if (MathF.Abs(DMath.AngleDiff(ws.TurretHeading, desiredYaw)) > winfo.Tolerance) continue;
             if (wbp.EnergyPerShot > 0 && !Experimental.WeaponEnergy.TryConsume(w, i, wi, wbp.EnergyPerShot)) continue; // Mavor: charge first
+            float ocDamage = 0; // ACU Overcharge: this shot spends the held charge (Combat/OverchargeSystem)
+            bool oc = wbp.Overcharge != null && (u.Flags[i] & UnitFlags.Overcharge) != 0 && OverchargeSystem.TryShot(w, i, wbp.Overcharge, out ocDamage);
 
             ws.Cooldown += winfo.Period;
             var flashPos = muzzle + new Vector3(MathF.Cos(ws.TurretHeading), 0, MathF.Sin(ws.TurretHeading)) * (bp.Radius * 0.6f);
-            int count = Math.Max(1, wbp.ProjectilesPerShot);
+            int count = oc ? 1 : Math.Max(1, wbp.ProjectilesPerShot);
             for (int p = 0; p < count; p++)
             {
                 var a = aim;
@@ -239,6 +241,7 @@ public static class WeaponSystem
                     flags |= ProjectileFlags.ProximityFuse;
                     if (winfo.Kind == WeaponKind.Direct) life = flight + 0.5f;
                 }
+                if (oc) flags |= ProjectileFlags.Overcharge;
 
                 shots.Add(new ShotRequest
                 {
@@ -253,8 +256,8 @@ public static class WeaponSystem
                     TargetPos = a,
                     Gravity = winfo.Kind == WeaponKind.Ballistic ? Ballistics.Gravity : 0f,
                     Life = life,
-                    Damage = wbp.Damage,
-                    DamageRadius = wbp.DamageRadius,
+                    Damage = oc ? ocDamage : wbp.Damage,
+                    DamageRadius = oc ? MathF.Max(0.5f, wbp.Overcharge!.DamageRadius) : wbp.DamageRadius,
                     Flags = flags,
                     Instant = winfo.Kind == WeaponKind.Beam,
                     Flash = p == 0,
@@ -344,6 +347,8 @@ public static class WeaponSystem
     {
         if (shot.Flash)
             CombatFx.Add(w, EffectKind.MuzzleFlash, shot.FlashPos, 0.4f + MathF.Min(shot.Damage, 200f) / 250f, shot.Army, shot.Bp, shot.Weapon);
+        if (shot.Flash && (shot.Flags & ProjectileFlags.Overcharge) != 0)
+            CombatFx.Add(w, EffectKind.Overcharge, shot.FlashPos, shot.DamageRadius, shot.Army, shot.Bp, shot.Weapon);
 
         if (shot.Instant)
         {
@@ -360,6 +365,7 @@ public static class WeaponSystem
                     Center = new Vector2(hitPos.X, hitPos.Z), Radius = shot.DamageRadius, Amount = shot.Damage,
                     Source = shot.Source, SourceArmy = shot.Army, Layers = mask,
                 });
+                if ((shot.Flags & ProjectileFlags.Overcharge) != 0) OverchargeSystem.TagLastAreaDamage(w, shot.Bp, shot.Weapon, hitPos, shot.DamageRadius, shot.Army);
                 CombatFx.Add(w, EffectKind.Explosion, hitPos, shot.DamageRadius, shot.Army, shot.Bp, shot.Weapon);
             }
             else

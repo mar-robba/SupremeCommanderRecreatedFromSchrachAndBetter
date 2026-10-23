@@ -23,6 +23,11 @@ public struct AreaDamageEvent
     /// <summary>Only units currently on these layers are damaged (None = all layers). E.g. flak bursts only
     /// hurt aircraft, bombs exploding on the ground don't hurt planes flying overhead.</summary>
     public LayerMask Layers;
+    /// <summary>ACU Overcharge shot (Combat/OverchargeSystem.Scale): damage vs structures × OcStructureMult, vs
+    /// commanders capped at OcCommanderCap.</summary>
+    public bool Overcharge;
+    public float OcStructureMult;
+    public float OcCommanderCap;
 }
 
 public enum EffectKind : byte
@@ -51,6 +56,13 @@ public enum EffectKind : byte
     Nuke,
     /// <summary>A unit was captured (Economy/CaptureSystem): Pos = unit, Army = NEW owner, BlueprintIndex = unit.</summary>
     Captured,
+    // ---- Commander (Rts.Sim/Combat/OverchargeSystem) ----
+    /// <summary>An ACU fired an Overcharge shot: Pos = muzzle, Size = the shot's DamageRadius, Army = shooter,
+    /// BlueprintIndex/WeaponIndex = its weapon. Raised in addition to that shot's MuzzleFlash.</summary>
+    Overcharge,
+    /// <summary>An Overcharge shot hit: Pos = impact, Size = DamageRadius, BlueprintIndex/WeaponIndex = shooter's weapon.
+    /// Raised in addition to the shot's Explosion.</summary>
+    OverchargeHit,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

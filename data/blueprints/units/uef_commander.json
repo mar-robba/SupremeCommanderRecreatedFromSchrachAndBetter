@@ -35,6 +35,7 @@
   "Weapons": [
     {
       "Name": "Zephyr Anti Matter Cannon",
+      "Overcharge": {},
       "Range": 22,
       "Damage": 100,
       "RateOfFire": 1,
