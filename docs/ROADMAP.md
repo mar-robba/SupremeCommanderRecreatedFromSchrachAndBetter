@@ -18,9 +18,9 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
   - (k-navy) DONE: branch `wave5-ai-navy` (0d0f4b0, worktree `.claude/worktrees/ai-navy`, report in its
     `.claude/agent-report.md`), contains (k) up to 9f0b1e5. Merge it AFTER (k) (it may need `git merge` of the final
     (k) first: conflicts only in AI_TUNING.md). Then HISTORY reports for both, remove worktrees/branches.
-  - Wave 6 audit agent running in `.claude/worktrees/wave6-audit` (branch `wave6-audit`): writes "Wave 6+ plan" in
-    ROADMAP (gap table, waves of 2 agents, questions for the owner). Merge it, then ask the owner the questions
-    (in Italian) and start wave 6 after (k) merges.
+  - Wave 6 audit merged (820b2e4): "Wave 6+ plan" below. Its 9 owner questions were asked on 2026-10-23 ~19:05;
+    record the answers in WORKFLOW "Owner decisions" and adjust the plan. Start wave 6 (6a commander & engineers,
+    6b game options & team play) after (k) and (k-navy) merge.
   - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root).
 - 2026-10-23 18:25: (k-navy) 2 stopped at its cap with navy + transports written, tested (Sim 423) and documented,
   (k) and main merged in (d2f9b24); k-navy 3 finishes it (re-measure, landing-zone weakness, Hard harass drops, perf,
