@@ -12,6 +12,10 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
 
 **ON RESUME:**
+- 2026-10-23 14:40: (k) coordinator 8 stopped at its cap (CHECKPOINT cf3767b): a T1-only AI beats the tech AI 22-6,
+  best lever ArtilleryTier=1 (NvN 45 min 78/96). Coordinator 9 started with the orchestrator's direction: **balance
+  first** (bench duel tool, then T1 artillery down / T2-T3 up to SupCom-like mass efficiency, UEF and Cybran), then
+  goals (a)(b)(c) again.
 - 2026-10-23 13:55: (l) Cybran merged into main (f727ced). Running: (k) coordinator 8 in `agent-ac4c927c54a66ca1d`
   and the new (k-navy) agent in `.claude/worktrees/ai-navy` (branch `wave5-ai-navy`, from the (k) branch at 701ea45):
   navy + transports AI (owns AiNavy*, AiTransport*, AiConfig.Navy.cs, their tests); it merges the (k) branch into its
