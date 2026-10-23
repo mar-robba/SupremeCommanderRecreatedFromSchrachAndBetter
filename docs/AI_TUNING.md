@@ -236,6 +236,12 @@ Hard preset. At minute 8 the old Hard had 40 land units vs Normal's 53 at the sa
 many commitments) and lost extractors. Focus fire hurts since the balance pass (not investigated: overkill or units
 stopping to re-target?). Main's 177-7-8 (30 min) was T1-only play with the old T1 artillery; not reached.
 
+Final check with the new Normal defaults and Hard preset (a37b799, 45 min): NvN 70 (49), stalled 25/77; HvN 92-55
+(147/192 finished, stalled 42/129); HvH 68/96 (57 by 30), stalled 29/64; Cybran v UEF (cvu, 96) **Cybran 51 - UEF 21,
+24 draws** (pre-balance 8-5 in 18: the balance pass broke faction parity, to fix); (c) tech vs T1-only 112-61 = 64 %
+(the T1-only seat now also has the pressure switch). Reference match `ai 30 256 42 hard,normal`: Hard at 15:58, hash
+74E2EB7D333190A4.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`

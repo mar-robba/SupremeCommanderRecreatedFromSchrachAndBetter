@@ -8,6 +8,7 @@ main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) locks
 `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EC8B7A06DF52317E
 (the reference for agents that must not change sim results; before the Cybran data it was EDCA8A729F29736E, same game).
 After the land balance pass (AI_TUNING "Unit balance" AFTER) it is "WINNER: AI 1 (Normal) after 15:50", hash 9724216772093A2E.
+With the (k) AI defaults after the balance (a37b799) it is "WINNER: Player (Hard) after 15:58", hash 74E2EB7D333190A4.
 Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
 the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
