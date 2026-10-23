@@ -22,7 +22,7 @@ public enum SandboxTool { None, Spawn, Nuke, Clear }
 /// <para>Input: while a text field is focused, game hotkeys, camera keys and selection are blocked; while a map tool
 /// is armed, selection is blocked (LMB applies, RMB / Esc cancels).</para>
 /// </summary>
-public sealed class SandboxController : IDisposable
+public sealed partial class SandboxController : IDisposable
 {
     public readonly GameContext Ctx;
     public readonly SelectionController Selection;
@@ -323,6 +323,9 @@ public sealed class SandboxController : IDisposable
                 break;
             case ClearLogAction:
                 ConsoleUi.ClearLog();
+                break;
+            case OverchargeAction or KillAreaAction:
+                ExecuteCommander(action); // SandboxController.Commander.cs
                 break;
         }
     }

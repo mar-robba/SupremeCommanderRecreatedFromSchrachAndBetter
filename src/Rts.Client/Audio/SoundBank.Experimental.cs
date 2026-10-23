@@ -11,7 +11,7 @@ public static partial class SoundBank
         SoundId.ExperimentalAlert => new(0.55f, 1, 1f, 1, Ui: true),
         SoundId.SuperHeavyFire => new(0.95f, 2, 3f, 2),
         SoundId.ExplosionHuge => new(0.95f, 3, 2.5f, 2),
-        _ => new(0.4f, 2, 1f, 1),
+        _ => CommanderInfo(id), // SoundBank.Commander.cs
     };
 
     private static float[] GenerateExperimental(SoundId id, ref SynthRng rng) => id switch
@@ -19,7 +19,7 @@ public static partial class SoundBank
         SoundId.ExperimentalAlert => ExperimentalAlert(),
         SoundId.SuperHeavyFire => SuperHeavyFire(ref rng),
         SoundId.ExplosionHuge => ExplosionHuge(ref rng),
-        _ => Synth.Alloc(0.05f),
+        _ => GenerateCommander(id, ref rng), // SoundBank.Commander.cs
     };
 
     /// <summary>"Experimental detected": a buzzing two-tone horn (hi-lo), three times (≈1.9 s).</summary>

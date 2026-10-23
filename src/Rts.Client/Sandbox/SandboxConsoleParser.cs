@@ -12,7 +12,7 @@ namespace Rts.Client.Sandbox;
 /// one token). Armies are 1-based player numbers like the setup screen: me, enemy, enemyN/aiN (N-th other army),
 /// armyN/pN or a bare N where an army is expected, all (toggles and ai only).
 /// </summary>
-public static class SandboxConsoleParser
+public static partial class SandboxConsoleParser
 {
     public const float DefaultDamage = 0.5f;
     public const float DefaultClearRadius = 20f;
@@ -51,8 +51,10 @@ public static class SandboxConsoleParser
         new("reveal", [], "reveal", "reveal the map (fog off)", OnOff, ParseReveal),
         new("ai", [], "ai <army|all> on|off [easy|normal|hard]", "AI control of an army",
             ["on", "off", "easy", "normal", "hard", "all", "enemy"], ParseAi),
-        new("kill", [], "kill", "destroy the selected units",
-            [], (c, a, x) => NoArgs(c, a, new UnitActionAction(SandboxUnitAction.Kill))),
+        new("kill", [], "kill [radius] [at x,z]", "destroy the selected units, or every unit in an area (default radius 5)",
+            ["at"], ParseKill),
+        new("overcharge", ["oc"], "overcharge [army|all] [on|off]", "arm / disarm the commanders' Overcharge (default on)",
+            ToggleWords, ParseOvercharge),
         new("delete", ["del", "remove"], "delete", "remove the selected units (no wreck)",
             [], (c, a, x) => NoArgs(c, a, new UnitActionAction(SandboxUnitAction.Delete))),
         new("heal", [], "heal", "fully heal the selected units",
@@ -279,20 +281,27 @@ public static class SandboxConsoleParser
 
     private static ParseResult ParseClear(Cmd c, List<string> a, ConsoleContext ctx)
     {
-        float? radius = null;
-        Vector2? at = null;
+        if (ParseArea(c, a, out float? radius, out Vector2? at) is { Error: not null } err) return err;
+        return ParseResult.Ok(new ClearAction(radius ?? DefaultClearRadius, at));
+    }
+
+    /// <summary>"[radius] [at x,z]" (also a bare x,z) for clear / kill; returns a failed result on bad input.</summary>
+    private static ParseResult? ParseArea(Cmd c, List<string> a, out float? radius, out Vector2? at)
+    {
+        radius = null;
+        at = null;
         for (int i = 0; i < a.Count;)
         {
             string t = a[i];
             if (t == "at")
             {
                 i++;
-                if (!TryPos(a, ref i, true, out var p)) return Fail("clear: 'at' needs a position (at x,z)");
+                if (!TryPos(a, ref i, true, out var p)) return Fail($"{c.Name}: 'at' needs a position (at x,z)");
                 at = p;
             }
             else if (t.Contains(','))
             {
-                if (!TryPos(a, ref i, false, out var p)) return Fail($"clear: bad position '{t}' (use x,z)");
+                if (!TryPos(a, ref i, false, out var p)) return Fail($"{c.Name}: bad position '{t}' (use x,z)");
                 at = p;
             }
             else if (radius == null && TryNum(t, out float r))
@@ -302,7 +311,7 @@ public static class SandboxConsoleParser
             }
             else return Unexpected(c, t);
         }
-        return ParseResult.Ok(new ClearAction(radius ?? DefaultClearRadius, at));
+        return null;
     }
 
     private static ParseResult ParseSpeed(Cmd c, List<string> a, ConsoleContext ctx)

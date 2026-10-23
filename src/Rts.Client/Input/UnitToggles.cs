@@ -145,6 +145,7 @@ public static partial class UnitToggles
         if (ctrl) return;
         if (Hotkeys.Pause.Pressed() && PauseState(ctx, sel.Selected).Any) TogglePause(ctx, sel.Selected);
         if (Hotkeys.Dive.Pressed() && DiveState(ctx, sel.Selected).Any) ToggleDive(ctx, sel.Selected);
+        OverchargeHotkeys(ctx, sel); // UnitToggles.Overcharge.cs
         if (Hotkeys.FireState.Pressed() && FireStateOf(ctx, sel.Selected).Any) CycleFireState(ctx, sel.Selected, Ui.Shift ? -1 : 1);
         // D and E are shared with the transport orders (SharedHotkeys): D also docks aircraft (TransportInput);
         // E is transport-to as soon as transports are selected.

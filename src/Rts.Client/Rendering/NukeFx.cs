@@ -33,6 +33,8 @@ public sealed class NukeFx
         public Vector3 Pos;
         public float S, Age, Seed;
         public float CapAcc, StemAcc, FireAcc, DustAcc, BaseAcc;
+        /// <summary>Commander death blast variant: dimmer screen flash, cyan flash core, the cloud thins out sooner.</summary>
+        public bool Acu;
     }
 
     private enum PuffKind : byte { Cap, Stem, Dust }
@@ -93,10 +95,13 @@ public sealed class NukeFx
     // ------------------------------------------------------------------ spawn / update
 
     /// <summary>Starts a detonation at a ground point (y = surface height); size = outer damage radius.</summary>
-    public void Spawn(Vector3 pos, float size)
+    public void Spawn(Vector3 pos, float size) => Spawn(pos, size, false);
+
+    /// <summary>As <see cref="Spawn(Vector3, float)"/>; commander = the ACU death blast variant (<see cref="Blast.Acu"/>).</summary>
+    public void Spawn(Vector3 pos, float size, bool commander)
     {
         float s = Math.Clamp(size > 0 ? size : 40f, 8f, 200f);
-        _blasts.Add(new Blast { Pos = pos, S = s, Seed = _ps.Rand() });
+        _blasts.Add(new Blast { Pos = pos, S = s, Seed = _ps.Rand(), Acu = commander });
         // Screen flash: full when the blast is in view and close (weaker when zoomed far out), dim when it is
         // off-screen but near the camera (the sky lights up), none for a blast far away on the other side of the map.
         var fv = FrameView.Current;
@@ -104,7 +109,7 @@ public sealed class NukeFx
         float camDist = Vector3.Distance(fv.CamPos, fireball);
         float vis = fv.SphereVisible(fireball, s * 1.5f) ? Math.Clamp(1.35f - camDist / (s * 14f), 0.45f, 1f)
             : camDist < Atmosphere.CameraDistance * 1.5f + s * 3f ? 0.35f : 0f;
-        _flash = MathF.Max(_flash, vis);
+        _flash = MathF.Max(_flash, vis * (commander ? 0.6f : 1f));
 
         // Initial fireball: hot blobs expanding from the ground and rising with the cap.
         int nf = N(36);
@@ -157,9 +162,9 @@ public sealed class NukeFx
     private void Emit(ref Blast b, float dt)
     {
         float t = b.Age;
-        if (t > 10.5f) return; // only the decal remains
+        if (t > (b.Acu ? 7f : 10.5f)) return; // only the decal remains
         float lod = Lod;
-        float taper = 1f - Smooth(7f, 10f, t);
+        float taper = 1f - (b.Acu ? Smooth(3.5f, 6.5f, t) : Smooth(7f, 10f, t));
         float f = FireLevel(t);
         if (t > 0.15f && taper > 0)
         {
@@ -385,7 +390,7 @@ public sealed class NukeFx
         if (t < 0.8f)
         {
             float k = t / 0.8f;
-            Glow(fv, g + Up * s * 0.25f, s * (2.4f + 1.6f * k), Col(new Vector3(1f, 1f, 0.95f), (1f - k) * (1f - k)), PShape.Glow);
+            Glow(fv, g + Up * s * 0.25f, s * (2.4f + 1.6f * k), Col(b.Acu ? new Vector3(0.82f, 0.94f, 1f) : new Vector3(1f, 1f, 0.95f), (1f - k) * (1f - k)), PShape.Glow);
         }
         if (t < 0.9f)
         {

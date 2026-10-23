@@ -47,6 +47,10 @@ public enum SoundId
     ExperimentalAlert,
     SuperHeavyFire,
     ExplosionHuge,
+    // Commander (Overcharge, ACU death blast): recipes in SoundBank.Commander.cs
+    OverchargeFire,
+    OverchargeHit,
+    CommanderBlast,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>
