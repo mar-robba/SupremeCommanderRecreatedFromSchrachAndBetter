@@ -2,11 +2,11 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-22 21:55 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-10-23 13:50 — read this first in a new session)
 main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
-2026-10-16). Tests: 393 sim + 213 client + 21 net (`tests/Rts.Net.Tests`).
-`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EDCA8A729F29736E
-(the reference for agents that must not change sim results).
+2026-10-16) + (l) Cybran faction (merged 2026-10-23). Tests: 416 sim + 227 client + 21 net (`tests/Rts.Net.Tests`).
+`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EC8B7A06DF52317E
+(the reference for agents that must not change sim results; before the Cybran data it was EDCA8A729F29736E, same game).
 Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
 the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
 `<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".

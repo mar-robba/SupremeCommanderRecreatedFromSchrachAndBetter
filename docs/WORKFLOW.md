@@ -162,6 +162,7 @@ Owner request (2026-10-16): keep evaluating how much many small contexts harm th
 |---|---|---|---|---|
 | 2026-10-16 | (k) AI stall diagnosis | high (150k at the time) | k3 202k (old cap), k4 135k, k5 / navy sub-agent dead at 164k | medium: k4 found the cause (T2/T3 play itself: half the land army, 42 pgens vs 15, unspent mass) but stopped at the cap before any fix, so a third agent re-reads the evidence. Navy: read until the cap, no code. k5 raised to 250k. |
 | 2026-10-16 | (l) client models | low (150k) | C dead at 152k, C1 started at 70k | none on the result so far; the dead attempt came from a too-wide reading list (fixed in AGENT_RULES), not from the cap. |
+| 2026-10-23 | (l) Cybran C1b–C3b + integration | coordinators medium (200k), pieces low (150k) | coordinator 10-22 cut by usage limit at 107k, fresh one finished at 110k; C1b reached 151k before writing code (big model files), C3a cut by usage limit; C3b 135k | low: every piece finished from its note; the only rediscovery was cosmetic (parked planes looked missing at the default camera). Model pieces read ~110k of code first: give them the helper signatures in the prompt. |
 
 ## Usage limits
 

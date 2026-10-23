@@ -390,6 +390,28 @@ equivalents.
   - a Cybran vs UEF AI match runs to a result.
   Screenshots with `--scene cybran`.
 
+**Delivered** (merged 2026-10-23; four coordinators and about ten sub-agents, cut by usage limits on 10-15, 10-16
+and 10-22): the second faction, playable by humans and the AI.
+- Data: `data/factions/cybran.json` plus 80 `cybran_*` blueprints (the full SupCom1 roster, experimentals Monkeylord,
+  Soul Ripper and Scathis, the ED1→ED5 shield upgrade chain). New optional roles: `light_assault_t1`,
+  `shield_ed2_t2` … `shield_ed5_t3`.
+- Sim: radar and sonar stealth, cloak, stealth fields (active while complete, not paused, energy not stalled; upkeep
+  `MaintenanceEnergy`), EMP stun (`StunDuration/StunRadius/StunMaxTech`; commanders and aircraft immune), seabed
+  walkers (`Amphibious`, only torpedoes or `FiresSubmerged` weapons reach them), `UnitView.Status` flags in the
+  snapshot.
+- Client: distinct `cy_*` models for every unit (angular, spidery legs, red/dark accents in team colour), status
+  visuals (cloaked = translucent shimmer, stunned = blue-white sparks, stealth field = violet ring on the terrain),
+  `--scene cybran[:land|:air|:naval|:structures1..3|:experimental]`.
+- Tests: `CybranRosterTests`, `StealthTests`, `EmpAmphibiousShieldTests`, `CybranModelTests`, `CybranSceneTests`,
+  `StatusFxTests`. At merge: 416 sim + 227 client + 21 net, all green.
+- Numbers: `ai 30 256 42 hard,normal` plays the same game as before (Hard 11:30), hash EC8B7A06DF52317E instead of
+  EDCA8A729F29736E, because the `cybran_*` files shift the blueprint index (DEV_GUIDE "Sim pitfalls"). Cybran vs UEF,
+  Hard vs Hard on 256, 18 games: Cybran 8, UEF 5, 5 draws. Bench `2000 300`: no regression.
+- Still open: the AI doesn't use stealth, cloak or EMP on purpose (both AIs field only T1 until (k) merges); a
+  cloaked unit upgrading in place loses its upgrade hologram; the EMP sparks look pale on light hulls.
+- Handoff review: the notes were good (the C3a list was exact). They lacked that the parked planes are drawn but tiny
+  at the default air camera, and that a bench copied outside the repo needs `data/` next to it.
+
 ### (m) Scale/perf — renderer, sim hot paths, map/setup scale
 *brief; started 2026-10-14*
 
