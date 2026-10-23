@@ -33,7 +33,7 @@ Things learned while building the project that are not about how a system works 
 
 ## Shell quirks (zsh on this machine)
 
-- **The repo path has a space** (`/run/media/marco/Volume D/RTS`): always quote paths. With `xargs` use `-d '\n'`.
+- **Paths may contain spaces** (the repo was at `/run/media/marco/Volume D/RTS` until 2026-10-22, now `/run/media/marco/RTS`): always quote paths. With `xargs` use `-d '\n'`.
 - **zsh does not word-split unquoted variables**: with `ids="a b"`, `cmd $ids` passes ONE argument. Use an array or
   `${=ids}`.
 - `tr` is aliased to `tree` in this shell. Use `sed`/`paste` instead.
