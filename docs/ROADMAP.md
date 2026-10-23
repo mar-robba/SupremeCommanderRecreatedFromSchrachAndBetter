@@ -55,7 +55,7 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
     (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
   - Both worktrees were clean at the restart. Merge (l) first; then (k) merges
     main and runs Cybran vs UEF matches.
-  History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40).
+  History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40), 2026-10-16 16:26, 2026-10-22 ~23:00, 2026-10-23 14:05 (reset 18:00; agents resumed by SendMessage).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
