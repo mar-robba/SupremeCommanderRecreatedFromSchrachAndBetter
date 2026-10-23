@@ -14,8 +14,8 @@ public sealed partial class AiMilitary
     /// a point defense) never walks in: the front fights at the base edge while the rest stands 40-80 behind, and the
     /// game stalls although one side is many times stronger. When the group clearly dominates what is known around
     /// its objective and its front, every AdvanceInterval the members that stopped (holding on attack-move, or idle)
-    /// move on: those at the front AdvanceStep closer to the objective, those far behind the front up to just behind
-    /// it (they fire on the move), then attack-move to the objective again.
+    /// move on: those at the front AdvanceStep closer to the objective (0 = they stay), indirect-fire members far
+    /// behind the front up to just behind it (they fire on the move), then attack-move to the objective again.
     /// </summary>
     private void Advance(AiGroup g)
     {
@@ -49,8 +49,9 @@ public sealed partial class AiMilitary
             bool holding = q.IsEmpty || (q.Current.Type == OrderType.AttackMove && !u.Move[i].HasGoal);
             if (!holding) continue;
             float d = Vector2.Distance(u.Pos[i], g.Target);
-            if (d > dFront + 25f) _tmp2.Add(i); // stopped far behind the front: come up
-            else _tmp.Add(i);
+            // Long-range members stopped far behind the front come up; AdvanceStep 0 = only that (front stays).
+            if (d > dFront + 25f) { if (W.BpOf(i).HasAny(UnitCategory.IndirectFire | UnitCategory.Artillery)) _tmp2.Add(i); }
+            else if (Cfg.AdvanceStep > 0) _tmp.Add(i);
         }
         if (_tmp.Count == 0 && _tmp2.Count == 0) return;
         if (_b.Tracing) _b.Trace($"advance g{g.Id} n={g.Members.Count} front={_tmp.Count} rear={_tmp2.Count} dFront={dFront:F0} st={g.Strength:F0} enemy={enemy:F0}");

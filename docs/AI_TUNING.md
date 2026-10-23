@@ -173,3 +173,13 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 |---|---|---|
 | tech AI defaults (2026-10-23) | 65 (59) | 24/69 |
 | + creeping advance (`AiMilitary.Advance`: every AdvanceInterval s a group >= AdvanceMargin × the known enemy at its objective/front moves its stopped members forward) 15 s / margin 1.3 / 10 s step 30 | 68 (49) / 58 (47) / 62 (51) | 31/74 / 33/73 / 34/70 (worse: off) |
+| + ArtilleryTier=1 (artillery role = T1 artillery only: no T2 missile launchers, no T3 mobile artillery) | 78 (65) | 13/68 |
+| + LeadArmyShare 0.8, LeadRatio 1.2 | 72 (66) | 21/76 |
+| + ShieldTime=99999 (no base shields) | 73 (58) | 21/69 |
+| + ArtilleryShare 0.15 (Normal default 0.25) | 69 (58) | 18/65 |
+| + AaGroundFactor 0.3 (anti-air-only members count 30 % in group strength) | 64 (53) | 27/71 |
+| + AaShareMin 0.05, AaShareMax 0.25 (mobile AA share of the mix; default 0.12-0.4) | 64 (54) | 22/68 |
+| + StallTime=60, StallMargin=10 (fall back and gather whenever an attack stops closing in for 60 s) | 63 (55) | 25/71 |
+| + Reinforce=false (fresh units wait for the next wave) | 40 (27) | 60/80 (much worse) |
+| + follow mode (Advance with AdvanceStep 0: only indirect-fire members stopped far behind the front move up to it) margin 0 / 1.5 | 69 (58) / 66 (55) | 24/68 / 25/72 (no help) |
+| + ArtilleryTier=2 (T2 missile launchers, no T3 mobile artillery) | 66 (60) | 27/71 |
