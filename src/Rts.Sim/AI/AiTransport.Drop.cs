@@ -101,7 +101,7 @@ public sealed partial class AiTransport
                 var p = W.Terrain.Clamp(TargetPos + DMath.Dir(d * DMath.TwoPi / 16) * r, 4f);
                 var q = _b.FindStandable(p, MotionLayer.Land);
                 if (Vector2.DistanceSquared(p, q) > 12f * 12f || LandComp(q, 2) != _targetComp) continue;
-                float score = V.ThreatAt(q, 20f) * 2f + V.AirThreatAt(q, 24f) * 1.5f
+                float score = V.ThreatAt(q, 20f) * 2f + V.AirThreatAt(q, 24f) * 1.5f + RouteAirThreat(_b.Rally, q)
                     + Vector2.Distance(q, _b.BasePos) * 0.2f + r * 0.3f;
                 float dt = Vector2.Distance(q, TargetPos);
                 if (dt < defR) score += 150f + (defR - dt) * 4f;
@@ -131,6 +131,16 @@ public sealed partial class AiTransport
             Beacon = LandComp(bc, 2) == _homeComp ? bc : _b.Rally;
             if (_b.Tracing) _b.Trace($"drop: LZ ({Lz.X:F0},{Lz.Y:F0}) score {best:F0} beacon ({Beacon.X:F0},{Beacon.Y:F0})");
         }
+    }
+
+    /// <summary>Known anti-air (ships, AA, fighters) along the straight flight from a to b.</summary>
+    private float RouteAirThreat(Vector2 a, Vector2 b)
+    {
+        float len = Vector2.Distance(a, b);
+        int n = Math.Clamp((int)(len / 24f), 1, 16);
+        float t = 0;
+        for (int k = 1; k < n; k++) t += V.AirThreatAt(Vector2.Lerp(a, b, k / (float)n), 12f);
+        return t;
     }
 
     // ------------------------------------------------------------------ landed group
@@ -179,8 +189,11 @@ public sealed partial class AiTransport
 
         if (LandedState == AiGroupState.Assemble)
         {
-            bool big = Landed.Count >= Cfg.DropWave;
-            bool waited = W.Tick - _firstLandTick >= Cfg.DropGatherTime * 10f;
+            // Big enough: a full wave that can take on a good share of the enemy's land army (it stays home on
+            // island maps), or the gathering took too long.
+            float enemy = MathF.Max(V.EnemyLandStrength, _b.Perception.EnemyLandEstimate);
+            bool big = Landed.Count >= Cfg.DropWave && strength >= enemy * Cfg.DropStrengthShare;
+            bool waited = W.Tick - _firstLandTick >= Cfg.DropGatherTime * 10f && Landed.Count >= Cfg.DropWave / 2;
             if (!big && !waited) return;
             LandedState = AiGroupState.Attack;
             _nextObjectiveTick = 0;

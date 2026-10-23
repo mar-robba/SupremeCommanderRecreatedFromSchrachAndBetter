@@ -27,13 +27,16 @@ public sealed partial class AiConfig
     // ---- drops (AiTransport; MaxTransports is in AiConfig.cs)
     /// <summary>Idle land units needed before the first transport is built (island maps only).</summary>
     public int DropMinUnits = 6;
-    /// <summary>One more transport (up to 2 x MaxTransports) per this many idle land units.</summary>
-    public int DropUnitsPerTransport = 30;
+    /// <summary>One more transport (up to DropTransportCap x MaxTransports) per this many idle land units.</summary>
+    public int DropUnitsPerTransport = 12;
+    public int DropTransportCap = 3;
     /// <summary>Pool units that stay home (base defense) instead of boarding.</summary>
     public int DropKeepHome = 4;
-    /// <summary>Landed units that attack at once; fewer attack after DropGatherTime seconds at the landing zone.</summary>
+    /// <summary>The landed group attacks with at least DropWave units and DropStrengthShare x the enemy's estimated land
+    /// strength, or after DropGatherTime seconds at the landing zone with half a wave.</summary>
     public int DropWave = 16;
-    public float DropGatherTime = 120f;
+    public float DropStrengthShare = 0.7f;
+    public float DropGatherTime = 240f;
     /// <summary>Enemy threat in the base (DefenseRadius) that sends the units waiting for a transport back to defend.</summary>
     public float DropDefendThreat = 150f;
     /// <summary>Earliest air staging for the transports (T2 engineers).</summary>

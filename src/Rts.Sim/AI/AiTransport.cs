@@ -93,7 +93,7 @@ public sealed partial class AiTransport
         }
         if (idle < Cfg.DropMinUnits && Transports.Count == 0) return 0;
         int extra = Cfg.DropUnitsPerTransport > 0 ? idle / Cfg.DropUnitsPerTransport : 0;
-        return Math.Min(Cfg.MaxTransports * 2, Cfg.MaxTransports + extra);
+        return Math.Min(Cfg.MaxTransports * Cfg.DropTransportCap, Cfg.MaxTransports + extra);
     }
 
     /// <summary>A transport blueprint the air factory <paramref name="factory"/> should build now, or -1.</summary>
@@ -120,10 +120,12 @@ public sealed partial class AiTransport
         var u = W.Units;
         foreach (int f in V.AirFactories)
         {
-            if (u.Upgrade[f].Active || (u.Factory[f].Queue?.Count ?? 0) > 0) continue;
+            var q = u.Factory[f].Queue;
+            if (u.Upgrade[f].Active || q != null && (q.Count >= Cfg.QueueDepth || q.Contains(t1) || q.Contains(t2))) continue;
             int bp = ChooseAir(f);
             if (bp < 0) continue;
             slot += _b.Economy.FactoryWeight(f);
+            if (_b.Tracing) _b.Trace($"drop: transport queued ({have + 1}/{want}, queue {q?.Count ?? 0})");
             _b.Cmd.Enqueue(f, bp);
             V.Queued[bp]++;
             if (++have >= want) return;
