@@ -12,9 +12,9 @@
   "MaxHealth": 6500,
   "Radius": 1.1,
   "Economy": {
-    "BuildCostMass": 1280,
-    "BuildCostEnergy": 12800,
-    "BuildTime": 5000
+    "BuildCostMass": 960,
+    "BuildCostEnergy": 9600,
+    "BuildTime": 3750
   },
   "Movement": {
     "Layer": "Land",
@@ -29,7 +29,7 @@
     {
       "Name": "Heavy Gauss Cannon",
       "Range": 30,
-      "Damage": 450,
+      "Damage": 600,
       "RateOfFire": 0.4,
       "MuzzleVelocity": 35,
       "TargetLayers": [

@@ -9,7 +9,7 @@
     "DirectFire",
     "Tech2"
   ],
-  "MaxHealth": 900,
+  "MaxHealth": 1100,
   "Radius": 0.7,
   "Economy": {
     "BuildCostMass": 160,
@@ -29,7 +29,7 @@
     {
       "Name": "Riot Gun",
       "Range": 20,
-      "Damage": 8,
+      "Damage": 9,
       "RateOfFire": 5,
       "MuzzleVelocity": 40,
       "TargetLayers": [

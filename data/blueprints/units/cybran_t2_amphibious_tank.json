@@ -9,7 +9,7 @@
     "DirectFire",
     "Tech2"
   ],
-  "MaxHealth": 1000,
+  "MaxHealth": 1150,
   "Radius": 0.7,
   "Economy": {
     "BuildCostMass": 165,
@@ -30,7 +30,7 @@
     {
       "Name": "Electron Bolter",
       "Range": 20,
-      "Damage": 40,
+      "Damage": 44,
       "RateOfFire": 1,
       "MuzzleVelocity": 34,
       "TargetLayers": [

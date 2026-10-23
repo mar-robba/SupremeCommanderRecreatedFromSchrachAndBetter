@@ -9,7 +9,7 @@
     "DirectFire",
     "Tech1"
   ],
-  "MaxHealth": 140,
+  "MaxHealth": 120,
   "Radius": 0.5,
   "Economy": {
     "BuildCostMass": 26,
@@ -29,7 +29,7 @@
     {
       "Name": "Pulse Laser",
       "Range": 15,
-      "Damage": 7,
+      "Damage": 6,
       "RateOfFire": 1.5,
       "MuzzleVelocity": 40,
       "TargetLayers": [
