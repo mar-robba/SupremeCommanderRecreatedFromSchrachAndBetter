@@ -15,7 +15,8 @@ don't edit those, keep .claude/notes/navy.md. (l) Cybran merges into main first:
 
 ## Lab (.claude/ai-lab/, gitignored)
 - specs/{nvn,hvn,hvh}.txt; basebin/ = main bench; kbin/ = this branch @0427eb6 + lv= (defaults);
-  kbin2/ = + Advance (knobs default off). cmp.py (`--spent|--mil --marks --diff`), sweep.sh
+  kbin2-5 = experiment builds (pre-merge); kbin6 = merged main + all knobs (defaults).
+  specs/cvu.txt + cvu.py = Cybran vs UEF (96 games, both seats). cmp.py (`--spent|--mil --marks --diff`), sweep.sh
   (`MIN=45 bash .claude/ai-lab/sweep.sh <pfx> <specs> <bin> cfg...`, cfg "-" = none, DIFF=Hard for h2h).
 - run.py (committed, tools/ai-lab) now prints `by 30 min N` (when > 30 min runs) and `lopsided stalled X/Y`.
   Retro on 30-min runs: main b3_nvn 80/96 stalled 1/61; k f1__ (defaults) 58/96 stalled 6/51; i1 LeadArmyShare
@@ -39,5 +40,7 @@ centroid drifts back (183,200)->(142,153) as long-range members stop at max rang
 - tc.sh <pfx> <specs> <bin> [cfg]: goal (c) tech vs T1-only both seats (prints tech share).
 
 ## Pitfalls
+- Lab bins read data/ from the worktree: after merging data changes (Cybran) old bins CRASH (tc0/tc1/e2 lost
+  once). Rebuild all bins after a merge. kbin6 = merged build (same games as kbin5, other hashes).
 - Upgraded/enhanced units change Bp: count by category/tier. Any order cancels a commander enhancement.
 - No per-think allocations. zsh: quote globs. Foreground waits >600 s go to background. Never pkill "Rts.Bench ai".

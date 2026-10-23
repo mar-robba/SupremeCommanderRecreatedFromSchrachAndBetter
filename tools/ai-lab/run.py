@@ -2,7 +2,7 @@
 
   python3 -I tools/ai-lab/run.py <tag> <minutes> <parallel> <specs...|@file> [--bin PATH] [--quiet] [--diff D]
 
-Specs are the strings printed by specs.py (preset:seed:difficulties:players:mapSize); pass "@-" to read them from
+Specs are the strings printed by specs.py (preset:seed:difficulties:players:mapSize[:factions]); pass "@-" to read them from
 stdin or "@file" from a file. Each game runs `Rts.Bench ai <minutes> <map> <seed> <diffs> 1 <players> <preset>` and
 writes <worktree>/.claude/ai-lab/runs/<tag>/<game>.txt (AI_CFG / AI_CFG_<Difficulty> env vars pass through).
 Summary: games finished (commander kill) per preset, mean end time, wins per difficulty (with --diff D: wins/losses/
@@ -48,11 +48,11 @@ def main():
     os.makedirs(out, exist_ok=True)
 
     def run1(spec):
-        preset, seed, diffs, players, size = spec.split(":")
-        name = f"{preset}_{seed}_{diffs.replace(',', 'v')}_{players}p_{size}"
+        preset, seed, diffs, players, size, *fac = spec.split(":")
+        name = f"{preset}_{seed}_{diffs.replace(',', 'v')}_{players}p_{size}" + (f"_{fac[0].replace(',', 'v')}" if fac else "")
         with open(os.path.join(out, name + ".txt"), "w") as f:
             try:
-                subprocess.run([bin_path, "ai", minutes, size, seed, diffs, "1", players, preset],
+                subprocess.run([bin_path, "ai", minutes, size, seed, diffs, "1", players, preset] + fac[:1],
                                stdout=f, stderr=subprocess.STDOUT, timeout=2400)
             except subprocess.TimeoutExpired:
                 f.write("\nTIMEOUT\n")
