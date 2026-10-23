@@ -12,6 +12,7 @@
   ],
   "MaxHealth": 10500,
   "RegenRate": 10,
+  "DeathBlast": {},
   "Radius": 1.2,
   "Economy": {
     "BuildCostMass": 18000,

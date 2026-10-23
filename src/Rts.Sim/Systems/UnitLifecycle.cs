@@ -28,5 +28,6 @@ public static class UnitLifecycle
         FactorySystem.OnUnitDeath(w, i, bp);
         Transport.TransportSystem.OnUnitDeath(w, i, bp); // cargo dies with its carrier
         Experimental.ExperimentalSystem.OnUnitDeath(w, i, bp);
+        Commander.CommanderDeathBlast.OnUnitDeath(w, i, bp); // queues the blast (never damage here)
     }
 }

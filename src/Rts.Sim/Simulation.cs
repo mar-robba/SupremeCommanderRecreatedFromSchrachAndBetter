@@ -61,6 +61,7 @@ public sealed class Simulation
         MovementSystem.Run(w);
         pf.Lap(SimProfile.Stage.Movement);
         Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
+        Commander.CommanderDeathBlast.Run(w); // commander death blasts (queued by OnUnitDeath) -> strategic detonation queue
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         pf.Lap(SimProfile.Stage.Special);
         Combat.OverchargeSystem.Run(w); // ACU Overcharge: arm the next shot from army energy storage
@@ -117,6 +118,7 @@ public sealed class Simulation
         Mix(Strategic.StrategicSystem.Hash(w));
         Mix(Transport.TransportSystem.Hash(w));
         Mix(Experimental.ExperimentalSystem.Hash(w));
+        Mix(Commander.CommanderDeathBlast.Hash(w));
         Mix(Combat.OverchargeSystem.Hash(w));
         return h;
     }
