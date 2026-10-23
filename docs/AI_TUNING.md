@@ -207,6 +207,19 @@ bench's per-army override (`AI_CFG0` / `AI_CFG1`).
 | ArtilleryTier=1 again (noise check, with a no-op override) | 80 (60) | 14/73 |
 | ArtilleryTier=1 + LeadArmyShare 0.8, LeadRatio 1.2 | 80 (65) | 22/77 (no gain on stalls) |
 
+#### After the unit balance pass (7650459, "Unit balance" below)
+
+| 45-minute cap, post-balance | Result |
+|---|---|
+| NvN defaults | 66 (52) finished, stalled 31/79 |
+| NvN ArtilleryTier=1 | 69 (59), stalled 29/85 (the pre-balance 78/13 gain is gone: T1 artillery no longer wins fights) |
+| (c) tech vs T1-only, defaults | tech 92 - 88 T1-only (51 %; pre-balance plains 6-22). Plains 21-27, lakes 23-22, highlands 19-24, canyon 29-15 |
+| (c) ArtilleryTier=1 on the tech seat | 96 - 85 (53 %) |
+
+When the games end decides it: the T1-only AI wins early (81 of its 88 wins before minute 25, 25 before minute 15), the
+tech AI wins late (58 of 92 after minute 25). The tech AI is weakest between ~5 and ~20 minutes, while extractor and
+factory upgrades and enhancements take mass from the army.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`
