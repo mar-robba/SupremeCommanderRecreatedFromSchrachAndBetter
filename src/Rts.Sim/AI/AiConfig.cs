@@ -123,16 +123,16 @@ public sealed partial class AiConfig
     /// <summary>Highest tech level the AI goes for (factories, engineers, structures).</summary>
     public int MaxTier = 3;
     /// <summary>Extractor upgrades start (T1→T2, T2→T3) once the game is this old.</summary>
-    public float MexT2Time = 330, MexT3Time = 900;
+    public float MexT2Time = 480, MexT3Time = 900; // 330 -> 480 after the unit balance (AI_TUNING "New goals")
     /// <summary>Factory upgrades (first factory of the tier; more follow with income).</summary>
-    public float LandT2Time = 480, LandT3Time = 1020, AirT2Time = 720, AirT3Time = 1200;
+    public float LandT2Time = 660, LandT3Time = 1020, AirT2Time = 720, AirT3Time = 1200;
     /// <summary>Share of the mass income that running upgrades may take.</summary>
     public float UpgradeShare = 0.35f;
     /// <summary>Share of the mass income kept for the factories: eco/tech commitments wait while the rest is used
     /// (AiEconomy.Budget.cs).</summary>
     public float ArmyShare = 0.5f;
     /// <summary>ArmyShare while pressured: own land strength below PressureRatio x the enemy's, or enemies at the base.</summary>
-    public float PressureArmyShare = 0f, PressureRatio = 0.6f; // off: 0.85 made NvN worse (40/96 vs 58), AI_TUNING
+    public float PressureArmyShare = 0.85f, PressureRatio = 0.8f; // tech vs T1-only 51 % -> 74 % with the later tech times (AI_TUNING)
     /// <summary>ArmyShare while leading: own land strength above LeadRatio x the enemy's (+200) after LeadTime. 0 = off.</summary>
     public float LeadArmyShare = 0f, LeadRatio = 1.5f, LeadTime = 600;
     /// <summary>More land factories (up to MaxLandFactoriesFloat) after CapacityTime while their capacity is below
@@ -156,7 +156,7 @@ public sealed partial class AiConfig
     public int MaxMexUpgrades = 2;
     public int MaxFactoryUpgrades = 1;
     /// <summary>Commander enhancements start (engineering first, then shield).</summary>
-    public float EnhanceTime = 540;
+    public float EnhanceTime = 900;
     /// <summary>Base shields, TML, artillery installations, mass storage next to upgraded extractors.</summary>
     public float ShieldTime = 780;
     public int MaxShields = 3;

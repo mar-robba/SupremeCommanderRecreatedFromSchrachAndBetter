@@ -5,13 +5,14 @@ using Rts.Sim.Orders;
 using Rts.Sim.Persistence;
 using Rts.Sim.Systems;
 using Rts.Sim.World;
+using Xunit.Abstractions;
 
 namespace Rts.Sim.Tests;
 
 /// <summary>Skirmish AI tech progression: T2 upgrades on a fixed seed, the anti-nuke reaction to a seen enemy
 /// strategic missile launcher, and save/load in the tech phase (upgrades, enhancements, projects in progress).
 /// Blueprints are looked up by category/tech or faction role, never by unit id (upgrades swap the Bp).</summary>
-public class AiTechTests
+public class AiTechTests(ITestOutputHelper output)
 {
     private const int Minute = 60 * SimWorld.TicksPerSecond;
 
@@ -73,16 +74,30 @@ public class AiTechTests
     [Fact]
     public void AiReachesTech2OnFixedSeed()
     {
-        // Seed 2, two Normal AIs (2026-10-23): first complete T2 land factory at 9.3 / 10.9 min, first T2 mass
-        // extractor at 8.3 / 8.8 min (army 0 / army 1). Checked at minute 13 for a ~2 minute margin.
+        // Seed 2, two Normal AIs: the first complete T2 land factory and T2 mass extractor of each army must exist by
+        // LimitMinute. 2026-10-23 with LandT2Time 660 / MexT2Time 480: land T2 14.3 / 12.7 min, mex T2 9.3 / 9.3 min
+        // (army 0 / 1), so ~2.7 minutes of margin. Run with `--logger "console;verbosity=detailed"` to see the times.
+        const int LimitMinute = 17;
         var sim = NewAiGame(2);
-        RunTo(sim, 13 * Minute);
         var w = sim.World;
+        var fac = new float[] { -1, -1 };
+        var mex = new float[] { -1, -1 };
+        while (w.Tick < LimitMinute * Minute && (fac[0] < 0 || fac[1] < 0 || mex[0] < 0 || mex[1] < 0))
+        {
+            RunTo(sim, w.Tick + 10 * SimWorld.TicksPerSecond);
+            for (int a = 0; a < 2; a++)
+            {
+                if (fac[a] < 0 && HasComplete(w, a, UnitCategory.Factory, UnitCategory.Land, 2)) fac[a] = w.Tick / (float)Minute;
+                if (mex[a] < 0 && HasComplete(w, a, UnitCategory.MassExtractor, UnitCategory.Structure, 2)) mex[a] = w.Tick / (float)Minute;
+            }
+        }
+        string times = $"land T2 {fac[0]:F1} / {fac[1]:F1} min, mex T2 {mex[0]:F1} / {mex[1]:F1} min (army 0 / 1)";
+        output.WriteLine(times);
         for (int a = 0; a < 2; a++)
         {
             Assert.False(w.Armies[a].Defeated, $"army {a} defeated");
-            Assert.True(HasComplete(w, a, UnitCategory.Factory, UnitCategory.Land, 2), $"army {a} has no complete T2+ land factory");
-            Assert.True(HasComplete(w, a, UnitCategory.MassExtractor, UnitCategory.Structure, 2), $"army {a} has no complete T2+ mass extractor");
+            Assert.True(fac[a] >= 0, $"army {a} has no complete T2+ land factory by minute {LimitMinute}: {times}");
+            Assert.True(mex[a] >= 0, $"army {a} has no complete T2+ mass extractor by minute {LimitMinute}: {times}");
         }
     }
 
