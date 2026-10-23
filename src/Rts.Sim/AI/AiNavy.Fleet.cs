@@ -142,14 +142,16 @@ public sealed partial class AiNavy
             _nextObjectiveTick = W.Tick + 100;
             _hasObjective = ChooseObjective(Home, _reserveStrength, out FleetGoal, out FleetTarget, out _goalThreat);
         }
-        int minFleet = Math.Max(2, Cfg.MinFleet + (int)Diff(-1, 0, 1));
+        // The navy is the main force on island maps: bigger first fleet.
+        int minFleet = Math.Max(2, Cfg.MinFleet + (int)Diff(-1, 0, 1) + (Priority ? 2 : 0));
         if (_reserve.Count < minFleet) { _readySince = -1; return; }
         if (_readySince < 0) _readySince = W.Tick;
         if (!_hasObjective) return;
         float required = Cfg.FleetAttackMargin * (_b.Perception.EnemyNavalMem * 0.7f + _goalThreat);
         bool timeout = (W.Tick - _readySince) * SimWorld.Dt > Cfg.FleetAssembleTimeout;
         bool big = _reserve.Count >= Cfg.MaxFleet * Diff(0.4f, 1f, 1.3f) * 0.6f;
-        if (_reserveStrength < required && !timeout && !big) return;
+        // Waited long enough: sail if not hopelessly outgunned (0.7 x the required strength).
+        if (_reserveStrength < required && !(timeout && _reserveStrength >= required * 0.7f) && !big) return;
         Fleet.Clear();
         foreach (int i in _reserve) { Fleet.Add(i); _b.Info(i).Group = FleetGroup; }
         _fleetInitial = _reserveStrength;

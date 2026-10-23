@@ -30,6 +30,8 @@ public sealed partial class AiConfig
     /// <summary>One more transport (up to DropTransportCap x MaxTransports) per this many idle land units.</summary>
     public int DropUnitsPerTransport = 12;
     public int DropTransportCap = 3;
+    /// <summary>Island maps: above this many idle land units the land and air factories get no budget.</summary>
+    public int DropIdleCap = 60;
     /// <summary>Pool units that stay home (base defense) instead of boarding.</summary>
     public int DropKeepHome = 4;
     /// <summary>The landed group attacks with at least DropWave units and DropStrengthShare x the enemy's estimated land

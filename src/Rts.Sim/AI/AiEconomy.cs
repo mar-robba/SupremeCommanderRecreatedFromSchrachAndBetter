@@ -480,6 +480,7 @@ public sealed partial class AiEconomy
         if (EnergyStall) return TryAssistProject(unit, isCommander, powerOnly: true);
         if (TryMex(unit, isCommander, false, pos)) return true;
         if (TryHydro(unit, isCommander, false, pos)) return true;
+        if (_b.Transport.TryAirFactory(unit, isCommander)) return true; // island maps: transports need an air factory
         if (MassRatio < 0.25f && TryReclaim(unit, isCommander, 6f)) return true;
         if (!MassStall)
         {

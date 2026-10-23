@@ -38,7 +38,7 @@ public sealed partial class AiTransport
 
     private bool _decided;
     private int _nextDecideTick;
-    private int _homeComp = -1;
+    private int _homeComp = -1, _idleLand;
     private int _homeThreatTick = int.MinValue / 4;
     private readonly List<int> _tmp = new();
     private readonly List<int> _tmp2 = new();
@@ -91,6 +91,7 @@ public sealed partial class AiTransport
             var r = _b.Info(i).Role;
             if (r is AiRole.Pool or AiRole.Attack or AiRole.Transport) idle++;
         }
+        _idleLand = idle;
         if (idle < Cfg.DropMinUnits && Transports.Count == 0) return 0;
         int extra = Cfg.DropUnitsPerTransport > 0 ? idle / Cfg.DropUnitsPerTransport : 0;
         return Math.Min(Cfg.MaxTransports * Cfg.DropTransportCap, Cfg.MaxTransports + extra);
@@ -113,6 +114,9 @@ public sealed partial class AiTransport
     public void ManageFactories(ref float slot, float budget)
     {
         if (!Island) return;
+        // More idle land units than the transports can use: the land (and air) factories get no budget this think,
+        // so the mass goes to the navy (served before) and the engineers.
+        if (_idleLand > Cfg.DropIdleCap) slot += budget;
         int t1 = _b.R.Transport1, t2 = _b.R.Transport2;
         int have = V.Total(t1) + V.Total(t2);
         int want = WantTransports();
@@ -132,22 +136,27 @@ public sealed partial class AiTransport
         }
     }
 
+    /// <summary>Engineer job, before the mass-stall gate (hook in AiEconomy.TryAssign): island maps need an air
+    /// factory for the transports, the economy builds it late or never there. Returns true if an order was issued.</summary>
+    public bool TryAirFactory(int unit, bool isCommander)
+    {
+        if (!Island || !_hasTarget) return false;
+        int af = _b.BpAirFactory;
+        var ubp = W.BpOf(unit);
+        if (V.AirFactories.Count > 0 || !AiRoster.CanBuild(ubp, af) || V.Count[af] + _b.Placement.ReservedCount(af) > 0
+            || WantTransports() == 0) return false;
+        if (!_b.Placement.FindSite(af, _b.BasePos, -_b.EnemyDir, 8f, isCommander ? Cfg.CommanderRadius : 40f, out var fs, 600)) return false;
+        Build(unit, ubp, af, fs);
+        if (_b.Tracing) _b.Trace($"drop: air factory at ({fs.X:F0},{fs.Y:F0})");
+        return true;
+    }
+
     /// <summary>Engineer job: one air staging near the base once the ferry route runs (refuels the transports).
     /// Returns true if an order was issued.</summary>
     public bool TryBuild(int unit, bool isCommander)
     {
         if (!Island || !_hasTarget) return false;
         var ubp = W.BpOf(unit);
-        // No air factory yet (the economy builds it late or never on small islands): transports need one.
-        int af = _b.BpAirFactory;
-        if (V.AirFactories.Count == 0 && AiRoster.CanBuild(ubp, af) && V.Count[af] + _b.Placement.ReservedCount(af) == 0
-            && WantTransports() > 0)
-        {
-            if (!_b.Placement.FindSite(af, _b.BasePos, -_b.EnemyDir, 8f, isCommander ? Cfg.CommanderRadius : 40f, out var fs, 600)) return false;
-            Build(unit, ubp, af, fs);
-            if (_b.Tracing) _b.Trace($"drop: air factory at ({fs.X:F0},{fs.Y:F0})");
-            return true;
-        }
         if (isCommander || Transports.Count < 2 || _b.GameTime < Cfg.DropStagingTime) return false;
         int bp = _b.R.AirStaging;
         if (!AiRoster.CanBuild(ubp, bp) || V.Count[bp] + _b.Placement.ReservedCount(bp) > 0) return false;
