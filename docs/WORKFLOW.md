@@ -110,6 +110,9 @@ To keep conflicts small:
   first, then only the needed sections; sub-agent prompts carry the contract lines they need instead of "read the docs".
 - **Never resume a big agent** with SendMessage after it was cut off: it keeps its whole old transcript and grows
   without limit. Resume only agents well under 100k. Replace the others with a fresh agent and the handoff note.
+- **Self-measure** (2026-10-24): every prompt carries a unique `CTX-TAG: <tag>` line and the agent runs
+  `agent_ctx.py --self <tag>` itself (AGENT_RULES), because agents can't feel their own context: on 2026-10-24 all five
+  wave 6 sub-agents ran 10-45k past their CHECKPOINT until the orchestrator messaged them.
 - **Measuring context**: `python3 -I tools/agents/agent_ctx.py <agentId>...` prints each agent's exact context,
   taken from the API usage fields of its transcript. It never reads the transcript text. File size is useless,
   because screenshots inflate it. Background alert:
