@@ -137,7 +137,7 @@ public sealed partial class EffectsRenderer
 
     private void TeleportChargeFrame(Vector3 pos, float s, float h, float f, Vector4 c, float t, float step, FrameView fv)
     {
-        var g = new Vector3(pos.X, _ps.GroundAt(pos) + 0.15f, pos.Z);
+        var g = new Vector3(pos.X, _ps.GroundAt(pos) + 0.45f, pos.Z); // lifted: flat rings clip into slopes
         var mid = pos + new Vector3(0, h * 0.55f, 0);
         float pulse = 0.5f + 0.5f * MathF.Sin(t * (4f + 8f * f));
         // Ground ring growing with the charge, pulsing faster as it fills.
@@ -178,7 +178,7 @@ public sealed partial class EffectsRenderer
     /// <summary>Destination marker of an own charging commander: ring, inner pulse, glow and a beam growing with the charge.</summary>
     private void TeleportDestFrame(Vector3 dest, float s, float f, Vector4 c, float t, FrameView fv)
     {
-        var g = new Vector3(dest.X, _ps.GroundAt(dest) + 0.2f, dest.Z);
+        var g = new Vector3(dest.X, _ps.GroundAt(dest) + 0.45f, dest.Z);
         if (!fv.SphereVisible(g, s * 6f + 30f)) return;
         float pulse = 0.5f + 0.5f * MathF.Sin(t * 3f);
         _proj.Flat(g, s * (4f + 0.4f * pulse), -t * 0.6f, ToColor(c with { W = 0.25f + 0.35f * f }), PShape.Ring, 0);
