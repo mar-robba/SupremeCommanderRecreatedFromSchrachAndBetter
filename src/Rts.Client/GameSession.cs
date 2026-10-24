@@ -190,6 +190,7 @@ public sealed class GameSession : IDisposable
         if (!MenuUi.Key(KeyboardKey.Escape)) return false;
         if (_sandbox != null && _sandbox.WantsEscape) return false; // closes the console / cancels the sandbox tool
         if (_hud.HelpOpen) return false; // Esc closes the F1 help (Hud)
+        if (_hud.DiplomacyOpen) { _hud.CloseDiplomacy(); return false; } // (6b) Esc closes the F4 diplomacy panel
         var s = _selection;
         if (s.Mode != SelectionController.CommandMode.Normal || s.Placement.Active || s.PendingSelfDestruct != null) return false;
         if (s.Selected.Count > 0)

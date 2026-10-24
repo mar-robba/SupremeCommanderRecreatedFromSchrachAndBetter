@@ -144,6 +144,8 @@ public sealed class GameConfig
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;
         c.ApplyFactionOptions(o);
+        if (o.Teams != null) // (6b) --teams 1,1,2,2
+            for (int i = 0; i < Math.Min(o.Teams.Length, MaxSlots); i++) c.Slots[i].Team = Math.Clamp(o.Teams[i], 0, 4);
         return c;
     }
 

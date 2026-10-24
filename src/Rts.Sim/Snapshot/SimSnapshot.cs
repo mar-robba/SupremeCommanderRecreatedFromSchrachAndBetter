@@ -89,6 +89,8 @@ public struct ArmyView
     public uint Color;
     /// <summary>Faction id (BlueprintDb.Factions).</summary>
     public string Faction;
+    /// <summary>Display name (lobby/setup name; immutable string, shared with the army).</summary>
+    public string Name;
     public bool Defeated;
     public int UnitCount;
     /// <summary>(6b) Max live units of the army (GameOptions.UnitCap; lifted in sandbox).</summary>

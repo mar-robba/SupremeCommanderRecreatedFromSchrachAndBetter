@@ -28,6 +28,7 @@ public sealed class Hud : IDisposable
     private readonly UpgradePanel _upgrade;
     private readonly EnhancementPanel _enh;
     private readonly HelpOverlay _help;
+    private readonly DiplomacyPanel _diplo; // (6b) F4
     private readonly IdleButtons _idle;
     private readonly UnitCapCounter _capCounter = new(); // (6b)
     private UiStartup? _startup;
@@ -51,11 +52,16 @@ public sealed class Hud : IDisposable
         _upgrade = new UpgradePanel(ctx, sel);
         _enh = new EnhancementPanel(ctx, sel);
         _help = new HelpOverlay(ctx);
+        _diplo = new DiplomacyPanel(ctx, sel);
         _idle = new IdleButtons(ctx, sel);
     }
 
     /// <summary>The F1 help overlay is open (Esc closes it instead of opening the pause menu).</summary>
     public bool HelpOpen => _help.Open;
+
+    /// <summary>(6b) The F4 diplomacy panel is open (Esc closes it: <see cref="CloseDiplomacy"/>).</summary>
+    public bool DiplomacyOpen => _diplo.Open;
+    public void CloseDiplomacy() => _diplo.Close();
 
     public Rectangle TopBarRect => _top;
 
@@ -68,6 +74,7 @@ public sealed class Hud : IDisposable
         if (o.Select != null || o.UiDemo || o.UiPlace != null || o.MousePos != null) _startup = new UiStartup(_ctx, _sel, o);
         if (o.TechDemo) _techDemo = new TechDemo(_ctx, _sel, o);
         if (o.HelpOverlay && !_help.Open) _help.Toggle();
+        if (o.Diplomacy && !_diplo.Open) _diplo.Toggle();
     }
 
     /// <summary>True if the mouse is over a HUD panel (camera/selection should ignore it).</summary>
@@ -80,7 +87,7 @@ public sealed class Hud : IDisposable
         // The outermost pixels belong to camera edge-scrolling, even over the top bar.
         if (m.X <= 3 || m.Y <= 3 || m.X >= Ui.Sw - 4 || m.Y >= Ui.Sh - 4) return false;
         bool Hit(Rectangle r) => r.Width > 0 && Raylib.CheckCollisionPointRec(m, r);
-        if (Hit(_top) || Hit(_mini) || _idle.Hit(m)) return true;
+        if (Hit(_top) || Hit(_mini) || _idle.Hit(m) || _diplo.Hit(m)) return true;
         if (_showSelectionPanels && (Hit(_infoR) || (!_ctx.ReadOnly && Hit(_ordersR)))) return true;
         if (!_ctx.ReadOnly && _enh.Hit(m)) return true;
         return _buildKind != BuildKind.None && Hit(_buildR);
@@ -95,6 +102,7 @@ public sealed class Hud : IDisposable
         _startup?.Update();
         _techDemo?.Update();
         _help.Update();
+        _diplo.Update(_ctx.Snapshots.Current);
         _sel.InputBlocked = _sel.PendingSelfDestruct != null || _help.Open;
     }
 
@@ -169,6 +177,7 @@ public sealed class Hud : IDisposable
         DrawModeHints();
         DrawEndOfGame(snap);
         if (dialog) DrawDialog();
+        _diplo.Draw(snap);
         Ui.DrawTooltip();
         _help.Draw();
         _frame++;
@@ -194,17 +203,24 @@ public sealed class Hud : IDisposable
         Ui.TextCentered("?", _helpR, Ui.F(13), Ui.TextColor, true);
         if (st.Left) _help.Toggle();
         if (st.Hover) Ui.Tooltip(_helpR, $"Controls  [{Hotkeys.Help.Label}]", "Every hotkey and mouse action", above: false);
+        float statsRight = _helpR.X;
+        if (DiplomacyPanel.Available(_ctx, snap))
+        {
+            var dr = new Rectangle(_helpR.X - Ui.P(90), _helpR.Y, Ui.P(84), hs);
+            _diplo.DrawButton(dr);
+            statsRight = dr.X;
+        }
 
         int fs = Ui.F(11.5f);
         string speed = $"x{_ctx.Runner.Speed:0.##}{(_ctx.Runner.Paused ? "  PAUSED" : "")}";
         string stats = $"{Raylib.GetFPS()} fps  ·  tick {snap.Tick}  ·  sim {snap.TickDurationMs:F1} ms  ·  units {snap.UnitCount}  ·  {speed}";
-        float sx = _helpR.X - Ui.P(10) - Ui.Measure(stats, fs);
+        float sx = statsRight - Ui.P(10) - Ui.Measure(stats, fs);
         if (sx > r.Width * 0.55f)
             Ui.Text(stats, sx, (r.Height - fs) * 0.5f - 1, fs, _ctx.Runner.Paused ? Ui.Warn : Ui.TextDim);
         else
         {
             string shortStats = $"{Raylib.GetFPS()} fps · {speed}";
-            Ui.Text(shortStats, _helpR.X - Ui.P(10) - Ui.Measure(shortStats, fs), (r.Height - fs) * 0.5f - 1, fs, Ui.TextDim);
+            Ui.Text(shortStats, statsRight - Ui.P(10) - Ui.Measure(shortStats, fs), (r.Height - fs) * 0.5f - 1, fs, Ui.TextDim);
         }
     }
 

@@ -47,6 +47,10 @@ public sealed class ClientOptions
     public bool EndScreen;
     /// <summary>Screenshot helper: --help-overlay opens the F1 help overlay at the start of the game.</summary>
     public bool HelpOverlay;
+    /// <summary>--diplomacy: open the F4 diplomacy panel at start (screenshots).</summary>
+    public bool Diplomacy;
+    /// <summary>--teams 1,1,2,2: team per army for CLI games (0 = none/FFA).</summary>
+    public int[]? Teams;
     /// <summary>Screenshot helper: the skirmish setup screen starts the game as soon as the preview is ready.</summary>
     public bool AutoStart;
     /// <summary>Debug: scripted menu flow (game → Restart → Quit to Menu → Skirmish → autostart → …) to exercise
@@ -181,6 +185,8 @@ public sealed class ClientOptions
                 case "--name": o.PlayerName = Next(); break;
                 case "--multiplayer": screen = StartScreen.Multiplayer; break;
                 case "--help-overlay": o.HelpOverlay = true; gameArg = true; break;
+                case "--diplomacy": o.Diplomacy = true; gameArg = true; break;
+                case "--teams": o.Teams = Next().Split(',').Select(int.Parse).ToArray(); gameArg = true; break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
                     {
