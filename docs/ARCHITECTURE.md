@@ -508,6 +508,17 @@ interpolates prev/cur by time
   panel shows veterancy and adjacency bonuses and capture bars; `Input/AdjacencyPreview` draws lines to neighbours
   that would give/receive a bonus while placing a structure; `Input/PlacementLine`: Shift+drag lays a line of
   structures (`--ui-place id@x,z` for screenshots).
+- Settings (wave 7a): `Menus/SettingsScreen` has three tabs (Audio & Display / Graphics / Gameplay; `--settings-tab
+  audio|graphics|gameplay`), also opened from the pause menu (`returnTo` = the paused game, like the save list; not in
+  multiplayer, where leaving `NetInGameScreen` would stall the lockstep turns). `AppSettings` fields: `Shadows`,
+  `ParticleQuality` (0..2 → 0.35/0.65/1), `TerrainDetail` (-1 auto, 0..3 forced LOD), `VSync`, `FpsCap` (0/30/60/120/144),
+  `UiScale` (0.8..1.5), `EdgeScroll`, `PanSpeed`/`ZoomSpeed` (0.5..2), `Autosave` (read by the autosave). `LoadFrom`
+  clamps (`Normalize`); missing fields = defaults = the behavior before the settings existed. `Menus/GraphicsSettings`
+  (`Init` after InitWindow, `Apply` on every change, all live) writes static switches read by the renderers:
+  `ShadowMap.Enabled` (skips the unit depth pass, `shadowOn = 0`), `ParticleSystem.Quality` (folded into `Lod`),
+  `TerrainRenderer.ForceLod`, `Ui.UserScale` (× automatic `Ui.S`), `CameraSettings` (read by `RtsCamera`), plus
+  VSync (`SetWindowState/ClearWindowState`) and `SetTargetFPS` (only called once a cap is chosen). Precedence:
+  `--novsync` and `--terrain-lod` win for that run (the screen shows a note); `--screenshot` runs use defaults.
 
 ## Sandbox mode (`Rts.Sim/Systems/SandboxSystem`, `Rts.Client/Sandbox`)
 - Sim: `SandboxSystem.Enable(world)` (called by `GameSession.CreateSimulation` when `GameConfig.Sandbox`) turns the
