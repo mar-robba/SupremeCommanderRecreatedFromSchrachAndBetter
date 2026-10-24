@@ -51,6 +51,10 @@ public enum SoundId
     OverchargeFire,
     OverchargeHit,
     CommanderBlast,
+    // Personal Teleporter (charge hum, departure / arrival zaps): SoundBank.Commander.cs
+    TeleportCharge,
+    TeleportOut,
+    TeleportIn,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>
