@@ -19,6 +19,8 @@ public static class UnitLifecycle
         Strategic.StrategicSystem.InitUnit(w, i, bp);
         Transport.TransportSystem.InitUnit(w, i, bp);
         Experimental.ExperimentalSystem.InitUnit(w, i, bp);
+        Combat.OverchargeSystem.InitUnit(w, i, bp);
+        Commander.TeleportSystem.InitUnit(w, i, bp);
     }
 
     public static void OnDeath(SimWorld w, int i, UnitBlueprint bp)
@@ -27,5 +29,6 @@ public static class UnitLifecycle
         FactorySystem.OnUnitDeath(w, i, bp);
         Transport.TransportSystem.OnUnitDeath(w, i, bp); // cargo dies with its carrier
         Experimental.ExperimentalSystem.OnUnitDeath(w, i, bp);
+        Commander.CommanderDeathBlast.OnUnitDeath(w, i, bp); // queues the blast (never damage here)
     }
 }

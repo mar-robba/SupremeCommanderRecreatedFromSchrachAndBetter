@@ -318,6 +318,17 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
 - [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
+- [x] Commander kit & engineer automation (2026-10-24, wave 6a; ARCHITECTURE "Commander kit & engineer automation"):
+      G1 ACU Overcharge (energy-fed shot, damage from stored energy, structures x0.5, ACUs capped; key O + orders
+      button, fx/sounds), G2 commander death blast (two-ring nuke-like blast 1.5 s after death, smaller ACU mushroom),
+      G3 patrol automation (patrolling engineers/ACU/SCU repair > assist > reclaim props near the route), G7 Personal
+      Teleporter enhancement on both ACUs (10 s charge, 5000 E + 50 E per unit of distance; key J + button, arc/cost
+      overlay, charge/arrival fx and sounds, back-pack model); console `overcharge`, `kill r at x,z`, `teleport x,z`
+      Reference match `ai 30 256 42 hard,normal` unchanged in play (Hard 15:35, identical stats), new hash
+      BF85B7DBBF03D949 (the new commander state is mixed into the hash)
+      - [ ] later: UEF Engineering Drones (C-D1/C-D2 ACU enhancement), UEF SCU Radar Jammer enhancement (rest of G7)
+      - [ ] later: AI uses Overcharge, the teleporter and engineer patrols; Overcharge reload/charge in the snapshot (button
+            shows ready from stored energy only); patrol test for the unreachable-target cooldown (needs a cliff map)
 - [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
       (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
       (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the

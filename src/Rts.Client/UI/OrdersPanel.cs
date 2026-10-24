@@ -11,7 +11,7 @@ namespace Rts.Client.UI;
 /// <summary>
 /// Order buttons with SupCom-like hotkeys: Stop (S), Move (M), Attack-move (A), Patrol (P), Guard/Assist (G),
 /// Self-destruct (Ctrl+K, asks for confirmation), and when they apply: Capture (E, engineers / commander), Pause (H,
-/// pausable units), Dive / Surface (D, submarines) and the transport orders (<see cref="TransportInput"/>): Unload /
+/// pausable units), Dive / Surface (D, submarines), Overcharge (O, commanders), Teleport (J, commanders with Personal Teleporter) and the transport orders (<see cref="TransportInput"/>): Unload /
 /// Launch (U), Transport-to (E), Ferry (F), Dock (D); extra rows appear for them. E and D are shared
 /// (<see cref="SharedHotkeys"/>): the Capture button shows no key while transports are selected (E = transport-to).
 /// Hotkeys themselves are handled by SelectionController / UnitToggles / TransportInput.
@@ -21,7 +21,7 @@ public sealed class OrdersPanel
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
 
-    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Capture, Pause, Dive, Unload, TransportTo, Ferry, Dock, FireState }
+    private enum Btn { Stop, Move, AttackMove, Patrol, Guard, SelfDestruct, Launch, Capture, Pause, Dive, Unload, TransportTo, Ferry, Dock, FireState, Overcharge, Teleport }
 
     public OrdersPanel(GameContext ctx, SelectionController sel)
     {
@@ -80,6 +80,10 @@ public sealed class OrdersPanel
         if (_pause.Any) b.Add((Btn.Pause, _pause.AllOn ? "Resume" : "Pause", UnitToggles.PauseKeyName, true, _pause.AllOn));
         _dive = UnitToggles.DiveState(_ctx, _sel.Selected);
         if (_dive.Any) b.Add((Btn.Dive, _dive.AllOn ? "Surface" : "Dive", UnitToggles.DiveKeyName, true, false));
+        _oc = UnitToggles.OverchargeState(_ctx, _sel.Selected); // lit while armed (OverchargeButton)
+        if (_oc.Any) b.Add((Btn.Overcharge, "OC", UnitToggles.OverchargeKeyName, true, _oc.On > 0));
+        _tp = TeleportInput.State(_ctx, _sel.Selected);
+        if (_tp.Any) b.Add((Btn.Teleport, "TP", Hotkeys.Teleport.Label, true, _sel.Mode == Mode.Teleport));
         var tb = TransportInput.ButtonsFor(CargoSelection.Of(_ctx, _sel.Selected, snap));
         if ((tb & TransportButtons.Unload) != 0) b.Add((Btn.Unload, "Unload", Hotkeys.Unload.Label, true, _sel.Mode == Mode.Unload));
         if ((tb & TransportButtons.Launch) != 0) b.Add((Btn.Unload, "Launch", Hotkeys.Unload.Label, true, _sel.Mode == Mode.Unload));
@@ -106,18 +110,22 @@ public sealed class OrdersPanel
             var br = new Rectangle(MathF.Round(r.X + pad + (i % cols) * (bw + pad)), MathF.Round(y + pad * 0.5f + (i / cols) * (bh + pad)), MathF.Round(bw), MathF.Round(bh));
             var tint = b.id == Btn.SelfDestruct ? new Color(80, 36, 34, 255) : (Color?)null;
             var st = Ui.Button(br, b.enabled, b.active, tint);
-            DrawGlyph(b.id, br, b.enabled, _pause.AllOn, _dive.AllOn, _fire);
+            if (b.id == Btn.Overcharge) OverchargeButton.DrawGlyph(br, _oc);
+            else if (b.id == Btn.Teleport) TeleportButton.DrawGlyph(br, _tp, b.active);
+            else DrawGlyph(b.id, br, b.enabled, _pause.AllOn, _dive.AllOn, _fire);
             int fs = Ui.F(10);
             string label = Ui.Fit(b.label, br.Width - Ui.P(2), fs);
             float lw = Ui.Measure(label, fs);
-            Ui.Text(label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled ? Ui.TextColor : Ui.TextFaint);
+            Ui.Text(label, br.X + (br.Width - lw) * 0.5f, br.Y + br.Height - fs - Ui.P(4), fs, b.enabled && (b.id != Btn.Overcharge || _oc.Ready) ? Ui.TextColor : Ui.TextFaint);
             if (b.key.Length > 0) Ui.HotkeyBadge(br, b.key);
             if (st.Left) Execute(b.id);
             else if (st.Right && b.id == Btn.FireState) UnitToggles.CycleFireState(_ctx, _sel.Selected, -1);
             if (st.Hover)
             {
                 string key = b.id == Btn.SelfDestruct ? Hotkeys.SelfDestruct.Label : b.key;
-                Ui.Tooltip(br, key.Length == 0 ? Title(b.id, b.label) : $"{Title(b.id, b.label)}  [{key}]", Description(b.id, b.label));
+                if (b.id == Btn.Overcharge) OverchargeButton.Tooltip(br, key, _oc);
+                else if (b.id == Btn.Teleport) TeleportButton.Tooltip(br, key, _tp);
+                else Ui.Tooltip(br, key.Length == 0 ? Title(b.id, b.label) : $"{Title(b.id, b.label)}  [{key}]", Description(b.id, b.label));
             }
         }
         _buttons.Clear(); // rebuilt by the next Refresh (Hud layout)
@@ -125,6 +133,8 @@ public sealed class OrdersPanel
 
     private UnitToggles.ToggleState _pause, _dive;
     private UnitToggles.FireSelection _fire;
+    private UnitToggles.OverchargeSelection _oc;
+    private TeleportInput.TeleportSelection _tp;
 
     private void Execute(Btn id)
     {
@@ -140,6 +150,8 @@ public sealed class OrdersPanel
             case Btn.Capture: _sel.SetMode(Mode.Capture); break;
             case Btn.Pause: UnitToggles.TogglePause(_ctx, _sel.Selected); break;
             case Btn.Dive: UnitToggles.ToggleDive(_ctx, _sel.Selected); break;
+            case Btn.Overcharge: UnitToggles.ToggleOvercharge(_ctx, _sel.Selected); break;
+            case Btn.Teleport: _sel.SetMode(Mode.Teleport); break;
             case Btn.Unload: TransportInput.StartUnload(_ctx, _sel, Ui.Shift); break;
             case Btn.TransportTo: TransportInput.StartMode(_sel, Mode.TransportTo); break;
             case Btn.Ferry: TransportInput.StartMode(_sel, Mode.Ferry); break;

@@ -41,6 +41,9 @@ public enum OrderType : byte
     Ferry,
     /// <summary>Aircraft: dock at the air carrier Target (air staging / Atlantis; None = nearest) to repair and refuel.</summary>
     Dock,
+    /// <summary>Unit with a personal teleporter (UnitBlueprint.Teleport, ACU enhancement): stand still, charge, then jump
+    /// to the ground point Pos. Executed by Commander/TeleportSystem; units without a teleporter drop it.</summary>
+    Teleport,
 }
 
 /// <summary>
@@ -74,6 +77,7 @@ public struct Order
     public static Order ReclaimAt(UnitHandle t, Vector2 pos) => new() { Type = OrderType.Reclaim, Target = t, Pos = pos, BlueprintIndex = -1, Spawned = UnitHandle.None };
     public static Order CaptureUnit(UnitHandle t) => new() { Type = OrderType.Capture, Target = t, BlueprintIndex = -1, Spawned = UnitHandle.None };
     public static Order LaunchAt(Vector2 pos) => new() { Type = OrderType.Launch, Pos = pos, Target = UnitHandle.None, BlueprintIndex = -1, Spawned = UnitHandle.None };
+    public static Order TeleportTo(Vector2 pos) => new() { Type = OrderType.Teleport, Pos = pos, Target = UnitHandle.None, BlueprintIndex = -1, Spawned = UnitHandle.None };
 
     /// <summary>Destination including formation offset.</summary>
     public readonly Vector2 Destination => Pos + FormationOffset;

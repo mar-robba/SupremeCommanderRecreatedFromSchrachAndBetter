@@ -212,6 +212,8 @@ public sealed class WeaponBlueprint
     /// <summary>Can fire while its unit is submerged (an amphibious walker on the seabed). Torpedoes always can;
     /// other weapons only with this flag.</summary>
     public bool FiresSubmerged;
+    /// <summary>ACU Overcharge mode of this weapon (Combat/OverchargeSystem). null = none.</summary>
+    public OverchargeBlueprint? Overcharge;
 }
 
 public sealed class VisualBlueprint

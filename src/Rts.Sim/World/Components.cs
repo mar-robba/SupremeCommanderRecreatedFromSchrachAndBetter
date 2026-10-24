@@ -26,6 +26,8 @@ public enum UnitFlags : ushort
     Carried = 1 << 10,
     /// <summary>EMP-stunned (Combat/EmpStun): no moving, firing, building or producing until the stun ends.</summary>
     Stunned = 1 << 11,
+    /// <summary>ACU Overcharge armed (toggled by <see cref="Orders.SetOverchargeCommand"/>; Combat/OverchargeSystem).</summary>
+    Overcharge = 1 << 12,
 }
 
 /// <summary>Movement module state (owned by MovementSystem / PathSystem).</summary>

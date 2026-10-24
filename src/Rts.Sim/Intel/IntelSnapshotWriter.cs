@@ -103,7 +103,9 @@ internal static class IntelSnapshotWriter
     {
         foreach (var e in w.Events.Effects)
             // Nuclear detonations are seen (and heard) by everyone, like the launch warning.
-            if (e.Kind == EffectKind.Nuke || w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
+            // A teleport arrival is seen by the jumper's team even where its vision has not been updated yet.
+            if (e.Kind == EffectKind.Nuke || (e.Kind == EffectKind.TeleportIn && w.Intel.TeamOf(e.Army) == w.Intel.TeamOf(viewArmy))
+                || w.Intel.IsPositionVisible(viewArmy, new Vector2(e.Pos.X, e.Pos.Z))) s.Effects.Add(e);
     }
 
     private static void Ensure<T>(ref T[] arr, int size)

@@ -346,6 +346,7 @@ public static class GameApp
                     OrderType.Move => new Color(60, 220, 60, 200),
                     OrderType.AttackMove or OrderType.Attack => new Color(230, 60, 50, 200),
                     OrderType.Patrol => new Color(80, 170, 255, 200),
+                    OrderType.Teleport => new Color(110, 225, 255, 200),
                     OrderType.Build or OrderType.Repair => new Color(240, 220, 60, 200),
                     _ => new Color(200, 200, 200, 200),
                 };

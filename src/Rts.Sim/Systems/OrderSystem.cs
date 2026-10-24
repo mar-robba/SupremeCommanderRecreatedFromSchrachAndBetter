@@ -76,6 +76,9 @@ public static class OrderSystem
             }
             case OrderType.Patrol:
             {
+                // Builder busy with a patrol job (State != 0: repair/assist/reclaim, Economy/EngineerPatrol): it drives
+                // movement (ConstructionSystem); don't advance the patrol meanwhile.
+                if (o.State != 0) return;
                 var dest = w.Terrain.Clamp(o.Destination);
                 if (AnyWeaponEngaged(u, i, bp)) { if (!ChaseEngagedTarget(w, i, bp, ref mv)) mv.HasGoal = false; return; }
                 if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp) + 1f) || MovementSystem.ArrivedAt(mv, dest))
@@ -138,6 +141,10 @@ public static class OrderSystem
                 else if (!bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) mv.HasGoal = false;
                 return; // engineers additionally assist via ConstructionSystem
             }
+            case OrderType.Teleport: // stand still while Commander/TeleportSystem charges; no teleporter (removed): drop it
+                mv.HasGoal = false;
+                if (bp.Teleport == null) q.Pop();
+                return;
             default:
                 return; // Build / Repair / Reclaim / Capture: ConstructionSystem
         }

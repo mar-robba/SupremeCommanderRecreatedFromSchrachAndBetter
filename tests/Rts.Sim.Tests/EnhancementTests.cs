@@ -50,7 +50,7 @@ public class EnhancementTests
         var db = TestUtil.Db;
         var acu = db["uef_commander"];
         Assert.True(acu.IsEnhanceable && !acu.IsVariant);
-        Assert.Equal(3 * 4 * 4, acu.EnhancementVariants.Length); // right arm 2, left arm 3, back 3 (+ empty)
+        Assert.Equal(3 * 4 * 5, acu.EnhancementVariants.Length); // right arm 2, left arm 3, back 4 (+ empty)
         Assert.Equal(acu.EnhancementVariants.Length, acu.EnhancementVariants.Distinct().Count());
         foreach (int v in acu.EnhancementVariants)
         {
