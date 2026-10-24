@@ -141,6 +141,10 @@ public static class OrderSystem
                 else if (!bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) mv.HasGoal = false;
                 return; // engineers additionally assist via ConstructionSystem
             }
+            case OrderType.Teleport: // stand still while Commander/TeleportSystem charges; no teleporter (removed): drop it
+                mv.HasGoal = false;
+                if (bp.Teleport == null) q.Pop();
+                return;
             default:
                 return; // Build / Repair / Reclaim / Capture: ConstructionSystem
         }

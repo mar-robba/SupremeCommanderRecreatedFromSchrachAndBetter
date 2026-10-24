@@ -97,6 +97,7 @@ public static class CommandSystem
             // Launch orders (Strategic module), and only silo launchers do.
             bool launch = o.Type == OrderType.Launch;
             if (launch && !Strategic.SiloSystem.IsLauncher(bp)) continue;
+            if (o.Type == OrderType.Teleport && bp.Teleport == null) continue; // personal teleporter only (Commander/TeleportSystem)
             if (!launch && bp.IsStructure && !bp.Has(UnitCategory.Factory)) continue;
             if (o.Type == OrderType.Build && !Array.Exists(bp.BuildIndices, b => b == o.BlueprintIndex)) continue;
 

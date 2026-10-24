@@ -88,7 +88,7 @@ public sealed class EnhancementBlueprint
     [JsonIgnore] public int PrerequisiteIndex = -1;
 }
 
-/// <summary>What an enhancement changes. Numbers add up along the prerequisite chain; Shield/Silo replace.</summary>
+/// <summary>What an enhancement changes. Numbers add up along the prerequisite chain; Shield/Silo/Teleport replace.</summary>
 public sealed class EnhancementEffects
 {
     public WeaponModifier[] Weapons = [];
@@ -107,6 +107,8 @@ public sealed class EnhancementEffects
     public ShieldBlueprint? Shield;
     /// <summary>Missile silo; <c>WeaponIndex</c> is relative to this effect's <see cref="AddWeapons"/>.</summary>
     public SiloBlueprint? Silo;
+    /// <summary>Personal teleporter (replaces any teleporter from a prerequisite).</summary>
+    public TeleportBlueprint? Teleport;
     /// <summary>Intel stealth/cloak granted by the enhancement (OR-ed along the prerequisite chain; see IntelBlueprint).</summary>
     public bool RadarStealth;
     public bool SonarStealth;

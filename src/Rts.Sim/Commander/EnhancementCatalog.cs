@@ -114,6 +114,7 @@ public static class EnhancementCatalog
             v.Silo = silo;
         }
         if (fx.Shield != null) v.Shield = Clone(fx.Shield);
+        if (fx.Teleport != null) v.Teleport = Clone(fx.Teleport);
         v.MaxHealth += fx.MaxHealthAdd;
         v.RegenRate += fx.RegenRateAdd;
         v.Economy.BuildRate += fx.BuildRateAdd;
