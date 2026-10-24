@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=RTS
+GenericName=Real-time strategy game
+Comment=Supreme Commander-like real-time strategy game
+Exec="@EXEC@"
+Path=@PATH@
+Icon=@ICON@
+Terminal=false
+Categories=Game;StrategyGame;
+Keywords=rts;strategy;supreme commander;
+StartupNotify=true

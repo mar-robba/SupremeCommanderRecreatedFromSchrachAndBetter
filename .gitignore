@@ -9,3 +9,6 @@ obj/
 /.claude/
 /saves/
 /replays/
+
+# Release packages (tools/package/package.sh)
+/release/
