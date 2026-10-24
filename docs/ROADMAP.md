@@ -71,9 +71,9 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G1 | ACU **Overcharge** (energy-fed shot, damage from stored energy; order button + key) | SC1 | M | `Rts.Sim/Combat`, `Commander`, commander blueprints, OrdersPanel | — | 1 |
 | G2 | **Commander death explosion** (nuke-like blast, hurts everyone near) | SC1 | S | `Commander` (death hook), Experimental death blast, NukeFx | — | 1 |
 | G3 | **Engineer patrol automation**: patrolling engineers/ACU/SCU reclaim wrecks, repair, assist builds in range | SC1 | S-M | `Economy/ConstructionSystem`, OrderSystem Patrol case | — | 1 |
-| G4 | **Game options**: victory assassination / supremacy / annihilation / sandbox; unit cap 250-1000 (+ HUD "units 123/500"); start resources; fog explored/none; game speed normal/fast/adjustable; cheats; prebuilt units | SC1 | M | GameSetup, CleanupSystem, Army; SkirmishSetupScreen, LobbyScreen, NetGameConfig, `Rts.Net/Lobby` codec; Hud | — | 1 |
-| G5 | **Team play**: give units and mass/energy to allies, allied overflow sharing, allies-only chat | SC1 | M | UnitTransfer, new `Economy/EconomyShare.cs`, new `Orders/DiplomacyCommands.cs`, new `UI/DiplomacyPanel` | G4 | 1 |
-| G6 | Score history (income, units, kills every 30 s) + end-screen graphs, score column in the players panel | SC1 | S | ArmyStats (saveable), EndScreen | G4 | 3 |
+| G4 | [x] 2026-10-24 (6b) **Game options**: victory assassination / supremacy / annihilation / sandbox; unit cap 250-1000 (+ HUD "units 123/500"); start resources; fog explored/none; game speed normal/fast/adjustable; cheats; prebuilt units | SC1 | M | GameSetup, CleanupSystem, Army; SkirmishSetupScreen, LobbyScreen, NetGameConfig, `Rts.Net/Lobby` codec; Hud | — | 1 |
+| G5 | [x] 2026-10-24 (6b) **Team play**: give units and mass/energy to allies, allied overflow sharing, allies-only chat | SC1 | M | UnitTransfer, new `Economy/EconomyShare.cs`, new `Orders/DiplomacyCommands.cs`, new `UI/DiplomacyPanel` | G4 | 1 |
+| G6 | [x] 2026-10-24 (6b) Score history (income, units, kills every 30 s) + end-screen graphs, score column in the players panel | SC1 | S | ArmyStats (saveable), EndScreen | G4 | 3 |
 | G7 | Missing enhancements: Personal Teleporter (both ACUs), UEF Engineering Drones (C-D1/C-D2), UEF SCU Radar Jammer | SC1 | M | `Commander`, blueprints, client models/fx | — | 2 |
 | G8 | Missing units: UEF Mech Marine (T1 bot); T3 strategic missile subs (UEF Ace, Cybran; nuke + TML from a submerged hull); Cybran T3 aircraft carrier; T3 sonar platforms; UEF T2 stealth field generator (verify vanilla); Salem destroyer walks on land | SC1 | M | `data/blueprints`, faction json (optional roles), `Naval`, `Strategic` (mobile silo), `Transport` (carrier), models | — | 2 |
 | G9 | **Walls** (T1 wall sections, both factions: block movement and shots, Shift-drag lines) | SC1 | S-M | data, Pathfinding blocked cells, Combat projectile hits | — | 2 |
@@ -325,6 +325,20 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       - [ ] later: UEF Engineering Drones (C-D1/C-D2 ACU enhancement), UEF SCU Radar Jammer enhancement (rest of G7)
       - [ ] later: AI uses Overcharge, the teleporter and engineer patrols; Overcharge reload/charge in the snapshot (button
             shows ready from stored energy only); patrol test for the unreachable-target cooldown (needs a cliff map)
+- [x] Game options & team play (2026-10-24, wave 6b; ARCHITECTURE "Game options & team play"): G4 options in the
+      skirmish setup AND the lobby (victory assassination/supremacy/annihilation/sandbox, unit cap 250-1000 + HUD
+      "units n/cap" counter with amber/red + toast, start resources low/normal/high (bank), fog normal/explored/none,
+      speed adjustable/1x/2x locked, cheats (F9/F10 sandbox tools in a normal game), prebuilt base), `--options SPEC`,
+      lobby codec (protocol 2); G5 give units / mass / energy to allies, allied overflow sharing, allies-only chat
+      (Shift+Enter), F4 diplomacy panel, `--teams`, `--diplomacy`; G6 score history every 30 s (saved), end-screen line
+      chart per army (score, incomes, units, kills, mass collected), score column in the diplomacy panel.
+      Defaults = old behavior: reference match unchanged (Hard 15:35, hash BF85B7DBBF03D949)
+      - [ ] later: share-until-death / full share of a defeated ally's units (SupCom "share conditions"), alliances
+            changed during the game (today teams are fixed by the lobby), gifting units beyond the receiver's cap
+      - [ ] later: save field migrations for the new 6b fields (`SimWorld.Options`, `Army.UnitCap/StartBank*`,
+            `ArmyStats` gifts + `History`) so pre-6b saves load (header `GameInfo.Options = null` = defaults), AI gives/asks resources to allies, allies-only chat in
+            the lobby and in single player (AI allies), score graph hover/values, frame-timing text overlaps the
+            diplomacy header in screenshot mode
 - [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
       (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
       (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
