@@ -10,12 +10,12 @@
     "Artillery",
     "Tech1"
   ],
-  "MaxHealth": 190,
+  "MaxHealth": 150,
   "Radius": 0.6,
   "Economy": {
-    "BuildCostMass": 36,
-    "BuildCostEnergy": 180,
-    "BuildTime": 180
+    "BuildCostMass": 40,
+    "BuildCostEnergy": 200,
+    "BuildTime": 200
   },
   "Movement": {
     "Layer": "Land",
@@ -32,14 +32,14 @@
       "Range": 30,
       "Damage": 90,
       "RateOfFire": 0.25,
-      "MuzzleVelocity": 20,
+      "MuzzleVelocity": 45,
       "TargetLayers": [
         "Land",
         "Water"
       ],
       "Ballistic": true,
       "DamageRadius": 1.5,
-      "Spread": 1.5,
+      "Spread": 3,
       "MinRange": 5,
       "StunDuration": 1,
       "StunRadius": 1.5,

@@ -193,6 +193,66 @@ public sealed class AiPlacement
         return true;
     }
 
+    /// <summary>
+    /// Site for <paramref name="bp"/> flush against a side of the own structure <paramref name="anchor"/> (adjacency
+    /// bonus: storage around extractors, power next to factories). Only full-contact offsets; no margin ring (the
+    /// point is touching). Sides facing <paramref name="avoidDir"/> (a factory's exit) are skipped.
+    /// </summary>
+    public bool FindAdjacentSite(int bp, int anchor, Vector2 avoidDir, out Vector2 site)
+    {
+        var w = _b.W;
+        site = default;
+        var sbp = w.Blueprints[bp];
+        var (ax0, az0, ax1, az1) = OccupancyGrid.Footprint(w.BpOf(anchor), w.Units.Pos[anchor]);
+        int fx = sbp.FootprintX, fz = sbp.FootprintZ;
+        bool avoid = avoidDir.LengthSquared() > 1e-4f;
+        var ad = avoid ? Vector2.Normalize(avoidDir) : default;
+        for (int side = 0; side < 4; side++)
+        {
+            var n = side switch { 0 => new Vector2(1, 0), 1 => new Vector2(-1, 0), 2 => new Vector2(0, 1), _ => new Vector2(0, -1) };
+            if (avoid && Vector2.Dot(n, ad) > 0.5f) continue;
+            int len = side < 2 ? az1 - az0 + 1 : ax1 - ax0 + 1;
+            int flen = side < 2 ? fz : fx;
+            int lo = Math.Min(0, len - flen), hi = Math.Max(0, len - flen);
+            for (int o = lo; o <= hi; o++)
+            {
+                int x0, z0;
+                if (side == 0) { x0 = ax1 + 1; z0 = az0 + o; }
+                else if (side == 1) { x0 = ax0 - fx; z0 = az0 + o; }
+                else if (side == 2) { z0 = az1 + 1; x0 = ax0 + o; }
+                else { z0 = az0 - fz; x0 = ax0 + o; }
+                var p = OccupancyGrid.SnapStructure(sbp, new Vector2(x0 + fx * 0.5f, z0 + fz * 0.5f));
+                var (bx0, bz0, _, _) = OccupancyGrid.Footprint(sbp, p);
+                if (bx0 != x0 || bz0 != z0) continue;
+                _b.Stats.SiteCandidates++;
+                if (IsGoodAdjacentSite(sbp, p)) { site = p; return true; }
+            }
+        }
+        return false;
+    }
+
+    private bool IsGoodAdjacentSite(UnitBlueprint sbp, Vector2 p)
+    {
+        var w = _b.W;
+        if (!w.Terrain.InBounds(p) || !w.Occupancy.CanPlace(sbp, p, w.Terrain)) return false;
+        var (x0, z0, x1, z1) = OccupancyGrid.Footprint(sbp, p);
+        if (x0 < 1 || z0 < 1 || x1 >= w.Terrain.Width - 1 || z1 >= w.Terrain.Height - 1) return false;
+        foreach (var r in _reserved)
+            if (x0 <= r.X1 && x1 >= r.X0 && z0 <= r.Z1 && z1 >= r.Z0) return false;
+        // Never cover a free deposit's extractor footprint.
+        foreach (var d in w.Terrain.Deposits)
+        {
+            if (MathF.Abs(d.Pos.X - p.X) > 8f || MathF.Abs(d.Pos.Y - p.Y) > 8f) continue;
+            int dx = (int)MathF.Floor(d.Pos.X), dz = (int)MathF.Floor(d.Pos.Y);
+            if (w.Occupancy.IsBlocked(dx, dz)) continue; // already built on
+            int r = d.Type == DepositType.Hydrocarbon ? 2 : 1;
+            if (dx + r >= x0 && dx - r <= x1 && dz + r >= z0 && dz - r <= z1) return false;
+        }
+        float half = MathF.Max(sbp.FootprintX, sbp.FootprintZ) * 0.5f;
+        float rr = half + 5f;
+        return Vector2.DistanceSquared(_b.Rally, p) >= rr * rr;
+    }
+
     /// <summary>Snapped extractor site of a deposit and whether it is free as far as the AI knows (no own/allied or
     /// known enemy structure on it; see <see cref="AiPerception.DepositLooksFree"/>).</summary>
     public bool DepositFree(int deposit, int bp, out Vector2 site)

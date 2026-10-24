@@ -110,6 +110,9 @@ To keep conflicts small:
   first, then only the needed sections; sub-agent prompts carry the contract lines they need instead of "read the docs".
 - **Never resume a big agent** with SendMessage after it was cut off: it keeps its whole old transcript and grows
   without limit. Resume only agents well under 100k. Replace the others with a fresh agent and the handoff note.
+- **Self-measure** (2026-10-24): every prompt carries a unique `CTX-TAG: <tag>` line and the agent runs
+  `agent_ctx.py --self <tag>` itself (AGENT_RULES), because agents can't feel their own context: on 2026-10-24 all five
+  wave 6 sub-agents ran 10-45k past their CHECKPOINT until the orchestrator messaged them.
 - **Measuring context**: `python3 -I tools/agents/agent_ctx.py <agentId>...` prints each agent's exact context,
   taken from the API usage fields of its transcript. It never reads the transcript text. File size is useless,
   because screenshots inflate it. Background alert:
@@ -164,6 +167,7 @@ Owner request (2026-10-16): keep evaluating how much many small contexts harm th
 | 2026-10-16 | (l) client models | low (150k) | C dead at 152k, C1 started at 70k | none on the result so far; the dead attempt came from a too-wide reading list (fixed in AGENT_RULES), not from the cap. |
 | 2026-10-23 | (k-navy) navy + transports | medium (200k) | agent 1 reached 193k in 11.5 min (read whole AI and transport files), stopped with the navy written but untested | low so far: its note lists the verified APIs; agent 2 started with a "grep, read ranges, never whole big files" rule. (k) coordinator 8 reached 240k in 38 min (matrix outputs). |
 | 2026-10-23 | (l) Cybran C1b–C3b + integration | coordinators medium (200k), pieces low (150k) | coordinator 10-22 cut by usage limit at 107k, fresh one finished at 110k; C1b reached 151k before writing code (big model files), C3a cut by usage limit; C3b 135k | low: every piece finished from its note; the only rediscovery was cosmetic (parked planes looked missing at the default camera). Model pieces read ~110k of code first: give them the helper signatures in the prompt. |
+| 2026-10-24 | (k) AI uses everything, end | high (250k) | k9 CHECKPOINT at 240k; k10 cut by a usage limit at 41k (only merged main); k11 finished at 191k | low: k11 continued from the note without redoing work (only gaps: data is read live, matrices take 8-12 min). Over the whole of (k) (11 coordinators) the harm was medium: the stall diagnosis was re-read twice (2026-10-16 row) and the goals stayed unmet; the remaining stall problem is an AI decision change, not a context problem. |
 
 ## Usage limits
 

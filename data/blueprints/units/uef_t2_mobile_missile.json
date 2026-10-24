@@ -9,7 +9,7 @@
     "IndirectFire",
     "Tech2"
   ],
-  "MaxHealth": 500,
+  "MaxHealth": 450,
   "Radius": 0.7,
   "Economy": {
     "BuildCostMass": 180,
@@ -37,7 +37,7 @@
         "Water"
       ],
       "MinRange": 8,
-      "DamageRadius": 1.5,
+      "DamageRadius": 1,
       "ProjectileVisual": "missile",
       "FiringTolerance": 60,
       "TurretTurnRate": 90

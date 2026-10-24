@@ -313,7 +313,7 @@ orchestrator finished the checks):
 - Check: `Rts.Bench -- ai 30 256 42 hard,normal` = main exactly (WINNER Hard after 11:30, hash EDCA8A729F29736E).
 - Known: only UEF exists, so the selector offers UEF / Random until (l) adds Cybran.
 
-## Wave 5 (in progress)
+## Wave 5 (merged 2026-10-16 → 10-24)
 
 Started 2026-10-14 ~00:45: (m), (n) and (o) started after the (f) merge. (k) and (l) start after (j) is merged,
 because they depend on faction roles. Below are the briefs the agents received: each prompt = brief +
@@ -354,6 +354,52 @@ the faction roles. New roles are append-only; list them in the report so the Cyb
   - a summary line in the bench output: max tier, number of experimentals, nukes, navy;
   - tests: T2 by minute X on a fixed seed; navy on Archipelago; anti-nuke after seeing an SML; save/load
     mid-game still identical.
+
+**Delivered** (merged 2026-10-24, 344e2b5; eleven coordinators from 2026-10-14 to 10-24, cut by usage limits and the
+context cap many times; navy + transports split off to (k-navy), merged after it). Final report of coordinator 11:
+- **Works:** the AI plays T2/T3 (upgrades, enhancements, shields, TML, strategic projects, SCUs, air T2/T3) through
+  faction roles, with a tech budget plus a pressure switch; duel tool (`Rts.Bench duel` / `duelmatrix`); land balance
+  pass (AI_TUNING "Unit balance"); Cybran/UEF parity; Normal defaults and Hard preset; lab scripts in `tools/ai-lab`.
+- **Last run:** UEF T1 tank MuzzleVelocity 30 -> 40, hp 305 (26d271f): Cybran v UEF 51-21 -> 39-35 (96 games,
+  45 min). Hard preset: artillery 0.05, 8/18 land factories, army share 0.6 (d52b553); 11 Hard levers measured, a
+  threat-weighted focus fire was reverted.
+- **Try:** `MIN=45 DIFF=Hard bash tools/ai-lab/specsweep.sh <tag> tools/ai-lab/specs/hvn.txt <bin> -`;
+  `Rts.Bench duelmatrix uef cybran`.
+- **Numbers (45-min cap):** NvN 64/96 finished (21/69 lopsided games stalled; goal 80/96); HvH 76/96 (goal 85 %);
+  Hard v Normal 102-52 (154/192 finished); tech v T1-only 60 % (goal 65 %); Cybran v UEF 39-35. Reference match
+  `ai 30 256 42 hard,normal`: Hard wins at 15:35, hash **4E3F22FD0F8EED11** (verified on main after the merge). Perf:
+  `2000 300` avg 1.75-1.97 ms vs main 1.72-1.80 (noise); AI 0.017 ms/tick.
+- **Tests:** Sim 419, Client 227, Net 21 green. Tests read the tank's hp from its blueprint; AiTechTests uses seed 6.
+- **Hotkeys:** none. **Shared files:** none (data, AiConfig, tests, docs).
+- **Known issues:** goals (a) stalls, (b) finished games and (c) tech v T1-only are not met (AI_TUNING "Hard's edge",
+  "Final numbers of agent (k)"): the stalls need an AI decision change, not more config values (wave 9a). Hard is
+  about 2:1 against Normal; main's old 96 % came from the T1 artillery exploit. Late games lean Cybran (UEF splits its
+  T2/T3 mass across shields, siege bots and fighter-bombers).
+- **Handoff review:** the note was good. It lacked that blueprint data is read live from the worktree (data tests
+  need no rebuild); `pgrep -f` wait loops matched themselves (wait on a result line instead); 45-min matrices take
+  8-12 min, not 2-3.5.
+
+### (k-navy) Navy + transports AI — `AiNavy*`, `AiTransport*`, `AiConfig.Navy.cs`
+*brief (2026-10-23, split off from (k)): naval factories and fleets on water maps, island drops with transports
+(landing zones, ferry, air staging), harass drops; own worktree branched from the (k) branch, merged after it.*
+
+**Delivered** (merged 2026-10-24 after (k); three agents: k-navy 1 stopped at 193k after 11.5 min with the navy
+written, k-navy 2 wrote transports and tests, k-navy 3 finished). Report of k-navy 3:
+- **Works:** naval factories and fleets when the enemy is reachable by water; island mode (no land path to any enemy
+  start): air factory before the mass-stall gate, transports queued behind interceptors, landing zones scored by
+  anti-air along the flight and kept away from the enemy commander's last seen position (`DropCommanderAvoid=3`);
+  Hard landed groups raid extractors first (`DropMexValueHard=80`). Engineers are amphibious, so no engineer ferries.
+- **Tried and reverted** (AI_TUNING "Navy and transports"): synchronized drop waves with a strength gate, pausing the
+  ferry while the landing zone is contested, freezing the landing zone: worse or noise.
+- **Numbers:** Archipelago 256 NvN 30 min 7/24 finished (4/24 without avoidance; 0/6 before the agent), 512 1/12.
+  Land games unchanged: reference match `ai 30 256 42 hard,normal` still 4E3F22FD0F8EED11 after the merge. AI cost
+  0.007 ms/tick (256), 0.014 (512), no per-think allocations.
+- **Tests:** Sim 423 (+4: AiNavy/AiTransport tests), Client 227, Net 21. **Shared files:** none.
+- **Known issues:** Hard on Archipelago builds few land units and drops 3x less than Normal (loses 7 of 8 finished
+  games to Normal: economy/production); small-island drops still die fast to home armies.
+- **Handoff review:** k-navy 1's note missed that air factories never got built on island maps and that engineer jobs
+  after the mass-stall gate never ran (k-navy 2 found both); k-navy 2's match runner lived only in the scratchpad
+  (lost, rewritten); "re-measure after the k merge" didn't say (k) kept moving (two more merges).
 
 ### (l) Cybran faction — `data/factions/cybran.json`, `cybran_*` blueprints, new sim features, models
 *brief; starts after (j)*
@@ -560,3 +606,27 @@ Deterministic lockstep on top of the replay command log and the desync hashes.
 - Known issues: games between different operating systems can desync (the sim's trig uses each OS's C math
   library); no reconnect, MP observers, MP saves or NAT traversal; after game over the end screen stops the local
   sim, so a peer that keeps playing waits.
+
+## Wave 6 (started 2026-10-23 20:10)
+
+Two agents with disjoint files, from the audit "Wave 6+ plan" in [ROADMAP.md](ROADMAP.md) (gap table G1-G45). Each
+prompt = brief + [AGENT_RULES.md](AGENT_RULES.md); coordinators cap 200k (medium), one sub-agent at a time (low 150k).
+
+### (6a) Commander & engineers — `Rts.Sim/Commander`, `Combat/OverchargeSystem.cs`, `Economy/EngineerPatrol.cs`
+*brief* (gap rows G1, G2, G3; G7 if time): Overcharge (energy-fed ACU shot, damage from stored energy, key O, order
+button, fx/sound); commander death blast (hook in `Commander/`, not CleanupSystem: 6b owns it); engineer patrol
+automation (patrolling builders repair > assist > reclaim near the route); then personal teleporter (both ACUs), UEF
+engineering drones, UEF SCU radar jammer. Owns `Rts.Sim/Commander`, the new OverchargeSystem, ConstructionSystem,
+commander/SCU blueprints, client order button + model partials. Both factions through roles. Tests: OC damage/energy,
+blast radius, patrol reclaim/repair/assist, teleport, save coverage. Screenshots: OC shot, death blast, teleport.
+
+### (6b) Game options & team play — GameSetup, CleanupSystem, setup/lobby screens, `Rts.Net` lobby codec
+*brief* (gap rows G4, G5; G6 if time; started 2026-10-24 06:00): options in the skirmish setup AND the MP lobby (host
+decides, sent through the lobby codec, saved in saves/replays): victory assassination / supremacy / annihilation /
+sandbox, unit cap 250-1000 with a HUD counter and "cap reached", start resources, fog normal/explored/none, game speed
+lock, cheats on/off, prebuilt bases (via roles). Team play through commands (replays + MP): give units and mass/energy
+to allies, allied overflow sharing, allies-only chat, a diplomacy panel. G6: score history + end-screen graphs.
+Defaults keep today's behavior (reference hash unchanged). Owns GameSetup, CleanupSystem, Army/ArmyStats (append),
+UnitTransfer, new EconomyShare/DiplomacyCommands, setup/lobby/end screens, NetGameConfig, Hud (additive), new
+DiplomacyPanel, the `Rts.Net` lobby codec. Tests: each victory mode, cap, transfers, overflow, codec round trip, MP
+loopback with options.

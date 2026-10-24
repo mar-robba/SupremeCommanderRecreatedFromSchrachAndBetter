@@ -77,7 +77,7 @@ public class CombatTests
         sim.Step();
         Assert.True(p.Alive[slot] && p.Id[slot] == id, "shell vanished after one tick");
         var moved = p.Pos[slot] - before;
-        Assert.InRange(moved.Length(), 2.9f, 3.1f); // MuzzleVelocity 30 * 0.1 s
+        Assert.InRange(moved.Length(), 3.9f, 4.1f); // MuzzleVelocity 40 * 0.1 s
         Assert.True(moved.X > 2.8f, $"shell should fly toward +x, moved {moved}");
 
         // Eventually it hits: the enemy loses health.

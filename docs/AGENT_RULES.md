@@ -25,6 +25,7 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   - Contracts that still hold: `BuiltBy` and `UpgradesTo` (ARCHITECTURE "Data model"); factions/roles
     (ARCHITECTURE "Factions": sim/AI code never hard-codes `uef_*` ids, it asks the faction's roles).
   - New hotkeys: check the HUD help for free keys and list every new key in your report (keys clash at merge).
+- `CTX-TAG: <unique tag>` (see the context cap bullet).
 - Context cap: HARD limit of `<CAP>`k tokens of context (default 150k; the orchestrator sizes it per task, WORKFLOW
   "Sizing an agent's context cap": `Fragmentation sensitivity: <class>, because <reason>`). Stay lean:
   - don't read huge files whole (grep, then read ranges);
@@ -32,6 +33,11 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   - pipe long outputs through tail/grep.
   At `<CAP-20>`k: commit, update your handoff note, and end your turn with the word CHECKPOINT. A fresh agent will
   continue from your note.
+  - Measure yourself: this prompt has a line `CTX-TAG: <tag>`. Run
+    `python3 -I /run/media/marco/RTS/tools/agents/agent_ctx.py --self <tag>` after every milestone and about every
+    10 tool calls (more often after screenshots or big reads). You can't feel your context: every sub-agent of
+    wave 6 ran past its CHECKPOINT until the orchestrator stopped it.
+  - Give each sub-agent you start its own unique `CTX-TAG: <tag>` line in its prompt (e.g. `6b-client-2`).
 - Handoff note: keep `<your worktree>/.claude/handoff.md` up to date at every milestone: done / TODO in order /
   known bugs / key commands / bench numbers. Commit WIP at every milestone. Usage limits can stop you at any moment.
   Keep it SHORT (under ~60 lines): only what the next agent needs to continue (state + commits, TODO in order,

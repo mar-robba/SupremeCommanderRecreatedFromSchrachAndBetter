@@ -26,6 +26,11 @@ public sealed class AiBrain
     public readonly AiPlacement Placement;
     public readonly AiStats Stats = new();
     public readonly AiCommands Cmd;
+    /// <summary>Every unit of the army's faction by role (tiers, navy, strategic, experimentals).</summary>
+    public readonly AiRoster R;
+    public readonly AiNavy Navy;
+    public readonly AiTransport Transport;
+    public readonly AiStrategic Strategic;
 
     /// <summary>Base center (commander start), direction toward the nearest enemy start, rally point for new units.</summary>
     public Vector2 BasePos;
@@ -49,33 +54,37 @@ public sealed class AiBrain
         Cfg = AiConfig.For(W.Armies[army].AiDifficulty);
         Perception = new AiPerception(W, army);
         Cmd = new AiCommands(W, army, Stats);
+        R = new AiRoster(W.Blueprints, W.Armies[army].Faction);
         Placement = new AiPlacement(this);
         Economy = new AiEconomy(this);
         Military = new AiMilitary(this);
         Scouting = new AiScouting(this);
+        Navy = new AiNavy(this);
+        Transport = new AiTransport(this);
+        Strategic = new AiStrategic(this);
 
         // Blueprints come from the army faction's roles (never hardcoded ids): -1 = the faction has no such unit.
         var factions = W.Blueprints.Factions;
         string faction = W.Armies[army].Faction;
-        int R(string role) => factions.RoleBlueprint(faction, role);
-        BpEngineer = R(FactionRoles.EngineerT1);
-        BpTank = R(FactionRoles.TankT1);
-        BpArtillery = R(FactionRoles.ArtilleryT1);
-        BpMobileAA = R(FactionRoles.MobileAaT1);
-        BpScout = R(FactionRoles.ScoutT1);
-        BpLandFactory = R(FactionRoles.LandFactoryT1);
-        BpAirFactory = R(FactionRoles.AirFactoryT1);
-        BpMex = R(FactionRoles.MexT1);
-        BpPgen = R(FactionRoles.PgenT1);
-        BpHydro = R(FactionRoles.Hydro);
-        BpMassStorage = R(FactionRoles.MassStorage);
-        BpEnergyStorage = R(FactionRoles.EnergyStorage);
-        BpPD = R(FactionRoles.PdT1);
-        BpAA = R(FactionRoles.AaT1);
-        BpRadar = R(FactionRoles.RadarT1);
-        BpInterceptor = R(FactionRoles.InterceptorT1);
-        BpBomber = R(FactionRoles.BomberT1);
-        BpAirScout = R(FactionRoles.AirScoutT1);
+        int Role(string role) => factions.RoleBlueprint(faction, role);
+        BpEngineer = Role(FactionRoles.EngineerT1);
+        BpTank = Role(FactionRoles.TankT1);
+        BpArtillery = Role(FactionRoles.ArtilleryT1);
+        BpMobileAA = Role(FactionRoles.MobileAaT1);
+        BpScout = Role(FactionRoles.ScoutT1);
+        BpLandFactory = Role(FactionRoles.LandFactoryT1);
+        BpAirFactory = Role(FactionRoles.AirFactoryT1);
+        BpMex = Role(FactionRoles.MexT1);
+        BpPgen = Role(FactionRoles.PgenT1);
+        BpHydro = Role(FactionRoles.Hydro);
+        BpMassStorage = Role(FactionRoles.MassStorage);
+        BpEnergyStorage = Role(FactionRoles.EnergyStorage);
+        BpPD = Role(FactionRoles.PdT1);
+        BpAA = Role(FactionRoles.AaT1);
+        BpRadar = Role(FactionRoles.RadarT1);
+        BpInterceptor = Role(FactionRoles.InterceptorT1);
+        BpBomber = Role(FactionRoles.BomberT1);
+        BpAirScout = Role(FactionRoles.AirScoutT1);
     }
 
     public float GameTime => W.GameTime;
@@ -101,7 +110,8 @@ public sealed class AiBrain
         long t1 = System.Diagnostics.Stopwatch.GetTimestamp();
         Stats.ScanMs += System.Diagnostics.Stopwatch.GetElapsedTime(t0, t1).TotalMilliseconds;
         if (View.Commander < 0 && View.Engineers.Count == 0 && View.LandFactories.Count == 0 && View.AirFactories.Count == 0
-            && View.LandCombat.Count == 0 && View.AirUnits.Count == 0) return;
+            && View.LandCombat.Count == 0 && View.AirUnits.Count == 0 && View.NavalUnits.Count == 0 && View.NavalFactories.Count == 0) return;
+        Stats.MaxTier = Math.Max(Stats.MaxTier, Math.Max(Math.Max(View.LandTier, View.AirTier), Math.Max(View.NavalTier, View.EngineerTier)));
         if (econ) Economy.Think();
         long t2 = System.Diagnostics.Stopwatch.GetTimestamp();
         Stats.EconMs += System.Diagnostics.Stopwatch.GetElapsedTime(t1, t2).TotalMilliseconds;

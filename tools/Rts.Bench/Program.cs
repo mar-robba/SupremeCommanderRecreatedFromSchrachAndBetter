@@ -12,12 +12,14 @@ using Rts.Sim.Orders;
 //        Rts.Bench parbench [threads] [calls]  (Par.For overhead per call, ParBench.cs)
 //        env BENCH_WARMUP=1: run SimWarmup first (JIT warm-up, as the client does at startup); BENCH_ALLOC=1: allocations per stage
 //        Rts.Bench mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]  (loopback lockstep self-test, see MpSelfTest.cs)
+//        Rts.Bench duel <unitA> <unitB> [mass] [seed] [mapSize] | duelmatrix <factionA> [factionB] [masses] [seeds]  (unit balance, Duel.cs)
 //        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset] [factions]  (skirmish AI match, see AiMatch.cs)
 if (int.TryParse(Environment.GetEnvironmentVariable("PAR_SPIN"), out int parSpin)) Par.WorkerSpinMicroseconds = parSpin; // pool worker spin (µs) experiments
 if (Environment.GetEnvironmentVariable("PAR_TASKS") == "1") Par.UseTaskParallel = true; // A/B: the old Parallel.For path
 if (args.Length > 0 && args[0] == "replay") { Environment.ExitCode = ReplayBench.Verify(args[1..]); return; }
 if (args.Length > 0 && args[0] == "savebench") { ReplayBench.SaveBench(args[1..]); return; }
 if (args.Length > 0 && args[0] == "parbench") { ParBench.Run(args[1..]); return; }
+if (args.Length > 0 && args[0] is "duel" or "duelmatrix") { if (args[0] == "duel") Duel.Run(args[1..]); else Duel.Matrix(args[1..]); return; }
 if (args.Length > 0 && args[0] == "mp") { Environment.ExitCode = MpSelfTest.Run(args[1..]); return; }
 if (args.Length > 0 && args[0] is "ai" or "aipassive")
 {
