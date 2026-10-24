@@ -660,6 +660,36 @@ UnitTransfer, new EconomyShare/DiplomacyCommands, setup/lobby/end screens, NetGa
 DiplomacyPanel, the `Rts.Net` lobby codec. Tests: each victory mode, cap, transfers, overflow, codec round trip, MP
 loopback with options.
 
+**Delivered** (merged 2026-10-24; one coordinator, resumed once after a usage limit; sub-agents: sim, client-1 net
+codec + session + HUD, client-2 setup/lobby UI + diplomacy (cut by the usage limit, note written on resume), finish).
+Report:
+- **G4 options** in the skirmish setup and the lobby: victory assassination / supremacy / annihilation / sandbox;
+  unit cap 250-1000 with a HUD "units n/cap" counter and a "Unit cap reached" alert; start resources low / normal /
+  high (high adds a refill bank); fog normal / explored / none; speed adjustable or locked at 1x / 2x; cheats;
+  prebuilt base from faction roles. Lobby codec protocol 2; options saved in saves and replays (`SimWorld.Options`,
+  `GameInfo.Options`).
+- **G5 team play:** give units, mass or energy to an ally (commands), allied overflow sharing, allies-only chat
+  (Shift+Enter), F4 diplomacy panel.
+- **G6 score history:** a sample every 30 s (saved, not hashed), a line chart per army on the end screen, a score
+  column in the diplomacy panel.
+- **Try:** `--options victory=supremacy,cap=250,resources=high,fog=explored,speed=fast,cheats=off,prebuilt=on`;
+  `--teams 1,1,2,2 --players 4 --diplomacy`; `--setup`; `--host --options ...`; bench `ai 12 256 7 hard,normal 1 2
+  plains uef,cybran victory=supremacy,prebuilt=on,cap=250`.
+- **Tests:** GameOptions 27, TeamPlay 8, GameOptionsNet 3, GameOptionsClient 3, DiplomacyPanel 3, AlliesChat 1,
+  ScoreHistory 3, ScoreGraph 1; after the merge Sim 500, Client 258, Net 26.
+- **Hotkeys:** F4 diplomacy; F9/F10 sandbox tools when cheats are on (the old FX debug keys only with `--fxtest`);
+  Shift+Enter allies chat.
+- **Numbers:** reference match unchanged (BF85B7DBBF03D949, verified on main after the merge). Perf `2000 300` main
+  1.75-1.94 vs 1.77-1.94 ms. Smoke match with options: no exceptions.
+- **Shared files (additive):** SimWorld (`Options`), SimSnapshot/SnapshotWriter (ArmyView UnitCap/Name/Score,
+  Options), CommandSystem (3 cases), EconomySystem (overflow hook), MultiplayerSystem (Defeat); GameApp/Program (CLI),
+  GameSession, Hud, Hotkeys, NetInGameScreen, Bench Program (9th arg).
+- **Known issues:** in screenshot mode the frame-timing text draws over the diplomacy panel header; the HUD counter's
+  amber/red colours only unit-tested; saves made before 6b untested (field migration = ROADMAP later; replays from
+  before the (k) balance data already refuse to open: "unit blueprints changed").
+- **Handoff review:** the notes were enough. Rediscovered: `HostSession.SetSlot` can't change a client's team (tests
+  use `LobbyRequest`), and `dn.sh` in a fresh worktree needs `safe.directory`. No seam bugs.
+
 ## Wave 7 (started 2026-10-24)
 
 From the "Wave 6+ plan" in [ROADMAP.md](ROADMAP.md). 7a started while 6b was still running (disjoint files); 7b
@@ -674,4 +704,13 @@ folder (XDG), runs from the repo keep today's folders. Settings: graphics (shado
 fps cap, UI scale) and gameplay (edge scroll, camera/zoom speed), reachable from the pause menu. Autosave every
 5 minutes, rolling 3. Tests: path resolution, settings round trip, autosave rotation; screenshots of the settings
 screens and the packaged build running; DEV_GUIDE "Packaging" section.
+
+### (7b) Orders & selection UX — `Rts.Client/Input`, Hotkeys, SelectionController, Minimap, alerts, pings
+*brief* (gap rows G14, G15, G16, G17; G20 if time; started 2026-10-24 after the 6b merge): selection filters (all of
+a type on the map, all land / air / naval / engineers), commander key (select + center), camera bookmarks, jump to the
+last alert; right-drag formation move with facing; waypoint editing (drag / delete queued order markers) and ferry
+route editing through a new sim `Orders/QueueEditCommands.cs`; notification pass (minimap flash where attacked,
+structure lost, construction/upgrade done, ally under attack); map pings (alert / move / attack, map + minimap,
+allies and MP, in replays) as a sim command; G20 range/intel overlays for the selection. Tests: hotkey table,
+queue-edit and ping sim tests, ping in a replay and an MP loopback. Screenshots.
 

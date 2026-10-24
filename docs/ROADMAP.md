@@ -2,27 +2,29 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-24 06:20 — read this first in a new session)
-main has waves 1-5: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
-+ (k-navy) navy/transports AI (merged 2026-10-24), and wave 6a commander & engineers (Overcharge, death blast, engineer
-patrol, teleporter; merged 2026-10-24). Tests: 462 sim + 251 client + 21 net.
-Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 15:35", hash
-**BF85B7DBBF03D949** (agents that must not change sim results compare against it; 6a only added hashed commander
-state, the game is the same as (k)'s 4E3F22FD0F8EED11; older: EC8B7A06DF52317E before the (k) balance data). Agent ids:
-`~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (valid only in the orchestrator session that
-started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes `<worktree>/.claude/agent-report.md` when
-done. Wave 6 briefs and reports: HISTORY "Wave 6". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
+## ▶ NEXT STEPS (updated 2026-10-24 11:10 — read this first in a new session)
+main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
++ (k-navy), (6a) commander & engineers, (6b) game options & team play (all merged by 2026-10-24). Tests: 500 sim + 258
+client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
+15:35", hash **BF85B7DBBF03D949** (agents that must not change sim results compare against it; the game equals (k)'s
+4E3F22FD0F8EED11, 6a only added hashed commander state). Replays made before the (k) balance data refuse to open
+("unit blueprints changed"). Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md`
+(valid only in the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and
+writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
+prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-10-24 06:20, session fa417db4):
-- **Running:** **(6b) Game options & team play** (G4, G5; G6 if time): worktree `.claude/worktrees/wave6b` (branch
-  `wave6b-options` from main 9f875d0), coordinator 1 (cap 200k medium), one sub-agent at a time. If cut off: commit
-  WIP there, fresh coordinator with the brief (HISTORY "Wave 6") + "continue from `.claude/handoff.md` and
-  `.claude/notes/`". Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...`.
+**ON RESUME** (2026-10-24 11:10, session fa417db4):
+- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh coordinator there
+  with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
+  `agent_ctx.py --watch 135000 <id>=185000 ...`.
+- **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
+  `wave7b-orders` from main), coordinator 1 (cap 200k medium).
 - **Running:** **(7a) Release, settings, autosave** (G45, G18, G40): worktree `.claude/worktrees/wave7a` (branch
   `wave7a-release` from main 4cee893), coordinator 1 (cap 200k medium). It must not install the desktop shortcut on
-  the owner's real desktop: ask the owner when it is done. 7b (orders & selection UX) starts after 6b merges.
-- **Then:** merge 6b and 7a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW, then 7b orders & selection UX and wave 8 (briefs in "Wave 6+ plan").
+  the owner's real desktop: ask the owner when it is done.
+- **Then:** merge 7a and 7b (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
+  in WORKFLOW; ask the owner about the desktop shortcut (7a); then wave 8 (8a missing units & walls, 8b maps; briefs
+  in "Wave 6+ plan").
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
