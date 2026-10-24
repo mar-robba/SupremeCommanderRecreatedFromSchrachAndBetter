@@ -53,6 +53,7 @@ public sealed class Simulation
         OrderSystem.Run(w);
         pf.Lap(SimProfile.Stage.Orders);
         ConstructionSystem.Run(w);
+        Commander.TeleportSystem.Run(w); // personal teleporter: charge (adds to the energy request ConstructionSystem reset), jump
         pf.Lap(SimProfile.Stage.Construction);
         FactorySystem.Run(w);
         pf.Lap(SimProfile.Stage.Factory);
@@ -120,6 +121,7 @@ public sealed class Simulation
         Mix(Experimental.ExperimentalSystem.Hash(w));
         Mix(Commander.CommanderDeathBlast.Hash(w));
         Mix(Combat.OverchargeSystem.Hash(w));
+        Mix(Commander.TeleportSystem.Hash(w));
         return h;
     }
 }

@@ -63,6 +63,15 @@ public enum EffectKind : byte
     /// <summary>An Overcharge shot hit: Pos = impact, Size = DamageRadius, BlueprintIndex/WeaponIndex = shooter's weapon.
     /// Raised in addition to the shot's Explosion.</summary>
     OverchargeHit,
+    // ---- Commander (Rts.Sim/Commander/TeleportSystem) ----
+    /// <summary>A personal teleporter started charging: Pos = unit, Size = unit radius, Army = owner, BlueprintIndex =
+    /// unit blueprint. Raised once per jump; the ongoing charge is <c>UnitView.TeleportFrac</c> (or the front order).</summary>
+    TeleportCharge,
+    /// <summary>A teleporting unit left: Pos = origin, Size = unit radius, Army = owner, BlueprintIndex = unit blueprint.</summary>
+    TeleportOut,
+    /// <summary>A teleporting unit arrived: Pos = arrival point, Size = unit radius, Army = owner, BlueprintIndex = unit
+    /// blueprint. Raised in the same tick as its TeleportOut.</summary>
+    TeleportIn,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

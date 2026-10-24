@@ -20,6 +20,7 @@ public static class UnitLifecycle
         Transport.TransportSystem.InitUnit(w, i, bp);
         Experimental.ExperimentalSystem.InitUnit(w, i, bp);
         Combat.OverchargeSystem.InitUnit(w, i, bp);
+        Commander.TeleportSystem.InitUnit(w, i, bp);
     }
 
     public static void OnDeath(SimWorld w, int i, UnitBlueprint bp)

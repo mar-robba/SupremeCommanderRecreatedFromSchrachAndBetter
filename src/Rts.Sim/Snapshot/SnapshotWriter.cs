@@ -54,6 +54,7 @@ public static class SnapshotWriter
             ref readonly var bs = ref u.Builder[i];
             v.WorkMode = bs.Mode;
             v.CaptureFrac = Systems.CaptureSystem.Progress(w, i); // an enemy is capturing this unit
+            v.TeleportFrac = Commander.TeleportSystem.Progress(w, i); // personal teleporter charge, -1 = none
             v.WorkProgress = -1;
             var building = u.Factory[i].Current.IsNone ? u.Builder[i].Target : u.Factory[i].Current;
             if (u.IsActive(building)) v.WorkProgress = u.BuildFraction[building.Index];
