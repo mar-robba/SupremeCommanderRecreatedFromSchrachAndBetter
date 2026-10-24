@@ -34,8 +34,9 @@ public sealed record SpeedChangedEvent(float Speed, bool Paused, string By) : Ne
 /// (the other players' armies are handed to the AI or defeated, per the host's option).</summary>
 public sealed record DisconnectedEvent(string Reason) : NetEvent;
 
-/// <summary>One chat line.</summary>
-public sealed record ChatLine(int PlayerId, string Name, string Text)
+/// <summary>One chat line. <paramref name="AlliesOnly"/>: sent "to allies" (Shift+Enter): the host relays it only to the
+/// sender and the players on the sender's lobby team (team 0 = no allies: only the sender sees it).</summary>
+public sealed record ChatLine(int PlayerId, string Name, string Text, bool AlliesOnly = false)
 {
     public bool IsSystem => PlayerId < 0;
 }

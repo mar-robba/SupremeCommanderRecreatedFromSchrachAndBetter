@@ -148,11 +148,11 @@ public sealed class HostSession : NetSession, ITurnSink
         get { lock (Gate) return (_conns.Sum(c => c.BytesSent), _conns.Sum(c => c.BytesReceived)); }
     }
 
-    public override void SendChat(string text)
+    public override void SendChat(string text, bool alliesOnly = false)
     {
         text = CleanText(text, MaxChat);
         if (text.Length == 0) return;
-        lock (Gate) PostChat(new ChatLine(0, LocalName, text));
+        lock (Gate) PostChat(new ChatLine(0, LocalName, text, alliesOnly));
     }
 
     // ------------------------------------------------------------------ connections
@@ -186,7 +186,8 @@ public sealed class HostSession : NetSession, ITurnSink
                 case MsgType.Chat:
                 {
                     string text = CleanText(r.Str(), MaxChat);
-                    if (text.Length > 0) PostChat(new ChatLine(c.PlayerId, c.Name, text));
+                    bool allies = ReadAlliesFlag(r);
+                    if (text.Length > 0) PostChat(new ChatLine(c.PlayerId, c.Name, text, allies));
                     break;
                 }
                 case MsgType.Loaded:
@@ -498,8 +499,27 @@ public sealed class HostSession : NetSession, ITurnSink
 
     private void PostChat(ChatLine line)
     {
-        AddChat(line);
-        Broadcast(ChatFrame(line));
+        if (!line.AlliesOnly)
+        {
+            AddChat(line);
+            Broadcast(ChatFrame(line));
+            return;
+        }
+        // "To allies": only the sender and the players on the sender's team (lobby slot Team > 0) get it.
+        if (ChatAllies(line.PlayerId, PlayerId)) AddChat(line);
+        var frame = ChatFrame(line);
+        foreach (var c in _conns)
+            if (c.PlayerId > 0 && c.PlayerId != int.MaxValue && ChatAllies(line.PlayerId, c.PlayerId)) c.Send(frame);
+    }
+
+    /// <summary>True if player <paramref name="to"/> may read an allies-only line of <paramref name="from"/>: the sender
+    /// itself, or both sit in army slots of the same team (team 0 = no allies).</summary>
+    private bool ChatAllies(int from, int to)
+    {
+        if (from == to) return true;
+        var a = LobbyRef.SlotOfPlayer(from);
+        var b = LobbyRef.SlotOfPlayer(to);
+        return a != null && b != null && a.Team > 0 && a.Team == b.Team;
     }
 
     private void SystemChatAll(string text) => PostChat(new ChatLine(-1, "", text));

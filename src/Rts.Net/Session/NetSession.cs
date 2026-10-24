@@ -75,7 +75,8 @@ public abstract class NetSession : IDisposable
     /// <summary>Bytes sent/received over TCP by this session so far (open connections).</summary>
     public abstract (long sent, long received) Traffic { get; }
 
-    public abstract void SendChat(string text);
+    /// <summary>Sends a chat line; <paramref name="alliesOnly"/> = only the sender's team sees it (see <see cref="ChatLine"/>).</summary>
+    public abstract void SendChat(string text, bool alliesOnly = false);
     internal abstract void ReportLoaded(NetGame game, ulong hash);
     internal abstract void RequestSpeed(NetGame game, float speed, bool paused);
 
@@ -98,7 +99,11 @@ public abstract class NetSession : IDisposable
         w.VarI(l.PlayerId);
         w.Str(l.Name);
         w.Str(l.Text);
+        w.U8(l.AlliesOnly ? (byte)1 : (byte)0); // appended (6b)
     });
+
+    /// <summary>The optional trailing "allies only" byte of a chat message (absent = public).</summary>
+    internal static bool ReadAlliesFlag(ByteReader r) => !r.AtEnd && r.U8() != 0;
 
     internal static byte[] SpeedFrame(float speed, bool paused, string by) => Msg.Build(MsgType.Speed, w =>
     {

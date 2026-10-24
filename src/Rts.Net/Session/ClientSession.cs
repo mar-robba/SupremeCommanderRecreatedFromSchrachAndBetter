@@ -72,10 +72,14 @@ public sealed class ClientSession : NetSession, ITurnSink
 
     public override (long sent, long received) Traffic => (_conn.BytesSent, _conn.BytesReceived);
 
-    public override void SendChat(string text)
+    public override void SendChat(string text, bool alliesOnly = false)
     {
         text = CleanText(text, MaxChat);
-        if (text.Length > 0) _conn.Send(Msg.Text(MsgType.Chat, text));
+        if (text.Length > 0) _conn.Send(Msg.Build(MsgType.Chat, w =>
+        {
+            w.Str(text);
+            w.U8(alliesOnly ? (byte)1 : (byte)0); // appended (6b)
+        }));
     }
 
     internal override void ReportLoaded(NetGame game, ulong hash)
@@ -122,7 +126,8 @@ public sealed class ClientSession : NetSession, ITurnSink
                 case MsgType.Chat:
                 {
                     int pid = (int)r.VarI();
-                    AddChat(new ChatLine(pid, CleanText(r.Str(), 24), CleanText(r.Str(), MaxChat)));
+                    string name = CleanText(r.Str(), 24), text = CleanText(r.Str(), MaxChat);
+                    AddChat(new ChatLine(pid, name, text, ReadAlliesFlag(r)));
                     break;
                 }
                 case MsgType.Start:
