@@ -23,6 +23,8 @@ public sealed class ShadowMap : IDisposable
     private int _renderedFrame = -10;
 
     public static ShadowMap? Current { get; private set; }
+    /// <summary>User setting (Settings → Graphics → Shadows): false skips the shadow pass and unbinds the map.</summary>
+    public static bool Enabled = true;
 
     public ShadowMap()
     {
@@ -97,7 +99,7 @@ public sealed class ShadowMap : IDisposable
     {
         var sm = Current;
         // Only use a map rendered this frame or the previous one (units are not drawn in the strategic view).
-        bool on = sm != null && sm.Valid && Frame - sm._renderedFrame <= 1;
+        bool on = Enabled && sm != null && sm.Valid && Frame - sm._renderedFrame <= 1;
         if (on)
         {
             Rlgl.ActiveTextureSlot(TextureSlot);

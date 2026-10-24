@@ -2,6 +2,7 @@ using Rts.Client;
 
 // Usage: Rts.Client                         -> main menu
 //        Rts.Client --menu | --setup | --settings [--preset P --map N --players N]  -> start in that screen
+//        Rts.Client --settings-tab audio|graphics|gameplay  -> settings screen on that tab (screenshots)
 //                   [--autostart] (setup: start as soon as the preview is ready) [--flow-test] (scripted menu flow)
 //        Rts.Client [--seed N] [--map 256|512|1024] [--players N] [--preset plains|lakes|highlands|canyon|archipelago]
 //                   [--water 0..1] [--demo] [--size 1600x900] [--pause-menu] [--endscreen]   -> straight into a game

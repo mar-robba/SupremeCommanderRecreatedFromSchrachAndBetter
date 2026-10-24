@@ -104,7 +104,7 @@ public sealed class ClientOptions
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
                 or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
-                or "--perf-log" or "--terrain-lod")) gameArg = true;
+                or "--perf-log" or "--terrain-lod" or "--settings-tab")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -121,6 +121,7 @@ public sealed class ClientOptions
                 case "--menu": screen = StartScreen.MainMenu; break;
                 case "--setup": screen = StartScreen.Setup; break;
                 case "--settings": screen = StartScreen.Settings; break;
+                case "--settings-tab": SettingsScreen.Tab = SettingsScreen.ParseTab(Next()); screen ??= StartScreen.Settings; break;
                 case "--pause-menu": o.PauseMenu = true; break;
                 case "--autostart": o.AutoStart = true; break;
                 case "--flow-test": o.FlowTest = o.AutoStart = true; break;
@@ -225,6 +226,7 @@ public static class GameApp
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
         AppIcon.SetWindowIcon();
+        GraphicsSettings.Init(settings, opt); // shadows, particles, terrain detail, UI scale, VSync, FPS cap, camera (CLI wins)
         Raylib.SetExitKey(KeyboardKey.Null);
         Rlgl.SetClipPlanes(0.5, 6000);
         if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();
