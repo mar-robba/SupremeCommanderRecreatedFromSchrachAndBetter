@@ -37,7 +37,8 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (exit 1 = desync).
 - Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
   `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
-  (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`).
+  (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`;
+  autosave = `autosave_1..3` every 5 min of game time, `--autosave-every TICKS` forces/shortens it for tests).
   Headless replay check (exit 1 = desync): `dotnet run -c Release --project tools/Rts.Bench -- replay <file>`;
   save/load timings: `... -- savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnitsPerArmy] [threads]`
 - Release package (DEV_GUIDE "Packaging"): `bash tools/package/package.sh [linux|win|all] [-o OUTDIR]` → `release/RtsGame-<ver>-linux-x64.tar.gz`

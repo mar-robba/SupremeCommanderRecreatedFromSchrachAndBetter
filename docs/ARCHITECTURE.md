@@ -592,6 +592,13 @@ interpolates prev/cur by time
   `GameContext.ReadOnly` (no order/build/enhancement UI, commands ignored by the player anyway): play/pause, speed
   0.5×–16×, timeline seek (`ReplaySeeker`: runner job `SeekTo` + `ReplaceSimulation`), fog view per army or all,
   DESYNC banner, other-build warning.
+- Autosave (wave 7a, `Rts.Client/Persistence/Autosave.cs`, pure + `AutosaveTests`; wired in `InGameSaveUi.AutosaveStep`
+  from `InGameScreen`'s Playing state): every 3000 ticks of GAME time (5 min; counted from the first snapshot tick seen,
+  so a loaded game waits a full interval and a paused game never autosaves) the normal save path writes `autosave_N`
+  (N = 1..3: first empty slot, else the oldest file, never the slot this game wrote last; other saves untouched),
+  toast "Autosaved", listed as "Autosave N". Only with the setting on (`AppSettings.Autosave`), a recording, not
+  replay/sandbox/scene/multiplayer (`NetInGameScreen` has none), not after a defeat or the end of the game, not in
+  `--screenshot` runs unless `--autosave-every TICKS` (test option: interval, forces it on).
 - **Keeping new state saveable** (rule for every feature): sim state lives in plain fields of sim classes/structs,
   arrays, `List`/`Dictionary`/`HashSet`/`Queue`/`Stack`, or a per-world `ConditionalWeakTable<SimWorld, T>`.
   No static mutable state, no stored lambdas/delegates (store an enum/id and dispatch in code; a cached delegate to
