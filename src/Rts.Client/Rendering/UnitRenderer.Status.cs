@@ -48,7 +48,7 @@ public sealed unsafe partial class UnitRenderer
             float heading, turret, turn = 0;
             if (prev != null && prev.TryGetUnit(v.Index, v.Gen, out var pv))
             {
-                pos = Vector3.Lerp(pv.Pos, v.Pos, alpha);
+                pos = SnapshotInterpolator.LerpPos(pv.Pos, v.Pos, alpha);
                 turn = Rts.Sim.Core.DMath.AngleDiff(pv.Heading, v.Heading);
                 heading = pv.Heading + turn * alpha;
                 turret = pv.TurretHeading + Rts.Sim.Core.DMath.AngleDiff(pv.TurretHeading, v.TurretHeading) * alpha;

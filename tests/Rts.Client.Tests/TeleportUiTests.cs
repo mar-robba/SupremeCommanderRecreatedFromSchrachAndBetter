@@ -140,4 +140,22 @@ public class TeleportUiTests
         Fails("teleport me enemy 10,20");
         Fails("teleport 10,20 me");
     }
+
+    [Fact]
+    public void InterpolationSnapsOnTeleportJumps()
+    {
+        var a = new Vector3(100, 5, 128);
+        // Normal movement (fastest unit: 2.5 per tick) is interpolated, height too.
+        var b = new Vector3(102, 7, 129);
+        Assert.Equal(Vector3.Lerp(a, b, 0.5f), SnapshotInterpolator.LerpPos(a, b, 0.5f));
+        Assert.Equal(a, SnapshotInterpolator.LerpPos(a, b, 0f));
+        // A jump further than SnapDistance (horizontal) shows the new position at once, at any alpha.
+        var far = new Vector3(150, 5, 128);
+        Assert.Equal(far, SnapshotInterpolator.LerpPos(a, far, 0f));
+        Assert.Equal(far, SnapshotInterpolator.LerpPos(a, far, 0.3f));
+        Assert.Equal(new Vector3(100, 5, 123), SnapshotInterpolator.LerpPos(a, new Vector3(100, 5, 108), 0.25f)); // exactly 20: still a lerp
+        // Vertical changes alone never snap (e.g. an aircraft climbing).
+        var up = new Vector3(100, 60, 128);
+        Assert.Equal(Vector3.Lerp(a, up, 0.5f), SnapshotInterpolator.LerpPos(a, up, 0.5f));
+    }
 }
