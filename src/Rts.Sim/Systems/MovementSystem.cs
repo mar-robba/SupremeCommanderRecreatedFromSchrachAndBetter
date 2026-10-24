@@ -222,6 +222,7 @@ public static partial class MovementSystem
             }
         }
 
+        if (!mv.HasGoal) Orders.QueueEditSystem.SteerFacing(w, i, ref desiredHeading); // (7b) FormationMove arrival facing
         if (mv.LeaveTime > 0) FactoryExitMotion.Steer(w, i, bp, ref mv, pos, onBlocked, dt, ref desiredHeading, ref desiredSpeed, ref wantsMove);
 
         // Turn; vehicles must roughly face the direction before driving at full speed.

@@ -117,4 +117,10 @@ public sealed class OrderQueue
     }
 
     public void Clear() => _items.Clear();
+
+    /// <summary>(7b) Removes the order at <paramref name="i"/> (queue editing, Orders/QueueEditCommands.cs).</summary>
+    public void RemoveAt(int i)
+    {
+        if ((uint)i < (uint)_items.Count) _items.RemoveAt(i);
+    }
 }
