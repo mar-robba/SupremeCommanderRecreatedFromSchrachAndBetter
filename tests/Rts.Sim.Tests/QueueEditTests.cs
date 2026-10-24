@@ -126,7 +126,9 @@ public class QueueEditTests
         var sim = TestUtil.NewSkirmish(seed: 3);
         var units = new UnitHandle[5];
         for (int k = 0; k < units.Length; k++) units[k] = TestUtil.Spawn(sim, "uef_t1_tank", 0, new Vector2(60 + k * 3f, 60));
-        var from = new Vector2(100, 80); var to = new Vector2(100, 104);
+        // The group stands perpendicular to the line (slot order must come from the travel direction, or paths cross
+        // and units stall each other); the line is on open ground (seed 3: around (100, 80) is a cliff).
+        var from = new Vector2(114, 62); var to = new Vector2(114, 86);
         sim.Step([new FormationMoveCommand(0, units, OrderType.Move, from, to, new Vector2(2, 0), false)]);
         var q0 = Q(sim, units[0]);
         Assert.Equal(new Vector2(1, 0), q0.Current.Aux);
@@ -137,13 +139,37 @@ public class QueueEditTests
         foreach (var h in units)
         {
             var p = u.Pos[h.Index];
-            Assert.True(MathF.Abs(p.X - 100) < 3f && p.Y > from.Y - 2 && p.Y < to.Y + 2, $"unit at {p}");
+            Assert.True(MathF.Abs(p.X - from.X) < 2f && p.Y > from.Y - 2 && p.Y < to.Y + 2, $"unit at {p}");
             Assert.True(MathF.Abs(DMath.AngleDiff(u.Heading[h.Index], 0)) < 0.1f, $"heading {u.Heading[h.Index]}");
             Assert.True(Q(sim, h).IsEmpty);
             zs.Add(p.Y);
         }
         zs.Sort();
         Assert.True(zs[^1] - zs[0] > 15f, "spread along the line");
+    }
+
+    [Theory]
+    [InlineData(0f)]   // group in a row perpendicular to the line (all ties along the line direction)
+    [InlineData(1f)]   // group in a row along x, line along z: diagonal travel
+    [InlineData(-1f)]
+    public void LineSlotsDoNotMakePathsCross(float tilt)
+    {
+        var pos = new List<Vector2>(); var rad = new List<float>(); var st = new List<bool>(); var ids = new List<int>();
+        for (int k = 0; k < 6; k++) { pos.Add(new Vector2(60 + k * 3f, 60 + k * tilt)); rad.Add(0.6f); st.Add(false); ids.Add(k + 2); }
+        var from = new Vector2(100, 80); var to = new Vector2(100, 104); var center = (from + to) * 0.5f;
+        var off = QueueEditSystem.LineOffsets(pos, rad, st, ids, from, to, Vector2.UnitX, center);
+        static float Cross(Vector2 a, Vector2 b) => a.X * b.Y - a.Y * b.X;
+        static bool Intersect(Vector2 p1, Vector2 p2, Vector2 q1, Vector2 q2)
+        {
+            float d1 = Cross(p2 - p1, q1 - p1), d2 = Cross(p2 - p1, q2 - p1), d3 = Cross(q2 - q1, p1 - q1), d4 = Cross(q2 - q1, p2 - q1);
+            return d1 * d2 < 0 && d3 * d4 < 0;
+        }
+        for (int a = 0; a < 6; a++)
+        {
+            Assert.Equal(from.X, center.X + off[a].X, 3);
+            for (int b = a + 1; b < 6; b++)
+                Assert.False(Intersect(pos[a], center + off[a], pos[b], center + off[b]), $"paths {a} and {b} cross");
+        }
     }
 
     [Fact]

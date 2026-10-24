@@ -151,25 +151,47 @@ public static class QueueEditSystem
     }
 
     /// <summary>
-    /// Line slots for <paramref name="units"/> (sorted by index, as ApplyIssueOrder collects them): mobile units spread
-    /// along from→to (spacing ≥ maxRadius*2+1.2, extra rows behind = opposite to facing, or towards the group when
-    /// there is no facing); structures (factory rally points) get offset 0. Units go to slots by their position (front
-    /// row = most advanced along the facing, then left to right along the line; ties by index), so paths don't cross.
+    /// Line slots for <paramref name="units"/> (sorted by index, as ApplyIssueOrder collects them). See the pure
+    /// overload (also used by the client's drag preview, so preview = result).
     /// </summary>
     public static Vector2[] LineOffsets(SimWorld w, List<int> units, Vector2 from, Vector2 to, Vector2 facing, Vector2 center)
     {
-        var u = w.Units;
-        var result = new Vector2[units.Count];
-        var mobile = new List<int>(units.Count); // positions k in units
-        var centroid = Vector2.Zero;
-        float maxR = 0.5f;
+        var pos = new Vector2[units.Count];
+        var radius = new float[units.Count];
+        var structure = new bool[units.Count];
         for (int k = 0; k < units.Count; k++)
         {
             var bp = w.BpOf(units[k]);
-            if (bp.IsStructure) continue;
+            pos[k] = w.Units.Pos[units[k]];
+            radius[k] = bp.Radius;
+            structure[k] = bp.IsStructure;
+        }
+        return LineOffsets(pos, radius, structure, units, from, to, facing, center);
+    }
+
+    /// <summary>
+    /// Pure line-formation slots (offsets from <paramref name="center"/>) for units at <paramref name="pos"/> (one entry
+    /// per unit, ordered by <paramref name="ids"/> ascending; ids also break ties). Mobile units spread along from→to
+    /// (spacing ≥ maxRadius*2+1.2, extra rows behind = opposite to facing, or away from the line towards the group when
+    /// there is no facing); structures (factory rally points) get offset 0. Rows: front-most units (along the facing)
+    /// first. Within a row units are matched to the slots left to right by their side position across the travel
+    /// direction (group centroid → center), so the paths don't cross even when the group stands perpendicular to the
+    /// line; when the group travels along the line, by their position along it.
+    /// </summary>
+    public static Vector2[] LineOffsets(IReadOnlyList<Vector2> pos, IReadOnlyList<float> radius, IReadOnlyList<bool> structure,
+        IReadOnlyList<int> ids, Vector2 from, Vector2 to, Vector2 facing, Vector2 center)
+    {
+        int n = pos.Count;
+        var result = new Vector2[n];
+        var mobile = new List<int>(n); // positions k in the inputs
+        var centroid = Vector2.Zero;
+        float maxR = 0.5f;
+        for (int k = 0; k < n; k++)
+        {
+            if (structure[k]) continue;
             mobile.Add(k);
-            centroid += u.Pos[units[k]];
-            maxR = MathF.Max(maxR, bp.Radius);
+            centroid += pos[k];
+            maxR = MathF.Max(maxR, radius[k]);
         }
         int m = mobile.Count;
         if (m == 0) return result;
@@ -195,15 +217,27 @@ public static class QueueEditSystem
             len = 0;
         }
 
+        // Row ordering axis: across the travel direction, oriented like dir, blended with dir (dominant when the group
+        // travels along the line, and a tie-break otherwise).
+        var side = dir;
+        var travel = center - centroid;
+        if (travel.LengthSquared() > 1f)
+        {
+            travel = Vector2.Normalize(travel);
+            var across = new Vector2(-travel.Y, travel.X);
+            if (Vector2.Dot(across, dir) < 0) across = -across;
+            side = Vector2.Normalize(across + dir * 0.25f);
+        }
+
         int cols = Math.Clamp((int)MathF.Floor(len / spacing) + 1, 1, m);
         int rows = (m + cols - 1) / cols;
         float step = cols > 1 ? len / (cols - 1) : 0f;
 
-        // Front-most first (along -back), ties by slot index; then each row left to right along dir.
+        // Front-most first (along -back), ties by id; then each row left to right.
         mobile.Sort((a, b) =>
         {
-            int cmp = Vector2.Dot(u.Pos[units[b]], -back).CompareTo(Vector2.Dot(u.Pos[units[a]], -back));
-            return cmp != 0 ? cmp : units[a].CompareTo(units[b]);
+            int cmp = Vector2.Dot(pos[b], -back).CompareTo(Vector2.Dot(pos[a], -back));
+            return cmp != 0 ? cmp : ids[a].CompareTo(ids[b]);
         });
         for (int r = 0; r < rows; r++)
         {
@@ -211,8 +245,8 @@ public static class QueueEditSystem
             var row = mobile.GetRange(start, inRow);
             row.Sort((a, b) =>
             {
-                int cmp = Vector2.Dot(u.Pos[units[a]], dir).CompareTo(Vector2.Dot(u.Pos[units[b]], dir));
-                return cmp != 0 ? cmp : units[a].CompareTo(units[b]);
+                int cmp = Vector2.Dot(pos[a], side).CompareTo(Vector2.Dot(pos[b], side));
+                return cmp != 0 ? cmp : ids[a].CompareTo(ids[b]);
             });
             for (int c = 0; c < inRow; c++)
             {
