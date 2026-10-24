@@ -23,6 +23,8 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;
   `nuke x,z` fires a real strategic missile (anti-nukes can intercept it), `nuke instant x,z` = the blast at once;
+  `overcharge [army|all] [on|off]` arms ACU Overcharge, `kill [radius] at x,z` kills an area, `teleport [army|all] x,z`
+  jumps teleporter ACUs (spawn `uef_commander+PersonalTeleporter`); keys: O = Overcharge, J = teleport mode;
   multi-word unit names use `_`, e.g. `spawn strategic_missile_launcher me at 100,128`)
 - Multiplayer (lockstep, ARCHITECTURE "Multiplayer"): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
   --host [port] | --join ip[:port] [--name N] [--autostart]` (default port 47624; `--autostart`: clients Ready, host
