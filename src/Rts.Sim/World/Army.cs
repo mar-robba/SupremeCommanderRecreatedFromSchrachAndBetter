@@ -45,4 +45,7 @@ public sealed class Army
     public readonly EconomyState Eco = new();
     /// <summary>Game statistics (end screen).</summary>
     public readonly ArmyStats Stats = new();
+    /// <summary>(6b) Start bank of <see cref="StartResources.High"/>: released into the storage as it frees up
+    /// (EconomyShare.Distribute, each tick). 0 = none.</summary>
+    public float StartBankMass, StartBankEnergy;
 }

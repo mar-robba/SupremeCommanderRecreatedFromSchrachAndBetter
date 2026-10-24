@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Rts.Sim;
 
 /// <summary>When an army is defeated (SupCom lobby "Victory Condition"). Append-only.</summary>
@@ -79,7 +81,7 @@ public sealed class GameOptions
     public GameOptions Clone() => (GameOptions)MemberwiseClone();
 
     /// <summary>The locked speed multiplier of <see cref="Speed"/> (null = adjustable).</summary>
-    public float? LockedSpeed => Speed switch { GameSpeedMode.Normal => 1f, GameSpeedMode.Fast => 2f, _ => null };
+    [JsonIgnore] public float? LockedSpeed => Speed switch { GameSpeedMode.Normal => 1f, GameSpeedMode.Fast => 2f, _ => null };
 
     public static string Name(VictoryCondition v) => v.ToString();
     public static string Name(StartResources r) => r.ToString();
@@ -101,4 +103,63 @@ public sealed class GameOptions
     /// <summary>Same values (codec round-trip tests; no Equals/GetHashCode override: Rts.Sim avoids GetHashCode).</summary>
     public bool SameAs(GameOptions o) => o.Victory == Victory && o.UnitCap == UnitCap && o.Resources == Resources &&
         o.Fog == Fog && o.Speed == Speed && o.Cheats == Cheats && o.Prebuilt == Prebuilt;
+
+    /// <summary>Max unit cap accepted by <see cref="Parse"/> (the unit store capacity of a skirmish).</summary>
+    public const int MaxUnitCap = 16384;
+
+    /// <summary>
+    /// Parses a CLI spec like <c>victory=supremacy,cap=500,resources=high,fog=explored,speed=fast,cheats=on,prebuilt=on</c>
+    /// (keys and values case-insensitive; booleans on/off/true/false/1/0; cap 1..16384; missing keys keep the defaults of
+    /// <c>new GameOptions()</c>; empty = defaults). Throws <see cref="FormatException"/> naming the valid choices.
+    /// </summary>
+    public static GameOptions Parse(string? spec)
+    {
+        var o = new GameOptions();
+        if (string.IsNullOrWhiteSpace(spec)) return o;
+        foreach (var raw in spec.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            int eq = raw.IndexOf('=');
+            if (eq <= 0) throw new FormatException($"Bad game option '{raw}': expected key=value (keys: {SpecKeys})");
+            string key = raw[..eq].Trim().ToLowerInvariant(), val = raw[(eq + 1)..].Trim();
+            switch (key)
+            {
+                case "victory": o.Victory = ParseEnum<VictoryCondition>(key, val); break;
+                case "cap":
+                case "unitcap":
+                    if (!int.TryParse(val, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int cap) ||
+                        cap < 1 || cap > MaxUnitCap)
+                        throw new FormatException($"Bad unit cap '{val}': expected 1..{MaxUnitCap} (setup choices: {string.Join(", ", UnitCaps)})");
+                    o.UnitCap = cap;
+                    break;
+                case "resources": o.Resources = ParseEnum<StartResources>(key, val); break;
+                case "fog": o.Fog = ParseEnum<FogMode>(key, val); break;
+                case "speed": o.Speed = ParseEnum<GameSpeedMode>(key, val); break;
+                case "cheats": o.Cheats = ParseBool(key, val); break;
+                case "prebuilt": o.Prebuilt = ParseBool(key, val); break;
+                default: throw new FormatException($"Unknown game option '{key}' (keys: {SpecKeys})");
+            }
+        }
+        return o;
+    }
+
+    /// <summary>The spec of these options for <see cref="Parse"/> (every key, lowercase), e.g. for logs and the CLI.</summary>
+    public string ToSpec() =>
+        $"victory={Victory.ToString().ToLowerInvariant()},cap={UnitCap},resources={Resources.ToString().ToLowerInvariant()}," +
+        $"fog={Fog.ToString().ToLowerInvariant()},speed={Speed.ToString().ToLowerInvariant()},cheats={(Cheats ? "on" : "off")},prebuilt={(Prebuilt ? "on" : "off")}";
+
+    private const string SpecKeys = "victory, cap, resources, fog, speed, cheats, prebuilt";
+
+    private static T ParseEnum<T>(string key, string val) where T : struct, Enum
+    {
+        foreach (var v in Enum.GetValues<T>())
+            if (string.Equals(v.ToString(), val, StringComparison.OrdinalIgnoreCase)) return v;
+        throw new FormatException($"Bad {key} '{val}' (choices: {string.Join(", ", Enum.GetNames<T>().Select(n => n.ToLowerInvariant()))})");
+    }
+
+    private static bool ParseBool(string key, string val) => val.ToLowerInvariant() switch
+    {
+        "on" or "true" or "1" or "yes" => true,
+        "off" or "false" or "0" or "no" => false,
+        _ => throw new FormatException($"Bad {key} '{val}' (choices: on, off, true, false, 1, 0)"),
+    };
 }

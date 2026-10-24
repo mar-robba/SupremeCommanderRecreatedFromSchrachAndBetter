@@ -91,6 +91,8 @@ public struct ArmyView
     public string Faction;
     public bool Defeated;
     public int UnitCount;
+    /// <summary>(6b) Max live units of the army (GameOptions.UnitCap; lifted in sandbox).</summary>
+    public int UnitCap;
     public float Mass, MassMax, MassIncome, MassDemand, MassEfficiency;
     public float Energy, EnergyMax, EnergyIncome, EnergyDemand, EnergyEfficiency;
 }
@@ -106,6 +108,8 @@ public sealed class SimSnapshot
     public long PublishedAt;
     public double TickDurationMs;
     public int WinningTeam;
+    /// <summary>(6b) The world's game options (the same object as SimWorld.Options: read only, never changed).</summary>
+    public GameOptions Options = new();
 
     public UnitView[] Units = new UnitView[256];
     public int UnitCount;

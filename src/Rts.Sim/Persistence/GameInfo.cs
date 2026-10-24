@@ -34,6 +34,8 @@ public sealed class GameInfo
     public string? Scene;
     /// <summary>Opaque client data (e.g. the client's game config as JSON) restored with a loaded game.</summary>
     public string? ClientData;
+    /// <summary>(6b) Game options of the game (null in files from before 6b = defaults, <c>new GameOptions()</c>).</summary>
+    public GameOptions? Options;
 
     /// <summary>Save slot name / replay title.</summary>
     public string Name = "";
@@ -75,6 +77,7 @@ public sealed class GameInfo
         Players = w.Armies.Select(a => new PlayerInfo { Name = a.Name, Team = a.Team, Color = a.Color, IsAI = a.IsAI, Difficulty = a.AiDifficulty, Faction = a.Faction }).ToList();
         Ticks = w.Tick;
         WinningTeam = w.WinningTeam;
+        Options = w.Options.Clone();
         GameVersion = CurrentGameVersion;
         SimBuild = CurrentSimBuild;
         BlueprintHash = BlueprintHashOf(w.Blueprints);
