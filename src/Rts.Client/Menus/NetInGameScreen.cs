@@ -157,6 +157,12 @@ public sealed class NetInGameScreen : IScreen
     private void SpeedKeys()
     {
         if (Hotkeys.PauseGame.Pressed()) _game.RequestSpeed(_game.Speed, !_game.Paused);
+        // (6b) Locked game speed (lobby option): the host keeps it anyway; say why nothing happens.
+        if ((Hotkeys.SpeedUp.Pressed() || Hotkeys.SpeedDown.Pressed()) && _game.LockedSpeed is float locked)
+        {
+            Toasts.Show($"Game speed is locked at {locked:0.#}x");
+            return;
+        }
         if (Hotkeys.SpeedUp.Pressed()) _game.RequestSpeed(MathF.Min(8f, _game.Speed * 2f), _game.Paused);
         if (Hotkeys.SpeedDown.Pressed()) _game.RequestSpeed(MathF.Max(0.125f, _game.Speed * 0.5f), _game.Paused);
     }

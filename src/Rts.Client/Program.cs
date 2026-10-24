@@ -7,6 +7,8 @@ using Rts.Client;
 //                   [--water 0..1] [--demo] [--size 1600x900] [--pause-menu] [--endscreen]   -> straight into a game
 //                   [--faction ID] (local player's faction) [--factions a,b,...] (per slot in order; "random" allowed;
 //                   ids = data/factions/*.json; also preset the --setup screen)
+//                   [--options SPEC] (game options, e.g. victory=supremacy,cap=500,resources=high,fog=explored,speed=fast,
+//                   cheats=off,prebuilt=on; default = cheats on; also presets the --setup screen)
 //                   [--screenshot out.png --frames 120] [--camera x,z,distance]
 //                   [--stress N] [--fxtest] [--gallery] [--novsync] [--debugwater H] [--nofog]
 //                   [--nosound] [--sound] [--volume F] [--sfx-volume F] [--music-volume F] [--nomusic]

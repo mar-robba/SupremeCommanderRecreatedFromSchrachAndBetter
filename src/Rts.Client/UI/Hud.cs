@@ -29,6 +29,7 @@ public sealed class Hud : IDisposable
     private readonly EnhancementPanel _enh;
     private readonly HelpOverlay _help;
     private readonly IdleButtons _idle;
+    private readonly UnitCapCounter _capCounter = new(); // (6b)
     private UiStartup? _startup;
     private TechDemo? _techDemo;
 
@@ -180,7 +181,11 @@ public sealed class Hud : IDisposable
         var r = _top;
         Raylib.DrawRectangleGradientV((int)r.X, (int)r.Y, (int)r.Width, (int)r.Height, new Color(26, 34, 46, 240), new Color(12, 16, 22, 235));
         Raylib.DrawLineEx(new Vector2(0, r.Height - 1), new Vector2(r.Width, r.Height - 1), 1, Ui.PanelBorder);
-        if ((uint)_ctx.LocalArmy < (uint)snap.Armies.Length) ResourceBar.Draw(r, snap.Armies[_ctx.LocalArmy]);
+        if ((uint)_ctx.LocalArmy < (uint)snap.Armies.Length)
+        {
+            ResourceBar.Draw(r, snap.Armies[_ctx.LocalArmy]);
+            _capCounter.Draw(r, ResourceBar.RightEdge(r) + Ui.P(14), snap, snap.Armies[_ctx.LocalArmy]); // (6b) units n/cap
+        }
 
         // Help button (far right) and stats.
         float hs = r.Height - Ui.P(8);

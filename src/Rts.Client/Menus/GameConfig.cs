@@ -49,6 +49,9 @@ public sealed class GameConfig
     public bool Sandbox;
     /// <summary>Sandbox only: the AI slots start with their AI switched on (off by default: passive enemy armies).</summary>
     public bool SandboxAi;
+    /// <summary>Game options (victory, cap, resources, fog, speed, cheats, prebuilt). Setup screen default = cheats off;
+    /// CLI games without <c>--options</c> use <c>new GameOptions()</c> (cheats on = the debug keys keep working).</summary>
+    public GameOptions Options = GameOptions.SetupDefaults();
 
     public GameConfig()
     {
@@ -58,7 +61,7 @@ public sealed class GameConfig
 
     public GameConfig Clone()
     {
-        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene };
+        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene, Options = Options.Clone() };
         for (int i = 0; i < MaxSlots; i++) copy.Slots[i] = Slots[i].Clone();
         return copy;
     }
@@ -128,6 +131,7 @@ public sealed class GameConfig
             Teams = open.Select((s, a) => s.Team > 0 ? s.Team : 100 + a).ToArray(),
             Colors = open.Select(s => GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length]).ToArray(),
             Names = names,
+            Options = Options.Clone(),
         };
     }
 
@@ -135,6 +139,7 @@ public sealed class GameConfig
     public static GameConfig FromOptions(ClientOptions o)
     {
         var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene };
+        c.Options = o.GameOptions != null ? GameOptions.Parse(o.GameOptions) : new GameOptions();
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;

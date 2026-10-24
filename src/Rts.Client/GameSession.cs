@@ -9,6 +9,7 @@ using Rts.Client.Sandbox;
 using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Data;
+using Rts.Sim.Orders;
 using Rts.Sim.Persistence;
 using Rts.Sim.Systems;
 
@@ -57,7 +58,10 @@ public sealed class GameSession : IDisposable
     private readonly SelectionController _selection;
     private readonly Hud _hud;
     /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
-    private readonly SandboxController? _sandbox;
+    private SandboxController? _sandbox; // (6b) also created later: cheat tools opened in a normal game (F9/F10)
+    private readonly ClientOptions _opt;
+    /// <summary>(6b) F9/F10 pressed in a cheats-on game: 1 = open the panel, 2 = the console, once the sim enabled the tools.</summary>
+    private int _cheatToolsPending;
     private readonly HashSet<long> _selectedSet = new();
     private bool _disposed;
 
@@ -114,7 +118,7 @@ public sealed class GameSession : IDisposable
             ReadOnly = replay != null,
         };
         // Fog of war: the runner filters snapshots for the local (human) army; --nofog / F7 reveal all.
-        _fog = new FogRenderer(Ctx, !opt.NoFog);
+        _fog = new FogRenderer(Ctx, !opt.NoFog && sim.World.Options.Fog != FogMode.None); // (6b) fog option None = no fog
         Ctx.Fog = _fog;
         _fx = new EffectsRenderer(Ctx, opt.FxTest);
         _perf = new PerfOverlay();
@@ -128,7 +132,12 @@ public sealed class GameSession : IDisposable
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
         _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
 
+        _opt = opt;
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
+        // (6b) F9/F10 outside sandbox open the cheat tools (cheats on) or nothing; the effect debug keys only with --fxtest.
+        else EffectsRenderer.DebugKeysEnabled = opt.FxTest;
+        // (6b) Locked game speed (option): single player sets it here; multiplayer gets it from the host (NetGame).
+        if (replay == null && wrapHooks == null && sim.World.Options.LockedSpeed is float locked) Runner.Speed = locked;
 
         var start = terrain.StartPositions[localArmy % terrain.StartPositions.Length];
         if (opt.CameraXZD is Vector3 cxz) _camera.LookAt(cxz.X, cxz.Y, cxz.Z);
@@ -136,6 +145,34 @@ public sealed class GameSession : IDisposable
         else _camera.LookAt(start.X, start.Y, 70);
 
         Runner.Start();
+    }
+
+    /// <summary>
+    /// (6b) Cheat tools in a normal game: with the Cheats option on, F9 / F10 send <c>EnableCheatToolsCommand</c> and open
+    /// the sandbox panel / console once the snapshot shows the sandbox status; cheats off = a toast, nothing else.
+    /// </summary>
+    private void CheatToolKeys(bool interactive)
+    {
+        var snap = _interp.Current;
+        if (_cheatToolsPending != 0)
+        {
+            if (snap?.Sandbox == null) return;
+            _sandbox = new SandboxController(Ctx, _selection, _opt);
+            if (_cheatToolsPending == 1) _sandbox.TogglePanel();
+            else _sandbox.ToggleConsole();
+            _cheatToolsPending = 0;
+            return;
+        }
+        if (!interactive || Ctx.ReadOnly || KeyboardCaptured || EffectsRenderer.DebugKeysEnabled || snap == null) return;
+        bool panel = Raylib.IsKeyPressed(Hotkeys.SandboxPanel.Key), console = Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[0]);
+        if (!panel && !console) return;
+        if (!snap.Options.Cheats && snap.Sandbox == null)
+        {
+            Toasts.Show("Cheats are off in this game");
+            return;
+        }
+        _cheatToolsPending = panel ? 1 : 2;
+        if (snap.Sandbox == null) Runner.Enqueue(new EnableCheatToolsCommand(LocalArmy));
     }
 
     public SelectionController Selection => _selection;
@@ -177,6 +214,7 @@ public sealed class GameSession : IDisposable
         _fog.Update(_interp, keys: interactive && _sandbox?.TextFocused != true && NetKeys == null && !KeyboardCaptured);
         _prof.Lap("fog");
         bool overUi = interactive && (_hud.MouseOverUi() | MouseOverExtraUi?.Invoke() == true);
+        if (_sandbox == null) CheatToolKeys(interactive);
         if (_sandbox != null) overUi |= _sandbox.Update(dt, interactive, overUi);
         if (KeyboardCaptured) _selection.InputBlocked = true;
         if (interactive)
