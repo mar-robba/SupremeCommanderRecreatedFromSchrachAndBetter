@@ -39,6 +39,12 @@ public sealed class AiGroup
     public bool Regroup;
     public int RegroupTick;
     public int EngageTick;
+    /// <summary>Stall check (AiMilitary.FallBack): closest the centroid got to ProgressTarget, and when.</summary>
+    public float BestDist;
+    public int ProgressTick;
+    public Vector2 ProgressTarget;
+    /// <summary>Last creeping-advance step (AiMilitary.Advance).</summary>
+    public int AdvanceTick;
     // Computed at the start of each military think.
     public float Strength;
     public Vector2 Centroid;
@@ -63,7 +69,7 @@ public sealed class AiGroup
 /// sortie of the assembling army. Hard also raids weakly defended extractors and snipes exposed commanders. Air:
 /// interceptors patrol the base, bombers raid eco. Scouting: <see cref="AiScouting"/>.
 /// </summary>
-public sealed class AiMilitary
+public sealed partial class AiMilitary
 {
     private readonly AiBrain _b;
     public readonly List<AiGroup> Groups = new();
@@ -122,6 +128,9 @@ public sealed class AiMilitary
         ManageSmallGroups();
         ManagePool();
         ManageAir();
+        _b.Navy.Think();
+        _b.Transport.Think();
+        _b.Strategic.Think();
         _b.Scouting.Think();
     }
 
@@ -134,20 +143,29 @@ public sealed class AiMilitary
             ref var info = ref _b.Info(i);
             if (info.Role != AiRole.None) continue;
             var bp = W.BpOf(i);
-            info.Role = bp.Has(UnitCategory.Scout) || bp.Weapons.Length == 0 ? AiRole.Scout : AiRole.Pool;
+            // Mobile shields (no weapons) march with the army; other unarmed units scout.
+            info.Role = bp.Has(UnitCategory.Scout) || (bp.Weapons.Length == 0 && !bp.Has(UnitCategory.Shield)) ? AiRole.Scout : AiRole.Pool;
         }
         foreach (int i in V.AirUnits)
         {
             ref var info = ref _b.Info(i);
             if (info.Role != AiRole.None) continue;
             var bp = W.BpOf(i);
-            info.Role = bp.Has(UnitCategory.Bomber) ? AiRole.Bomber
+            info.Role = bp.Has(UnitCategory.Transport) ? AiRole.Transport
+                : bp.HasAny(UnitCategory.Bomber | UnitCategory.Gunship) ? AiRole.Bomber
                 : bp.Weapons.Length == 0 ? AiRole.AirScout
                 : AiRole.AirDefense;
         }
     }
 
-    private float StrengthOf(int i) => AiPerception.Strength(W, i, W.BpOf(i));
+    private float StrengthOf(int i)
+    {
+        var bp = W.BpOf(i);
+        float s = AiPerception.Strength(W, i, bp);
+        // Anti-air only units add little to a ground fight (AiConfig.AaGroundFactor).
+        if (Cfg.AaGroundFactor < 1f && (AiPerception.TargetsOf(bp) & (LayerMask.Land | LayerMask.Water)) == 0) s *= Cfg.AaGroundFactor;
+        return s;
+    }
 
     // ------------------------------------------------------------------ threats
 
@@ -512,6 +530,7 @@ public sealed class AiMilitary
         g.CheckTick = W.Tick;
         g.StuckThinks = 0;
         g.Reissues = 0;
+        g.ProgressTarget = default; // FallBack: a fresh attack starts a fresh stall check
         g.Target = target;
         g.TargetUnit = th;
         if (!resume) g.InitialStrength = g.Strength;
@@ -621,6 +640,8 @@ public sealed class AiMilitary
 
         Engage(g, 45f, g.Target);
         if (Cfg.FocusFire && local > 0) FocusFire(g, g.Target);
+        if (FallBack(g)) return;
+        Advance(g);
 
         // Position targets (sorties, last known positions) are done when the group idles there, or after a while
         // when it dominates locally: a stream of fresh enemies must not pin the army there for minutes.
@@ -686,6 +707,36 @@ public sealed class AiMilitary
         g.TargetUnit = th;
         g.NextObjectiveTick = W.Tick + 100;
         SetStaging(g, StagingFor(tpos, g.Anchor, g.Strength));
+    }
+
+    /// <summary>
+    /// Attrition stall (wave 5k): an army that has not closed in on its objective for StallTime while weaker than
+    /// StallMargin x what the objective needs is being fed into the defenses piecemeal (reinforcement batches walk in
+    /// one by one and die; traced: 650 units lost in an enemy base over 15 minutes). It falls back to a staging point
+    /// out of range and gathers the whole army again (reinforcements go to the staging point) before the next attack.
+    /// </summary>
+    private bool FallBack(AiGroup g)
+    {
+        if (Cfg.StallTime <= 0 || g.Kind != AiGroupKind.Army || Cfg.StageDistance <= 0) return false;
+        float d = Vector2.Distance(g.Centroid, g.Target);
+        if (g.ProgressTarget != g.Target || d < g.BestDist - 4f)
+        {
+            g.ProgressTarget = g.Target;
+            g.BestDist = d;
+            g.ProgressTick = W.Tick;
+            return false;
+        }
+        if (W.Tick - g.ProgressTick < Cfg.StallTime * SimWorld.TicksPerSecond) return false;
+        g.ProgressTick = W.Tick;
+        float required = RequiredStrength(g.Target);
+        if (g.Strength >= required * Cfg.StallMargin) return false;
+        if (_b.Tracing) _b.Trace($"fallback g{g.Id} n={g.Members.Count} d={d:F0} st={g.Strength:F0} req={required:F0}");
+        g.State = AiGroupState.Assemble;
+        g.StateTick = W.Tick;
+        g.Regroup = false;
+        g.NextObjectiveTick = W.Tick + 100;
+        SetStaging(g, StagingFor(g.Target, g.Anchor, g.Strength));
+        return true;
     }
 
     /// <summary>Idle members while known enemies are close (outranged by artillery, attack-move finished short of
@@ -824,8 +875,10 @@ public sealed class AiMilitary
             foreach (int i in g.Members)
             {
                 var bp = W.BpOf(i);
-                if (bp.HasAny(UnitCategory.IndirectFire | UnitCategory.AntiAir) || bp.Weapons.Length == 0) continue;
-                if (Vector2.Distance(u.Pos[i], cp) < Cfg.SnipeRadius + 5f) _tmp.Add(i);
+                if (bp.Weapons.Length == 0 || bp.Has(UnitCategory.AntiAir)) continue;
+                bool indirect = bp.Has(UnitCategory.IndirectFire);
+                if (indirect && !Cfg.SnipeIndirect) continue;
+                if (Vector2.Distance(u.Pos[i], cp) < Cfg.SnipeRadius + (indirect ? 30f : 5f)) _tmp.Add(i);
             }
             if (_tmp.Count < 3) continue;
             g.SnipeTick = W.Tick;
@@ -862,6 +915,7 @@ public sealed class AiMilitary
                 : bp.Has(UnitCategory.MassExtractor) ? 30f
                 : bp.HasAny(UnitCategory.PowerGenerator | UnitCategory.MassFabricator) ? 20f
                 : bp.Has(UnitCategory.Defense) ? 5f : 10f;
+            if (bp.HasAny(UnitCategory.Factory | UnitCategory.MassExtractor)) value += Cfg.TierValue * (bp.Tech - 1);
             float d = Vector2.Distance(from, ks.Pos);
             float score = value - d * 0.25f;
             float defense = V.ThreatAt(ks.Pos, 24f);

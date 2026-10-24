@@ -8,7 +8,7 @@ namespace Rts.Sim.AI;
 /// attack, reinforcing, raids, retreats, commander snipes) and intel use (scouts, radar). Every difficulty plays by
 /// the fog-of-war rules and none gets free resources: Hard is stronger through better macro and decisions only.
 /// </summary>
-public sealed class AiConfig
+public sealed partial class AiConfig
 {
     public AiDifficulty Difficulty;
 
@@ -98,6 +98,11 @@ public sealed class AiConfig
     public float PositionTargetTime = 60f;
     /// <summary>Share of artillery in the land mix (after the opening).</summary>
     public float ArtilleryShare = 0.25f;
+    /// <summary>Mass share of mobile anti-air in the land mix once the enemy has air: 0.1 + enemy air / (air + land),
+    /// clamped to [AaShareMin, AaShareMax].</summary>
+    public float AaShareMin = 0.12f, AaShareMax = 0.4f;
+    /// <summary>Weight of anti-air-only members in a group's strength (attack and retreat decisions are ground fights).</summary>
+    public float AaGroundFactor = 1f;
     /// <summary>Raiding parties against weakly defended enemy extractors (size, max simultaneous; 0 = none).</summary>
     public int RaidSize = 0;
     public int MaxRaids = 0;
@@ -105,11 +110,65 @@ public sealed class AiConfig
     public bool CommanderSnipe;
     /// <summary>Snipes look for the enemy commander this far from the army.</summary>
     public float SnipeRadius = 40f;
+    /// <summary>Indirect-fire members (missile launchers, artillery) join the snipe too (wave 5k: enhanced commanders
+    /// with shields and engineering HP outlast the few direct-fire units of an artillery-heavy army).</summary>
+    public bool SnipeIndirect;
     /// <summary>Micro: direct-fire units of a fighting group spread their fire over the weakest enemies in range
     /// (enough damage on each to kill it, then the next) instead of each shooting the nearest one.</summary>
     public bool FocusFire;
     /// <summary>Seconds of a shooter's damage counted against a focus target before the next shooter picks another.</summary>
     public float FocusHorizon = 3f;
+
+    // ---- tech, strategic, navy, transports (wave 5k). Times are game seconds.
+    /// <summary>Highest tech level the AI goes for (factories, engineers, structures).</summary>
+    public int MaxTier = 3;
+    /// <summary>Extractor upgrades start (T1→T2, T2→T3) once the game is this old.</summary>
+    public float MexT2Time = 480, MexT3Time = 900; // 330 -> 480 after the unit balance (AI_TUNING "New goals")
+    /// <summary>Factory upgrades (first factory of the tier; more follow with income).</summary>
+    public float LandT2Time = 660, LandT3Time = 1020, AirT2Time = 720, AirT3Time = 1200;
+    /// <summary>Share of the mass income that running upgrades may take.</summary>
+    public float UpgradeShare = 0.35f;
+    /// <summary>Share of the mass income kept for the factories: eco/tech commitments wait while the rest is used
+    /// (AiEconomy.Budget.cs).</summary>
+    public float ArmyShare = 0.5f;
+    /// <summary>ArmyShare while pressured: own land strength below PressureRatio x the enemy's, or enemies at the base.</summary>
+    public float PressureArmyShare = 0.85f, PressureRatio = 0.8f; // tech vs T1-only 51 % -> 74 % with the later tech times (AI_TUNING)
+    /// <summary>ArmyShare while leading: own land strength above LeadRatio x the enemy's (+200) after LeadTime. 0 = off.</summary>
+    public float LeadArmyShare = 0f, LeadRatio = 1.5f, LeadTime = 600;
+    /// <summary>More land factories (up to MaxLandFactoriesFloat) after CapacityTime while their capacity is below
+    /// ArmyShare x CapacityMargin x mass income.</summary>
+    public float CapacityTime = 420, CapacityMargin = 1.2f;
+    /// <summary>Floating also when stored mass exceeds max(FloatMass, FloatSeconds x income) (big storages).</summary>
+    public float FloatMass = 1200, FloatSeconds = 30;
+    /// <summary>Highest tier of combat units the factories make (experiments; engineers/structures use MaxTier).</summary>
+    public int MaxUnitTier = 3;
+    /// <summary>Highest tier of the artillery role (T2 missile launchers and T3 artillery outrange the rest of the army).</summary>
+    public int ArtilleryTier = 3;
+    /// <summary>Attrition stall (AiMilitary.FallBack): an attacking army that has not closed in on its objective for
+    /// StallTime seconds while weaker than StallMargin x the strength the objective needs gathers again. 0 = off.</summary>
+    public float StallTime = 0, StallMargin = 1f;
+    /// <summary>Creeping advance (AiMilitary.Advance): every AdvanceInterval seconds an attacking army at least
+    /// AdvanceMargin x stronger than the known enemy strength at its objective and at its front steps its front
+    /// AdvanceStep closer (0 = it stays) and brings indirect-fire members that stopped far behind up to it. 0 = off.</summary>
+    public float AdvanceInterval = 0, AdvanceMargin = 2f, AdvanceStep = 20f;
+    /// <summary>Objective value bonus per tier above 1 for extractors and factories (upgraded ones carry the economy).</summary>
+    public float TierValue = 0;
+    public int MaxMexUpgrades = 2;
+    public int MaxFactoryUpgrades = 1;
+    /// <summary>Commander enhancements start (engineering first, then shield).</summary>
+    public float EnhanceTime = 900;
+    /// <summary>Base shields, TML, artillery installations, mass storage next to upgraded extractors.</summary>
+    public float ShieldTime = 780;
+    public int MaxShields = 3;
+    public float TmlTime = 840;
+    public int MaxTml = 1;
+    /// <summary>Nukes, experimentals, quantum gateway (also need a big mass income).</summary>
+    public float StrategicTime = 1260;
+    public int MaxScus = 2;
+    /// <summary>Navy: frigates/subs vs destroyers/cruisers mix cap; 0 = no navy.</summary>
+    public int MaxNavalFactories = 2;
+    /// <summary>Transport drops (0 = never).</summary>
+    public int MaxTransports = 2;
 
     public static AiConfig For(AiDifficulty d) => d switch
     {
@@ -125,22 +184,33 @@ public sealed class AiConfig
             AttackMargin = 1f, StageDistance = 0, AssembleTimeout = 60,
             RetreatFraction = 0, PullBackHealth = 0, DefenseRadius = 40, CommanderRetreatHealth = 0,
             PushTime = 1500, LateGameTime = 1800, BomberGroup = 3, Reinforce = false,
+            MaxTier = 2, MexT2Time = 600, MexT3Time = 99999, LandT2Time = 900, AirT2Time = 1500, UpgradeShare = 0.25f,
+            MaxMexUpgrades = 1, EnhanceTime = 1200, ShieldTime = 1500, MaxShields = 1, TmlTime = 99999, MaxTml = 0,
+            StrategicTime = 99999, MaxScus = 0, MaxNavalFactories = 1, MaxTransports = 0,
         },
         AiDifficulty.Hard => new AiConfig
         {
-            // Hard = faster reactions, a stronger opening, an artillery-heavy mix, raids, snipes and micro - no bonuses.
+            // Hard = faster reactions, more factories, raids, commander snipes, more shields/TML/SCUs - no bonuses.
             Difficulty = d,
             EconInterval = 3, MilitaryInterval = 6, IdlePickupChance = 1f,
-            MaxEngineers = 12, EarlyEngineers = 5, MaxLandFactories = 7, MaxLandFactoriesFloat = 16, MaxAirFactories = 1, AirFactoryTime = 330,
+            MaxLandFactories = 8, MaxLandFactoriesFloat = 18, MaxAirFactories = 1, AirFactoryTime = 330,
             PowerMargin = 0.8f, MexChain = 1, MaxMassStorage = 2, MaxEnergyStorage = 1,
-            BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 4, QueueDepth = 2, SpendRatio = 1.1f,
-            LandScouts = 2, AirScouts = 1, ScoutRebuildTime = 60, MaxRadars = 3, RadarTime = 150,
-            FirstAttackTime = 200, FirstWave = 8, WaveGrowth = 3, MaxWave = 45, MaxArmy = 130,
-            AttackMargin = 1.25f, StageDistance = 45f, AssembleTimeout = 120,
-            RetreatFraction = 0, PullBackHealth = 0.25f, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
+            BasePointDefense = 2, BaseAntiAir = 3, ExpansionPointDefense = 3, QueueDepth = 2, SpendRatio = 1.1f,
+            LandScouts = 2, AirScouts = 0, ScoutRebuildTime = 60, MaxRadars = 1, RadarTime = 150,
+            FirstWave = 8, WaveGrowth = 3, MaxWave = 45, MaxArmy = 130,
+            StageDistance = 45f,
+            RetreatFraction = 0, DefenseRadius = 65, CommanderRetreatHealth = 0.5f,
             PushTime = 840, LateGameTime = 1140, BomberGroup = 5, Reinforce = true,
-            RaidSize = 6, MaxRaids = 1, CommanderSnipe = true, FocusFire = true,
-            ArtilleryShare = 0.55f, // matrix: 0.15 -> 36 % wins vs Normal, 0.25 -> 57 %, 0.4 -> 78 %, 0.55 -> 86 %
+            RaidSize = 6, MaxRaids = 1, CommanderSnipe = true,
+            // 2026-10-23 after the unit balance (AI_TUNING "New goals"): the early tech, focus fire, unit pull-back,
+            // the 0.55 artillery share and the bigger engineer/radar/expansion-PD counts made Hard lose to Normal
+            // (18-81 of 192 at 45 min); Normal's tech times + these values: 92-55.
+            MexT2Time = 480, MexT3Time = 840, LandT2Time = 660, LandT3Time = 1020, AirT2Time = 660, AirT3Time = 1080,
+            MaxShields = 4, MaxTml = 2, MaxScus = 3, MaxNavalFactories = 3, MaxTransports = 3,
+            ArtilleryShare = 0.05f, // pre-balance matrix (T1 artillery won every fight): 0.55 -> 86 % wins vs Normal
+            // 2026-10-24 (AI_TUNING "Hard's edge"): artillery 0.1 -> 0.05, 8/18 land factories, army share 0.6:
+            // 90-49 -> 102-52 at 45 min (154 of 192 finished instead of 139); every lever tried stays near 2:1.
+            ArmyShare = 0.6f,
         },
         _ => new AiConfig { Difficulty = AiDifficulty.Normal },
     };

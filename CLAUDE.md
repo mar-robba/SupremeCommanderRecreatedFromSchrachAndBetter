@@ -10,6 +10,8 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 - Tests: `dotnet test tests/Rts.Sim.Tests`, `dotnet test tests/Rts.Client.Tests` and `dotnet test tests/Rts.Net.Tests` (headless, must stay green)
 - Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads] [mapSize] [armies]`
   (env `BENCH_WARMUP=1` = JIT warm-up first, `BENCH_ALLOC=1` = allocations per stage; DEV_GUIDE "Profiling")
+- Unit duels (balance, AI_TUNING "Unit balance"): `dotnet run -c Release --project tools/Rts.Bench -- duel <unitA> <unitB> [mass=2000] [seed] [mapSize]`
+  (unit = blueprint id or `faction:role`, e.g. `uef:tank_t1`); grids: `... -- duelmatrix <factionA> [factionB] [masses=600,2000,6000] [seeds=3]`
 - AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions]`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`

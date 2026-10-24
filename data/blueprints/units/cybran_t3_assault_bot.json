@@ -9,12 +9,12 @@
     "DirectFire",
     "Tech3"
   ],
-  "MaxHealth": 2500,
+  "MaxHealth": 2550,
   "Radius": 0.8,
   "Economy": {
-    "BuildCostMass": 450,
-    "BuildCostEnergy": 5000,
-    "BuildTime": 2200
+    "BuildCostMass": 400,
+    "BuildCostEnergy": 4450,
+    "BuildTime": 1960
   },
   "Movement": {
     "Layer": "Land",
@@ -29,7 +29,7 @@
     {
       "Name": "Disintegrator Pulse Laser",
       "Range": 24,
-      "Damage": 52,
+      "Damage": 54,
       "RateOfFire": 2,
       "MuzzleVelocity": 40,
       "TargetLayers": [

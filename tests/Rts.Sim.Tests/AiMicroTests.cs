@@ -45,7 +45,9 @@ public class AiMicroTests
     [Fact]
     public void OnlyHardMicrosAndNoDifficultyRetreatsArmies()
     {
-        Assert.True(AiConfig.For(AiDifficulty.Hard).FocusFire);
+        // Focus fire made Hard lose to Normal after the 2026-10-23 unit balance (AI_TUNING "New goals"): off everywhere;
+        // the micro itself stays (the tests above switch it on).
+        Assert.False(AiConfig.For(AiDifficulty.Hard).FocusFire);
         Assert.False(AiConfig.For(AiDifficulty.Normal).FocusFire);
         Assert.False(AiConfig.For(AiDifficulty.Easy).FocusFire);
         // Matrix results: retreating beaten armies lost more games than fighting on (piecemeal pressure ends games).

@@ -225,7 +225,7 @@ public class SandboxTests
         Assert.True(u.IsActive(outer), "outer ring unit should survive");
         float hp = u.Health[outer.Index], pdMax = w.Blueprints[Bp("uef_t1_point_defense")].MaxHealth;
         Assert.Equal(pdMax - SandboxSystem.NukeOuterDamage, hp, 1f); // outer ring only
-        Assert.Equal(300f, u.Health[far.Index]);
+        Assert.Equal(w.Blueprints[tank].MaxHealth, u.Health[far.Index]);
         Assert.Contains(snap.Effects, e => e.Kind == EffectKind.Nuke && e.Size == SandboxSystem.NukeOuterRadius);
         Assert.Contains(snap.Effects, e => e.Kind == EffectKind.UnitDeath);
     }
@@ -264,9 +264,9 @@ public class SandboxTests
         Assert.False(w.Units.IsActive(a));
         Assert.False(w.Units.IsActive(b));
         Assert.Equal(props + 1, w.Props.Count); // kill leaves a wreck, delete doesn't
-        Assert.Equal(150f, w.Units.Health[d.Index], 1);
+        Assert.Equal(w.Blueprints[tank].MaxHealth * 0.5f, w.Units.Health[d.Index], 1);
         sim.Step([new SandboxUnitActionCommand(0, [d], SandboxUnitAction.Heal)]);
-        Assert.Equal(300f, w.Units.Health[d.Index]);
+        Assert.Equal(w.Blueprints[tank].MaxHealth, w.Units.Health[d.Index]);
     }
 
     [Fact]

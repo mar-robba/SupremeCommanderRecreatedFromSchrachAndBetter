@@ -42,6 +42,8 @@ public static class AiMatch
         // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).
         int statusEvery = Math.Max(1, (int)(float.Parse(Environment.GetEnvironmentVariable("AI_STATUS_SECONDS") ?? "60", System.Globalization.CultureInfo.InvariantCulture) * SimWorld.TicksPerSecond));
         var deaths = new int[players];
+        _spend = new SpendTracker(players);
+        _kills = new KillTracker(players);
         // Where units die (diagnostics): per army, [0] own base, [1] enemy base, [2] field; mobile and structures.
         var deathZoneMobile = new int[players, 3];
         var deathZoneStruct = new int[players, 3];
@@ -81,9 +83,12 @@ public static class AiMatch
                     else deathZoneMobile[fx.Army, zone]++;
                 }
             w.Events.Effects.Clear();
+            if (w.Tick % 5 == 0) _spend.Scan(w);
+            _kills!.Scan(w);
             if (w.Tick % statusEvery == 0) PrintStatus(w, deaths);
             if (w.Tick % statusEvery == 0 && AiRoster.Enabled) AiRoster.Sample(w);
             if (Environment.GetEnvironmentVariable("AI_DUMP") is { } dump) DumpGroup(w, dump);
+            if (Environment.GetEnvironmentVariable("AI_BASE") is { } baseSpec) DumpBase(w, baseSpec);
             if (Environment.GetEnvironmentVariable("AI_DEPOSITS") is { } depMin && w.Tick == (int)(float.Parse(depMin, System.Globalization.CultureInfo.InvariantCulture) * 600))
                 for (int a = 0; a < players; a++)
                     if (AiSystem.StateOf(w)?.BrainOrNull(a) is { } br) Console.Write($"  deposits seen by {w.Armies[a].Name}:\n{br.Economy.DescribeDeposits()}");
@@ -101,6 +106,7 @@ public static class AiMatch
         for (int a = 0; a < players; a++)
             Console.WriteLine($"  {w.Armies[a].Name} deaths by zone (own base / enemy base / field): mobile {deathZoneMobile[a, 0]}/{deathZoneMobile[a, 1]}/{deathZoneMobile[a, 2]}, " +
                               $"structures {deathZoneStruct[a, 0]}/{deathZoneStruct[a, 1]}/{deathZoneStruct[a, 2]} (mex {mexLost[a]})");
+        for (int a = 0; a < players; a++) Console.WriteLine($"  {w.Armies[a].Name} kills by: {_kills!.Format(a)}");
         foreach (var army in w.Armies)
         {
             var s = army.Stats;
@@ -114,6 +120,9 @@ public static class AiMatch
             if (b == null) continue;
             Console.WriteLine($"  {w.Armies[a].Name}: AI cost avg {b.Stats.AvgMs:F3} ms/tick, max {b.Stats.MaxMs:F2} ms, (scan {b.Stats.ScanMs:F0} / eco {b.Stats.EconMs:F0} / mil {b.Stats.MilitaryMs:F0} ms total, sites {b.Stats.SiteSearches}/{b.Stats.SiteFailures} failed/{b.Stats.SiteCandidates} cand), commands {b.Stats.Commands}, waves {b.Military.WavesLaunched}, " +
                               $"deep stall E {Pct(b.Economy.DeepEnergyStallThinks, b.Economy.Thinks)} M {Pct(b.Economy.DeepMassStallThinks, b.Economy.Thinks)}");
+            var ts = b.Stats;
+            Console.WriteLine($"  {w.Armies[a].Name} tech: tier={ts.MaxTier} upgrades={ts.Upgrades} enh={ts.Enhancements} exp={ts.Experimentals} " +
+                              $"nukes={ts.Nukes} tml={ts.Tml} navy={ts.Naval} drops={ts.Drops} captures={ts.Captures}");
         }
         tickMs.Sort();
         Console.WriteLine($"sim tick ms: avg {tickMs.Average():F2} p50 {tickMs[tickMs.Count / 2]:F2} p95 {tickMs[(int)(tickMs.Count * 0.95)]:F2} max {tickMs[^1]:F2}; " +
@@ -140,6 +149,46 @@ public static class AiMatch
                     Console.WriteLine($"  cfg a{a}: {f.Name}={f.GetValue(br.Cfg)}");
                 }
             }
+        }
+    }
+
+    /// <summary>AI_BASE="seconds:army[,...]": the army's armed units and structures within 50 of its start (type,
+    /// position, health) and the enemy units within 100 of it by type (count, how many stand still).</summary>
+    private static void DumpBase(SimWorld w, string spec)
+    {
+        foreach (var part in spec.Split(','))
+        {
+            var f = part.Split(':');
+            if (f.Length < 2 || w.Tick != (int)(float.Parse(f[0], System.Globalization.CultureInfo.InvariantCulture) * 10)) continue;
+            int army = int.Parse(f[1]);
+            var c = w.Terrain.StartPositions[army % w.Terrain.StartPositions.Length];
+            var u = w.Units;
+            var mine = new SortedDictionary<string, string>();
+            var foes = new SortedDictionary<string, (int n, int still, float dmin)>();
+            for (int k = 0; k < u.AliveCount; k++)
+            {
+                int i = u.AliveList[k];
+                if (!u.IsActive(i) || !u.IsComplete(i)) continue;
+                var bp = w.BpOf(i);
+                float d = System.Numerics.Vector2.Distance(u.Pos[i], c);
+                if (u.Army[i] == army && d < 50f && (bp.Weapons.Length > 0 || bp.Has(UnitCategory.Factory) || bp.Has(UnitCategory.Shield)))
+                {
+                    string key = bp.Id;
+                    string v = $"({u.Pos[i].X:F0},{u.Pos[i].Y:F0}){u.Health[i] / bp.MaxHealth * 100:F0}%";
+                    mine[key] = mine.TryGetValue(key, out var old) ? old + " " + v : v;
+                }
+                else if (u.Army[i] != army && d < 100f && bp.IsMobile)
+                {
+                    var e = foes.TryGetValue(bp.Id, out var x) ? x : (n: 0, still: 0, dmin: 999f);
+                    e.n++;
+                    if (!u.Move[i].HasGoal) e.still++;
+                    e.dmin = MathF.Min(e.dmin, d);
+                    foes[bp.Id] = e;
+                }
+            }
+            Console.WriteLine($"  base a{army} at ({c.X:F0},{c.Y:F0}) t={Fmt(w.GameTime)}");
+            foreach (var kv in mine) Console.WriteLine($"    own {kv.Key}: {kv.Value}");
+            foreach (var kv in foes) Console.WriteLine($"    foe {kv.Key}: n={kv.Value.n} still={kv.Value.still} nearest={kv.Value.dmin:F0}");
         }
     }
 
@@ -193,6 +242,9 @@ public static class AiMatch
 
     private static string Fmt(float seconds) => $"{(int)seconds / 60}:{(int)seconds % 60:D2}";
 
+    private static SpendTracker? _spend;
+    private static KillTracker? _kills;
+
     private static void PrintStatus(SimWorld w, int[] deaths)
     {
         var u = w.Units;
@@ -201,11 +253,15 @@ public static class AiMatch
         {
             var army = w.Armies[a];
             int mex = 0, fac = 0, land = 0, air = 0, eng = 0, pgen = 0, def = 0;
+            float armyM = 0, defM = 0, ecoM = 0, landM = 0; // mass value of complete army units / defenses / other structures / land army
             for (int k = 0; k < u.AliveCount; k++)
             {
                 int i = u.AliveList[k];
                 if (!u.IsActive(i) || u.Army[i] != a || !u.IsComplete(i)) continue;
                 var bp = w.BpOf(i);
+                float m = bp.Economy.BuildCostMass;
+                if (bp.IsStructure) { if (bp.Has(UnitCategory.Defense) || bp.Has(UnitCategory.Shield)) defM += m; else ecoM += m; }
+                else if (!bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) armyM += m;
                 if (bp.Has(UnitCategory.MassExtractor)) mex++;
                 else if (bp.Has(UnitCategory.Factory)) fac++;
                 else if (bp.Has(UnitCategory.PowerGenerator)) pgen++;
@@ -213,6 +269,7 @@ public static class AiMatch
                 else if (bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) eng++;
                 else if (bp.IsMobile && bp.Movement.Layer == Rts.Sim.Data.MotionLayer.Air) air++;
                 else if (bp.IsMobile && !bp.Has(UnitCategory.Commander)) land++;
+                if (bp.IsMobile && bp.Movement.Layer == Rts.Sim.Data.MotionLayer.Land && !bp.Has(UnitCategory.Engineer) && !bp.Has(UnitCategory.Commander)) landM += m;
             }
             var e = army.Eco;
             var cmd = army.Commander;
@@ -229,7 +286,7 @@ public static class AiMatch
                     var role = brain.Info(i).Role;
                     if (role == AiRole.Pool) pool++; else if (role == AiRole.Defend) defend++; else if (role == AiRole.Attack) attack++;
                 }
-                mil = $" pool={pool} defend={defend} attack={attack}/{brain.Military.Groups.Count}g waves={brain.Military.WavesLaunched}";
+                mil = $" pool={pool} defend={defend} attack={attack}/{brain.Military.Groups.Count}g waves={brain.Military.WavesLaunched} bud={brain.Economy.FactorySpend:F0}/{brain.Economy.EcoSpend:F0}/{brain.Economy.FactoryBudget:F1}/{brain.Economy.UpgradeSpend:F0}";
                 if (Environment.GetEnvironmentVariable("AI_GROUPS") == "1")
                     foreach (var g in brain.Military.Groups)
                     {
@@ -241,7 +298,7 @@ public static class AiMatch
                     }
             }
             line.Append($" | {army.Name}{(army.Defeated ? " DEFEATED" : "")}: n={army.UnitCount} mex={mex} pg={pgen} fac={fac} def={def} eng={eng} land={land} air={air} " +
-                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil}");
+                        $"M {e.MassIncome:F0}/{e.MassDemand:F0}/{e.Mass:F0} E {e.EnergyIncome:F0}/{e.EnergyDemand:F0}/{e.Energy:F0} eff {e.MassEfficiency:F2}/{e.EnergyEfficiency:F2} lost={deaths[a]} acu={hp}{mil} val={armyM / 1000f:F1}k/{defM / 1000f:F1}k/{ecoM / 1000f:F1}k lv={landM / 1000f:F1}k{_spend?.Format(a)}");
         }
         Console.WriteLine(line.ToString());
     }

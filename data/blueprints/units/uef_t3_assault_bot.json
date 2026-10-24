@@ -9,12 +9,12 @@
     "DirectFire",
     "Tech3"
   ],
-  "MaxHealth": 2600,
+  "MaxHealth": 2800,
   "Radius": 0.8,
   "Economy": {
-    "BuildCostMass": 480,
-    "BuildCostEnergy": 5400,
-    "BuildTime": 2400
+    "BuildCostMass": 420,
+    "BuildCostEnergy": 4725,
+    "BuildTime": 2100
   },
   "Movement": {
     "Layer": "Land",
@@ -29,7 +29,7 @@
     {
       "Name": "Ion Cannon",
       "Range": 24,
-      "Damage": 50,
+      "Damage": 54,
       "RateOfFire": 2,
       "MuzzleVelocity": 40,
       "TargetLayers": [

@@ -45,6 +45,28 @@ public sealed class AiCommands
         _stats.Commands++;
     }
 
+    /// <summary>In-place structure upgrade (to its blueprint's UpgradesTo).</summary>
+    public void Upgrade(int unit)
+    {
+        _out.Add(new UpgradeCommand(_army, [H(unit)]));
+        _stats.Commands++;
+        _stats.Upgrades++;
+    }
+
+    /// <summary>Starts building an enhancement (by id) on a commander/SCU.</summary>
+    public void Enhance(int unit, string enhancement)
+    {
+        _out.Add(new EnhanceCommand(_army, [H(unit)], enhancement));
+        _stats.Commands++;
+        _stats.Enhancements++;
+    }
+
+    public void SetPaused(int unit, bool paused)
+    {
+        _out.Add(new SetPausedCommand(_army, [H(unit)], paused));
+        _stats.Commands++;
+    }
+
     public void Enqueue(int factory, int bp, int count = 1)
     {
         _out.Add(new FactoryEnqueueCommand(_army, [H(factory)], bp, count));

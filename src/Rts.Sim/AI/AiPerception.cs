@@ -29,6 +29,18 @@ public sealed class AiView
     public readonly List<int> Engineers = new();
     public readonly List<int> LandFactories = new();
     public readonly List<int> AirFactories = new();
+    /// <summary>Complete naval factories, and other complete factory structures (quantum gateways).</summary>
+    public readonly List<int> NavalFactories = new();
+    public readonly List<int> Gateways = new();
+    /// <summary>Complete own missile silos (tactical/strategic launchers, anti-nukes).</summary>
+    public readonly List<int> Silos = new();
+    /// <summary>Complete mobile naval units (surface/sub, not engineers).</summary>
+    public readonly List<int> NavalUnits = new();
+    /// <summary>Highest tech of the complete land/air/naval factories and of the engineers (commander excluded); 0 = none.</summary>
+    public int LandTier, AirTier, NavalTier, EngineerTier;
+    /// <summary>Own structures upgrading right now.</summary>
+    public int Upgrading;
+    public float OwnNavalStrength;
     /// <summary>All own structures (complete or under construction).</summary>
     public readonly List<int> Structures = new();
     /// <summary>Own structures under construction.</summary>
@@ -53,6 +65,14 @@ public sealed class AiView
     public float EnemyLandStrength;
     public float EnemyAirStrength;
     public int EnemyAirCount;
+    /// <summary>Strength of the enemy naval units detected right now.</summary>
+    public float EnemyNavalStrength;
+    /// <summary>Known enemy strategic launchers (ghosts or in sight): nuke silos / tactical missile launchers, and the
+    /// position of the known TML closest to our base (valid when EnemyTml &gt; 0).</summary>
+    public int EnemyNukes, EnemyTml;
+    public Vector2 EnemyTmlPos;
+    /// <summary>Known enemy naval factories.</summary>
+    public int EnemyNavalFactories;
     /// <summary>An enemy air factory is known (seen and not seen destroyed).</summary>
     public bool EnemyHasAirFactory;
 
@@ -136,6 +156,11 @@ public sealed class AiView
         Commander = -1;
         Engineers.Clear(); LandFactories.Clear(); AirFactories.Clear(); Structures.Clear(); Unfinished.Clear();
         LandCombat.Clear(); AirUnits.Clear(); EnemyMobile.Clear(); EnemyStructures.Clear();
+        NavalFactories.Clear(); Gateways.Clear(); Silos.Clear(); NavalUnits.Clear();
+        LandTier = AirTier = NavalTier = EngineerTier = 0;
+        Upgrading = 0;
+        OwnNavalStrength = EnemyNavalStrength = 0;
+        EnemyNukes = EnemyTml = EnemyNavalFactories = 0;
         if (Count.Length != bpCount) { Count = new int[bpCount]; Complete = new int[bpCount]; Queued = new int[bpCount]; }
         Array.Clear(Count); Array.Clear(Complete); Array.Clear(Queued);
         OwnLandStrength = OwnAirStrength = EnemyLandStrength = EnemyAirStrength = 0;
@@ -183,6 +208,8 @@ public sealed class AiPerception
     private int _lastScanTick = -1;
     /// <summary>Remembered enemy air: count and strength (decaying max of what was seen).</summary>
     public float EnemyAirCountMem, EnemyAirStrengthMem;
+    /// <summary>Remembered enemy naval strength (decaying max of what was seen).</summary>
+    public float EnemyNavalMem;
     /// <summary>Estimated enemy land army strength (decaying memory of what was seen, summed over the map).</summary>
     public float EnemyLandEstimate;
 
@@ -270,11 +297,14 @@ public sealed class AiPerception
                 {
                     v.Structures.Add(i);
                     if (!complete) { v.Unfinished.Add(i); continue; }
+                    if (u.Upgrade[i].Active) v.Upgrading++;
+                    if (bp.Silo != null) v.Silos.Add(i);
                     if (bp.Has(UnitCategory.Factory))
                     {
-                        // Naval (and unknown) factories are not driven by this AI yet.
-                        if (bp.Has(UnitCategory.Air)) v.AirFactories.Add(i);
-                        else if (!bp.Has(UnitCategory.Naval)) v.LandFactories.Add(i);
+                        if (bp.Has(UnitCategory.Air)) { v.AirFactories.Add(i); v.AirTier = Math.Max(v.AirTier, bp.Tech); }
+                        else if (bp.Has(UnitCategory.Naval)) { v.NavalFactories.Add(i); v.NavalTier = Math.Max(v.NavalTier, bp.Tech); }
+                        else if (bp.Has(UnitCategory.Land)) { v.LandFactories.Add(i); v.LandTier = Math.Max(v.LandTier, bp.Tech); }
+                        else v.Gateways.Add(i);
                         var q = u.Factory[i].Queue;
                         if (q != null)
                             for (int e = u.IsActive(u.Factory[i].Current) ? 1 : 0; e < q.Count; e++)
@@ -284,8 +314,17 @@ public sealed class AiPerception
                 }
                 if (!complete) continue;
                 if (bp.Has(UnitCategory.Commander)) { v.Commander = i; continue; }
-                if (bp.Has(UnitCategory.Engineer)) { if (bp.Movement.Layer is not (MotionLayer.Water or MotionLayer.Sub)) v.Engineers.Add(i); continue; }
+                if (bp.Has(UnitCategory.Engineer))
+                {
+                    if (bp.Movement.Layer is not (MotionLayer.Water or MotionLayer.Sub)) { v.Engineers.Add(i); v.EngineerTier = Math.Max(v.EngineerTier, bp.Tech); }
+                    continue;
+                }
                 if (IsAirUnit(bp)) { v.AirUnits.Add(i); v.OwnAirStrength += Strength(_w, i, bp); }
+                else if (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub)
+                {
+                    v.NavalUnits.Add(i);
+                    v.OwnNavalStrength += Strength(_w, i, bp);
+                }
                 else if (bp.Movement.Layer is MotionLayer.Land or MotionLayer.Amphibious or MotionLayer.Hover)
                 {
                     v.LandCombat.Add(i);
@@ -326,6 +365,7 @@ public sealed class AiPerception
                 v.EnemyAirCount++;
                 v.EnemyAirStrength += MathF.Max(30, bp.Economy.BuildCostMass);
             }
+            else if (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub) v.EnemyNavalStrength += st;
             else v.EnemyLandStrength += st;
             if (st <= 0) continue;
             var targets = TargetsOf(bp);
@@ -352,10 +392,23 @@ public sealed class AiPerception
         }
 
         // Known enemy structures: defenses add threat (they don't move: no decay), air factories are noted.
+        float tmlBest = float.MaxValue;
+        var home = _w.Units.IsActive(_w.Armies[_army].Commander) ? _w.Units.Pos[_w.Armies[_army].Commander.Index] : _w.Terrain.StartPositions[_army % _w.Terrain.StartPositions.Length];
         foreach (var ks in Structures)
         {
             var bp = db[ks.Bp];
             if (bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Air)) v.EnemyHasAirFactory = true;
+            if (bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Naval)) v.EnemyNavalFactories++;
+            if (bp.Silo is { } silo)
+            {
+                if (silo.Kind == SiloKind.Strategic) v.EnemyNukes++;
+                else if (silo.Kind == SiloKind.Tactical)
+                {
+                    v.EnemyTml++;
+                    float d = Vector2.DistanceSquared(ks.Pos, home);
+                    if (d < tmlBest) { tmlBest = d; v.EnemyTmlPos = ks.Pos; }
+                }
+            }
             if (bp.Weapons.Length == 0) continue;
             if (u.IsActive(ks.Handle) && !u.IsComplete(ks.Handle.Index)) continue;
             float st = bp.Economy.BuildCostMass * 1.5f;
@@ -387,6 +440,7 @@ public sealed class AiPerception
         }
         EnemyLandEstimate = landEst;
         EnemyAirCountMem = MathF.Max(v.EnemyAirCount, EnemyAirCountMem * decay);
+        EnemyNavalMem = MathF.Max(v.EnemyNavalStrength, EnemyNavalMem * decay);
         EnemyAirStrengthMem = MathF.Max(v.EnemyAirStrength, EnemyAirStrengthMem * decay);
         for (int a = 0; a < EnemyCommanderPos.Length; a++)
             if (_w.Armies[a].Defeated) { EnemyCommanderPos[a] = null; EnemyCommanderHandle[a] = UnitHandle.None; }
