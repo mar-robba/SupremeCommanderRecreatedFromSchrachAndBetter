@@ -324,6 +324,7 @@ public static partial class UnitModels
                 case "shield": EnhShield(m, a, w, h, l); break;
                 case "shield_field": EnhShieldField(m, a, w, h, l); break;
                 case "missile_pack": EnhMissilePack(m, a, w, h, l); break;
+                case "teleporter": EnhTeleporter(m, a, w, h, l, IsCybranShape(bp.Visual.Shape)); break; // UnitModels.Teleport.cs
                 default: CybranEnhancement(en.Visual, m, a, s, w, h, l); break; // UnitModels.Cybran.cs
             }
         }
