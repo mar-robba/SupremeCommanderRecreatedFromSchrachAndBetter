@@ -22,6 +22,8 @@ public static class Ui
 {
     /// <summary>UI scale: 1 at 1280x720, grows with the window.</summary>
     public static float S { get; private set; } = 1f;
+    /// <summary>User UI scale multiplier on <see cref="S"/> (Settings → Graphics, 1 = automatic size only).</summary>
+    public static float UserScale = 1f;
     public static int Sw { get; private set; } = 1280;
     public static int Sh { get; private set; } = 720;
     public static Vector2 Mouse { get; private set; }
@@ -56,7 +58,7 @@ public static class Ui
     {
         Sw = Raylib.GetScreenWidth();
         Sh = Raylib.GetScreenHeight();
-        S = Math.Clamp(MathF.Min(Sw / 1280f, Sh / 720f), 0.75f, 2.5f);
+        S = Math.Clamp(MathF.Min(Sw / 1280f, Sh / 720f), 0.75f, 2.5f) * UserScale;
         Mouse = Raylib.GetMousePosition();
         Shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         Ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);

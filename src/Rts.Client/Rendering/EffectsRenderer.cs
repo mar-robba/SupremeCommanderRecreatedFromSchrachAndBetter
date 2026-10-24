@@ -109,7 +109,7 @@ public sealed partial class EffectsRenderer : IDisposable
         dt = GameDt(_ctx, dt);
         _frame++;
         var fv = FrameView.Capture();
-        _ps.Lod = Math.Clamp(110f / MathF.Max(1f, Atmosphere.CameraDistance), 0.3f, 1f) * (_ps.Count > ParticleSystem.Capacity * 0.7f ? 0.4f : 1f);
+        _ps.Lod = Math.Clamp(110f / MathF.Max(1f, Atmosphere.CameraDistance), 0.3f, 1f) * (_ps.Count > ParticleSystem.Capacity * 0.7f ? 0.4f : 1f) * ParticleSystem.Quality;
         HandleDebugKeys();
         foreach (var e in newEffects) Spawn(e);
         if (FakeBattle) UpdateFakeBattle(dt, cur);

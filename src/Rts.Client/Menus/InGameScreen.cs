@@ -57,6 +57,7 @@ public sealed class InGameScreen : IScreen
                 if (_s.HandleEscapeForPause()) OpenPause();
                 else CheckOutcome();
                 _saveUi.HandleHotkeys(_frames);
+                _saveUi.AutosaveStep(ended: _shownDefeat);
                 break;
             case State.Paused:
                 if (!_saveUi.DialogOpen && MenuUi.Key(KeyboardKey.Escape)) Resume();
@@ -119,7 +120,7 @@ public sealed class InGameScreen : IScreen
             return;
         }
         float w = Ui.P(320), bh = Ui.P(42), gap = Ui.P(10);
-        float h = Ui.P(64) + 6 * (bh + gap) + Ui.P(10);
+        float h = Ui.P(64) + 7 * (bh + gap) + Ui.P(10);
         var p = Ui.R((Ui.Sw - w) * 0.5f, (Ui.Sh - h) * 0.42f, w, h);
         Ui.Panel(p);
         Ui.TextCentered("PAUSED", Ui.R(p.X, p.Y + Ui.P(12), p.Width, Ui.P(30)), Ui.F(22), Ui.TextColor, true);
@@ -131,6 +132,9 @@ public sealed class InGameScreen : IScreen
         r.Y += bh + gap;
         // The save list takes this paused game along: Back returns here, loading a save disposes it.
         if (MenuUi.BigButton(r, "Load Game")) _app.Go(new SaveListScreen(_app, replays: false, returnTo: this), keepOld: true);
+        r.Y += bh + gap;
+        // Settings also take the paused game along (Back returns here); graphics/camera options apply live.
+        if (MenuUi.BigButton(r, "Settings")) _app.Go(new SettingsScreen(_app, returnTo: this), keepOld: true);
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Restart")) _app.StartGame(_s.Config, _opt);
         r.Y += bh + gap;

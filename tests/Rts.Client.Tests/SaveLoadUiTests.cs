@@ -12,6 +12,7 @@ namespace Rts.Client.Tests;
 
 /// <summary>Client side of save/load and replays: texts, client config round trip, recording → save/replay files →
 /// load / replay playback with seeking (headless, runner not started: jobs run at RunJobs).</summary>
+[Collection("SaveStore folders")] // tests that redirect the static SaveStore.SavesDir never run in parallel
 public class SaveLoadUiTests
 {
     private static readonly BlueprintDb Db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);

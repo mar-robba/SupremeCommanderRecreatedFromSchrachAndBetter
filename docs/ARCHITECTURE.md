@@ -508,6 +508,24 @@ interpolates prev/cur by time
   panel shows veterancy and adjacency bonuses and capture bars; `Input/AdjacencyPreview` draws lines to neighbours
   that would give/receive a bonus while placing a structure; `Input/PlacementLine`: Shift+drag lays a line of
   structures (`--ui-place id@x,z` for screenshots).
+- User folders & release builds (wave 7a; DEV_GUIDE "Packaging"): `Rts.Sim/Persistence/UserDirs` resolves the folders once
+  at startup (`UserDirs.Apply()` in Program.cs → `SaveStore.SavesDir/ReplaysDir`). Rule: a `release.txt` marker next to
+  the executable (written by `tools/package/package.sh`) = release mode → saves/replays/screenshots in
+  `$XDG_DATA_HOME/RtsGame` (`%APPDATA%\RtsGame`); otherwise (dotnet run, tests, Bench) relative to the cwd as before;
+  `RTS_USER_DIR` overrides. Settings always `$XDG_CONFIG_HOME/RtsGame/settings.json`; `data/` found by walking up from
+  the exe. `CrashLog` (user data dir `crash.log`, main thread + unhandled + first sim-thread fault), `AppVersion.Label`
+  (main menu), `AppIcon` (procedural window icon, `--export-icon`).
+- Settings (wave 7a): `Menus/SettingsScreen` has three tabs (Audio & Display / Graphics / Gameplay; `--settings-tab
+  audio|graphics|gameplay`), also opened from the pause menu (`returnTo` = the paused game, like the save list; not in
+  multiplayer, where leaving `NetInGameScreen` would stall the lockstep turns). `AppSettings` fields: `Shadows`,
+  `ParticleQuality` (0..2 → 0.35/0.65/1), `TerrainDetail` (-1 auto, 0..3 forced LOD), `VSync`, `FpsCap` (0/30/60/120/144),
+  `UiScale` (0.8..1.5), `EdgeScroll`, `PanSpeed`/`ZoomSpeed` (0.5..2), `Autosave` (read by the autosave). `LoadFrom`
+  clamps (`Normalize`); missing fields = defaults = the behavior before the settings existed. `Menus/GraphicsSettings`
+  (`Init` after InitWindow, `Apply` on every change, all live) writes static switches read by the renderers:
+  `ShadowMap.Enabled` (skips the unit depth pass, `shadowOn = 0`), `ParticleSystem.Quality` (folded into `Lod`),
+  `TerrainRenderer.ForceLod`, `Ui.UserScale` (× automatic `Ui.S`), `CameraSettings` (read by `RtsCamera`), plus
+  VSync (`SetWindowState/ClearWindowState`) and `SetTargetFPS` (only called once a cap is chosen). Precedence:
+  `--novsync` and `--terrain-lod` win for that run (the screen shows a note); `--screenshot` runs use defaults.
 
 ## Sandbox mode (`Rts.Sim/Systems/SandboxSystem`, `Rts.Client/Sandbox`)
 - Sim: `SandboxSystem.Enable(world)` (called by `GameSession.CreateSimulation` when `GameConfig.Sandbox`) turns the
@@ -581,6 +599,13 @@ interpolates prev/cur by time
   `GameContext.ReadOnly` (no order/build/enhancement UI, commands ignored by the player anyway): play/pause, speed
   0.5×–16×, timeline seek (`ReplaySeeker`: runner job `SeekTo` + `ReplaceSimulation`), fog view per army or all,
   DESYNC banner, other-build warning.
+- Autosave (wave 7a, `Rts.Client/Persistence/Autosave.cs`, pure + `AutosaveTests`; wired in `InGameSaveUi.AutosaveStep`
+  from `InGameScreen`'s Playing state): every 3000 ticks of GAME time (5 min; counted from the first snapshot tick seen,
+  so a loaded game waits a full interval and a paused game never autosaves) the normal save path writes `autosave_N`
+  (N = 1..3: first empty slot, else the oldest file, never the slot this game wrote last; other saves untouched),
+  toast "Autosaved", listed as "Autosave N". Only with the setting on (`AppSettings.Autosave`), a recording, not
+  replay/sandbox/scene/multiplayer (`NetInGameScreen` has none), not after a defeat or the end of the game, not in
+  `--screenshot` runs unless `--autosave-every TICKS` (test option: interval, forces it on).
 - **Keeping new state saveable** (rule for every feature): sim state lives in plain fields of sim classes/structs,
   arrays, `List`/`Dictionary`/`HashSet`/`Queue`/`Stack`, or a per-world `ConditionalWeakTable<SimWorld, T>`.
   No static mutable state, no stored lambdas/delegates (store an enum/id and dispatch in code; a cached delegate to
