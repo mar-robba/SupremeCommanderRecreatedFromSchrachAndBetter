@@ -60,6 +60,7 @@ public sealed class GameSession : IDisposable
     private readonly SandboxController? _sandbox;
     private readonly HashSet<long> _selectedSet = new();
     private bool _disposed;
+    private bool _faultLogged; // sim-thread fault written to the crash log once (CrashLog)
 
     /// <summary>Builds the simulation for a config (pure sim work, safe on a background thread).</summary>
     public static Simulation CreateSimulation(BlueprintDb db, GameConfig cfg, out int localArmy)
@@ -170,6 +171,7 @@ public sealed class GameSession : IDisposable
     public void Frame(float dt, bool interactive = true)
     {
         var ctx = Ctx;
+        if (!_faultLogged && Runner.Fault is Exception fault) { _faultLogged = true; CrashLog.Record(fault, "sim thread", fatal: false); }
         _perf.BeginFrame();
         _prof.Begin();
         _interp.Update();
