@@ -96,6 +96,8 @@ public sealed class ClientGameData
     {
         var cfg = FromJson(info.ClientData)?.ToConfig() ?? FromHeader(info);
         cfg.Sandbox = info.Sandbox;
+        // Game options live in the sim (saved); the header copy keeps them for restarts. Null = pre-6b file = defaults.
+        cfg.Options = info.Options?.Clone() ?? new GameOptions();
         return cfg;
     }
 

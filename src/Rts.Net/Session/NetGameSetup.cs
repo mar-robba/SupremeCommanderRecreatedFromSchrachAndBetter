@@ -28,6 +28,7 @@ public static class NetGameSetup
             Names = slots.Select(s => s.Kind == NetSlotKind.AI ? $"AI {++aiNo} ({s.Difficulty})" : s.Name).ToArray(),
             // "" = the default faction; "random" is resolved from the seed (identical on every peer).
             Factions = slots.Select(s => string.IsNullOrWhiteSpace(s.Faction) ? null : s.Faction).ToArray()!,
+            Options = o.Game.Clone(),
         };
     }
 

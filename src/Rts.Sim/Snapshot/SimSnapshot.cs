@@ -94,8 +94,14 @@ public struct ArmyView
     public uint Color;
     /// <summary>Faction id (BlueprintDb.Factions).</summary>
     public string Faction;
+    /// <summary>Display name (lobby/setup name; immutable string, shared with the army).</summary>
+    public string Name;
     public bool Defeated;
     public int UnitCount;
+    /// <summary>(6b) Max live units of the army (GameOptions.UnitCap; lifted in sandbox).</summary>
+    public int UnitCap;
+    /// <summary>(6b, G6) Current score (<see cref="World.ArmyStats.Score(float, float, int, int)"/>).</summary>
+    public int Score;
     public float Mass, MassMax, MassIncome, MassDemand, MassEfficiency;
     public float Energy, EnergyMax, EnergyIncome, EnergyDemand, EnergyEfficiency;
 }
@@ -111,6 +117,8 @@ public sealed class SimSnapshot
     public long PublishedAt;
     public double TickDurationMs;
     public int WinningTeam;
+    /// <summary>(6b) The world's game options (the same object as SimWorld.Options: read only, never changed).</summary>
+    public GameOptions Options = new();
 
     public UnitView[] Units = new UnitView[256];
     public int UnitCount;

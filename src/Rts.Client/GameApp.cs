@@ -29,6 +29,9 @@ public sealed class ClientOptions
     /// <summary>--faction ID: the local player's faction; --factions a,b,...: every slot in order ("random" allowed).</summary>
     public string? Faction;
     public string[]? Factions;
+    /// <summary>--options SPEC: game options (<c>GameOptions.Parse</c>, e.g. "victory=supremacy,cap=500,cheats=off");
+    /// null = CLI defaults <c>new GameOptions()</c> (cheats on). Also presets the --setup screen.</summary>
+    public string? GameOptions;
     public bool Demo;
     /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) "transport" (TransportScene) or "cybran[:land|:air|:naval|:structures|:experimental]" (CybranScene).</summary>
     public string? Scene;
@@ -44,6 +47,10 @@ public sealed class ClientOptions
     public bool EndScreen;
     /// <summary>Screenshot helper: --help-overlay opens the F1 help overlay at the start of the game.</summary>
     public bool HelpOverlay;
+    /// <summary>--diplomacy: open the F4 diplomacy panel at start (screenshots).</summary>
+    public bool Diplomacy;
+    /// <summary>--teams 1,1,2,2: team per army for CLI games (0 = none/FFA).</summary>
+    public int[]? Teams;
     /// <summary>Screenshot helper: the skirmish setup screen starts the game as soon as the preview is ready.</summary>
     public bool AutoStart;
     /// <summary>Debug: scripted menu flow (game → Restart → Quit to Menu → Skirmish → autostart → …) to exercise
@@ -112,6 +119,11 @@ public sealed class ClientOptions
                 case "--players": o.Players = int.Parse(Next()); o.PlayersGiven = true; break;
                 case "--faction": o.Faction = Next(); break;
                 case "--factions": o.Factions = Next().Split(','); break;
+                case "--options":
+                    o.GameOptions = Next();
+                    try { Rts.Sim.GameOptions.Parse(o.GameOptions); }
+                    catch (FormatException e) { throw new ArgumentException(e.Message); }
+                    break;
                 case "--preset":
                     string pn = Next();
                     if (!MapPresets.TryParse(pn, out o.Preset)) throw new ArgumentException("unknown preset " + pn + " (plains, lakes, highlands, canyon, archipelago)");
@@ -174,6 +186,8 @@ public sealed class ClientOptions
                 case "--name": o.PlayerName = Next(); break;
                 case "--multiplayer": screen = StartScreen.Multiplayer; break;
                 case "--help-overlay": o.HelpOverlay = true; gameArg = true; break;
+                case "--diplomacy": o.Diplomacy = true; gameArg = true; break;
+                case "--teams": o.Teams = Next().Split(',').Select(int.Parse).ToArray(); gameArg = true; break;
                 default:
                     if (AudioSettings.ParseArg(a, Next, o.Audio))
                     {
@@ -319,11 +333,18 @@ public static class GameApp
     public static void DebugKeys(GameContext ctx)
     {
         if (Input.Hotkeys.PauseGame.Pressed()) ctx.Runner.Paused = !ctx.Runner.Paused;
-        if (Input.Hotkeys.SpeedUp.Pressed()) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
-        if (Input.Hotkeys.SpeedDown.Pressed()) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
+        // (6b) Game options: a locked speed ignores + / - (pause still works); debug spawns only with cheats (or sandbox).
+        var snap = ctx.Snapshots.Current;
+        bool up = Input.Hotkeys.SpeedUp.Pressed(), down = Input.Hotkeys.SpeedDown.Pressed();
+        if ((up || down) && snap?.Options.LockedSpeed is float locked) Persistence.Toasts.Show($"Game speed is locked at {locked:0.#}x");
+        else
+        {
+            if (up) ctx.Runner.Speed = MathF.Min(8f, ctx.Runner.Speed * 2f);
+            if (down) ctx.Runner.Speed = MathF.Max(0.125f, ctx.Runner.Speed * 0.5f);
+        }
         // F1 = help overlay (UI/HelpOverlay); the debug tank spawns are Ctrl+F1 / Ctrl+F2.
         bool f1 = Input.Hotkeys.DebugSpawnOwn.Pressed(), f2 = Input.Hotkeys.DebugSpawnEnemy.Pressed();
-        if ((f1 || f2) && ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
+        if ((f1 || f2) && (snap?.Options.Cheats == true || snap?.Sandbox != null) && ctx.PickGround(Raylib.GetMousePosition()) is Vector3 g)
         {
             int army = f1 ? ctx.LocalArmy : (ctx.LocalArmy + 1) % ctx.ArmyColors.Length;
             ctx.Runner.Enqueue(new DebugSpawnCommand(army, ctx.Db.IndexOf("uef_t1_tank"), new Vector2(g.X, g.Z), 10));

@@ -34,6 +34,9 @@ public sealed class SimWorld
     /// <summary>Cargo/transport state: who carries whom, fuel, VTOL modes (Rts.Sim/Transport).</summary>
     public readonly Transport.CargoState Cargo;
     public bool CheatsEnabled = true;
+    /// <summary>(6b) Game options of this game (set by GameSetup.CreateSkirmish, then never changed; saved with the
+    /// world). Read by CleanupSystem (victory), DiplomacySystem (cheat tools, unit cap) and the snapshot.</summary>
+    public GameOptions Options = new();
     /// <summary>Set when only one team remains.</summary>
     public int WinningTeam = -1;
 

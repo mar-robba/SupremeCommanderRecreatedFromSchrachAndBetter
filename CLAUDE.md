@@ -12,11 +12,16 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   (env `BENCH_WARMUP=1` = JIT warm-up first, `BENCH_ALLOC=1` = allocations per stage; DEV_GUIDE "Profiling")
 - Unit duels (balance, AI_TUNING "Unit balance"): `dotnet run -c Release --project tools/Rts.Bench -- duel <unitA> <unitB> [mass=2000] [seed] [mapSize]`
   (unit = blueprint id or `faction:role`, e.g. `uef:tank_t1`); grids: `... -- duelmatrix <factionA> [factionB] [masses=600,2000,6000] [seeds=3]`
-- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions]`
+- AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions] [options]`
+  (`options` = a game options spec as `--options` below, e.g. `victory=supremacy,prebuilt=on,cap=250`)
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
   both also preset `--setup`)
+  (`--options SPEC` = game options, keys `victory=assassination|supremacy|annihilation|sandbox`, `cap=1..16384`,
+  `resources=normal|low|high`, `fog=normal|explored|none`, `speed=adjustable|normal|fast`, `cheats=on|off`, `prebuilt=on|off`,
+  e.g. `--options victory=supremacy,cap=500,cheats=off`; also presets `--setup` and `--host`; `--teams 1,1,2,2` = team per slot
+  (0 = none); `--diplomacy` opens the F4 diplomacy panel at start; in-game chat Shift+Enter = to allies (multiplayer))
   (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis), `--scene cybran[:land|:air|:naval|:structures1|:structures2|:structures3|:experimental]` (every Cybran unit laid out by group) (scene positions are printed; aim with `--camera`))

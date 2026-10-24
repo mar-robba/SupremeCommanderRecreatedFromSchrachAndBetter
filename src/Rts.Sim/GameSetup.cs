@@ -32,6 +32,9 @@ public sealed class SkirmishSettings
     /// <summary>Starting stored resources; negative = full storage (the commander's StorageMass/StorageEnergy).</summary>
     public float StartMass = -1;
     public float StartEnergy = -1;
+    /// <summary>Game options (victory, unit cap, start resources, fog, cheats, prebuilt base); defaults = classic game.
+    /// <see cref="StartMass"/>/<see cref="StartEnergy"/> (when >= 0) override <see cref="GameOptions.Resources"/>.</summary>
+    public GameOptions Options = new();
 }
 
 public static class GameSetup
@@ -85,17 +88,28 @@ public static class GameSetup
         }
 
         var world = new SimWorld(db, terrain, armies, (ulong)s.Seed, s.UnitCapacity);
+        var o = world.Options = s.Options.Clone();
+        world.CheatsEnabled = o.Cheats;
         // SupCom: storage comes from units (the commander at start); games begin with full storage.
+        // Options: Low = half storage, High = full + a bank of 2x the storage (EconomyShare releases it).
+        float startShare = o.Resources == StartResources.Low ? 0.5f : 1f;
+        float bank = o.Resources == StartResources.High ? 2f : 0f;
         var commanders = new int[s.Players];
         foreach (var army in armies)
         {
+            army.UnitCap = o.UnitCap;
             int cmd = commanders[army.Index] = db.Factions.CommanderOf(army.Faction);
             var cmdEco = db[cmd].Economy;
             army.Eco.MassMax = cmdEco.StorageMass;
             army.Eco.EnergyMax = cmdEco.StorageEnergy;
-            army.Eco.Mass = s.StartMass < 0 ? cmdEco.StorageMass : Math.Min(s.StartMass, cmdEco.StorageMass);
-            army.Eco.Energy = s.StartEnergy < 0 ? cmdEco.StorageEnergy : Math.Min(s.StartEnergy, cmdEco.StorageEnergy);
+            army.Eco.Mass = s.StartMass < 0 ? cmdEco.StorageMass * startShare : Math.Min(s.StartMass, cmdEco.StorageMass);
+            army.Eco.Energy = s.StartEnergy < 0 ? cmdEco.StorageEnergy * startShare : Math.Min(s.StartEnergy, cmdEco.StorageEnergy);
+            if (s.StartMass < 0) army.StartBankMass = cmdEco.StorageMass * bank;
+            if (s.StartEnergy < 0) army.StartBankEnergy = cmdEco.StorageEnergy * bank;
         }
+        if (o.Fog == FogMode.None) world.Intel.Enabled = false;
+        else if (o.Fog == FogMode.Explored) // the whole map starts explored; IntelSystem keeps explored cells
+            foreach (var team in world.Intel.Teams) Array.Fill(team.Fog, Systems.IntelService.FogExplored);
         var center = new Vector2(terrain.Width * 0.5f, terrain.Height * 0.5f);
         for (int a = 0; a < s.Players; a++)
         {
@@ -103,6 +117,7 @@ public static class GameSetup
             var h = world.SpawnUnit(commanders[a], a, sp, DMath.HeadingOf(center - sp), complete: true);
             armies[a].Commander = h;
         }
+        if (o.Prebuilt) PrebuiltBase.Place(world);
         // Nav clearance grids now (loading) instead of in the first tick (~50 ms on 1024): a pure function of terrain
         // + occupancy, so building them earlier changes nothing (later structures update them incrementally).
         world.Paths.EnsureGrids();

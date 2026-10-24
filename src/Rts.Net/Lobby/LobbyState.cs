@@ -1,4 +1,5 @@
 using Rts.Net.Wire;
+using Rts.Sim;
 using Rts.Sim.Map;
 using Rts.Sim.Orders;
 using Rts.Sim.Persistence;
@@ -66,8 +67,15 @@ public sealed class LobbyOptions
     public int Seed = 42;
     /// <summary>What happens to the army of a player who disconnects.</summary>
     public DropAction OnDrop = DropAction.AiTakeover;
+    /// <summary>Game options (victory, unit cap, resources, fog, speed, cheats, prebuilt): lobby defaults = cheats off.</summary>
+    public GameOptions Game = GameOptions.SetupDefaults();
 
-    public LobbyOptions Clone() => (LobbyOptions)MemberwiseClone();
+    public LobbyOptions Clone()
+    {
+        var c = (LobbyOptions)MemberwiseClone();
+        c.Game = Game.Clone();
+        return c;
+    }
 
     public void Write(ByteWriter w)
     {
@@ -76,16 +84,35 @@ public sealed class LobbyOptions
         w.Raw(Water);
         w.VarI(Seed);
         w.U8((byte)OnDrop);
+        w.U8((byte)Game.Victory);
+        w.VarU((ulong)Math.Clamp(Game.UnitCap, 1, GameOptions.MaxUnitCap));
+        w.U8((byte)Game.Resources);
+        w.U8((byte)Game.Fog);
+        w.U8((byte)Game.Speed);
+        w.U8((byte)((Game.Cheats ? 1 : 0) | (Game.Prebuilt ? 2 : 0)));
     }
 
-    public static LobbyOptions Read(ByteReader r) => new()
+    public static LobbyOptions Read(ByteReader r)
     {
-        MapSize = r.Count(8192),
-        Preset = (MapPreset)r.U8(),
-        Water = r.Raw<float>(),
-        Seed = (int)r.VarI(),
-        OnDrop = (DropAction)Math.Min(r.U8(), (byte)DropAction.Defeat),
-    };
+        var o = new LobbyOptions
+        {
+            MapSize = r.Count(8192),
+            Preset = (MapPreset)r.U8(),
+            Water = r.Raw<float>(),
+            Seed = (int)r.VarI(),
+            OnDrop = (DropAction)Math.Min(r.U8(), (byte)DropAction.Defeat),
+        };
+        var g = o.Game;
+        g.Victory = (VictoryCondition)Math.Min(r.U8(), (byte)VictoryCondition.Sandbox);
+        g.UnitCap = (int)Math.Clamp(r.VarU(), 1UL, (ulong)GameOptions.MaxUnitCap);
+        g.Resources = (StartResources)Math.Min(r.U8(), (byte)StartResources.High);
+        g.Fog = (FogMode)Math.Min(r.U8(), (byte)FogMode.None);
+        g.Speed = (GameSpeedMode)Math.Min(r.U8(), (byte)GameSpeedMode.Fast);
+        byte flags = r.U8();
+        g.Cheats = (flags & 1) != 0;
+        g.Prebuilt = (flags & 2) != 0;
+        return o;
+    }
 }
 
 /// <summary>The whole lobby (host authoritative: clients receive a full copy after every change).</summary>

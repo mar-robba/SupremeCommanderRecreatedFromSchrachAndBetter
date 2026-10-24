@@ -42,7 +42,15 @@ public sealed class NetGame
         LocalTurn = localTurn;
         LocalArmy = localTurn >= 0 ? start.TurnArmies[localTurn] : -1;
         _pings = new int[start.TurnPlayers.Length];
+        // A locked game speed (lobby option) is the starting speed on every peer (same lobby = no broadcast needed).
+        Speed = LockedSpeed ?? 1f;
     }
+
+    /// <summary>The speed fixed by the lobby's game options (null = adjustable): speed requests keep it, pause still works.</summary>
+    public float? LockedSpeed => Start.Lobby.Options.Game.LockedSpeed;
+
+    /// <summary>The speed a request may set: the requested one, or the locked speed.</summary>
+    internal float AllowedSpeed(float requested) => LockedSpeed ?? requested;
 
     public int TurnPlayers => Start.TurnPlayers.Length;
     public string NameOfTurn(int turn) => (uint)turn < (uint)TurnPlayers ? Start.Lobby.Slots[Start.ArmySlots[Start.TurnArmies[turn]]].Name : "?";
@@ -67,7 +75,7 @@ public sealed class NetGame
     public void ReportLoaded(ulong stateHash) => _session.ReportLoaded(this, stateHash);
 
     /// <summary>Asks for a new speed / pause state (the host applies it for everybody).</summary>
-    public void RequestSpeed(float speed, bool paused) => _session.RequestSpeed(this, Math.Clamp(speed, 0.125f, 8f), paused);
+    public void RequestSpeed(float speed, bool paused) => _session.RequestSpeed(this, AllowedSpeed(Math.Clamp(speed, 0.125f, 8f)), paused);
 
     /// <summary>The local runner whose Speed/Paused follow the negotiated values (set now and at every change).</summary>
     public void AttachRunner(SimRunner runner)

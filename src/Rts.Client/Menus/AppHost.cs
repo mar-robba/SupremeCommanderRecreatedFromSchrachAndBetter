@@ -61,6 +61,7 @@ public sealed class AppHost : IDisposable
             for (int i = 0; i < GameConfig.MaxSlots; i++)
                 SetupConfig.Slots[i].Kind = i == 0 ? SlotKind.Human : i < options.Players ? SlotKind.AI : SlotKind.Closed;
         SetupConfig.ApplyFactionOptions(options);
+        if (options.GameOptions != null) SetupConfig.Options = Rts.Sim.GameOptions.Parse(options.GameOptions); // --setup --options
     }
 
     /// <summary>Shared animated menu background (created on first use).</summary>
