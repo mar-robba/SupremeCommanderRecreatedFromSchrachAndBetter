@@ -38,11 +38,16 @@ public sealed class SelectionController
 
     /// <summary>What a right-click would do at the cursor (context orders, shown as a cursor hint).</summary>
     public ContextAction HoverAction = ContextAction.None;
+    /// <summary>(7b) Right-drag line formation and waypoint marker editing (Input/FormationDrag.cs, WaypointEditor.cs).</summary>
+    public readonly FormationDrag Formation;
+    public readonly WaypointEditor Waypoints;
 
     public SelectionController(GameContext ctx)
     {
         _ctx = ctx;
         Placement = new BuildPlacement(ctx);
+        Formation = new FormationDrag(ctx, this);
+        Waypoints = new WaypointEditor(ctx, this);
     }
 
     public bool IsDragging => _dragStart.HasValue && Vector2.Distance(_dragStart.Value, Raylib.GetMousePosition()) > 6;
@@ -62,10 +67,12 @@ public sealed class SelectionController
         PruneDead(snap);
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
-        if (InputBlocked) { _dragStart = null; return; }
+        if (InputBlocked) { _dragStart = null; Formation.Cancel(); return; }
 
         HandleHotkeys(ctrl, shift);
-        bool hover = !mouseOverUi && !_ctx.ReadOnly && !Placement.Active && Selected.Count > 0 && !IsDragging;
+        Waypoints.Refresh(mouseOverUi || Placement.Active || Mode != CommandMode.Normal || IsDragging || Formation.Active);
+        bool hover = !mouseOverUi && !_ctx.ReadOnly && !Placement.Active && Selected.Count > 0 && !IsDragging
+            && Waypoints.Hover < 0 && Waypoints.Dragging == null && !Formation.Active;
         HoverAction = !hover ? ContextAction.None
             : Mode == CommandMode.Normal ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition())
             : Mode == CommandMode.Capture ? UnitToggles.CaptureHover(_ctx, this, Raylib.GetMousePosition())
@@ -74,6 +81,7 @@ public sealed class SelectionController
         if (Placement.Active)
         {
             _dragStart = null;
+            Formation.Cancel();
             Placement.Update(mouseOverUi, Selected, shift);
             return;
         }
@@ -85,8 +93,9 @@ public sealed class SelectionController
                 if (IssueAtCursor(shift, Mode) && !shift) Mode = CommandMode.Normal;
                 return;
             }
-            _dragStart = Raylib.GetMousePosition();
+            if (!Waypoints.TryBeginDrag()) _dragStart = Raylib.GetMousePosition();
         }
+        Waypoints.Update();
         if (_dragStart.HasValue && Raylib.IsMouseButtonReleased(MouseButton.Left))
         {
             if (IsDragging) BoxSelect(DragRect, shift);
@@ -95,8 +104,21 @@ public sealed class SelectionController
         }
         if (!mouseOverUi && !_ctx.ReadOnly && Raylib.IsMouseButtonPressed(MouseButton.Right))
         {
-            if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+            // (7b) Normal / attack-move: wait for the release (a drag = line formation, a click = as before).
+            if (Mode is CommandMode.Normal or CommandMode.AttackMove && Waypoints.Dragging == null
+                && Formation.Begin(Raylib.GetMousePosition())) { }
+            else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
             else IssueAtCursor(shift, CommandMode.Normal);
+        }
+        switch (Formation.Update(shift, Mode))
+        {
+            case FormationDrag.Result.Click:
+                if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+                else IssueAtCursor(shift, CommandMode.Normal);
+                break;
+            case FormationDrag.Result.Issued:
+                if (Mode != CommandMode.Normal && !shift) Mode = CommandMode.Normal;
+                break;
         }
     }
 

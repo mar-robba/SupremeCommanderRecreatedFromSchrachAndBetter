@@ -120,6 +120,7 @@ public static class Hotkeys
     public static readonly Hotkey Launch = new(KeyboardKey.L, N, U, "Orders", "Launch mode (missile launchers: click a ground target)");
     public static readonly Hotkey Teleport = new(KeyboardKey.J, N, U, "Orders", "Teleport mode (commander with Personal Teleporter: click a ground point)");
     public static readonly Hotkey SelfDestruct = new(KeyboardKey.K, C, U, "Orders", "Self-destruct (asks for confirmation)");
+    public static readonly Hotkey DeleteWaypoint = new(KeyboardKey.Delete, N, U, "Orders", "Delete the waypoint under the cursor (selected units' queued orders)", label: "Del");
 
     // ---------------------------------------------------------------- toggles
     public static readonly Hotkey FireState = new(KeyboardKey.Q, N, U, "Toggles", "Fire state: fire at will → return fire → hold fire (Shift: back)");
@@ -180,7 +181,7 @@ public static class Hotkeys
     [
         Pan, Rotate, ResetRotation,
         GroupRecall, GroupSet, IdleEngineer, IdleFactory,
-        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct,
+        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct, DeleteWaypoint,
         FireState, Pause, Dive, Overcharge, Capture,
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
@@ -199,6 +200,8 @@ public static class Hotkeys
         new("Selection", "Idle buttons", "Above the minimap: click = next idle engineer / factory, Shift+click = all"),
         new("Orders", "Right click", "Move / attack / assist / reclaim / repair / capture / load (Shift: queue)"),
         new("Orders", "Right click (factory)", "Set the rally point"),
+        new("Orders", "Right drag", "Line formation along the drag, facing away from the camera when dragged left to right (Shift: queue; attack-move mode: attack-move)"),
+        new("Orders", "Drag a waypoint", "Left-drag a selected unit's waypoint marker to move it (Del over it: delete it)"),
         new("Orders", "Minimap", "Left: camera; in an order mode: give it there · right: move"),
         new("Camera", "Wheel", "Zoom to the cursor (zoomed out: strategic icons)"),
         new("Factory", "Right-click", "On a unit button: remove one from the queue (Shift: 5)"),

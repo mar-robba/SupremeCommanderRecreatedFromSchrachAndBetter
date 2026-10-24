@@ -60,6 +60,7 @@ public sealed class GameSession : IDisposable
     /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
     private SandboxController? _sandbox; // (6b) also created later: cheat tools opened in a normal game (F9/F10)
     private readonly ClientOptions _opt;
+    private readonly OrdersUiDemo? _ordersDemo; // (7b) --ui-formation / --ui-waypoints
     /// <summary>(6b) F9/F10 pressed in a cheats-on game: 1 = open the panel, 2 = the console, once the sim enabled the tools.</summary>
     private int _cheatToolsPending;
     private readonly HashSet<long> _selectedSet = new();
@@ -125,6 +126,7 @@ public sealed class GameSession : IDisposable
         _selection = new SelectionController(Ctx);
         _hud = new Hud(Ctx, _selection);
         _hud.ApplyStartupOptions(opt);
+        _ordersDemo = OrdersUiDemo.Create(Ctx, _selection, opt);
         _stratHud = new StrategicHud(Ctx, _selection);
         _props = new PropRenderer(Ctx, _fx.Particles);
         _shields = new ShieldRenderer(Ctx);
@@ -221,6 +223,7 @@ public sealed class GameSession : IDisposable
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
+            _ordersDemo?.Update();
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
@@ -246,6 +249,7 @@ public sealed class GameSession : IDisposable
         _prof.Lap("units");
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
+        OrderMarkers.Draw3D(ctx, _selection); // (7b) waypoint markers, formation drag preview
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
@@ -281,6 +285,7 @@ public sealed class GameSession : IDisposable
             _prof.Lap("hud");
             _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
+            OrderMarkers.Draw2D(ctx, _selection, overUi);
             TeleportHud.Draw2D(ctx, _selection, overUi);
         }
         _prof.Lap("cursor");
