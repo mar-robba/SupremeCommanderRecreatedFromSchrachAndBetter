@@ -2,113 +2,38 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-23 13:50 — read this first in a new session)
-main has waves 1-4 + (j) factions (merged 2026-10-15) + (n) UX polish, (o) lockstep MP and (m) scale/perf (merged
-2026-10-16) + (l) Cybran faction (merged 2026-10-23). Tests: 416 sim + 227 client + 21 net (`tests/Rts.Net.Tests`).
-`Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 11:30", hash EC8B7A06DF52317E
-(the reference for agents that must not change sim results; before the Cybran data it was EDCA8A729F29736E, same game).
-After the land balance pass (AI_TUNING "Unit balance" AFTER) it is "WINNER: AI 1 (Normal) after 15:50", hash 9724216772093A2E.
-With the final (k) AI (Hard preset and UEF T1 tank fix, 2026-10-24) it is "WINNER: Player (Hard) after 15:35", hash 4E3F22FD0F8EED11.
-Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (ids are valid only in
-the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes
-`<worktree>/.claude/agent-report.md` when done. Briefs: HISTORY.md "Wave 5".
+## ▶ NEXT STEPS (updated 2026-10-24 06:00 — read this first in a new session)
+main has waves 1-5: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, and since 2026-10-24
+(k) AI uses everything (344e2b5) + (k-navy) navy and transports AI (5b6ffb6). Tests: 423 sim + 227 client + 21 net.
+Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 15:35", hash
+**4E3F22FD0F8EED11** (agents that must not change sim results compare against it; older references: EC8B7A06DF52317E
+before the (k) balance data, EDCA8A729F29736E before the Cybran data). Agent ids:
+`~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (valid only in the orchestrator session that
+started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes `<worktree>/.claude/agent-report.md` when
+done. Wave 6 briefs: HISTORY "Wave 6" (from "Wave 6+ plan" below).
 
-**ON RESUME:**
-- **2026-10-24 00:45 (session fa417db4):** the 20:14 session limit had cut the restarted coordinators k10 (only `git merge
-  main`, bf5ef6b) and 6a coord 2 (nothing). Fresh ones started after the 23:00 reset with the same briefs: (k) coordinator 11
-  and (6a) coordinator 3 (ids in `orchestrator/agents-wave5.md`). The plan below still holds; if this session is gone too,
-  repeat step 1 below.
-- **2026-10-23 ~20:20 — orchestrator restart (session 1d992d8d ended at 244k). Do this first:**
-  1. Both running agents CHECKPOINTed cleanly (trees clean, handoff notes current). Start a **fresh coordinator in each worktree** (absolute path, no isolation;
-     prompt = the brief below + "continue from `.claude/handoff.md` and `.claude/notes/`"), at most 2 active agents;
-     coordinators run ONE sub-agent at a time and wait while it works. Agent tags: `[IA usa tutto (5k)] ...`,
-     `[Comandante e ingegneri (6a)] ...`. Context watcher: `agent_ctx.py --watch 135000 <id>=<cap-15k> ...`.
-  2. **(k) AI uses everything** — worktree `.claude/worktrees/agent-ac4c927c54a66ca1d` (branch
-     `worktree-agent-ac4c927c54a66ca1d`), class high, cap 250k (CHECKPOINT 230k). Goals (orchestrator decision
-     2026-10-23): (a) lopsided games end, (b) finished games at a 45-min cap: NvN >= 80/96, HvH >= 85 %, Hard v Normal
-     win share >= main's (main 177-7-8), (c) tech beats a T1-only config >= 65 %; timeboxed (record numbers, pick best
-     defaults, move on). Done (CHECKPOINT 79f4ece, tests Sim 419/Client 227/Net 21): duel tool, unit balance pass
-     (7650459), new Normal defaults, new Hard preset (focus fire off), branch reference hash 74E2EB7D333190A4 (Hard
-     15:58). Numbers at 45 min: (c) 64 % (112-61), NvN 70/96, lopsided stalled 25/77, HvH 68/96, Hard v Normal 92-55.
-     **Next: Cybran/UEF parity first (51-21; `duelmatrix uef cybran` role by role), then Hard's edge, stalls
-     documented if no lever helps.** Then: AiTechTests timings, docs, lab
-     scripts in tools/ai-lab, Client/Net tests, perf, final merge main, report with "Handoff review". Coordinators
-     8/9 reached 240k in ~40 min: keep outputs tiny. Its branch tracks no `.claude/` files any more.
-  3. **(k-navy) DONE** — branch `wave5-ai-navy` (worktree `.claude/worktrees/ai-navy`, 0d0f4b0, report in its
-     `.claude/agent-report.md`). Merge into main AFTER (k): first `git merge` the final (k) branch into it (conflicts
-     only in AI_TUNING.md), all tests, then merge. Copy both reports into HISTORY, remove worktrees + branches.
-  4. **(6a) Commander & engineers** — worktree `.claude/worktrees/wave6a` (branch `wave6a-commander`, from main
-     03bda94), class medium, cap 200k, sub-agents low 150k. CHECKPOINT before any code: its handoff has the G3
-     design checked against the code and the piece order (G3, G1, G2, G7). Brief: "Wave 6+ plan" section, row 6a (G1 Overcharge,
-     G2 commander death blast in `Commander/` not CleanupSystem, G3 engineer patrol automation in
-     `Economy/EngineerPatrol.cs`, G7 teleporter / UEF drones / SCU jammer if time); both factions via roles; tests,
-     screenshots, docs, new reference hash documented, report.
-  5. When (k) is merged: start **6b game options & team play** (brief in "Wave 6+ plan").
-  6. **Owner questions pending** (asked 2026-10-23 ~19:05, see "Questions for the owner" in the Wave 6+ plan:
-     campaign, map editor, mods, Italian localization, release packaging, online play, voice announcer, FA units,
-     split screen). Ask again if unanswered; record answers in WORKFLOW "Owner decisions".
-  7. New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW
-     "Incidents"). Agent ids of this session: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md`.
-- 2026-10-23 18:50 (session 1d992d8d, orchestrator near its context limit): state for a restart.
-  - (k) coordinator 9 running in `agent-ac4c927c54a66ca1d`: unit balance pass done (7650459, duel tool f71a222,
-    AI_TUNING "Unit balance"), now re-measuring goals (a)(b)(c). When it finishes: merge it FIRST.
-  - (k-navy) DONE: branch `wave5-ai-navy` (0d0f4b0, worktree `.claude/worktrees/ai-navy`, report in its
-    `.claude/agent-report.md`), contains (k) up to 9f0b1e5. Merge it AFTER (k) (it may need `git merge` of the final
-    (k) first: conflicts only in AI_TUNING.md). Then HISTORY reports for both, remove worktrees/branches.
-  - Wave 6 audit merged (820b2e4): "Wave 6+ plan" below. Its 9 owner questions were asked on 2026-10-23 ~19:05;
-    record the answers in WORKFLOW "Owner decisions" and adjust the plan.
-  - 2026-10-23 20:10: wave 6a (commander & engineers: Overcharge, death blast, patrol automation, then teleport/drones/
-    jammer) started early, in parallel with (k) (disjoint files): coordinator in `.claude/worktrees/wave6a` (branch
-    `wave6a-commander`). Start 6b (game options & team play) when (k) finishes. (k) was told: Cybran v UEF 51-21 and
-    Hard v Normal 92-55 after the balance pass must be fixed.
-  - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root).
-- 2026-10-23 18:25: (k-navy) 2 stopped at its cap with navy + transports written, tested (Sim 423) and documented,
-  (k) and main merged in (d2f9b24); k-navy 3 finishes it (re-measure, landing-zone weakness, Hard harass drops, perf,
-  report). Its branch merges into main AFTER (k). (k) coordinator 9 runs the unit balance sub-agent.
-- 2026-10-23 13:52: (k) coordinator 8 stopped at its cap (CHECKPOINT cf3767b): a T1-only AI beats the tech AI 22-6,
-  best lever ArtilleryTier=1 (NvN 45 min 78/96). Coordinator 9 started with the orchestrator's direction: **balance
-  first** (bench duel tool, then T1 artillery down / T2-T3 up to SupCom-like mass efficiency, UEF and Cybran), then
-  goals (a)(b)(c) again.
-- 2026-10-23 13:55: (l) Cybran merged into main (f727ced). Running: (k) coordinator 8 in `agent-ac4c927c54a66ca1d`
-  and the new (k-navy) agent in `.claude/worktrees/ai-navy` (branch `wave5-ai-navy`, from the (k) branch at 701ea45):
-  navy + transports AI (owns AiNavy*, AiTransport*, AiConfig.Navy.cs, their tests); it merges the (k) branch into its
-  own at the end. Merge order: (k) into main, then `wave5-ai-navy` (or navy into (k) first). If cut off: fresh agent
-  in the same worktree from its `.claude/handoff.md`.
-- 2026-10-23 13:15 (session 1d992d8d): the disk came back at `/run/media/marco/RTS` (WORKFLOW "Incidents"); the
-  10-22 ~23:00 usage limit had cut both coordinators ((k) WIP committed as ceacaa1, (l) C3a WIP 606a2b7). Fresh
-  coordinators started (ids in `orchestrator/agents-wave5.md`): (l) cap 200k: C3a leftovers, C3b status visuals,
-  D integration + report. (k) cap 250k with **new stall goals** (orchestrator decision: the 30-min 80/96 target
-  measured T1-only play): (a) lopsided games must end (winning army stops 40-70 from the base), (b) finished games
-  at a 45-min cap: NvN >= 80/96, HvH >= 85 %, Hard v Normal >= main, (c) tech beats a T1-only config head-to-head
-  (>= 65 %); timeboxed. Navy + transports AI go to a separate agent (new worktree from the (k) branch) after (l) merges.
-- 2026-10-22 21:55 (session cb4473f4, after a reboot: every /tmp scratchpad is wiped): the 2026-10-16 16:26 session
-  limit had cut both coordinators and the (l) client sub-agent C1; its WIP is committed as 8d78f74 (Cybran air models
-  + client hooks; naval models missing, the client does NOT compile; state at the bottom of (l) `notes/C-client.md`).
-  Fresh coordinators started in both worktrees (ids in `orchestrator/agents-wave5.md`): (l) cap 200k (medium:
-  integration), (k) cap 250k (high: stall diagnosis by matrices). Same brief and TODO as below. If this session is gone
-  too, start them again the same way (their handoff notes are current).
-- 2026-10-16 16:07: new orchestrator session started a fresh coordinator in each worktree below ((l) and (k)); ids in
-  `orchestrator/agents-wave5.md`. If this session is gone too, repeat the step below (their handoff notes are current).
-- 2026-10-16 16:10: the owner restarted the orchestrator. The last two wave 5 agents were told to CHECKPOINT
-  (commit + short handoff) and stop with the old session; their ids are gone. **Start a fresh agent in each
-  worktree** (absolute path, no isolation; brief in HISTORY "Wave 5" + "continue from `.claude/handoff.md` and the
-  notes in `.claude/notes/`"), at most 2 at a time (WORKFLOW "Usage limits"), each a coordinator running ONE sub-agent
-  at a time, everyone under the 150k context cap (owner rule 2026-10-16, AGENT_RULES):
-  - (l) Cybran in `agent-a9df3acf3524c656f`: sim done (stealth/cloak/field, EMP, seabed walkers; shield chain: see
-    `notes/A-sim.md`), data done (80 blueprints + cybran.json + CybranRosterTests, `notes/B-data.md`; 5c23700, all
-    tests green: 399 sim + 213 client + 21 net). Next: sub-agent C client (remaining air/naval/experimental/structure
-    models: remove the `#if CYBRAN_MODELS_FULL` guard in `UnitModels.Cybran.cs`, `case` lines, icons, status
-    visuals, `--scene cybran`), then D integration (Cybran vs UEF AI matches, perf, docs, final merge, report).
-  - (k) AI uses everything in `agent-ac4c927c54a66ca1d` (CHECKPOINT ab30ce2, compiles, clean): tech (T2/T3
-    upgrades, enhancements, adjacency), projects (shields, TMD, anti-nuke, TML, artillery, gateway/SCUs,
-    experimentals, nukes, mass fabs), `AiStrategic`, captures, a `tech:` summary line in the bench. **Problem first:
-    tech makes games stall** (Hard v Normal 77-16 with 99 unfinished of 192, main 177-7-8; NvN finished 45/96 vs
-    80/96). Left: fix the stalemates, navy + transports (`AiNavy`/`AiTransport` are stubs), T1 artillery balance (done: land balance pass, AI_TUNING "Unit balance" AFTER),
-    `AiTechTests`, docs, report. Client/Net tests not yet run on the branch.
-    (m) measured one AI think at ~11 ms with 8 AIs on 1024: (k) should keep it down.
-  - Both worktrees were clean at the restart. Merge (l) first; then (k) merges
-    main and runs Cybran vs UEF matches.
-  History: weekly limit 2026-10-14 08:14; session limits 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 (reset 15:40), 2026-10-16 16:26, 2026-10-22 ~23:00, 2026-10-23 14:05 (reset 18:00; agents resumed by SendMessage).
+**ON RESUME** (2026-10-24 06:00, session fa417db4):
+- **Running (wave 6, 2 agents):**
+  - **(6a) Commander & engineers**: worktree `.claude/worktrees/wave6a` (branch `wave6a-commander`), coordinator 3
+    (cap 200k medium; was at ~155k at 05:45). Done: G3 patrol automation, G1 Overcharge (sim + client, key O), G2
+    commander death blast (sim + client), tests. In progress: G7 teleporter sim (WIP c874f7b + sub-agent). Left:
+    teleporter client, drones/jammer (or ROADMAP later), docs, `git merge main` (it must re-measure the hash: main
+    changed to 4E3F22FD0F8EED11), report. Its notes: `.claude/notes/` there.
+  - **(6b) Game options & team play** (G4, G5; G6 if time): worktree `.claude/worktrees/wave6b` (branch
+    `wave6b-options` from main 9f875d0), coordinator 1 (cap 200k medium), one sub-agent at a time.
+  - If cut off (usage limit or restart): commit WIP in the worktree, then a fresh coordinator there with the same
+    brief (HISTORY "Wave 6") + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
+    `agent_ctx.py --watch 135000 <id>=185000 ...`. Sub-agents of 6a hit their caps fast (client pieces: screenshots):
+    tell them to CHECKPOINT by SendMessage when the watcher fires.
+- **Then:** merge 6a and 6b (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
+  in WORKFLOW, then wave 7 (7a release + settings + autosave, 7b orders & selection UX; briefs in "Wave 6+ plan").
+- **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
+  Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
+- (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
+  an AI decision change, planned for wave 9a (G30-G33).
+- New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
+  History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
+  2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -119,9 +44,9 @@ the orchestrator session that started them). Each agent keeps `<worktree>/.claud
 
 **Next waves (owner: "everything must be done"; 2026-10-23: two factions, UEF + Cybran, are enough, no further factions):**
 - **Wave 5** (after f + j are merged), 5 parallel agents:
-  1. AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
+  1. ✅ (merged 2026-10-24, with k-navy) AI uses everything: T2/T3 upgrades, adjacency, enhancements, navy (Archipelago), transports, shields/TML/nukes/
      anti-nuke, experimentals. Faction-agnostic via roles. Balance pass.
-  2. Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
+  2. ✅ (merged 2026-10-23) Cybran faction (`data/factions/cybran.json`): full T1–T3, Monkeylord, Soul Ripper, Scathis; stealth/cloak, EMP,
      amphibious walkers; distinct models.
   3. ✅ (merged 2026-10-16) Scale/perf: 1024 maps with 4–8 players, 5k+ units at 60 FPS (LOD, instancing, intel cost, async nav build).
   4. ✅ (merged 2026-10-16) UX polish: the follow-ups above; fire states (hold fire / return fire); Load in the pause menu; viewer F7; save

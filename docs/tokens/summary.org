@@ -3,41 +3,41 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-10-24 03:40 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-10-24 03:42 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.231,5 milioni di token, 618,7 $, 20 sessioni e 126 agenti.
-Output: 46 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,89).
+1.235,0 milioni di token, 620,2 $, 20 sessioni e 127 agenti.
+Output: 47 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,89).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 57     | 452,2     | 2.727      | 237,0 | 38,3    | 2026-10-23      |
-| Avversario IA          | 25     | 260,7     | 1.331      | 116,9 | 18,9    | 2026-10-24      |
+| Gameplay SupCom        | 57     | 452,2     | 2.727      | 237,0 | 38,2    | 2026-10-23      |
+| Avversario IA          | 25     | 260,7     | 1.331      | 116,9 | 18,8    | 2026-10-24      |
 | Esperienza client      | 19     | 189,0     | 1.117      | 85,6  | 13,8    | 2026-10-16      |
-| Coordinamento          | 0      | 118,7     | 615        | 67,2  | 10,9    | 2026-10-23      |
+| Coordinamento          | 0      | 118,7     | 615        | 67,2  | 10,8    | 2026-10-23      |
 | Infrastruttura tecnica | 14     | 119,9     | 843        | 59,5  | 9,6     | 2026-10-16      |
-| Da classificare        | 11     | 50,8      | 399        | 27,7  | 4,5     | 2026-10-24      |
+| Da classificare        | 12     | 52,9      | 406        | 28,6  | 4,6     | 2026-10-24      |
 | Documentazione         | 0      | 32,0      | 286        | 20,6  | 3,3     | 2026-10-23      |
-| orchestrazione         | 0      | 8,1       | 38         | 4,3   | 0,7     | 2026-10-24      |
+| orchestrazione         | 0      | 9,6       | 47         | 4,9   | 0,8     | 2026-10-24      |
 
 * Per scopo
 | Scopo                                           | Agenti | Token (M) | Output (k) | $    | % costo | Ultima attività |
 |-------------------------------------------------+--------+-----------+------------+------+---------+-----------------|
 | IA usa tutto (5k)                               | 18     | 170,2     | 902        | 76,3 | 12,3    | 2026-10-24      |
-| Fazione Cybran (5l)                             | 20     | 88,6      | 595        | 46,2 | 7,5     | 2026-10-23      |
+| Fazione Cybran (5l)                             | 20     | 88,6      | 595        | 46,2 | 7,4     | 2026-10-23      |
 | Orchestrazione (sessioni principali)            | 0      | 69,5      | 396        | 46,0 | 7,4     | 2026-10-16      |
 | Rifinitura SupCom (4f)                          | 9      | 79,5      | 452        | 42,3 | 6,8     | 2026-10-14      |
-| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 428        | 40,6 | 6,6     | 2026-10-14      |
-| Navale (3c)                                     | 4      | 61,0      | 250        | 31,9 | 5,2     | 2026-10-12      |
-| Comandante e ingegneri (6a)                     | 10     | 45,9      | 342        | 25,0 | 4,0     | 2026-10-24      |
+| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 428        | 40,6 | 6,5     | 2026-10-14      |
+| Navale (3c)                                     | 4      | 61,0      | 250        | 31,9 | 5,1     | 2026-10-12      |
+| Comandante e ingegneri (6a)                     | 10     | 47,6      | 347        | 25,6 | 4,1     | 2026-10-24      |
 | Mappe, menu, flusso (onda 2)                    | 3      | 64,8      | 251        | 25,0 | 4,0     | 2026-10-11      |
-| Armi strategiche (3b)                           | 6      | 45,7      | 278        | 22,8 | 3,7     | 2026-10-12      |
+| Armi strategiche (3b)                           | 6      | 45,7      | 279        | 22,8 | 3,7     | 2026-10-12      |
 | Sperimentali e comandanti (4g)                  | 5      | 38,4      | 256        | 22,5 | 3,6     | 2026-10-13      |
 | Scala e prestazioni (5m)                        | 6      | 50,0      | 241        | 21,3 | 3,4     | 2026-10-16      |
 | Trasporti (4h)                                  | 4      | 37,9      | 246        | 20,6 | 3,3     | 2026-10-14      |
 | UX (5n)                                         | 7      | 42,8      | 251        | 19,2 | 3,1     | 2026-10-16      |
-| Salvataggi e replay (4i)                        | 3      | 31,0      | 226        | 17,1 | 2,8     | 2026-10-14      |
+| Salvataggi e replay (4i)                        | 3      | 31,0      | 227        | 17,1 | 2,8     | 2026-10-14      |
 | Multigiocatore lockstep (5o)                    | 5      | 35,1      | 220        | 16,0 | 2,6     | 2026-10-16      |
 | Sandbox (3e)                                    | 5      | 28,2      | 233        | 14,8 | 2,4     | 2026-10-12      |
 | Nebbia di guerra e intel (onda 2)               | 2      | 30,9      | 145        | 12,9 | 2,1     | 2026-10-11      |
@@ -47,17 +47,18 @@ Output: 46 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (
 | Orchestrazione wave 5 (ripresa 23/10)           | 0      | 24,6      | 96         | 9,9  | 1,6     | 2026-10-23      |
 | Audio e rifinitura (onda 2)                     | 2      | 20,6      | 113        | 9,9  | 1,6     | 2026-10-11      |
 | Documentazione e analisi costi                  | 0      | 16,8      | 130        | 9,1  | 1,5     | 2026-10-23      |
-| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 134        | 9,0  | 1,5     | 2026-10-10      |
+| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 134        | 9,0  | 1,4     | 2026-10-10      |
 | Orchestrazione wave 5 (ripresa 16/10)           | 0      | 19,1      | 93         | 8,7  | 1,4     | 2026-10-16      |
 | Combattimento (onda 1)                          | 1      | 12,0      | 71         | 7,3  | 1,2     | 2026-10-10      |
 | UI e HUD (onda 1)                               | 1      | 12,0      | 102        | 6,7  | 1,1     | 2026-10-10      |
 | Economia e costruzione (onda 1)                 | 1      | 6,7       | 82         | 5,5  | 0,9     | 2026-10-10      |
 | Infrastruttura fazioni (j)                      | 2      | 11,0      | 88         | 5,2  | 0,8     | 2026-10-14      |
 | Fondazione (sessione principale)                | 0      | 3,9       | 156        | 5,1  | 0,8     | 2026-10-10      |
-| Orchestrazione wave 5k/6a                       | 0      | 7,2       | 29         | 3,6  | 0,6     | 2026-10-24      |
+| Orchestrazione wave 5k/6a                       | 0      | 8,7       | 37         | 4,1  | 0,7     | 2026-10-24      |
 | Pianificazione wave 6                           | 1      | 4,9       | 57         | 2,7  | 0,4     | 2026-10-23      |
 | Orchestrazione wave 5 (ripresa l Cybran + k IA) | 0      | 5,5       | 30         | 2,6  | 0,4     | 2026-10-22      |
 | Orchestratore ondata 5-6                        | 0      | 0,8       | 9          | 0,8  | 0,1     | 2026-10-23      |
+| Opzioni partita e squadra (6b)                  | 1      | 0,3       | 1          | 0,2  | 0,0     | 2026-10-24      |
 
 * Per giorno
 | Giorno     | Token (M) | $     | Agenti |
@@ -71,13 +72,14 @@ Output: 46 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (
 | 2026-10-16 | 138,5     | 57,9  | 14     |
 | 2026-10-22 | 54,8      | 25,9  | 8      |
 | 2026-10-23 | 134,8     | 62,0  | 14     |
-| 2026-10-24 | 67,3      | 35,7  | 9      |
+| 2026-10-24 | 70,8      | 37,2  | 10     |
 
 * Ultime attività
 | Fine (UTC)       | Tipo     | Scopo                                 | Descrizione                                        | Token (M) | $     | Output |
 |------------------+----------+---------------------------------------+----------------------------------------------------+-----------+-------+--------|
-| 2026-10-24 03:40 | sessione | Orchestrazione wave 5k/6a             | continua                                           | 7,2       | 3.57  | esatto |
-| 2026-10-24 03:40 | agente   | Comandante e ingegneri (6a)           | [Comandante e ingegneri (6a)] G7 teleporter client | 1,6       | 0.80  | esatto |
+| 2026-10-24 03:42 | sessione | Orchestrazione wave 5k/6a             | continua                                           | 8,7       | 4.13  | esatto |
+| 2026-10-24 03:42 | agente   | Opzioni partita e squadra (6b)        | [Opzioni partita e squadra (6b)] coordinator 1     | 0,3       | 0.25  | esatto |
+| 2026-10-24 03:42 | agente   | Comandante e ingegneri (6a)           | [Comandante e ingegneri (6a)] G7 teleporter client | 3,3       | 1.43  | esatto |
 | 2026-10-24 03:38 | agente   | Comandante e ingegneri (6a)           | [Comandante e ingegneri (6a)] coordinator 3        | 7,0       | 7.08  | esatto |
 | 2026-10-24 03:38 | agente   | Comandante e ingegneri (6a)           | [Comandante e ingegneri (6a)] G7 teleporter sim    | 7,6       | 3.61  | esatto |
 | 2026-10-23 23:53 | agente   | IA usa tutto (5k)                     | [IA usa tutto (5k)] coordinator 11                 | 15,5      | 7.97  | esatto |
@@ -95,7 +97,6 @@ Output: 46 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (
 | 2026-10-23 17:08 | agente   | Pianificazione wave 6                 | [Pianificazione wave 6] SupCom1 gap audit          | 4,9       | 2.72  | esatto |
 | 2026-10-23 16:55 | ripresa  | IA usa tutto (5k)                     | [IA usa tutto (5k)] navy agent 3, finish           | 13,1      | 5.64  | esatto |
 | 2026-10-23 16:29 | agente   | IA usa tutto (5k)                     | [IA usa tutto (5k)] unit balance pass              | 8,8       | 4.23  | esatto |
-| 2026-10-23 16:16 | agente   | IA usa tutto (5k)                     | [IA usa tutto (5k)] navy agent 2, transports       | 13,6      | 5.95  | esatto |
 
 * Da classificare
 Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l'area dello scopo in
@@ -111,4 +112,5 @@ Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l
 - Comandante e ingegneri (6a): [Comandante e ingegneri (6a)] coordinator
 - Comandante e ingegneri (6a): [Comandante e ingegneri (6a)] coordinator 2
 - Comandante e ingegneri (6a): [Comandante e ingegneri (6a)] coordinator 3
+- Opzioni partita e squadra (6b): [Opzioni partita e squadra (6b)] coordinator 1
 - Pianificazione wave 6: [Pianificazione wave 6] SupCom1 gap audit
