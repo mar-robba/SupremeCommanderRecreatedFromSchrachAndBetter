@@ -224,6 +224,7 @@ public static class GameApp
         Rendering.FrameProfiler.GpuEnabled = opt.ScreenshotPath != null || Rendering.PerfLog.Enabled; // GPU stage timings
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
+        AppIcon.SetWindowIcon();
         Raylib.SetExitKey(KeyboardKey.Null);
         Rlgl.SetClipPlanes(0.5, 6000);
         if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();
