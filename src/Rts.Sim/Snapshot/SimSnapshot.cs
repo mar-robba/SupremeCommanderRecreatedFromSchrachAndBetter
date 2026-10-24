@@ -95,6 +95,8 @@ public struct ArmyView
     public int UnitCount;
     /// <summary>(6b) Max live units of the army (GameOptions.UnitCap; lifted in sandbox).</summary>
     public int UnitCap;
+    /// <summary>(6b, G6) Current score (<see cref="World.ArmyStats.Score(float, float, int, int)"/>).</summary>
+    public int Score;
     public float Mass, MassMax, MassIncome, MassDemand, MassEfficiency;
     public float Energy, EnergyMax, EnergyIncome, EnergyDemand, EnergyEfficiency;
 }

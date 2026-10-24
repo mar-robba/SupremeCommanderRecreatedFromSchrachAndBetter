@@ -36,7 +36,7 @@ public static class DiplomacyRules
 
 /// <summary>
 /// F4 diplomacy panel: every player (color, name, faction, team, ally/enemy, defeated, units n/cap for you and your
-/// allies; your row marked) and, per living ally, "give the selected units" (<see cref="GiveUnitsCommand"/> with your own
+/// allies, score (<c>ArmyStats.Score</c>); your row marked) and, per living ally, "give the selected units" (<see cref="GiveUnitsCommand"/> with your own
 /// selected units) and "give mass/energy" (<see cref="DiplomacyRules.GiveFraction"/> of your stored amount per click,
 /// <see cref="GiveResourcesCommand"/>). Hidden in replays and for observers (defeated local army).
 /// </summary>
@@ -64,7 +64,7 @@ public sealed class DiplomacyPanel
     {
         if (!Available(_ctx, snap)) { Open = false; return; }
         if (Hotkeys.Diplomacy.Pressed()) Toggle();
-        float w = Ui.P(712), rowH = Ui.P(30);
+        float w = Ui.P(776), rowH = Ui.P(30);
         _rect = new Rectangle(Ui.Sw - w - Ui.P(8), Ui.P(38), w, Ui.P(56) + snap.Armies.Length * rowH + Ui.P(26));
     }
 
@@ -89,13 +89,14 @@ public sealed class DiplomacyPanel
         var mine = OwnSelected(snap);
         float x = p.X + Ui.P(12), y = p.Y + Ui.P(26), rowH = Ui.P(30);
         float cName = x + Ui.P(18), cFac = cName + Ui.P(130), cTeam = cFac + Ui.P(70), cRel = cTeam + Ui.P(44),
-            cUnits = cRel + Ui.P(64), cGive = cUnits + Ui.P(76);
+            cUnits = cRel + Ui.P(64), cScore = cUnits + Ui.P(76), cGive = cScore + Ui.P(64);
         int hs = Ui.F(10.5f), fs = Ui.F(12.5f);
         Ui.Text("PLAYER", cName, y, hs, Ui.TextFaint, true);
         Ui.Text("FACTION", cFac, y, hs, Ui.TextFaint, true);
         Ui.Text("TEAM", cTeam, y, hs, Ui.TextFaint, true);
         Ui.Text("STATUS", cRel, y, hs, Ui.TextFaint, true);
         Ui.Text("UNITS", cUnits, y, hs, Ui.TextFaint, true);
+        Ui.Text("SCORE", cScore, y, hs, Ui.TextFaint, true);
         Ui.Text("GIVE", cGive, y, hs, Ui.TextFaint, true);
         y += Ui.P(18);
         foreach (var row in DiplomacyRules.Rows(snap.Armies, _ctx.LocalArmy))
@@ -114,6 +115,7 @@ public sealed class DiplomacyPanel
             var (rel, rc) = row.Defeated ? ("Defeated", Ui.TextFaint) : row.Self ? ("You", Ui.Accent) : row.Ally ? ("Ally", Ui.Good) : ("Enemy", Ui.Bad);
             Ui.Text(rel, cRel, ty, fs, rc, true);
             Ui.Text(row.Self || row.Ally ? $"{a.UnitCount}/{a.UnitCap}" : "—", cUnits, ty, fs, tc);
+            Ui.Text(Ui.Num(a.Score), cScore, ty, fs, tc); // G6: ArmyStats.Score (every player, like SupCom)
             if (row.CanGive)
             {
                 float bw = Ui.P(96), bh = rowH - Ui.P(6), by = y + Ui.P(2);

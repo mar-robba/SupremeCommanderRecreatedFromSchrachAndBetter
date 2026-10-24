@@ -49,6 +49,10 @@ public static class CleanupSystem
         }
         w.PendingDeaths.Clear();
 
+        // (6b, G6) Score history: one sample per army every ScoreSample.Interval ticks (not hashed).
+        if (w.Tick % ScoreSample.Interval == 0)
+            foreach (var army in w.Armies) army.Stats.Record(w.Tick, army.Eco, army.UnitCount);
+
         // Victory: one team left standing (never in sandbox mode).
         if (w.WinningTeam < 0 && victory != VictoryCondition.Sandbox)
         {
