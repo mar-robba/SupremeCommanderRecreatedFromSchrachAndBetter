@@ -75,6 +75,7 @@ public sealed partial class EffectsRenderer : IDisposable
         if (e.Kind == EffectKind.Nuke) { SpawnNuke(in e); return; } // NukeFx, commander blasts too (EffectsRenderer.Overcharge.cs)
         if (SpawnStrategic(in e)) return; // EffectsRenderer.Strategic.cs
         if (SpawnOvercharge(in e)) return; // EffectsRenderer.Overcharge.cs
+        if (SpawnTeleport(in e)) return; // EffectsRenderer.Teleport.cs
         float size = MathF.Max(0.3f, e.Size);
         var fv = FrameView.Current;
         if (!fv.SphereVisible(e.Pos, size * 6 + 4)) { if (e.Kind != EffectKind.UnitDeath) return; }
@@ -131,6 +132,7 @@ public sealed partial class EffectsRenderer : IDisposable
         }
         // Client-side fake projectiles (debug).
         foreach (var f in _fake) DrawProjectile(f.Id, f.Pos, f.Vel, f.Visual, f.Army, fv, dt);
+        TeleportFrame(dt, cur, prev, alpha, fv); // Personal Teleporter charge (EffectsRenderer.Teleport.cs)
 
         // Forget trails of projectiles that disappeared.
         _stale.Clear();
