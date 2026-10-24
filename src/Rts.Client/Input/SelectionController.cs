@@ -24,7 +24,7 @@ public sealed class SelectionController
     private double _lastClickTime;
     private UnitHandle _lastClicked = UnitHandle.None;
 
-    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Capture, Unload, TransportTo, Ferry }
+    public enum CommandMode { Normal, AttackMove, Patrol, Move, Guard, Launch, Capture, Unload, TransportTo, Ferry, Teleport }
     public CommandMode Mode = CommandMode.Normal;
 
     /// <summary>Structure placement mode (build menu).</summary>
@@ -112,6 +112,7 @@ public sealed class SelectionController
             if (Hotkeys.Guard.Pressed()) SetMode(CommandMode.Guard);
             if (Hotkeys.SelfDestruct.Pressed()) RequestSelfDestruct();
             StrategicOrders.HandleHotkey(_ctx, this, ctrl);
+            TeleportInput.HandleHotkey(_ctx, this, ctrl);
             UnitToggles.HandleHotkeys(_ctx, this, ctrl);
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
@@ -236,6 +237,8 @@ public sealed class SelectionController
                 return true;
             case CommandMode.Launch:
                 return StrategicOrders.TryLaunchAt(_ctx, this, p);
+            case CommandMode.Teleport:
+                return TeleportInput.TryTeleportAt(_ctx, this, p, queue);
             case CommandMode.Capture:
             {
                 var armies = ArmyCommands.Groups(_ctx, Selected).Select(g => g.Army).ToArray();
@@ -388,6 +391,7 @@ public sealed class SelectionController
         if (Selected.Count == 0) return false;
         var mouse = Raylib.GetMousePosition();
         if (mode == CommandMode.Launch) return StrategicOrders.TryLaunch(_ctx, this, mouse);
+        if (mode == CommandMode.Teleport) return TeleportInput.TryTeleport(_ctx, this, mouse, queue);
         if (mode == CommandMode.Capture) return UnitToggles.TryCapture(_ctx, this, mouse, queue);
         if (TransportInput.IsTransportMode(mode)) return TransportInput.TryIssueMode(_ctx, this, mouse, queue, mode);
         var target = PickUnit(mouse);

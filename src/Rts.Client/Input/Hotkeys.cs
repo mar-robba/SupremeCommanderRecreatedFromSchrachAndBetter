@@ -118,6 +118,7 @@ public static class Hotkeys
     public static readonly Hotkey Patrol = new(KeyboardKey.P, N, U, "Orders", "Patrol mode (Shift: add points)");
     public static readonly Hotkey Guard = new(KeyboardKey.G, N, U, "Orders", "Guard / assist mode");
     public static readonly Hotkey Launch = new(KeyboardKey.L, N, U, "Orders", "Launch mode (missile launchers: click a ground target)");
+    public static readonly Hotkey Teleport = new(KeyboardKey.J, N, U, "Orders", "Teleport mode (commander with Personal Teleporter: click a ground point)");
     public static readonly Hotkey SelfDestruct = new(KeyboardKey.K, C, U, "Orders", "Self-destruct (asks for confirmation)");
 
     // ---------------------------------------------------------------- toggles
@@ -178,7 +179,7 @@ public static class Hotkeys
     [
         Pan, Rotate, ResetRotation,
         GroupRecall, GroupSet, IdleEngineer, IdleFactory,
-        Stop, Move, AttackMove, Patrol, Guard, Launch, SelfDestruct,
+        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct,
         FireState, Pause, Dive, Overcharge, Capture,
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
