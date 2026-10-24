@@ -379,6 +379,28 @@ context cap many times; navy + transports split off to (k-navy), merged after it
   need no rebuild); `pgrep -f` wait loops matched themselves (wait on a result line instead); 45-min matrices take
   8-12 min, not 2-3.5.
 
+### (k-navy) Navy + transports AI — `AiNavy*`, `AiTransport*`, `AiConfig.Navy.cs`
+*brief (2026-10-23, split off from (k)): naval factories and fleets on water maps, island drops with transports
+(landing zones, ferry, air staging), harass drops; own worktree branched from the (k) branch, merged after it.*
+
+**Delivered** (merged 2026-10-24 after (k); three agents: k-navy 1 stopped at 193k after 11.5 min with the navy
+written, k-navy 2 wrote transports and tests, k-navy 3 finished). Report of k-navy 3:
+- **Works:** naval factories and fleets when the enemy is reachable by water; island mode (no land path to any enemy
+  start): air factory before the mass-stall gate, transports queued behind interceptors, landing zones scored by
+  anti-air along the flight and kept away from the enemy commander's last seen position (`DropCommanderAvoid=3`);
+  Hard landed groups raid extractors first (`DropMexValueHard=80`). Engineers are amphibious, so no engineer ferries.
+- **Tried and reverted** (AI_TUNING "Navy and transports"): synchronized drop waves with a strength gate, pausing the
+  ferry while the landing zone is contested, freezing the landing zone: worse or noise.
+- **Numbers:** Archipelago 256 NvN 30 min 7/24 finished (4/24 without avoidance; 0/6 before the agent), 512 1/12.
+  Land games unchanged: reference match `ai 30 256 42 hard,normal` still 4E3F22FD0F8EED11 after the merge. AI cost
+  0.007 ms/tick (256), 0.014 (512), no per-think allocations.
+- **Tests:** Sim 423 (+4: AiNavy/AiTransport tests), Client 227, Net 21. **Shared files:** none.
+- **Known issues:** Hard on Archipelago builds few land units and drops 3x less than Normal (loses 7 of 8 finished
+  games to Normal: economy/production); small-island drops still die fast to home armies.
+- **Handoff review:** k-navy 1's note missed that air factories never got built on island maps and that engineer jobs
+  after the mass-stall gate never ran (k-navy 2 found both); k-navy 2's match runner lived only in the scratchpad
+  (lost, rewritten); "re-measure after the k merge" didn't say (k) kept moving (two more merges).
+
 ### (l) Cybran faction — `data/factions/cybran.json`, `cybran_*` blueprints, new sim features, models
 *brief; starts after (j)*
 
