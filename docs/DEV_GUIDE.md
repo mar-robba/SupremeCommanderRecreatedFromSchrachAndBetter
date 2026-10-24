@@ -231,7 +231,8 @@ downloaded from NuGet), 36 MB tar.gz / 37 MB zip.
   dev runs too; trimmed to ~256 KB; time, version, OS, full stack) and still crash with the stderr trace. Bad
   command-line arguments (thrown by `ClientOptions.Parse`) are not logged. A fatal crash of an interactive run writes
   `crash.pending`; the next interactive start shows "The game crashed last time: <path>" in the main-menu footer.
-  Sim-thread faults are not here: `SimRunner` catches them (`Fault`) and the HUD shows them.
+  Sim-thread faults: `SimRunner` catches them (`Fault`, shown by the HUD); `GameSession.Frame` logs the first one
+  (non-fatal entry "sim thread").
 - **Icon**: `AppIcon` draws it procedurally (SDFs, CPU `Image`, no window): window icon after InitWindow, and
   `Rts.Client --export-icon FILE.png` (alone; no window) which the script uses. The Windows exe gets it too
   (`ApplicationIcon` = an .ico wrapping the PNG, only with `all`, since the PNG comes from the linux build).

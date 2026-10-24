@@ -508,6 +508,13 @@ interpolates prev/cur by time
   panel shows veterancy and adjacency bonuses and capture bars; `Input/AdjacencyPreview` draws lines to neighbours
   that would give/receive a bonus while placing a structure; `Input/PlacementLine`: Shift+drag lays a line of
   structures (`--ui-place id@x,z` for screenshots).
+- User folders & release builds (wave 7a; DEV_GUIDE "Packaging"): `Rts.Sim/Persistence/UserDirs` resolves the folders once
+  at startup (`UserDirs.Apply()` in Program.cs → `SaveStore.SavesDir/ReplaysDir`). Rule: a `release.txt` marker next to
+  the executable (written by `tools/package/package.sh`) = release mode → saves/replays/screenshots in
+  `$XDG_DATA_HOME/RtsGame` (`%APPDATA%\RtsGame`); otherwise (dotnet run, tests, Bench) relative to the cwd as before;
+  `RTS_USER_DIR` overrides. Settings always `$XDG_CONFIG_HOME/RtsGame/settings.json`; `data/` found by walking up from
+  the exe. `CrashLog` (user data dir `crash.log`, main thread + unhandled + first sim-thread fault), `AppVersion.Label`
+  (main menu), `AppIcon` (procedural window icon, `--export-icon`).
 - Settings (wave 7a): `Menus/SettingsScreen` has three tabs (Audio & Display / Graphics / Gameplay; `--settings-tab
   audio|graphics|gameplay`), also opened from the pause menu (`returnTo` = the paused game, like the save list; not in
   multiplayer, where leaving `NetInGameScreen` would stall the lockstep turns). `AppSettings` fields: `Shadows`,

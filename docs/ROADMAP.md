@@ -87,7 +87,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G15 | Formation move with facing (right-drag), waypoint editing (drag / delete queued order markers), ferry route editing | SC1 | M | Input, new `Orders/QueueEditCommands.cs` (+ one CommandSystem line) | — | 2 |
 | G16 | Notifications: minimap flash where attacked, structure lost, construction/upgrade done, unit cap reached, ally under attack | SC1 | S | GameAudio alerts, Minimap, Toasts | — | 2 |
 | G17 | Map pings / markers (alert, move, attack; map + minimap; allies and MP; in replays) | SC1 | M | new `UI/Pings`, sim command (additive) | — | 2 |
-| G18 | Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
+| G18 | [x] 2026-10-24 (7a) Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
 | G19 | Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
 | G20 | Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
 | G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
@@ -109,12 +109,12 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
 | G38 | NAT traversal / relay server (today: port forwarding) | SC1 | L | `Rts.Net` + a hosted server | owner Q6 | 3 |
 | G39 | Vote to drop, host migration, per-player lobby pings, chat sounds | — | S-M | `Rts.Net`, Net menus | — | 3 |
-| G40 | Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
+| G40 | [x] 2026-10-24 (7a) Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
 | G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
 | G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | Q |
 | G43 | Campaign (UEF + Cybran operations: scripted missions, dialogue, handmade maps) | SC1 | XL | scenario system, maps, AI scripts | G42, G26 | Q |
 | G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | Q |
-| G45 | **Release packaging**: self-contained Release build (linux-x64; win-x64 zip optional), data next to the exe, saves/replays/settings/screenshots in the user folder (today `saves/` = current dir), icon, `.desktop` launcher + desktop shortcut, version in the main menu, crash log | — | S-M | new `tools/package/`, csproj, SaveStore dirs, Program.cs | — | 1 |
+| G45 | [x] 2026-10-24 (7a) **Release packaging**: self-contained Release build (linux-x64; win-x64 zip optional), data next to the exe, saves/replays/settings/screenshots in the user folder (today `saves/` = current dir), icon, `.desktop` launcher + desktop shortcut, version in the main menu, crash log | — | S-M | new `tools/package/`, csproj, SaveStore dirs, Program.cs | — | 1 |
 
 ### Proposed waves (2 agents each, disjoint files, one usage window each; start after (k) and (k-navy) merge)
 Free keys today: O, I, J, W, F2-F4, F11, F12 (`HotkeyTableTests`). Each agent: AGENT_RULES block, cap 150k.
@@ -341,6 +341,18 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
             `ArmyStats` gifts + `History`) so pre-6b saves load (header `GameInfo.Options = null` = defaults), AI gives/asks resources to allies, allies-only chat in
             the lobby and in single player (AI allies), score graph hover/values, frame-timing text overlaps the
             diplomacy header in screenshot mode
+- [x] Release, settings, autosave (2026-10-24, wave 7a; ARCHITECTURE "Client" user folders/settings bullets, "Save/load"
+      autosave bullet, DEV_GUIDE "Packaging"): G45 `bash tools/package/package.sh [linux|win|all]` → self-contained
+      `release/RtsGame-0.7.0-linux-x64.tar.gz` (36 MB) / `-win-x64.zip` (37 MB) with data/, `release.txt` marker
+      (user folders `~/.local/share/RtsGame`), procedural icon, `.desktop` + `install-desktop.sh` (tested with a
+      temporary HOME only), version label in the main menu, crash log `~/.local/share/RtsGame/crash.log`. G18 settings
+      tabs Audio & Display / Graphics (shadows, particles, terrain detail, VSync, FPS cap, UI scale) / Gameplay (edge
+      scroll, pan/zoom speed, autosave), all live, Settings in the pause menu. G40 autosave every 5 min of game time,
+      rolling `autosave_1..3`, not in replays/sandbox/MP/screenshot runs (`--autosave-every TICKS` for tests).
+      - [ ] later: install the desktop shortcut on the owner's machine (ask first); F12 screenshots go to the cwd
+            (raylib built-in capture; the launcher sets `Path=` to the user screenshots folder); Settings and autosave
+            in multiplayer (needs an in-screen overlay: leaving NetInGameScreen stalls lockstep); live effect of
+            shadows/particles/UI scale only unit-tested (screenshot runs use defaults); signed/AppImage/Flatpak builds
 - [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
       (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
       (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the
@@ -401,7 +413,7 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
             the replay view selector
       - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
-            seek checkpoints cost a short hitch every 60 s of game time; autosave; multiplayer reuse (wave 6)
+            seek checkpoints cost a short hitch every 60 s of game time; multiplayer reuse (autosave: done wave 7a)
 - [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
       relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),
       faction, team, color, AI level, ready, host map options + live preview, chat, kick; one turn per player per

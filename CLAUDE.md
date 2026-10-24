@@ -22,7 +22,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   `resources=normal|low|high`, `fog=normal|explored|none`, `speed=adjustable|normal|fast`, `cheats=on|off`, `prebuilt=on|off`,
   e.g. `--options victory=supremacy,cap=500,cheats=off`; also presets `--setup` and `--host`; `--teams 1,1,2,2` = team per slot
   (0 = none); `--diplomacy` opens the F4 diplomacy panel at start; in-game chat Shift+Enter = to allies (multiplayer))
-  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
+  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--settings-tab audio|graphics|gameplay`; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis), `--scene cybran[:land|:air|:naval|:structures1|:structures2|:structures3|:experimental]` (every Cybran unit laid out by group) (scene positions are printed; aim with `--camera`))
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
