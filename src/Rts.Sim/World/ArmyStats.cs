@@ -22,4 +22,8 @@ public sealed class ArmyStats
     /// <summary>Total mass/energy consumed (construction, upkeep).</summary>
     public float MassSpent;
     public float EnergySpent;
+    /// <summary>(6b) Mass/energy given to allies (GiveResourcesCommand + storage overflow shared by EconomyShare).</summary>
+    public float MassGiven, EnergyGiven;
+    /// <summary>(6b) Mass/energy received from allies (gifts + their overflow).</summary>
+    public float MassReceived, EnergyReceived;
 }

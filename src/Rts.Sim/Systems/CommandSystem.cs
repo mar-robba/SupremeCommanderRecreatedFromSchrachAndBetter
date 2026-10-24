@@ -41,6 +41,9 @@ public static class CommandSystem
                 case EnhanceCommand en: Commander.EnhancementSystem.Apply(w, en); break;
                 case RemoveEnhancementCommand re: Commander.EnhancementSystem.Apply(w, re); break;
                 case PlayerLeftCommand pl: MultiplayerSystem.Apply(w, pl); break;
+                case GiveUnitsCommand gu: DiplomacySystem.Apply(w, gu); break; // (6b) team play
+                case GiveResourcesCommand gr: DiplomacySystem.Apply(w, gr); break;
+                case EnableCheatToolsCommand ec: DiplomacySystem.Apply(w, ec); break;
                 case SelfDestructCommand sd:
                     foreach (var h in sd.Units)
                         if (Owns(w, c.Army, h)) w.KillUnit(h.Index, UnitHandle.None);
