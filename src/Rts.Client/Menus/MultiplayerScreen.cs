@@ -156,7 +156,7 @@ public sealed class MultiplayerScreen : IScreen
             bool can = !busy && !g.InGame && g.SameBuild && g.Players < g.MaxPlayers;
             var st = Ui.Button(row, can);
             Ui.Text(Ui.Fit(g.Name, w * 0.55f, Ui.F(13), true), row.X + Ui.P(10), row.Y + Ui.P(5), Ui.F(13), can ? Ui.TextColor : Ui.TextDim, true);
-            Ui.Text($"{g.Endpoint} · {g.Map}", row.X + Ui.P(10), row.Y + Ui.P(22), Ui.F(10.5f), Ui.TextFaint);
+            Ui.Text(Ui.Fit($"{g.Endpoint} · {g.Map}", row.Width - Ui.P(20), Ui.F(10.5f)), row.X + Ui.P(10), row.Y + Ui.P(22), Ui.F(10.5f), Ui.TextFaint);
             string state = g.InGame ? "in game" : !g.SameBuild ? "other version" : $"{g.Players}/{g.MaxPlayers} players";
             Ui.TextRight(state, row.X + row.Width - Ui.P(10), row.Y + (rowH - Ui.F(12)) * 0.5f, Ui.F(12),
                 g.InGame || !g.SameBuild ? Ui.Warn : Ui.Good, true);

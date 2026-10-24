@@ -53,6 +53,7 @@ public sealed class LobbyScreen : IScreen
         o.Preset = c.Preset;
         o.Water = c.WaterAmount;
         o.Seed = c.Seed;
+        o.Game = c.Options.Clone(); // game options from the setup screen (or --options)
         _host.SetOptions(o);
         if (_app.Options.PlayersGiven)
             for (int i = 1; i < Math.Min(_app.Options.Players, LobbyState.MaxSlots); i++)
@@ -84,9 +85,14 @@ public sealed class LobbyScreen : IScreen
         var mapPanel = Ui.R(Ui.Sw - Ui.P(48) - mapW, top, mapW, bottomBar - top - Ui.P(14));
         float leftW = MathF.Min(Ui.P(700), mapPanel.X - x0 - Ui.P(20));
         var playersPanel = Ui.R(x0, top, leftW, Ui.P(8 * 36 + 52));
-        var chatPanel = Ui.R(x0, playersPanel.Y + playersPanel.Height + Ui.P(14), leftW, bottomBar - Ui.P(14) - (playersPanel.Y + playersPanel.Height + Ui.P(14)));
+        float lowY = playersPanel.Y + playersPanel.Height + Ui.P(14), lowH = bottomBar - Ui.P(14) - lowY;
+        // Game options (left) and chat (right) under the players.
+        float optW = MathF.Min(Ui.P(400), leftW * 0.58f);
+        var optPanel = Ui.R(x0, lowY, optW, MathF.Min(lowH, GameOptionsBlock.Height(2)));
+        var chatPanel = Ui.R(x0 + optW + Ui.P(14), lowY, leftW - optW - Ui.P(14), lowH);
         DrawPlayers(playersPanel, lobby);
         DrawMap(mapPanel, lobby);
+        DrawGameOptions(optPanel, lobby);
         DrawChat(chatPanel);
         DrawBottom(x0, bottomBar, mapPanel.X + mapPanel.Width, lobby);
         AutoStart(lobby);
@@ -342,6 +348,20 @@ public sealed class LobbyScreen : IScreen
 
         if (n.MapSize != o.MapSize || n.Preset != o.Preset || n.Water != o.Water || n.Seed != o.Seed || n.OnDrop != o.OnDrop)
             _host.SetOptions(n);
+    }
+
+    // ------------------------------------------------------------------ game options
+
+    /// <summary>Victory, cap, resources, fog, speed, cheats, prebuilt: the host edits a clone (→ SetOptions), clients read.</summary>
+    private void DrawGameOptions(Rectangle p, LobbyState l)
+    {
+        if (_host == null)
+        {
+            GameOptionsBlock.Draw(p, l.Options.Game, false, 2, "set by the host");
+            return;
+        }
+        var n = l.Options.Clone();
+        if (GameOptionsBlock.Draw(p, n.Game, true, 2)) _host.SetOptions(n);
     }
 
     // ------------------------------------------------------------------ chat

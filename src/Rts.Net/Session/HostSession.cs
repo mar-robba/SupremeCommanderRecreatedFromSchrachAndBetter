@@ -52,7 +52,7 @@ public sealed class HostSession : NetSession, ITurnSink
     {
         var l = Lobby;
         return LanDiscovery.Encode(_hostId, Port, GameName, LocalName, l.HumanCount, l.Slots.Count(s => s.Kind != NetSlotKind.Closed),
-            Phase != NetPhase.Lobby, $"{l.Options.MapSize} {l.Options.Preset}");
+            Phase != NetPhase.Lobby, $"{l.Options.MapSize} {l.Options.Preset} · {l.Options.Game.Describe()}");
     }
 
     // ------------------------------------------------------------------ lobby API (UI thread)

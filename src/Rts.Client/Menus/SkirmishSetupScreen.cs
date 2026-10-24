@@ -41,7 +41,7 @@ public sealed class SkirmishSetupScreen : IScreen
 
         float x0 = Ui.P(48), y0 = Ui.P(30);
         if (_sandbox) MenuUi.ScreenTitle("Sandbox", "Test freely: spawn any unit, cheats, nukes, no victory", x0, y0);
-        else MenuUi.ScreenTitle("Skirmish", "Players, teams and map", x0, y0);
+        else MenuUi.ScreenTitle("Skirmish", "Players, teams, map and game options", x0, y0);
 
         float top = y0 + Ui.P(84);
         float bottomBar = Ui.Sh - Ui.P(62);
@@ -49,6 +49,13 @@ public sealed class SkirmishSetupScreen : IScreen
         var mapPanel = Ui.R(Ui.Sw - Ui.P(48) - mapW, top, mapW, bottomBar - top - Ui.P(14));
         var playersPanel = Ui.R(x0, top, MathF.Min(Ui.P(660), mapPanel.X - x0 - Ui.P(20)), Ui.P(8 * 40 + 58));
         DrawPlayers(playersPanel);
+        if (!_sandbox)
+        {
+            // Game options under the players (the sandbox has its own rules: no victory, cheats on).
+            float oy = playersPanel.Y + playersPanel.Height + Ui.P(26);
+            var optPanel = Ui.R(x0, oy, playersPanel.Width, MathF.Min(GameOptionsBlock.Height(3), bottomBar - Ui.P(14) - oy));
+            GameOptionsBlock.Draw(optPanel, _cfg.Options, true, 3);
+        }
         DrawMap(mapPanel);
         DrawBottom(x0, bottomBar, mapPanel.X + mapPanel.Width);
         Ui.DrawTooltip();
