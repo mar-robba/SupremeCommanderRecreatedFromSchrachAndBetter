@@ -7,8 +7,7 @@ namespace Rts.Client.Menus;
 /// <summary>
 /// Applies the graphics and gameplay options of <see cref="AppSettings"/> (wave 7a) to the static switches read by the
 /// renderers, the UI and the camera: <see cref="ShadowMap.Enabled"/>, <see cref="ParticleSystem.Quality"/>,
-/// <see cref="TerrainRenderer.ForceLod"/>, <see cref="Ui.UserScale"/>, <see cref="RtsCamera.EdgeScroll"/> /
-/// <see cref="RtsCamera.PanSpeedScale"/> / <see cref="RtsCamera.ZoomSpeedScale"/>, plus VSync and the FPS cap on the
+/// <see cref="TerrainRenderer.ForceLod"/>, <see cref="Ui.UserScale"/>, <see cref="CameraSettings"/>, plus VSync and the FPS cap on the
 /// window. Called once after InitWindow and again whenever the settings screen changes something (everything is live).
 /// Command-line switches win for that run: <c>--novsync</c> keeps VSync off, <c>--terrain-lod N</c> keeps its LOD.
 /// The defaults reproduce the behavior before these settings existed (screenshot runs use defaults).
@@ -48,9 +47,9 @@ public static class GraphicsSettings
         ParticleSystem.Quality = ParticleScales[Math.Clamp(s.ParticleQuality, 0, ParticleScales.Length - 1)];
         if (!TerrainLodFromCli) TerrainRenderer.ForceLod = Math.Clamp(s.TerrainDetail, -1, 3);
         Ui.UserScale = Math.Clamp(s.UiScale, UiScales[0], UiScales[^1]);
-        RtsCamera.EdgeScroll = s.EdgeScroll;
-        RtsCamera.PanSpeedScale = Math.Clamp(s.PanSpeed, 0.5f, 2f);
-        RtsCamera.ZoomSpeedScale = Math.Clamp(s.ZoomSpeed, 0.5f, 2f);
+        CameraSettings.EdgeScroll = s.EdgeScroll;
+        CameraSettings.PanSpeed = Math.Clamp(s.PanSpeed, 0.5f, 2f);
+        CameraSettings.ZoomSpeed = Math.Clamp(s.ZoomSpeed, 0.5f, 2f);
         if (!_captured || !Raylib.IsWindowReady()) return;
 
         bool vsync = s.VSync && !_cliNoVsync;
