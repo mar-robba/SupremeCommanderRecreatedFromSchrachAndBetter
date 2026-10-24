@@ -18,9 +18,9 @@ done. Wave 6 briefs and reports: HISTORY "Wave 6". Every prompt carries a `CTX-T
   `wave6b-options` from main 9f875d0), coordinator 1 (cap 200k medium), one sub-agent at a time. If cut off: commit
   WIP there, fresh coordinator with the brief (HISTORY "Wave 6") + "continue from `.claude/handoff.md` and
   `.claude/notes/`". Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...`.
-- **Next agent now (second slot):** wave 7a (release + settings + autosave: G45, G18, G40) can start while 6b runs:
-  its files (tools/package, csproj, SaveStore dirs, Program.cs, SettingsScreen, AppSettings, InGameScreen) barely
-  touch 6b's (setup/lobby/end screens, Hud, GameSetup). 7b (orders & selection UX) after 6b merges (Hud, Input).
+- **Running:** **(7a) Release, settings, autosave** (G45, G18, G40): worktree `.claude/worktrees/wave7a` (branch
+  `wave7a-release` from main 4cee893), coordinator 1 (cap 200k medium). It must not install the desktop shortcut on
+  the owner's real desktop: ask the owner when it is done. 7b (orders & selection UX) starts after 6b merges.
 - **Then:** merge 6b and 7a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
   in WORKFLOW, then 7b orders & selection UX and wave 8 (briefs in "Wave 6+ plan").
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
