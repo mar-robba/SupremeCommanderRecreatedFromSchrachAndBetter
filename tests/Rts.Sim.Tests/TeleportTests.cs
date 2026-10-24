@@ -364,4 +364,22 @@ public class TeleportTests
             Assert.True(withTp > 0);
         }
     }
+    [Fact]
+    public void ArrivalEffectIsSeenByOwnTeamOutsideVision()
+    {
+        var sim = Ready();
+        var w = sim.World;
+        var far = new Vector3(250, 0, 6); // map corner: nobody's vision
+        Assert.False(w.Intel.IsPositionVisible(0, new Vector2(far.X, far.Z)));
+        Assert.False(w.Intel.IsPositionVisible(1, new Vector2(far.X, far.Z)));
+        w.Events.Effects.Clear();
+        w.Events.Effects.Add(new EffectEvent { Kind = EffectKind.TeleportIn, Pos = far, Size = 2, Army = 0 });
+        w.Events.Effects.Add(new EffectEvent { Kind = EffectKind.TeleportOut, Pos = far, Size = 2, Army = 0 });
+        var own = new Rts.Sim.Snapshot.SimSnapshot();
+        Rts.Sim.Snapshot.SnapshotWriter.Write(w, own, 0);
+        Assert.Equal([EffectKind.TeleportIn], own.Effects.Select(e => e.Kind));
+        var enemy = new Rts.Sim.Snapshot.SimSnapshot();
+        Rts.Sim.Snapshot.SnapshotWriter.Write(w, enemy, 1);
+        Assert.Empty(enemy.Effects);
+    }
 }
