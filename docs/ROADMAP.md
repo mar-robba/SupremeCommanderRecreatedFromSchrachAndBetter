@@ -4,8 +4,8 @@ Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated 
 
 ## ▶ NEXT STEPS (updated 2026-10-24 11:10 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
-+ (k-navy), (6a) commander & engineers, (6b) game options & team play (all merged by 2026-10-24). Tests: 500 sim + 258
-client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
++ (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
+279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
 15:35", hash **BF85B7DBBF03D949** (agents that must not change sim results compare against it; the game equals (k)'s
 4E3F22FD0F8EED11, 6a only added hashed commander state). Replays made before the (k) balance data refuse to open
 ("unit blueprints changed"). Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md`
@@ -19,12 +19,12 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
   `agent_ctx.py --watch 135000 <id>=185000 ...`.
 - **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
   `wave7b-orders` from main), coordinator 1 (cap 200k medium).
-- **Running:** **(7a) Release, settings, autosave** (G45, G18, G40): worktree `.claude/worktrees/wave7a` (branch
-  `wave7a-release` from main 4cee893), coordinator 1 (cap 200k medium). It must not install the desktop shortcut on
-  the owner's real desktop: ask the owner when it is done.
-- **Then:** merge 7a and 7b (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW; ask the owner about the desktop shortcut (7a); then wave 8 (8a missing units & walls, 8b maps; briefs
-  in "Wave 6+ plan").
+- **Running:** **(8a) Missing units & walls** (G8, G9, Atlantis dive): worktree `.claude/worktrees/wave8a` (branch
+  `wave8a-units` from main), coordinator 1 (cap 200k medium).
+- **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
+  on the home disk: the data partition has no exec bits).
+- **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
+  in WORKFLOW; then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need

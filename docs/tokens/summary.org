@@ -3,59 +3,60 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-10-24 08:53 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-10-24 09:13 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.304,5 milioni di token, 657,1 $, 20 sessioni e 137 agenti.
-Output: 57 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,90).
+1.326,0 milioni di token, 668,4 $, 20 sessioni e 141 agenti.
+Output: 61 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 2,91).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 57     | 452,2     | 2.736      | 237,1 | 36,1    | 2026-10-23      |
-| Avversario IA          | 25     | 260,8     | 1.334      | 116,9 | 17,8    | 2026-10-24      |
-| Esperienza client      | 19     | 189,0     | 1.121      | 85,7  | 13,0    | 2026-10-16      |
-| Coordinamento          | 0      | 118,7     | 615        | 67,2  | 10,2    | 2026-10-23      |
-| Da classificare        | 22     | 113,5     | 887        | 61,0  | 9,3     | 2026-10-24      |
-| Infrastruttura tecnica | 14     | 119,9     | 846        | 59,6  | 9,1     | 2026-10-16      |
+| Gameplay SupCom        | 57     | 452,2     | 2.745      | 237,3 | 35,5    | 2026-10-23      |
+| Avversario IA          | 25     | 260,8     | 1.336      | 117,0 | 17,5    | 2026-10-24      |
+| Esperienza client      | 19     | 189,0     | 1.124      | 85,7  | 12,8    | 2026-10-16      |
+| Da classificare        | 26     | 131,6     | 1.045      | 70,9  | 10,6    | 2026-10-24      |
+| Coordinamento          | 0      | 118,7     | 615        | 67,2  | 10,1    | 2026-10-23      |
+| Infrastruttura tecnica | 14     | 119,9     | 848        | 59,6  | 8,9     | 2026-10-16      |
 | Documentazione         | 0      | 32,0      | 286        | 20,6  | 3,1     | 2026-10-23      |
-| orchestrazione         | 0      | 18,4      | 79         | 9,1   | 1,4     | 2026-10-24      |
+| orchestrazione         | 0      | 21,8      | 91         | 10,1  | 1,5     | 2026-10-24      |
 
 * Per scopo
 | Scopo                                           | Agenti | Token (M) | Output (k) | $    | % costo | Ultima attività |
 |-------------------------------------------------+--------+-----------+------------+------+---------+-----------------|
-| IA usa tutto (5k)                               | 18     | 170,2     | 904        | 76,3 | 11,6    | 2026-10-24      |
-| Fazione Cybran (5l)                             | 20     | 88,6      | 597        | 46,2 | 7,0     | 2026-10-23      |
-| Orchestrazione (sessioni principali)            | 0      | 69,5      | 396        | 46,0 | 7,0     | 2026-10-16      |
-| Rifinitura SupCom (4f)                          | 9      | 79,5      | 454        | 42,3 | 6,4     | 2026-10-14      |
-| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 430        | 40,6 | 6,2     | 2026-10-14      |
-| Comandante e ingegneri (6a)                     | 13     | 65,9      | 470        | 34,3 | 5,2     | 2026-10-24      |
-| Navale (3c)                                     | 4      | 61,0      | 251        | 32,0 | 4,9     | 2026-10-12      |
-| Mappe, menu, flusso (onda 2)                    | 3      | 64,8      | 251        | 25,0 | 3,8     | 2026-10-11      |
-| Armi strategiche (3b)                           | 6      | 45,7      | 280        | 22,8 | 3,5     | 2026-10-12      |
-| Sperimentali e comandanti (4g)                  | 5      | 38,4      | 257        | 22,6 | 3,4     | 2026-10-13      |
-| Scala e prestazioni (5m)                        | 6      | 50,0      | 242        | 21,3 | 3,2     | 2026-10-16      |
-| Trasporti (4h)                                  | 4      | 37,9      | 247        | 20,6 | 3,1     | 2026-10-14      |
-| UX (5n)                                         | 7      | 42,8      | 252        | 19,2 | 2,9     | 2026-10-16      |
+| IA usa tutto (5k)                               | 18     | 170,2     | 905        | 76,4 | 11,4    | 2026-10-24      |
+| Fazione Cybran (5l)                             | 20     | 88,6      | 599        | 46,3 | 6,9     | 2026-10-23      |
+| Orchestrazione (sessioni principali)            | 0      | 69,5      | 396        | 46,0 | 6,9     | 2026-10-16      |
+| Rifinitura SupCom (4f)                          | 9      | 79,6      | 456        | 42,4 | 6,3     | 2026-10-14      |
+| IA schermaglie (onde 2-4)                       | 7      | 90,5      | 431        | 40,6 | 6,1     | 2026-10-14      |
+| Comandante e ingegneri (6a)                     | 13     | 65,9      | 470        | 34,3 | 5,1     | 2026-10-24      |
+| Navale (3c)                                     | 4      | 61,0      | 252        | 32,0 | 4,8     | 2026-10-12      |
+| Mappe, menu, flusso (onda 2)                    | 3      | 64,8      | 252        | 25,0 | 3,7     | 2026-10-11      |
+| Armi strategiche (3b)                           | 6      | 45,7      | 280        | 22,8 | 3,4     | 2026-10-12      |
+| Sperimentali e comandanti (4g)                  | 5      | 38,4      | 258        | 22,6 | 3,4     | 2026-10-13      |
+| Scala e prestazioni (5m)                        | 6      | 50,0      | 243        | 21,4 | 3,2     | 2026-10-16      |
+| Trasporti (4h)                                  | 4      | 37,9      | 248        | 20,6 | 3,1     | 2026-10-14      |
+| UX (5n)                                         | 7      | 42,8      | 253        | 19,3 | 2,9     | 2026-10-16      |
 | Opzioni partita e squadra (6b)                  | 5      | 33,7      | 249        | 17,8 | 2,7     | 2026-10-24      |
-| Salvataggi e replay (4i)                        | 3      | 31,0      | 227        | 17,2 | 2,6     | 2026-10-14      |
+| Salvataggi e replay (4i)                        | 3      | 31,0      | 228        | 17,2 | 2,6     | 2026-10-14      |
 | Multigiocatore lockstep (5o)                    | 5      | 35,1      | 221        | 16,0 | 2,4     | 2026-10-16      |
-| Sandbox (3e)                                    | 5      | 28,2      | 233        | 14,9 | 2,3     | 2026-10-12      |
-| Nebbia di guerra e intel (onda 2)               | 2      | 30,9      | 146        | 12,9 | 2,0     | 2026-10-11      |
+| Sandbox (3e)                                    | 5      | 28,2      | 234        | 14,9 | 2,2     | 2026-10-12      |
+| Nebbia di guerra e intel (onda 2)               | 2      | 30,9      | 146        | 12,9 | 1,9     | 2026-10-11      |
 | Documentazione                                  | 0      | 15,2      | 156        | 11,4 | 1,7     | 2026-10-15      |
 | Tecnologia T2/T3 (3a)                           | 2      | 22,2      | 130        | 10,6 | 1,6     | 2026-10-12      |
-| Grafica client (onda 1)                         | 1      | 20,7      | 169        | 10,0 | 1,5     | 2026-10-10      |
+| Rilascio e impostazioni (7a)                    | 4      | 17,5      | 169        | 10,4 | 1,6     | 2026-10-24      |
+| Grafica client (onda 1)                         | 1      | 20,7      | 169        | 10,1 | 1,5     | 2026-10-10      |
 | Orchestrazione wave 5 (ripresa 23/10)           | 0      | 24,6      | 96         | 9,9  | 1,5     | 2026-10-23      |
 | Audio e rifinitura (onda 2)                     | 2      | 20,6      | 114        | 9,9  | 1,5     | 2026-10-11      |
+| Orchestrazione wave 5k/6a                       | 0      | 20,9      | 82         | 9,3  | 1,4     | 2026-10-24      |
 | Documentazione e analisi costi                  | 0      | 16,8      | 130        | 9,1  | 1,4     | 2026-10-23      |
-| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 134        | 9,0  | 1,4     | 2026-10-10      |
+| Pathfinding e movimento (onda 1)                | 1      | 18,1      | 134        | 9,0  | 1,3     | 2026-10-10      |
 | Orchestrazione wave 5 (ripresa 16/10)           | 0      | 19,1      | 93         | 8,7  | 1,3     | 2026-10-16      |
-| Orchestrazione wave 5k/6a                       | 0      | 17,6      | 69         | 8,3  | 1,3     | 2026-10-24      |
 | Combattimento (onda 1)                          | 1      | 12,0      | 71         | 7,3  | 1,1     | 2026-10-10      |
 | UI e HUD (onda 1)                               | 1      | 12,0      | 102        | 6,7  | 1,0     | 2026-10-10      |
-| Rilascio e impostazioni (7a)                    | 3      | 8,9       | 112        | 6,1  | 0,9     | 2026-10-24      |
+| Ordini e selezione (7b)                         | 3      | 9,6       | 100        | 5,6  | 0,8     | 2026-10-24      |
 | Economia e costruzione (onda 1)                 | 1      | 6,7       | 82         | 5,5  | 0,8     | 2026-10-10      |
-| Infrastruttura fazioni (j)                      | 2      | 11,0      | 88         | 5,2  | 0,8     | 2026-10-14      |
+| Infrastruttura fazioni (j)                      | 2      | 11,0      | 88         | 5,3  | 0,8     | 2026-10-14      |
 | Fondazione (sessione principale)                | 0      | 3,9       | 156        | 5,1  | 0,8     | 2026-10-10      |
 | Pianificazione wave 6                           | 1      | 4,9       | 57         | 2,7  | 0,4     | 2026-10-23      |
 | Orchestrazione wave 5 (ripresa l Cybran + k IA) | 0      | 5,5       | 30         | 2,6  | 0,4     | 2026-10-22      |
@@ -67,22 +68,26 @@ Output: 57 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (
 | 2026-10-10 | 89,8      | 52,7  | 9      |
 | 2026-10-11 | 192,1     | 84,9  | 9      |
 | 2026-10-12 | 204,5     | 107,3 | 29     |
-| 2026-10-13 | 142,5     | 84,0  | 20     |
-| 2026-10-14 | 91,8      | 46,6  | 14     |
+| 2026-10-13 | 142,5     | 84,1  | 20     |
+| 2026-10-14 | 91,8      | 46,7  | 14     |
 | 2026-10-15 | 115,4     | 62,1  | 18     |
-| 2026-10-16 | 138,5     | 58,0  | 14     |
+| 2026-10-16 | 138,6     | 58,0  | 14     |
 | 2026-10-22 | 54,8      | 25,9  | 8      |
 | 2026-10-23 | 134,8     | 62,0  | 14     |
-| 2026-10-24 | 140,3     | 73,7  | 20     |
+| 2026-10-24 | 161,8     | 84,7  | 24     |
 
 * Ultime attività
 | Fine (UTC)       | Tipo     | Scopo                          | Descrizione                                        | Token (M) | $    | Output |
 |------------------+----------+--------------------------------+----------------------------------------------------+-----------+------+--------|
-| 2026-10-24 08:53 | sessione | Orchestrazione wave 5k/6a      | continua                                           | 17,6      | 8.29 | esatto |
-| 2026-10-24 08:53 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] settings + pause me | 1,8       | 1.26 | esatto |
+| 2026-10-24 09:13 | sessione | Orchestrazione wave 5k/6a      | continua                                           | 20,9      | 9.33 | esatto |
+| 2026-10-24 09:13 | agente   | Ordini e selezione (7b)        | [Ordini e selezione (7b)] formation drag + waypoin | 1,0       | 0.77 | esatto |
+| 2026-10-24 09:10 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] coordinator 1       | 5,6       | 4.00 | esatto |
+| 2026-10-24 09:10 | agente   | Ordini e selezione (7b)        | [Ordini e selezione (7b)] coordinator 1            | 3,8       | 2.33 | esatto |
+| 2026-10-24 09:09 | agente   | Ordini e selezione (7b)        | [Ordini e selezione (7b)] sim commands queue edit  | 4,8       | 2.54 | esatto |
+| 2026-10-24 09:05 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] autosave            | 2,6       | 1.33 | esatto |
+| 2026-10-24 08:58 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] settings + pause me | 4,1       | 2.17 | esatto |
 | 2026-10-24 08:50 | agente   | Opzioni partita e squadra (6b) | [Opzioni partita e squadra (6b)] coordinator 1     | 6,9       | 5.85 | esatto |
 | 2026-10-24 08:49 | ripresa  | Opzioni partita e squadra (6b) | [Opzioni partita e squadra (6b)] finish: ally chat | 8,4       | 3.27 | esatto |
-| 2026-10-24 08:47 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] coordinator 1       | 1,9       | 1.97 | esatto |
 | 2026-10-24 08:46 | agente   | Rilascio e impostazioni (7a)   | [Rilascio e impostazioni (7a)] paths, packaging, v | 5,3       | 2.90 | esatto |
 | 2026-10-24 08:32 | agente   | Opzioni partita e squadra (6b) | [Opzioni partita e squadra (6b)] client-2 setup/lo | 5,8       | 3.01 | esatto |
 | 2026-10-24 04:11 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] coordinator 4        | 7,4       | 3.17 | esatto |
@@ -94,10 +99,6 @@ Output: 57 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (
 | 2026-10-24 03:45 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G7 teleporter client | 5,0       | 2.16 | esatto |
 | 2026-10-24 03:38 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G7 teleporter sim    | 7,6       | 3.61 | esatto |
 | 2026-10-23 23:53 | agente   | IA usa tutto (5k)              | [IA usa tutto (5k)] coordinator 11                 | 15,5      | 7.97 | esatto |
-| 2026-10-23 23:45 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G1+G2 client tests a | 7,4       | 2.88 | esatto |
-| 2026-10-23 23:30 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G1+G2 client Overcha | 7,7       | 3.32 | esatto |
-| 2026-10-23 23:18 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G2 death blast tests | 2,4       | 1.24 | esatto |
-| 2026-10-23 23:08 | agente   | Comandante e ingegneri (6a)    | [Comandante e ingegneri (6a)] G1+G2 sim Overcharge | 6,6       | 3.06 | esatto |
 
 * Da classificare
 Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l'area dello scopo in
@@ -121,7 +122,11 @@ Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l
 - Opzioni partita e squadra (6b): [Opzioni partita e squadra (6b)] coordinator 1
 - Opzioni partita e squadra (6b): [Opzioni partita e squadra (6b)] finish: ally chat, G6, chec
 - Opzioni partita e squadra (6b): [Opzioni partita e squadra (6b)] sim options + team play
+- Ordini e selezione (7b): [Ordini e selezione (7b)] coordinator 1
+- Ordini e selezione (7b): [Ordini e selezione (7b)] formation drag + waypoint editing 
+- Ordini e selezione (7b): [Ordini e selezione (7b)] sim commands queue edit + ping
 - Pianificazione wave 6: [Pianificazione wave 6] SupCom1 gap audit
+- Rilascio e impostazioni (7a): [Rilascio e impostazioni (7a)] autosave
 - Rilascio e impostazioni (7a): [Rilascio e impostazioni (7a)] coordinator 1
 - Rilascio e impostazioni (7a): [Rilascio e impostazioni (7a)] paths, packaging, version, cr
 - Rilascio e impostazioni (7a): [Rilascio e impostazioni (7a)] settings + pause menu
