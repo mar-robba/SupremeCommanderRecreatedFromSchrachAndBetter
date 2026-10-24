@@ -19,15 +19,7 @@ public static class MultiplayerSystem
             if (!army.Name.EndsWith(" (AI)")) army.Name += " (AI)";
             return;
         }
-        // Defeat: the assassination rule (CleanupSystem) destroys the army at the end of this tick.
-        var u = w.Units;
-        if (!army.Commander.IsNone && u.IsActive(army.Commander))
-        {
-            w.KillUnit(army.Commander.Index, UnitHandle.None);
-            return;
-        }
-        army.Defeated = true;
-        for (int k = 0; k < u.Capacity; k++)
-            if (u.Alive[k] && u.Army[k] == c.Army) w.KillUnit(k, UnitHandle.None);
+        // Defeat: the army is defeated now and all its units are destroyed (every victory mode).
+        CleanupSystem.Defeat(w, c.Army);
     }
 }

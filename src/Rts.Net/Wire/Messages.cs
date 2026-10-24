@@ -51,7 +51,7 @@ public enum MsgType : byte
 /// <summary>Builds message frames.</summary>
 public static class Msg
 {
-    public const uint ProtocolVersion = 1;
+    public const uint ProtocolVersion = 2; // 2: LobbyOptions.Game (game options)
 
     [ThreadStatic] private static ByteWriter? _w;
 

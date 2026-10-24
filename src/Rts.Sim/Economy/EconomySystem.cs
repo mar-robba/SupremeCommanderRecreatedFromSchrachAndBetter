@@ -175,14 +175,18 @@ public static class EconomySystem
             s.EffEnergy[a] = effE;
             float consumedMass = t.MassOnly * effM + t.BothMass * effBoth;
             float consumedEnergy = t.EnergyOnly * effE + t.BothEnergy * effBoth;
-            eco.Mass = Math.Clamp(eco.Mass + (incomeMass - consumedMass) * dt, 0, eco.MassMax);
-            eco.Energy = Math.Clamp(eco.Energy + (t.ProdEnergy - consumedEnergy) * dt, 0, eco.EnergyMax);
+            float rawMass = eco.Mass + (incomeMass - consumedMass) * dt;
+            float rawEnergy = eco.Energy + (t.ProdEnergy - consumedEnergy) * dt;
+            eco.Mass = Math.Clamp(rawMass, 0, eco.MassMax);
+            eco.Energy = Math.Clamp(rawEnergy, 0, eco.EnergyMax);
+            EconomyShare.NoteOverflow(w, a, rawMass - eco.MassMax, rawEnergy - eco.EnergyMax); // (6b) allied overflow
             var stats = w.Armies[a].Stats;
             stats.MassCollected += incomeMass * dt;
             stats.EnergyCollected += t.ProdEnergy * dt;
             stats.MassSpent += consumedMass * dt;
             stats.EnergySpent += consumedEnergy * dt;
         }
+        EconomyShare.Distribute(w); // (6b) allied overflow sharing + High start bank
 
         // Pass 2 (only units that requested something): per-unit efficiency, upkeep-scaled production.
         for (int c = 0; c < consumers.ChunkCount; c++)

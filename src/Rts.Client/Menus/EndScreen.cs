@@ -7,7 +7,8 @@ namespace Rts.Client.Menus;
 
 /// <summary>
 /// End-of-game statistics overlay: result title, game time and one row per army (team, result, units built,
-/// structures built, lost, killed, mass and energy collected) with per-column bars. Constructed only while the sim
+/// structures built, lost, killed, mass and energy collected) with per-column bars, and the score history graph
+/// (<see cref="ScoreGraph"/>). Constructed only while the sim
 /// thread is stopped (reads <see cref="SimWorld"/> directly, copying the values).
 /// </summary>
 public sealed class EndScreen
@@ -25,11 +26,14 @@ public sealed class EndScreen
     private readonly string _subtitle;
     private readonly List<Row> _rows = new();
     private readonly float[] _max = new float[Columns.Length];
+    /// <summary>(6b, G6) Line chart of the armies' score history under the table.</summary>
+    private readonly ScoreGraph _graph;
 
     public EndScreen(GameSession s, Result result)
     {
         _result = result;
         var w = s.Sim.World;
+        _graph = new ScoreGraph(w, s.LocalArmy);
         float seconds = w.Tick * SimWorld.Dt;
         _subtitle = $"Game time {(int)(seconds / 60)}:{(int)(seconds % 60):00}  ·  {MapPresets.Name(s.Config.Preset)}, {w.Terrain.Width / 51.2f:0} km";
         foreach (var a in w.Armies)
@@ -100,6 +104,14 @@ public sealed class EndScreen
 
         float bw = Ui.P(170), bh = Ui.P(42), gap = Ui.P(14);
         float bx = (sw - (3 * bw + 2 * gap)) * 0.5f, by = p.Y + p.Height + Ui.P(26);
+        // G6 graph between the table and the buttons, when there is room for it.
+        float gh = MathF.Min(Ui.P(230), Ui.Sh - (p.Y + p.Height) - Ui.P(14 + 20 + 16) - bh);
+        if (gh >= Ui.P(110))
+        {
+            var gr = Ui.R(p.X, p.Y + p.Height + Ui.P(14), p.Width, gh);
+            _graph.Draw(gr);
+            by = gr.Y + gr.Height + Ui.P(20);
+        }
         var action = Action.None;
         if (MenuUi.BigButton(Ui.R(bx, by, bw, bh), _result == Result.Defeat ? "Keep Watching" : "Continue")) action = Action.Continue;
         if (MenuUi.BigButton(Ui.R(bx + bw + gap, by, bw, bh), "Restart", CanRestart)) action = Action.Restart;

@@ -10,10 +10,15 @@ namespace Rts.Client.UI;
 /// </summary>
 public static class ResourceBar
 {
+    private static float GroupWidth(Rectangle bar) => MathF.Min(Ui.P(330), (bar.Width - Ui.P(320)) * 0.5f);
+
+    /// <summary>(6b) X right of the mass + energy groups (the unit cap counter goes there).</summary>
+    public static float RightEdge(Rectangle bar) => bar.X + Ui.P(8) + GroupWidth(bar) * 2 + Ui.P(12);
+
     public static void Draw(Rectangle bar, in ArmyView a)
     {
         float x = bar.X + Ui.P(8);
-        float groupW = MathF.Min(Ui.P(330), (bar.Width - Ui.P(320)) * 0.5f);
+        float groupW = GroupWidth(bar);
         DrawGroup(new Rectangle(x, bar.Y, groupW, bar.Height), "MASS", Ui.MassColor,
             a.Mass, a.MassMax, a.MassIncome, a.MassDemand, a.MassEfficiency, true);
         DrawGroup(new Rectangle(x + groupW + Ui.P(12), bar.Y, groupW, bar.Height), "ENERGY", Ui.EnergyColor,

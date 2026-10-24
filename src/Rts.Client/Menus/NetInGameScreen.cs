@@ -32,6 +32,7 @@ public sealed class NetInGameScreen : IScreen
     private readonly ClientOptions _opt;
     private readonly NetTextField _chat = new("", NetSession.MaxChat);
     private readonly List<(ChatLine line, double time)> _feed = new();
+    private bool _chatAllies; // the open chat line goes "to allies" (opened with Shift+Enter)
     private State _state;
     private float _endTimer;
     private bool _endWon, _endGameOver, _shownDefeat, _shownOver;
@@ -71,14 +72,18 @@ public sealed class NetInGameScreen : IScreen
                 {
                     if (_chat.HandleKeys())
                     {
-                        if (_chat.Text.Trim().Length > 0) _net.SendChat(_chat.Text);
+                        if (_chat.Text.Trim().Length > 0) _net.SendChat(_chat.Text, _chatAllies);
                         _chat.Text = "";
                         _chat.Focused = false;
                     }
                 }
                 else if (!MenuUi.Automated && Hotkeys.Chat.Pressed())
                 {
-                    if (_s.Selection.PendingSelfDestruct == null) _chat.Focus();
+                    if (_s.Selection.PendingSelfDestruct == null)
+                    {
+                        _chatAllies = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
+                        _chat.Focus();
+                    }
                 }
                 else if (_s.HandleEscapeForPause()) _state = State.Menu;
                 CheckOutcome();
@@ -157,6 +162,12 @@ public sealed class NetInGameScreen : IScreen
     private void SpeedKeys()
     {
         if (Hotkeys.PauseGame.Pressed()) _game.RequestSpeed(_game.Speed, !_game.Paused);
+        // (6b) Locked game speed (lobby option): the host keeps it anyway; say why nothing happens.
+        if ((Hotkeys.SpeedUp.Pressed() || Hotkeys.SpeedDown.Pressed()) && _game.LockedSpeed is float locked)
+        {
+            Toasts.Show($"Game speed is locked at {locked:0.#}x");
+            return;
+        }
         if (Hotkeys.SpeedUp.Pressed()) _game.RequestSpeed(MathF.Min(8f, _game.Speed * 2f), _game.Paused);
         if (Hotkeys.SpeedDown.Pressed()) _game.RequestSpeed(MathF.Max(0.125f, _game.Speed * 0.5f), _game.Paused);
     }
@@ -229,6 +240,9 @@ public sealed class NetInGameScreen : IScreen
         if (_game.Offline) Ui.TextRight("offline", r.X + r.Width - Ui.P(8), r.Y + r.Height + Ui.P(3), fs, Ui.Warn, true);
     }
 
+    /// <summary>"[Allies] " for an allies-only line (shown as "[Allies] name: text").</summary>
+    internal static string ChatPrefix(ChatLine line) => line.AlliesOnly ? "[Allies] " : "";
+
     private void DrawChat(double now)
     {
         float x = Ui.P(14), w = Ui.P(520);
@@ -238,8 +252,9 @@ public sealed class NetInGameScreen : IScreen
         if (_chat.Focused)
         {
             var input = Ui.R(x, y, w, Ui.P(28));
-            _chat.Draw(input, "", "Say:", 12.5f);
-            Ui.Text("Enter: send · Esc: cancel", x, y + Ui.P(31), Ui.F(10), Ui.TextFaint);
+            _chat.Draw(input, "", _chatAllies ? "To allies:" : "Say:", 12.5f);
+            Ui.Text(_chatAllies ? "Enter: send to your team · Esc: cancel" : "Enter: send · Esc: cancel (Shift+Enter: to allies)",
+                x, y + Ui.P(31), Ui.F(10), Ui.TextFaint);
         }
         // Recent lines above the input position, oldest on top.
         var lines = _feed.Where(f => _chat.Focused || now - f.time < FeedSeconds).TakeLast(_chat.Focused ? 10 : 6).ToList();
@@ -255,7 +270,7 @@ public sealed class NetInGameScreen : IScreen
             {
                 var slot = lobby.SlotOfPlayer(line.PlayerId);
                 var c = slot != null ? ColorUtil.Scale(ColorUtil.FromRgba(GameSetup.ArmyColors[slot.Color % GameSetup.ArmyColors.Length]), 1.3f) : Ui.Accent;
-                string who = line.Name + ": ";
+                string who = ChatPrefix(line) + line.Name + ": ";
                 Ui.TextShadow(who, tx, ly, fs, ColorUtil.WithAlpha(c, a), true);
                 tx += Ui.Measure(who, fs, true);
                 Ui.TextShadow(Ui.Fit(line.Text, x + w - tx, fs), tx, ly, fs, ColorUtil.WithAlpha(Ui.TextColor, a));

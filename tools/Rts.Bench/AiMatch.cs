@@ -8,7 +8,7 @@ using Rts.Sim.World;
 
 /// <summary>
 /// Headless skirmish AI match: every army is an AI (or army 0 is passive with "aipassive").
-/// Usage: Rts.Bench ai|aipassive [maxMinutes=30] [mapSize=256] [seed=42] [difficulties=normal,normal] [threads=0] [players=2] [preset=plains] [factions=uef,uef (or random)]
+/// Usage: Rts.Bench ai|aipassive [maxMinutes=30] [mapSize=256] [seed=42] [difficulties=normal,normal] [threads=0] [players=2] [preset=plains] [factions=uef,uef (or random)] [options=victory=supremacy,prebuilt=on,...]
 /// Prints a status line per game minute, then the winner, duration, end-screen statistics and per-AI cost (ms per tick).
 /// </summary>
 public static class AiMatch
@@ -25,6 +25,8 @@ public static class AiMatch
         if (args.Length > 6 && !MapPresets.TryParse(args[6], out preset)) throw new ArgumentException("unknown preset " + args[6]);
         // Faction per army (the last one repeats); default = every army UEF.
         string[]? factions = args.Length > 7 ? args[7].Split(',') : null;
+        // (6b) Game options spec, e.g. "victory=supremacy,prebuilt=on,cap=250" (GameOptions.Parse); default = classic.
+        var options = args.Length > 8 ? GameOptions.Parse(args[8]) : new GameOptions();
 
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
         if (Environment.GetEnvironmentVariable("BENCH_WARMUP") == "1") SimWarmup.Run(db); // JIT warm-up as the client does
@@ -34,9 +36,11 @@ public static class AiMatch
             MapSize = mapSize, Seed = seed, Players = players, AiPlayers = ai, MapPreset = preset,
             Factions = factions == null ? null : Enumerable.Range(0, players).Select(a => factions[Math.Min(a, factions.Length - 1)]).ToArray(),
             AiDifficulties = Enumerable.Range(0, players).Select(a => Enum.Parse<AiDifficulty>(diffs[Math.Min(a, diffs.Length - 1)], ignoreCase: true)).ToArray(),
+            Options = options,
         });
         var w = sim.World;
         Console.WriteLine($"AI match: map {mapSize} {MapPresets.Name(preset)}, seed {seed}, players {players} ({string.Join(" vs ", w.Armies.Select(a => (a.IsAI ? a.AiDifficulty.ToString() : "passive") + " " + a.Faction))}), threads {Par.MaxThreads}");
+        if (!options.SameAs(new GameOptions())) Console.WriteLine($"Options: {options.ToSpec()}");
 
         int maxTicks = (int)(maxMinutes * 60 * SimWorld.TicksPerSecond);
         // Status line interval in ticks (env AI_STATUS_SECONDS, default one game minute).

@@ -21,7 +21,7 @@ public static class NetGameConfig
     public static GameConfig From(LobbyState lobby, int localPlayerId)
     {
         var o = lobby.Options;
-        var cfg = new GameConfig { MapSize = o.MapSize, Preset = o.Preset, WaterAmount = o.Water, Seed = o.Seed };
+        var cfg = new GameConfig { MapSize = o.MapSize, Preset = o.Preset, WaterAmount = o.Water, Seed = o.Seed, Options = o.Game.Clone() };
         for (int i = 0; i < GameConfig.MaxSlots; i++)
         {
             var c = cfg.Slots[i];

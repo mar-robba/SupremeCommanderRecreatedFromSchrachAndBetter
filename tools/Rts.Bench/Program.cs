@@ -13,7 +13,7 @@ using Rts.Sim.Orders;
 //        env BENCH_WARMUP=1: run SimWarmup first (JIT warm-up, as the client does at startup); BENCH_ALLOC=1: allocations per stage
 //        Rts.Bench mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]  (loopback lockstep self-test, see MpSelfTest.cs)
 //        Rts.Bench duel <unitA> <unitB> [mass] [seed] [mapSize] | duelmatrix <factionA> [factionB] [masses] [seeds]  (unit balance, Duel.cs)
-//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset] [factions]  (skirmish AI match, see AiMatch.cs)
+//        Rts.Bench ai|aipassive [maxMinutes] [mapSize] [seed] [difficulties] [threads] [players] [preset] [factions] [options]  (skirmish AI match, see AiMatch.cs)
 if (int.TryParse(Environment.GetEnvironmentVariable("PAR_SPIN"), out int parSpin)) Par.WorkerSpinMicroseconds = parSpin; // pool worker spin (µs) experiments
 if (Environment.GetEnvironmentVariable("PAR_TASKS") == "1") Par.UseTaskParallel = true; // A/B: the old Parallel.For path
 if (args.Length > 0 && args[0] == "replay") { Environment.ExitCode = ReplayBench.Verify(args[1..]); return; }

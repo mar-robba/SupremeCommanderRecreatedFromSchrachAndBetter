@@ -120,6 +120,15 @@ Things learned while building the project that are not about how a system works 
   on the screenshot frame.
 - `--select <blueprint id>` (or `any:<id>` in the sandbox) pre-selects units; `--ui-place id@x,z` shows a placement
   ghost; the sandbox `--exec "spawn ...; wait 30; ..."` builds any situation.
+- `--screenshot screenshots/x.png` writes **nothing** (no error) if the `screenshots/` folder doesn't exist: a fresh
+  worktree has none, so `mkdir -p screenshots` first.
+- Late-game screens (end-screen graphs, big bases) need game time a 120-frame run doesn't have: make a save with
+  `Rts.Bench -- savebench 8 256 2` (writes `saves/savebench.rtssave`), then `--load saves/savebench.rtssave
+  --endscreen --screenshot ...` (6b).
+- `git worktree add` of main for the perf check: `dn.sh` calls git, which refuses a new worktree path ("dubious
+  ownership") until it is a `safe.directory`. Without touching the global config: prefix the command with
+  `GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0=<worktree path>` (6b). Put that worktree on
+  the RTS volume, not in /tmp.
 
 ## Multiplayer checks
 
