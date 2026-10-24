@@ -55,6 +55,8 @@ public static partial class SandboxConsoleParser
             ["at"], ParseKill),
         new("overcharge", ["oc"], "overcharge [army|all] [on|off]", "arm / disarm the commanders' Overcharge (default on)",
             ToggleWords, ParseOvercharge),
+        new("teleport", ["tp"], "teleport [army|all] [at] x,z", "commanders with a Personal Teleporter charge and jump there",
+            ["at", "all", "me", "enemy"], ParseTeleport),
         new("delete", ["del", "remove"], "delete", "remove the selected units (no wreck)",
             [], (c, a, x) => NoArgs(c, a, new UnitActionAction(SandboxUnitAction.Delete))),
         new("heal", [], "heal", "fully heal the selected units",

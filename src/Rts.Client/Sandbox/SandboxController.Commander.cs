@@ -8,7 +8,8 @@ using Rts.Sim.World;
 namespace Rts.Client.Sandbox;
 
 /// <summary>Sandbox console actions for commander tests (SandboxConsoleParser.Commander.cs): Overcharge on/off for
-/// every commander of an army, and kill every unit in an area (from the current snapshot).</summary>
+/// every commander of an army, Teleport orders for its commanders with a teleporter, and kill every unit in an area
+/// (from the current snapshot).</summary>
 public sealed partial class SandboxController
 {
     private void ExecuteCommander(ConsoleAction action)
@@ -35,6 +36,28 @@ public sealed partial class SandboxController
                 }
                 if (total == 0) Error($"No commander with Overcharge for {ArmyLabel(oc.Army)}");
                 else Ok($"Overcharge {(oc.On ? "ON" : "OFF")}: {total} commander(s) of {ArmyLabel(oc.Army)}");
+                break;
+            }
+            case TeleportAction ta:
+            {
+                int total = 0;
+                var dest = Ctx.Terrain.Clamp(ta.At, 1f);
+                for (int army = 0; army < snap.Armies.Length; army++)
+                {
+                    if (ta.Army >= 0 && army != ta.Army) continue;
+                    var units = new List<UnitHandle>();
+                    for (int k = 0; k < snap.UnitCount; k++)
+                    {
+                        ref var v = ref snap.Units[k];
+                        if (v.Army != army || (v.Flags & UnitFlags.UnderConstruction) != 0) continue;
+                        if (Ctx.Db[v.Bp].Teleport != null) units.Add(new UnitHandle(v.Index, v.Gen));
+                    }
+                    if (units.Count == 0) continue;
+                    Ctx.Runner.Enqueue(new IssueOrderCommand(army, units.ToArray(), Order.TeleportTo(dest), false));
+                    total += units.Count;
+                }
+                if (total == 0) Error($"No commander with a Personal Teleporter for {ArmyLabel(ta.Army)}");
+                else Ok($"Teleport: {total} commander(s) of {ArmyLabel(ta.Army)} to {dest.X:0},{dest.Y:0}");
                 break;
             }
             case KillAreaAction ka:

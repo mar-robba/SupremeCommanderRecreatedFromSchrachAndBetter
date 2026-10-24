@@ -324,7 +324,7 @@ public sealed partial class SandboxController : IDisposable
             case ClearLogAction:
                 ConsoleUi.ClearLog();
                 break;
-            case OverchargeAction or KillAreaAction:
+            case OverchargeAction or KillAreaAction or TeleportAction:
                 ExecuteCommander(action); // SandboxController.Commander.cs
                 break;
         }
