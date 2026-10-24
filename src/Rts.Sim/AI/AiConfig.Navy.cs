@@ -5,7 +5,7 @@ namespace Rts.Sim.AI;
 public sealed partial class AiConfig
 {
     /// <summary>Master switch of the navy (naval factories, ships, torpedo defense, sonar).</summary>
-    public bool NavyEnabled = false;
+    public bool NavyEnabled = true;
     /// <summary>Coast search radius around the base for the naval factory (scaled by sqrt(map size / 256)).</summary>
     public float NavalSiteRadius = 70f;
     /// <summary>Earliest first naval factory when the enemy is also reachable by land (Lakes). Without a land path
@@ -23,4 +23,30 @@ public sealed partial class AiConfig
     public float FleetRetreatShare = 0.3f;
     /// <summary>Torpedo launchers at the base coast once enemy ships came near (Easy -1, Hard +1).</summary>
     public int MaxTorpedoDefenses = 2;
+
+    // ---- drops (AiTransport; MaxTransports is in AiConfig.cs)
+    /// <summary>Idle land units needed before the first transport is built (island maps only).</summary>
+    public int DropMinUnits = 6;
+    /// <summary>One more transport (up to DropTransportCap x MaxTransports) per this many idle land units.</summary>
+    public int DropUnitsPerTransport = 12;
+    public int DropTransportCap = 3;
+    /// <summary>Island maps: above this many idle land units the land and air factories get no budget.</summary>
+    public int DropIdleCap = 60;
+    /// <summary>Pool units that stay home (base defense) instead of boarding.</summary>
+    public int DropKeepHome = 4;
+    /// <summary>The landed group attacks with at least DropWave units and DropStrengthShare x the enemy's estimated land
+    /// strength, or after DropGatherTime seconds at the landing zone with half a wave.</summary>
+    public int DropWave = 16;
+    public float DropStrengthShare = 0.7f;
+    public float DropGatherTime = 240f;
+    /// <summary>Enemy threat in the base (DefenseRadius) that sends the units waiting for a transport back to defend.</summary>
+    public float DropDefendThreat = 150f;
+    /// <summary>Landing zone / landed objective penalty per world unit inside 60 (LZ) / 40 (objective) of the enemy
+    /// commander's last seen position (it kills most drop units).</summary>
+    public float DropCommanderAvoid = 3f;
+    /// <summary>Landed objective value of a mass extractor (factory 60, power generator 30); Hard raids extractors first.</summary>
+    public float DropMexValue = 50f;
+    public float DropMexValueHard = 80f;
+    /// <summary>Earliest air staging for the transports (T2 engineers).</summary>
+    public float DropStagingTime = 600f;
 }

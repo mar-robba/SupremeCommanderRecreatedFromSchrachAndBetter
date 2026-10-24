@@ -408,8 +408,23 @@ interpolates prev/cur by time
     commander near the army), pull-back of units under 25 % health, focus fire (`PickFocusTarget`: each direct-fire
     member takes the weakest identified enemy in range after the damage already assigned, FocusHorizon = 3 s).
   - Air: interceptor patrols, bomber groups on raid targets; air scouts.
-  - Navy/T2/T3/strategic weapons are not used yet (wave 4); on Archipelago the AI builds land units that stay on
-    their island (no crash, no command spam).
+  - Navy (`AiNavy.cs`, `AiNavy.Fleet.cs`, wave 5 k-navy): `Decide` once (no DeepWater = nothing, so dry maps are
+    unchanged) looks for a coast site near the base whose water (class-2 graph) reaches an enemy base; `Priority` =
+    no land path to any enemy start (the navy gets the factory budget before the land factories). Engineers build
+    naval factories, torpedo launchers (after enemy ships came near) and sonar; ships gather at `Home` (defend the
+    coast), sail at MinFleet + strength (or timeout with 0.7x the required strength), attack enemy ships > coastal
+    structures by value > stale enemy starts, retreat when beaten. Fleet members: Role Naval, Group 1000001.
+  - Transports (`AiTransport.cs`, `AiTransport.Drop.cs`): island mode = no enemy start reachable on foot. Builds
+    transports (hook `ManageFactories` before the land factories; an air factory job before the mass-stall gate),
+    picks a landing zone on the target's island (rings 30-100 x 16 around the enemy start, scored by ground/air
+    threat, anti-air along the flight, enemy defense radius, nearness to enemy structures and to the enemy commander's
+    last seen position (it kills most drop units), bad-LZ memory), runs a
+    ferry route (`TransportOrders.Ferry(beacon, LZ)`) and sends idle Pool/army units to the beacon (Role Transport,
+    Group 1000002: the military code ignores them; released to Pool if the base is attacked). Landed units gather
+    until DropWave units and 0.7x the enemy land estimate (or DropGatherTime), then attack-move the best known
+    structure on that island (factories first, away from the enemy commander; Hard: extractors first). Above DropIdleCap idle land units the land/air factories get no budget. Air staging
+    (T2) + Dock for low-fuel transports. Knobs: `AiConfig.Navy.cs` (Drop*, fleet), `MaxTransports` (AiConfig.cs).
+  - T2/T3/strategic weapons: see the wave 5k AI_TUNING sections.
 - Results (bench, 30 min, 256 maps, 4 land presets): Normal vs Normal ends by commander kill in ~86 % of games
   (mean ≈ 18.6 min); Hard beats Normal in 86 % of games (166 won / 8 lost / 18 undecided of 192), Easy loses to
   Normal in 23 of 24; Hard vs Hard ends in ~69 %; 4-player FFAs on 512 end by ~30 min. Stalemates are equal armies

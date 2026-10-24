@@ -482,3 +482,53 @@ MaxHealth 305 takes the same 18 Cybran laser hits as 300 (it only changes kills 
 the MuzzleVelocity 40 one. Left: in games that last past minute 25 Cybran still fields more T2/T3 (max alive heavy tanks
 15 vs 5, assault bots 17 vs 4): the UEF spends part of its T2/T3 mass on roles Cybran lacks (mobile shields 6 %,
 one siege bot per two assault bots, fighter-bombers), so late games lean Cybran and early ones UEF.
+
+## Navy and transports (wave 5 k-navy, 2026-10-23)
+
+How it works: ARCHITECTURE "Skirmish AI" (Navy, Transports bullets). Knobs in `src/Rts.Sim/AI/AiConfig.Navy.cs`
+(all overridable with `AI_CFG`, e.g. `AI_CFG="DropTransportCap=6,DropUnitsPerTransport=6"`).
+Bench: `Rts.Bench ai 30 256 <seed> normal,normal 1 2 archipelago uef,cybran`; the `tech:` line has `navy=` (ships
+queued) and `drops=` (thinks in which units landed); `AI_TRACE=1` prints `navy:` and `drop:` lines (LZ, boarding,
+landed group attacks/lost, transports queued).
+
+- Land presets are unchanged: plains seed 3 hard,normal 12 min hash 1D9784B1AC58A30A, highlands seed 5 NvN 12 min
+  419351D31ADAC8B2 (same before/after); Lakes 256 (3 games) identical results (no naval site reaches the enemy
+  there, no island mode).
+- Before (navy only, k-navy 1): Archipelago 256 NvN 0/6 finished in 30 min; 100-300 land units idle per AI.
+- Archipelago 256 NvN 30 min, seeds 1-4, uef/cybran mixes: **2/6 finished** (19-22 min, by drops), drops 3-56 per
+  AI, navy 6-30 ships. 512 (2 games): no finish in 30 min, drops 37-57 and 25-41 ships per AI.
+- AI cost ≤ 0.022 ms/tick per AI (256 and 512).
+- k-navy 3 (after merging k's balance passes; 24-game sets = seeds 1-6 and 7-12, two faction mixes each, script loop
+  over `Rts.Bench ai 30 256 <seed> normal,normal 1 2 archipelago <factions>`, ~6 s per 12 games in parallel):
+  Archipelago 256 NvN **7/24 finished** (13-26 min; 4/24 with `DropCommanderAvoid=0`), 512: 1/12. Land presets equal
+  to k's branch build: plains s3 hard,normal 12 min 47E3ECD759E44BEA, highlands s5 NvN 6F64E54D002096E9.
+  `Rts.Bench 2000 300`: same hash and tick time as main. AI cost alone: 0.007 ms/tick (256), 0.014 (512).
+
+What mattered:
+- No air factory on island maps (the economy's WantAirFactory rarely passes there, and the engineer job after the
+  mass-stall gate never ran): air factory job before the gate (`TryAirFactory`).
+- Transports were queued only into empty air-factory queues (interceptors kept them full): queue behind them.
+- Ferries flying over the enemy fleet were shot down by frigates: LZ score includes anti-air along the flight.
+- Landing at the edge of the enemy base (islands are small: 40-60 from the start) loses the drop in 15-30 s to the
+  home army; gather until 0.7x the enemy land estimate helps only where an LZ outside the defense radius exists.
+- More transports (`DropTransportCap=6,DropUnitsPerTransport=6`) did not change the finish rate (6 games).
+- The enemy commander kills most drop units (~90 kills per finished game). Landing zones and landed objectives keep
+  away from its last seen position (`DropCommanderAvoid=3`, per world unit inside 60 / 40): before the balance pass
+  10/24 finished vs 4/24 (sweep: 2 → 4/12, 3 → 6/12, 4 → 4/12, 5 → 3/12, 8 → 2/12 on seeds 1-6); after it 7/24 vs 4/24.
+  The `drop: LZ` trace line shows the distance to the commander: median 49 → 57 (seed 1), minimum still ~26-30.
+- Tried and dropped (k-navy 3, before the balance pass, baseline 3/12 seeds 1-6 with avoidance off):
+  - Synchronized waves (transports wait at the beacon until all can fill up and the landing force has 1.2x the threat
+    at the LZ, then load and fly together; LZ frozen while a group gathers): 1/12; with the threat raised to the enemy
+    land estimate 1/12, with 6x transports 0/12, without the strength gate 1/12; fewer enemy structures killed on 256
+    (350-500 vs 547) and 512 (453 vs 690). The trickle keeps pressure up and units leave home (the idle cap throttles
+    production less).
+  - Transports pause while the landed group faces more than 1.5x its strength (avoidance on): 11/24 vs 10/24, ratio 1:
+    8/24, 2.5: 9/24 (noise). Freezing the LZ while a group gathers: 8/24.
+  - Hard raids extractors first (`DropMexValueHard=80`, normal 50): hard vs normal 6/24 Hard wins (was 3/24) before
+    the balance pass, kept; after it no difference (Hard wins 1/24 either way). For Normal, 80 was worse (8/24).
+- Engineer ferries are not needed: engineers are amphibious and reach every island (256 and 512).
+
+Open: small-island drops vs big home armies (drop on expansions first, naval bombardment support); Hard on
+Archipelago builds few land units (one traced game: 9-39 vs 23-45 for Normal; similar mass income) and drops 3x less, so it loses 7
+of 8 finished games to Normal (economy/production, not the drop code); cliff maps (highlands plateaus) where transports
+could also help (kept off: island mode needs no land path to any enemy start).

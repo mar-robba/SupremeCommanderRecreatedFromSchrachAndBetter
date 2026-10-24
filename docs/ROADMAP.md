@@ -318,6 +318,12 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
             commander kill in ~86 %, Hard beats Normal in 86 % (166-8-18 of 192), Easy loses 23/24; 4p FFAs on 512 end
       - [ ] later: Highlands/Canyon NvN stalemates (equal armies trading), Hard vs Hard ends only ~69 %; T1 artillery
             looks too cost-efficient (balance); AI uses T2/T3, navy, strategic weapons, experimentals, transports
+            (navy + drops done 2026-10-23, k-navy: Archipelago 256 NvN ends 2/6 by 30 min, was 0/6; k-navy 3: LZ and
+            landed objectives avoid the enemy commander: 7/24 by 30 min after the land balance pass, 4/24 without)
+      - [ ] later (k-navy): island drops still lose to big home armies on small islands (synchronized waves, pausing
+            contested LZs and LZ freezing were tried and hurt, AI_TUNING "Navy and transports"); Hard builds few land
+            units on islands (drops 3x fewer than Normal, loses 7 of 8 finished games to Normal); drops on land maps
+            with cliffs. Engineer ferries not needed (engineers are amphibious).
 - [x] Better map generator (merged 2026-10-11): presets Plains/Lakes/Highlands/Canyon/Archipelago, guaranteed land connectivity, tests
 - [x] Main menu / game setup screen, victory/defeat screens (merged 2026-10-11):
       GameSession owns fog/wrecks/audio/cursor hints; setup AI slots → `Army.IsAI` + `AiDifficulty` (in-sim AI);
@@ -370,7 +376,9 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       shore), rate-limited torpedo defense, subs only seen by sonar/omni and only hit by torpedoes; Archipelago sea
       lanes + harbor beaches (playable: coast reachable, battleship lanes between starts); client: ship models, wakes,
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
-      - [ ] later: AI builds and uses navy (wave 4), ships steering around each other in narrow channels
+      - [x] AI builds and uses navy + transport drops on island maps (wave 5 k-navy, 2026-10-23; AI_TUNING "Navy and
+            transports")
+      - [ ] later: ships steering around each other in narrow channels
             (they only push apart now)
 - [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
       build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
