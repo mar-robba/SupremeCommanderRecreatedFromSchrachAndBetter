@@ -31,8 +31,8 @@ public sealed class AppSettings
     /// <summary>The settings in use (loaded at startup).</summary>
     public static AppSettings Current { get; private set; } = new();
 
-    private static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RtsGame", "settings.json");
+    /// <summary><c>$XDG_CONFIG_HOME/RtsGame/settings.json</c> (default ~/.config; Windows %APPDATA%), see <see cref="Rts.Sim.Persistence.UserDirs"/>.</summary>
+    public static string FilePath => Path.Combine(Rts.Sim.Persistence.UserDirs.Current.ConfigDir, "settings.json");
 
     /// <summary>Automated runs (screenshots) never read or write the user's file.</summary>
     public static bool Persist = true;
