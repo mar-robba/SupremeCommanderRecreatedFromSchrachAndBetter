@@ -35,6 +35,9 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`).
   Headless replay check (exit 1 = desync): `dotnet run -c Release --project tools/Rts.Bench -- replay <file>`;
   save/load timings: `... -- savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnitsPerArmy] [threads]`
+- Release package (DEV_GUIDE "Packaging"): `bash tools/package/package.sh [linux|win|all] [-o OUTDIR]` → `release/RtsGame-<ver>-linux-x64.tar.gz`
+  (+ `-win-x64.zip`; self-contained, ~4 min; `release.txt` next to the exe = release mode: saves/replays in `~/.local/share/RtsGame`);
+  `--export-icon FILE.png` writes the procedural game icon and exits; crashes are logged to `~/.local/share/RtsGame/crash.log`.
 - **Visual check (agents must use this after client changes):**
   `dotnet run --project src/Rts.Client -- --demo --screenshot screenshots/<name>.png --frames 120 --size 1280x720 [--camera x,z,dist]`
   then Read the PNG to look at it. A display is available (X11/XWayland).
