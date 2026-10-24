@@ -67,9 +67,10 @@ public sealed class GameRecording : ITickHooks
     /// <summary>
     /// Saves the game as <paramref name="name"/>: the world is captured on the sim thread (between two ticks, also while
     /// paused), then encoded and written on a worker. A toast reports the result; <paramref name="done"/> (optional)
-    /// is called on the worker with the saved path or null on failure.
+    /// is called on the worker with the saved path or null on failure. <paramref name="toast"/> replaces the success
+    /// toast text (autosave: "Autosaved").
     /// </summary>
-    public void Save(SimRunner runner, string name, ClientGameData clientData, Action<string?>? done = null)
+    public void Save(SimRunner runner, string name, ClientGameData clientData, Action<string?>? done = null, string? toast = null)
     {
         var info = _info.Clone();
         info.ClientData = clientData.ToJson();
@@ -88,7 +89,7 @@ public sealed class GameRecording : ITickHooks
                 try
                 {
                     string path = SaveStore.WriteSave(SaveGame.Encode(c), name);
-                    Toasts.Show(name == SaveStore.QuickSaveName ? "Quicksave done" : $"Game saved: {name}");
+                    Toasts.Show(toast ?? (name == SaveStore.QuickSaveName ? "Quicksave done" : $"Game saved: {name}"));
                     done?.Invoke(path);
                 }
                 catch (Exception e)

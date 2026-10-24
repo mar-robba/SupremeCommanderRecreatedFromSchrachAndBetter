@@ -22,6 +22,7 @@ using Rts.Client;
 //                   --replay FILE [--seek TICK]            -> watch a replay (.rtsreplay), optionally from TICK
 //                   [--save-at N] (quicksave at frame N) [--save-dialog] (pause menu + save dialog, screenshots)
 //                   [--write-replay] (--screenshot runs don't write replays unless given)
+//                   [--autosave-every TICKS] (autosave interval, default 3000 = 5 min of game time; also in --screenshot runs)
 //                   [--help-overlay] (open the F1 help overlay at the start, screenshots)
 // In game: F5 quicksave, F6 quickload, Esc → Save Game. Every game is recorded; the replay is written at the end/quit.
 // Audio is off in --screenshot runs unless --sound is given. Audio and --nofog flags don't force a direct game.

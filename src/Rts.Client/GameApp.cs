@@ -93,6 +93,8 @@ public sealed class ClientOptions
     public string? LoadPath, ReplayPath;
     public int SeekTick = -1, SaveAt = -1;
     public bool SaveDialog, WriteReplay;
+    /// <summary>--autosave-every TICKS: autosave interval for tests/screenshots (forces autosave on, also in --screenshot runs).</summary>
+    public int AutosaveEvery = -1;
     /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
     public int HostPort;
     public string? JoinAddress, PlayerName;
@@ -177,6 +179,7 @@ public sealed class ClientOptions
                 case "--save-at": o.SaveAt = int.Parse(Next()); break;
                 case "--save-dialog": o.SaveDialog = o.PauseMenu = true; break;
                 case "--write-replay": o.WriteReplay = true; break;
+                case "--autosave-every": o.AutosaveEvery = int.Parse(Next()); break;
                 case "--host":
                     o.HostPort = i + 1 < args.Length && int.TryParse(args[i + 1], out int hp) ? hp : Rts.Net.Session.NetSession.DefaultPort;
                     if (i + 1 < args.Length && int.TryParse(args[i + 1], out _)) i++;

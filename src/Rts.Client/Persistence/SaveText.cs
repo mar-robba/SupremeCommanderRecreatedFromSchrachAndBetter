@@ -33,10 +33,11 @@ public static class SaveText
         return existing.Any(e => string.Equals(Path.GetFullPath(e.Path), path, StringComparison.Ordinal));
     }
 
-    /// <summary>Title of a list entry: the save name (or the file name), "quicksave" marked.</summary>
+    /// <summary>Title of a list entry: the save name (or the file name), "quicksave" / "autosave_N" marked.</summary>
     public static string Title(SaveEntry e)
     {
         string name = e.Info?.Name is { Length: > 0 } n ? n : e.FileName;
+        if (Autosave.Title(e.FileName, name) is string auto) return auto;
         if (e.FileName != SaveStore.QuickSaveName) return name;
         return name == SaveStore.QuickSaveName ? "Quicksave" : $"{name} (quicksave)";
     }

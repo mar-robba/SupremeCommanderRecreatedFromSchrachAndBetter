@@ -57,6 +57,7 @@ public sealed class InGameScreen : IScreen
                 if (_s.HandleEscapeForPause()) OpenPause();
                 else CheckOutcome();
                 _saveUi.HandleHotkeys(_frames);
+                _saveUi.AutosaveStep(ended: _shownDefeat);
                 break;
             case State.Paused:
                 if (!_saveUi.DialogOpen && MenuUi.Key(KeyboardKey.Escape)) Resume();
