@@ -9,7 +9,7 @@
     "DirectFire",
     "Tech1"
   ],
-  "MaxHealth": 300,
+  "MaxHealth": 305,
   "Radius": 0.6,
   "Economy": {
     "BuildCostMass": 56,
@@ -31,7 +31,7 @@
       "Range": 18,
       "Damage": 18,
       "RateOfFire": 1,
-      "MuzzleVelocity": 30,
+      "MuzzleVelocity": 40,
       "TargetLayers": [
         "Land",
         "Water"

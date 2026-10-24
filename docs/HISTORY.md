@@ -355,6 +355,30 @@ the faction roles. New roles are append-only; list them in the report so the Cyb
   - tests: T2 by minute X on a fixed seed; navy on Archipelago; anti-nuke after seeing an SML; save/load
     mid-game still identical.
 
+**Delivered** (merged 2026-10-24, 344e2b5; eleven coordinators from 2026-10-14 to 10-24, cut by usage limits and the
+context cap many times; navy + transports split off to (k-navy), merged after it). Final report of coordinator 11:
+- **Works:** the AI plays T2/T3 (upgrades, enhancements, shields, TML, strategic projects, SCUs, air T2/T3) through
+  faction roles, with a tech budget plus a pressure switch; duel tool (`Rts.Bench duel` / `duelmatrix`); land balance
+  pass (AI_TUNING "Unit balance"); Cybran/UEF parity; Normal defaults and Hard preset; lab scripts in `tools/ai-lab`.
+- **Last run:** UEF T1 tank MuzzleVelocity 30 -> 40, hp 305 (26d271f): Cybran v UEF 51-21 -> 39-35 (96 games,
+  45 min). Hard preset: artillery 0.05, 8/18 land factories, army share 0.6 (d52b553); 11 Hard levers measured, a
+  threat-weighted focus fire was reverted.
+- **Try:** `MIN=45 DIFF=Hard bash tools/ai-lab/specsweep.sh <tag> tools/ai-lab/specs/hvn.txt <bin> -`;
+  `Rts.Bench duelmatrix uef cybran`.
+- **Numbers (45-min cap):** NvN 64/96 finished (21/69 lopsided games stalled; goal 80/96); HvH 76/96 (goal 85 %);
+  Hard v Normal 102-52 (154/192 finished); tech v T1-only 60 % (goal 65 %); Cybran v UEF 39-35. Reference match
+  `ai 30 256 42 hard,normal`: Hard wins at 15:35, hash **4E3F22FD0F8EED11** (verified on main after the merge). Perf:
+  `2000 300` avg 1.75-1.97 ms vs main 1.72-1.80 (noise); AI 0.017 ms/tick.
+- **Tests:** Sim 419, Client 227, Net 21 green. Tests read the tank's hp from its blueprint; AiTechTests uses seed 6.
+- **Hotkeys:** none. **Shared files:** none (data, AiConfig, tests, docs).
+- **Known issues:** goals (a) stalls, (b) finished games and (c) tech v T1-only are not met (AI_TUNING "Hard's edge",
+  "Final numbers of agent (k)"): the stalls need an AI decision change, not more config values (wave 9a). Hard is
+  about 2:1 against Normal; main's old 96 % came from the T1 artillery exploit. Late games lean Cybran (UEF splits its
+  T2/T3 mass across shields, siege bots and fighter-bombers).
+- **Handoff review:** the note was good. It lacked that blueprint data is read live from the worktree (data tests
+  need no rebuild); `pgrep -f` wait loops matched themselves (wait on a result line instead); 45-min matrices take
+  8-12 min, not 2-3.5.
+
 ### (l) Cybran faction — `data/factions/cybran.json`, `cybran_*` blueprints, new sim features, models
 *brief; starts after (j)*
 

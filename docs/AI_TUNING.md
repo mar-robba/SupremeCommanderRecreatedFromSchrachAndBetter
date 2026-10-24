@@ -220,6 +220,71 @@ When the games end decides it: the T1-only AI wins early (81 of its 88 wins befo
 tech AI wins late (58 of 92 after minute 25). The tech AI is weakest between ~5 and ~20 minutes, while extractor and
 factory upgrades and enhancements take mass from the army.
 
+Levers for the tech seat of (c) (192 games each, tech share of decided games): PressureArmyShare 0.85 + PressureRatio
+0.8 63 %; MexT2Time 480 + LandT2Time 660 53 %; EnhanceTime 900 58 %; ArmyShare 0.6 55 %; UpgradeShare 0.2 48 %;
+**all of the first three together 74 % (66-23 and 69-24 by seat; plains 25-21, lakes 36-11, highlands 33-10,
+canyon 41-5)** -> made the Normal defaults (`AiConfig`: MexT2Time 480, LandT2Time 660, EnhanceTime 900,
+PressureArmyShare 0.85, PressureRatio 0.8). NvN 45 with them: 70 (49) finished, stalled 25/77 (without the pressure
+switch 63/30; + ArtilleryTier=1 67/31, so ArtilleryTier stays 3).
+
+Hard v Normal (hvn, 192 games, 45 min; wins Hard-Normal) with those Normal defaults: the old Hard preset lost 18-81.
+ArtilleryShare 0.25 49-75, 0.4 44-77; + Normal's tech times 60-71; + Normal's upgrade/project values 60-69; + ArtilleryShare
+0.1 69-75 (= "C"). On top of C: raids off 58-88 (raids help), PullBackHealth 0 67-77, **FocusFire off 90-48**, Normal
+attack timing (FirstAttackTime 240, AttackMargin 1.3, AssembleTimeout 150) 79-67; FocusFire + pull-back off + Normal
+attack timing + Normal engineers (10/4), 1 radar, no air scout, 3 expansion PDs: **92-55, stalled 42/129** -> the new
+Hard preset. At minute 8 the old Hard had 40 land units vs Normal's 53 at the same income (mass demand 41 vs 30: too
+many commitments) and lost extractors. Focus fire hurts since the balance pass (not investigated: overkill or units
+stopping to re-target?). Main's 177-7-8 (30 min) was T1-only play with the old T1 artillery; not reached.
+
+Final check with the new Normal defaults and Hard preset (a37b799, 45 min): NvN 70 (49), stalled 25/77; HvN 92-55
+(147/192 finished, stalled 42/129); HvH 68/96 (57 by 30), stalled 29/64; Cybran v UEF (cvu, 96) **Cybran 51 - UEF 21,
+24 draws** (pre-balance 8-5 in 18: the balance pass broke faction parity, to fix); (c) tech vs T1-only 112-61 = 64 %
+(the T1-only seat now also has the pressure switch). Reference match `ai 30 256 42 hard,normal`: Hard at 15:58, hash
+74E2EB7D333190A4.
+
+#### Hard's edge (2026-10-24, after the UEF T1 tank fix)
+
+HvN, 192 games, 45 min, Hard - Normal wins (finished, lopsided stalled). Each line adds to the Hard preset of a37b799.
+
+| Hard override | Hard - Normal | finished | stalled |
+|---|---|---|---|
+| none (preset a37b799 with the tank fix) | 90 - 49 | 139 | 55/140 |
+| FocusFire on, target = highest (enemy land dps + 1) / health left instead of lowest health | 69 - 57 | 126 | 44/131 |
+| ArtilleryShare 0.05 | 98 - 51 | 149 | 38/110 |
+| ArtilleryShare 0 | 92 - 51 | 143 | 49/101 |
+| 0.05 + Normal's MaxShields 3 / MaxTml 1 / MaxScus 2 | 98 - 51 (identical games: the caps are never reached) | 149 | 38/110 |
+| 0.05 + CommanderSnipe off | 100 - 50 | 150 | 34/120 |
+| 0.05 + MaxLandFactories 8 / Float 18 ("B") | 101 - 47 | 148 | 42/119 |
+| B + AttackMargin 1.6 | 97 - 54 | 151 | 45/125 |
+| **B + ArmyShare 0.6** -> the Hard preset | **102 - 52** | **154** | **33/115** |
+| B + UpgradeShare 0.25 | 95 - 53 | 148 | 31/112 |
+| B + EconInterval 2, MilitaryInterval 4 | 93 - 54 | 147 | 45/126 |
+
+Every lever lands at about 2:1 (64-68 % of decided games): Hard is Normal with a few more factories, raids and faster
+thinking, and with the unit balance no unit mix wins outright any more. Main's 177-7-8 (96 %) came from the T1
+artillery exploit (ArtilleryShare 0.55 when T1 artillery won every fight) and is not reachable with config values;
+a real gap needs better decisions (engagement choice, retreat of losing groups, focus fire that does not cost
+firing time). Focus fire still hurts with a threat-weighted pick, so the cost is probably the orders themselves (an
+AttackUnit order per member every think; not measured: stops, turning, chasing), not the choice of target; the code
+stayed as it was.
+
+#### Final numbers of agent (k) (2026-10-24: UEF T1 tank fix + Hard preset above, 45-minute cap)
+
+| goal | target | result | |
+|---|---|---|---|
+| (a) lopsided games end | ~0 stalled | NvN 21/69, HvN 33/115, HvH 17/48 stalled | unmet (see "Experiments" for every lever tried) |
+| (b) NvN finished | >= 80/96 | 64/96 (52 by 30 min) | unmet (a37b799: 70; noise about ±6) |
+| (b) HvH finished | >= 85 % | 76/96 = 79 % (67 by 30 min) | unmet (a37b799: 68) |
+| (b) Hard v Normal | >= main's 96 % | 102 - 52 = 66 % (154/192 finished) | unmet ("Hard's edge") |
+| (c) tech v T1-only | >= 65 % | 104 - 70 = 60 % | unmet (a37b799: 64 %; the faster UEF tank shells help the T1-only AI) |
+| Cybran v UEF | even | 39 - 35 (22 draws) | met (was 51 - 21) |
+
+Reference match `ai 30 256 42 hard,normal`: "WINNER: Player (Hard) after 15:35", hash 4E3F22FD0F8EED11. Runs:
+`.claude/ai-lab/runs/k11*` in the (k) worktree (not in git). What is left is the stall problem: equal mirror AIs with
+T2/T3, shields and point defense trade at the front for a long time, and no army-control lever tried so far ends those
+games without losing more elsewhere; the next step is an AI decision change (siege of a fortified front with artillery
+and T3 units, a real "break the stalemate" mode), not more config values.
+
 ## Unit balance
 
 Tool: `Rts.Bench -- duel <unitA> <unitB> [mass] [seed] [mapSize]` and `duelmatrix <factionA> [factionB] [masses] [seeds]`
@@ -397,6 +462,26 @@ by margin +0.4..+0.5; asl3 1.71 ~ hvy2 1.91). (3) Open: higher tiers beat T1 cle
 (5 x 420 = 2100 mass). shareA stays nearly binary, so same-role cross cells read 0.00/1.00 even at margin +-0.05.
 (4) The reference match `ai 30 256 42 hard,normal` now ends "WINNER: AI 1 (Normal) after 15:50" (was Hard at 11:30),
 hash 9724216772093A2E: check AI matches before trusting the AI on these numbers.
+
+### Faction parity after the balance pass (2026-10-24)
+
+The balance pass left Cybran v UEF (cvu, 96 games, 45 min, Normal v Normal, both seats, four presets) at **Cybran 51 -
+UEF 21, 24 draws**. Both factions were even until minute 6-8 (same mex, income, land value), then the UEF fell behind
+(minute 15: land value 2.2k vs 2.7k, mex 9.2 vs 10.9). The cross matrix (`duelmatrix uef cybran 300,600,1200,2000,4000
+4`) had every same-role pair near 0 except the one that matters most, **T1 tank vs T1 tank: margin -0.34 / -0.15 /
+-0.19 / -0.01 / -0.15** (eff 1.72 vs 1.73, but the Cybran bot is faster, 3.2 vs 3.0, and its laser flies at 40
+against the Gauss shell's 30, so more UEF shots miss moving targets).
+
+| uef_t1_tank change | tank1 vs tank1 margin (600 / 1200 / 2000 / 4000) | cvu Cybran - UEF (draws) |
+|---|---|---|
+| none | -0.15 / -0.19 / -0.01 / -0.15 | 51 - 21 (24) |
+| MuzzleVelocity 30 -> 40, MaxHealth 300 -> 315 | +0.04 / -0.01 / +0.18 / +0.07 | 34 - 41 (21): UEF wins early (25 of 41 before minute 20), Cybran late |
+| **MuzzleVelocity 30 -> 40, MaxHealth 300 -> 305** | -0.07 / -0.16 / +0.08 / -0.11 | **39 - 35 (22)** -> kept |
+
+MaxHealth 305 takes the same 18 Cybran laser hits as 300 (it only changes kills by mixed damage), so the duel grid is
+the MuzzleVelocity 40 one. Left: in games that last past minute 25 Cybran still fields more T2/T3 (max alive heavy tanks
+15 vs 5, assault bots 17 vs 4): the UEF spends part of its T2/T3 mass on roles Cybran lacks (mobile shields 6 %,
+one siege bot per two assault bots, fighter-bombers), so late games lean Cybran and early ones UEF.
 
 ## Navy and transports (wave 5 k-navy, 2026-10-23)
 

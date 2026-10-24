@@ -375,9 +375,8 @@ interpolates prev/cur by time
   `AiSaveLoadTests`: save mid-battle, load, identical continuation); only the `AiSystem.Trace` hook is `[NoSave]`.
 - `AiBrain` thinks on a staggered schedule (economy every `EconInterval`, military every `MilitaryInterval` ticks,
   offset by army index); difficulty (`Army.AiDifficulty`: Easy/Normal/Hard) selects an `AiConfig`. No difficulty
-  cheats (no resource bonus, no map vision): Hard is better through faster reactions, a stronger opening (5 early
-  engineers, mex chains), an artillery-heavy land mix (`ArtilleryShare` 0.55 vs 0.25: by far the biggest lever),
-  raids, commander snipes and micro (damaged units pulled back for repair, focus fire).
+  cheats (no resource bonus, no map vision): Hard is better through faster reactions, more factories, raids and
+  commander snipes (until the 2026-10-23 unit balance also an artillery-heavy mix, pull-back and focus fire; see below).
   Cost ≈ 0.02-0.03 ms/tick per AI (worst game ≈ 0.05).
 - `AiPerception` (fog-fair, `RespectIntel=true`): the only window on enemies. Enemy units count only while seen or on
   radar (radar blips = anonymous, assumed one tank), structures are remembered as ghosts until seen dead, threat maps
@@ -430,6 +429,21 @@ interpolates prev/cur by time
   (mean ≈ 18.6 min); Hard beats Normal in 86 % of games (166 won / 8 lost / 18 undecided of 192), Easy loses to
   Normal in 23 of 24; Hard vs Hard ends in ~69 %; 4-player FFAs on 512 end by ~30 min. Stalemates are equal armies
   trading in the middle of Highlands/Canyon maps. T1 mobile artillery is very cost-efficient (balance pass later).
+- Tech and budget (wave 5k): `AiEconomy.Tech.cs` upgrades extractors and factories after `MexT2Time`/`MexT3Time`,
+  `LandT2Time`/`LandT3Time`/`AirT2Time`/`AirT3Time` within `UpgradeShare` of the mass income (`MaxMexUpgrades`,
+  `MaxFactoryUpgrades` at once), buys commander enhancements after `EnhanceTime`, builds tiered engineers/power/
+  defenses, pauses mass fabricators when energy runs short, runs the quantum gateway (`MaxScus`) and the big projects
+  (`ShieldTime`: base shields, TMD, artillery installations, storages; `TmlTime`; `StrategicTime`: nukes,
+  experimentals; an anti-nuke as soon as an enemy launcher is seen). `AiStrategic.cs` aims the tactical/strategic
+  launchers. `AiEconomy.Budget.cs`: the factories get at least `ArmyShare` (0.5) of the mass income and eco/tech
+  commitments start only while the rest leaves room; **pressured** (after 5 min, own land strength below
+  `PressureRatio` 0.8 x the enemy's estimate, or enemies at the base) the share is `PressureArmyShare` 0.85, so tech
+  waits while the army is losing (tech vs a T1-only AI: 51 % -> 74 % of decided games). Unit choice by faction roles;
+  caps `MaxTier` (structures/engineers), `MaxUnitTier` (combat units), `ArtilleryTier`. Off by default (AI_TUNING):
+  `StallTime` fall-back, `AdvanceInterval` creeping advance, `LeadArmyShare`. Since the 2026-10-23 unit balance Hard
+  no longer uses the 0.55 artillery share, focus fire or the unit pull-back (they lost to Normal); its edge is now 8
+  land factories, raids, faster thinking, army share 0.6 and artillery 0.05 (about 2:1 vs Normal). Numbers and the
+  open stall problem: AI_TUNING "New goals", "Hard's edge" and "Unit balance".
 - Bench: `dotnet run -c Release --project tools/Rts.Bench -- ai [minutes] [map] [seed] [diff0,diff1,...] [threads] [players] [preset] [factions]`
   (`aipassive` = army 0 idle). Env: `AI_STATUS_SECONDS` (status lines), `AI_GROUPS=1`, `AI_TRACE=1` (decisions),
   `AI_DUMP`, `AI_DEPOSITS`, `AI_OMNI=1` (no fog), `AI_CFG="Field=value,..."` / `AI_CFG<army>` / `AI_CFG_<Difficulty>`
