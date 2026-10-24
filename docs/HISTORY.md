@@ -620,6 +620,35 @@ engineering drones, UEF SCU radar jammer. Owns `Rts.Sim/Commander`, the new Over
 commander/SCU blueprints, client order button + model partials. Both factions through roles. Tests: OC damage/energy,
 blast radius, patrol reclaim/repair/assist, teleport, save coverage. Screenshots: OC shot, death blast, teleport.
 
+**Delivered** (merged 2026-10-24; four coordinators: coordinator 1 designed G3 and stopped at the orchestrator restart,
+coordinator 2 was cut by a usage limit at once, coordinator 3 built G3/G1/G2 and the teleporter sim, coordinator 4
+finished). Report of coordinator 4:
+- **G1 Overcharge:** the commander's shot spends stored energy (1000-5000) as damage; structures take half, enemy
+  commanders at most 400. Key O + orders button, fx and sounds.
+- **G2 commander death blast:** two-ring nuke-like blast 1.5 s after the commander dies; hurts own units too, removes
+  wrecks, smaller mushroom.
+- **G3 patrol:** patrolling engineers, commanders and SCUs repair damaged allies first, then assist allied buildings,
+  then reclaim wrecks near the route.
+- **G7 Personal Teleporter** (both commanders): 10 s charge, 5000 E + 50 E per unit of distance; key J + button, arc
+  and cost overlay, fx, sounds, back-pack model.
+- **Try:** `--sandbox --exec "money me on; spawn uef_commander+PersonalTeleporter me at 100,128; wait 10; teleport me
+  150,128"`; console `overcharge [army|all] [on|off]`, `kill [r] at x,z`, `teleport [army|all] [at] x,z`.
+- **Tests:** Sim 462 (Overcharge, CommanderDeathBlast 7, EngineerPatrol 6, Teleport 14), Client 251 (OverchargeUi 7,
+  TeleportUi 9, snap 1), Net 21. **Hotkeys:** O, J.
+- **Numbers:** reference match plays exactly like before (Hard at 15:35, same stats); hash **BF85B7DBBF03D949**
+  because the new commander state is hashed (verified on main after the merge). Perf `2000 300`: 1.78 vs 1.74 ms (noise).
+- **Shared files (additive):** Simulation, UnitLifecycle, CommandSystem, OrderSystem, ConstructionSystem,
+  WeaponSystem, Components, SimSnapshot/SnapshotWriter, IntelSnapshotWriter, SimEvents, Order, EnhancementCatalog;
+  client Hotkeys, SelectionController, OrdersPanel, GameSession, GameApp, EffectsRenderer, UnitRenderer, SoundBank,
+  sandbox console.
+- **Left (ROADMAP later):** UEF Engineering Drones, UEF SCU Radar Jammer; the AI does not use Overcharge, the
+  teleporter or patrols (wave 9a, G32).
+- **Handoff review:** the notes gave exact files and lines per step, so two small sub-agents finished the teleporter
+  client without rereading code. The handoff left the build broken (the WIP needed 4 lines in shared files). Seam bug:
+  fog hid the teleport arrival effect from its own player (fixed, with a test). Every earlier 6a sub-agent ran past
+  its CHECKPOINT; what worked: pieces of ~4 steps, exact line pointers, 1-3 screenshots, a commit per milestone, and
+  a context warning mid-run (hence `agent_ctx.py --self`).
+
 ### (6b) Game options & team play — GameSetup, CleanupSystem, setup/lobby screens, `Rts.Net` lobby codec
 *brief* (gap rows G4, G5; G6 if time; started 2026-10-24 06:00): options in the skirmish setup AND the MP lobby (host
 decides, sent through the lobby codec, saved in saves/replays): victory assassination / supremacy / annihilation /
@@ -630,3 +659,19 @@ Defaults keep today's behavior (reference hash unchanged). Owns GameSetup, Clean
 UnitTransfer, new EconomyShare/DiplomacyCommands, setup/lobby/end screens, NetGameConfig, Hud (additive), new
 DiplomacyPanel, the `Rts.Net` lobby codec. Tests: each victory mode, cap, transfers, overflow, codec round trip, MP
 loopback with options.
+
+## Wave 7 (started 2026-10-24)
+
+From the "Wave 6+ plan" in [ROADMAP.md](ROADMAP.md). 7a started while 6b was still running (disjoint files); 7b
+starts after 6b merges (Hud, Input). Owner question 5 (release size) was unanswered: the recommendation holds.
+
+### (7a) Release, settings, autosave — `tools/package/`, Program.cs, SettingsScreen, AppSettings, pause menu
+*brief* (gap rows G45, G18, G40): a `tools/package/` script that builds a self-contained Linux Release folder
+(dotnet publish, data next to the exe, icon, version label in the main menu, crash log file) plus a `.desktop`
+launcher/desktop-shortcut installer (tested with a temporary HOME; installing on the owner's real desktop is the
+owner's choice) and an optional Windows zip; the packaged build keeps saves/replays/settings/screenshots in the user
+folder (XDG), runs from the repo keep today's folders. Settings: graphics (shadows, particles, terrain LOD, vsync,
+fps cap, UI scale) and gameplay (edge scroll, camera/zoom speed), reachable from the pause menu. Autosave every
+5 minutes, rolling 3. Tests: path resolution, settings round trip, autosave rotation; screenshots of the settings
+screens and the packaged build running; DEV_GUIDE "Packaging" section.
+

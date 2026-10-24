@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Numerics;
 using Rts.Sim;
 using Rts.Sim.Snapshot;
 using Rts.Sim.World;
@@ -32,6 +33,18 @@ public sealed class SnapshotInterpolator
         if (Prev != null) _runner.Return(Prev);
         Prev = Current;
         Current = s;
+    }
+
+    /// <summary>Horizontal jump (world units) between two snapshots above which a unit snaps instead of sliding
+    /// (teleports; the fastest units move 25/s = 2.5 per tick).</summary>
+    public const float SnapDistance = 20f;
+
+    /// <summary>Interpolated unit position: lerp from a (prev) to b (cur), or b when the unit jumped further than
+    /// <see cref="SnapDistance"/> horizontally (Personal Teleporter), so it never slides across the map.</summary>
+    public static Vector3 LerpPos(Vector3 a, Vector3 b, float t)
+    {
+        float dx = b.X - a.X, dz = b.Z - a.Z;
+        return dx * dx + dz * dz > SnapDistance * SnapDistance ? b : Vector3.Lerp(a, b, t);
     }
 
     /// <summary>0..1 between Prev and Current.</summary>

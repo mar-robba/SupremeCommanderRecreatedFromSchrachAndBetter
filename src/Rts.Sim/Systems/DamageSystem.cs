@@ -30,7 +30,7 @@ public static class DamageSystem
                 if (Strategic.ShieldSystem.ProtectsFromArea(w, a.SourceArmy, a.Center, j)) continue; // blast outside an enemy dome
                 // Linear falloff to 50% at the edge.
                 float f = 1f - 0.5f * (d / MathF.Max(r, 0.01f));
-                Apply(w, j, a.Amount * f, a.Source);
+                Apply(w, j, a.Overcharge ? Combat.OverchargeSystem.Scale(w, j, a, a.Amount * f) : a.Amount * f, a.Source);
             }
         }
         foreach (var d in w.Events.Damage)

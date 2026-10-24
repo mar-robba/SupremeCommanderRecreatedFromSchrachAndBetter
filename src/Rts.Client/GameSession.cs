@@ -249,6 +249,7 @@ public sealed class GameSession : IDisposable
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
+        TeleportHud.Draw3D(ctx, _selection, cur);
         _prof.Lap("props+sel3d");
         _terrainR.DrawWater();
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.DrawSubmerged(); // subs seen through the water
@@ -280,6 +281,7 @@ public sealed class GameSession : IDisposable
             _prof.Lap("hud");
             _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
+            TeleportHud.Draw2D(ctx, _selection, overUi);
         }
         _prof.Lap("cursor");
         _stratHud.Draw2D(cur, dt);

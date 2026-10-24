@@ -37,6 +37,7 @@ public static class CommandSystem
                 case CancelUpgradeCommand cu: UpgradeSystem.Apply(w, cu); break;
                 case SetPausedCommand sp: PauseSystem.Apply(w, sp); break;
                 case SetSubmergedCommand ss: Naval.Submarines.Apply(w, ss); break;
+                case SetOverchargeCommand oc: Combat.OverchargeSystem.Apply(w, oc); break;
                 case SetFireStateCommand fs: Combat.FireStates.Apply(w, fs); break;
                 case EnhanceCommand en: Commander.EnhancementSystem.Apply(w, en); break;
                 case RemoveEnhancementCommand re: Commander.EnhancementSystem.Apply(w, re); break;
@@ -99,6 +100,7 @@ public static class CommandSystem
             // Launch orders (Strategic module), and only silo launchers do.
             bool launch = o.Type == OrderType.Launch;
             if (launch && !Strategic.SiloSystem.IsLauncher(bp)) continue;
+            if (o.Type == OrderType.Teleport && bp.Teleport == null) continue; // personal teleporter only (Commander/TeleportSystem)
             if (!launch && bp.IsStructure && !bp.Has(UnitCategory.Factory)) continue;
             if (o.Type == OrderType.Build && !Array.Exists(bp.BuildIndices, b => b == o.BlueprintIndex)) continue;
 

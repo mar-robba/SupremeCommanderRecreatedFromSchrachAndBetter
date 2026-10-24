@@ -88,6 +88,13 @@ Things learned while building the project that are not about how a system works 
   the same game (Hard wins at 11:30) with another hash (EC8B7A06DF52317E instead of EDCA8A729F29736E). To prove it, copy `tools/Rts.Bench/bin/Release/net10.0` to a
   scratch `bin/` next to a copy of `data/` without the new files (the data root is found by walking up from the
   binary) and run the match there: the old hash must come back (wave 5l).
+- Never add AreaDamage inside `UnitLifecycle.OnDeath`: queue the blast and fire it from a sequential system later in
+  the tick (`CommanderDeathBlast`, ExperimentalSystem's PendingBlast) (wave 6a).
+- Tests: units spawned outside a tick are not in `Units.AliveList` until the next Step (iterate `Capacity` + IsActive to
+  build commands for them); killing `army.Commander` defeats the army and CleanupSystem kills all its units, so spawn an
+  extra commander to test commander-death effects on own units (wave 6a).
+- The fog filter (`IntelSnapshotWriter.AddVisibleEffects`) drops effects at points the viewer cannot see yet, even for
+  its own units: an effect where an own unit has just arrived (teleport) needs an exemption (wave 6a).
 
 ## Client pitfalls
 
@@ -96,6 +103,10 @@ Things learned while building the project that are not about how a system works 
 - Sounds longer than 4 s fail `SynthTests` (the nuke explosion is 3.9 s played at a lower pitch to sound longer).
 - The perf overlay is on in screenshots and covers the right end of the sandbox console header.
 - In the model partials (`UnitModels.*.cs`) `Color` is ambiguous inside local functions: write `Raylib_cs.Color`.
+- A unit that jumps between two snapshots (teleport) slides across the map with `Vector3.Lerp`: unit positions go
+  through `SnapshotInterpolator.LerpPos` (snaps beyond 20 units) (wave 6a).
+- Sandbox `--exec` timing: `wait N` counts frames (~60/s); the sim tick is about frames / 6. Console commands that read
+  the snapshot (`overcharge`, `teleport`) need a `wait` of ~10-20 frames after `spawn` (wave 6a).
 
 ## Visual checks
 

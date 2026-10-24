@@ -53,6 +53,7 @@ public sealed class Simulation
         OrderSystem.Run(w);
         pf.Lap(SimProfile.Stage.Orders);
         ConstructionSystem.Run(w);
+        Commander.TeleportSystem.Run(w); // personal teleporter: charge (adds to the energy request ConstructionSystem reset), jump
         pf.Lap(SimProfile.Stage.Construction);
         FactorySystem.Run(w);
         pf.Lap(SimProfile.Stage.Factory);
@@ -61,8 +62,10 @@ public sealed class Simulation
         MovementSystem.Run(w);
         pf.Lap(SimProfile.Stage.Movement);
         Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
+        Commander.CommanderDeathBlast.Run(w); // commander death blasts (queued by OnUnitDeath) -> strategic detonation queue
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         pf.Lap(SimProfile.Stage.Special);
+        Combat.OverchargeSystem.Run(w); // ACU Overcharge: arm the next shot from army energy storage
         TargetingSystem.Run(w);
         pf.Lap(SimProfile.Stage.Targeting);
         WeaponSystem.Run(w);
@@ -116,6 +119,9 @@ public sealed class Simulation
         Mix(Strategic.StrategicSystem.Hash(w));
         Mix(Transport.TransportSystem.Hash(w));
         Mix(Experimental.ExperimentalSystem.Hash(w));
+        Mix(Commander.CommanderDeathBlast.Hash(w));
+        Mix(Combat.OverchargeSystem.Hash(w));
+        Mix(Commander.TeleportSystem.Hash(w));
         return h;
     }
 }

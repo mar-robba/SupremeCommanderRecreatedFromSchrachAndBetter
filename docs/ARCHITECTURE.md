@@ -737,3 +737,44 @@ Tests: `CybranModelTests`, `CybranSceneTests`, `StatusFxTests`.
 
 **AI.** No AI change: the AI plays Cybran through the roles (AI_TUNING "Cybran vs UEF"). The AI doesn't use
 stealth/cloak/EMP deliberately yet (later).
+
+## Commander kit & engineer automation (wave 6a: `Rts.Sim/Combat/OverchargeSystem`, `Rts.Sim/Commander`, `Economy/EngineerPatrol`)
+All three ACU abilities are blueprint data (no unit ids in code): a weapon's `"Overcharge": {}` block, a unit's
+`"DeathBlast": {}` and `"Teleport"` (through the `PersonalTeleporter` enhancement). Both faction commanders have them;
+enhancement variants clone them (EnhancementCatalog). New sim state lives in per-world weak tables (saveable, hashed).
+- **Overcharge (G1)**: `SetOverchargeCommand(army, units, on)` sets `UnitFlags.Overcharge` on own units with an OC weapon
+  (`OverchargeSystem.WeaponIndex(bp)`). `OverchargeSystem` runs before TargetingSystem: while armed and the reload
+  (`Reload` 5 s) is ready it reserves stored energy (`MinEnergy` 1000 .. `MaxEnergy` 5000); `WeaponSystem.TryShot`
+  turns the next shot into an OC shot: damage = energy x `DamagePerEnergy`, splash `DamageRadius` 2.5, structures x
+  `StructureDamageMult` 0.5, commanders capped at `CommanderMaxDamage` 400 (AreaDamageEvent fields). Refund to storage
+  on disarm / stun / no target for > 3 s; lost if the ACU dies. Snapshot: `ProjectileFlags.Overcharge`,
+  `EffectKind.Overcharge` (muzzle) + `OverchargeHit` (impact), both in addition to the normal fx. The client's "ready"
+  = army stored energy >= MinEnergy (reload is not in the snapshot).
+- **Commander death blast (G2)**: `CommanderDeathBlast.OnUnitDeath` (UnitLifecycle.OnDeath hook; skips unfinished units
+  and `RemoveUnitSilently`) queues a blast `Delay` 1.5 s later; `Run` (after ExperimentalSystem) fires it through
+  `Strategic.MissileSystem.QueueDetonation` = a two-ring nuke (inner 12 / 4000 + outer 26 / 1500, rings add up), own
+  units hurt too, wrecks in the inner ring vaporized. NOT in CleanupSystem (never add AreaDamage inside OnDeath). The
+  client sees `EffectKind.Nuke` with `BlueprintIndex` = the commander's bp: `EffectsRenderer.IsCommanderBlast(db, bp)`
+  (bp.DeathBlast != null) picks the smaller ACU mushroom and a positional sound instead of the map-wide nuke sound.
+- **Engineer patrol automation (G3)**: mobile builders on a Patrol order (`ConstructionSystem` case Patrol ->
+  `EngineerPatrol.Exec`) scan every 5 ticks (staggered `(Tick + i) % 5`, radius `ScanRadius` 12 + half size) and do,
+  in priority: repair damaged allies (not flying aircraft, not carried) > assist unfinished allied structures >
+  reclaim props (never units). The job is kept in the patrol Order itself (`State` 1 repair / 2 assist / 3 reclaim,
+  `Target`, `Spawned` = prop, `BlueprintIndex` = no-scan-before tick after an unreachable job, 5 s); OrderSystem's
+  Patrol case returns early while `State != 0` so the route does not advance. Leash 1.5 x scan range. Unreachable =
+  the builder `ArrivedAt` its goal while still out of range (not checked on the job's first tick). Prop draining is the
+  shared `ConstructionSystem.ReclaimProp` (same float ops as ExecReclaim).
+- **Personal Teleporter (G7)**: enhancement `PersonalTeleporter` (Back slot, 1500 M / 37500 E) adds
+  `TeleportBlueprint` (ChargeTime 10 s, EnergyBase 5000 + EnergyPerDistance 50 per unit, MaxRange 0 = unlimited).
+  Order `Order.TeleportTo(p)` (`OrderType.Teleport`, shift queues; CommandSystem drops it for units without a
+  teleporter). `TeleportSystem` (sequential, after ConstructionSystem): when the order reaches the front the cost is
+  fixed and charging starts (energy request x economy efficiency, so a stall slows it; paused/stunned/carried waits);
+  any other front order cancels it (energy lost). The jump lands on the nearest standable cell for the unit's clearance
+  (map clamp + `NavGrid.FindNearestPassable`; amphibious ACUs may land on the seabed). Snapshot: `UnitView.TeleportFrac`
+  (0..1, -1 = not charging, also for enemies), effects `TeleportCharge` (charge start), `TeleportOut` + `TeleportIn`
+  (jump tick; `TeleportIn` passes the fog filter for the jumper's team, its vision there is not stamped yet). Client: key J / orders button `TeleportInput` (cost estimate `TeleportInput.Cost`, mirrors
+  `TeleportSystem.Target`), `TeleportHud` arc + rings, `EffectsRenderer.Teleport`, back-pack mesh `EnhTeleporter`;
+  unit interpolation snaps instead of sliding when a unit moves > 20 between snapshots. The AI does not use it.
+- Sandbox console: `overcharge [army|all] [on|off]` (alias oc), `kill [radius] at x,z` (area kill; plain `kill` =
+  selection), `teleport [army|all] [at] x,z` (alias tp). Teleporter variants spawn by id:
+  `spawn uef_commander+PersonalTeleporter me at 100,128`.

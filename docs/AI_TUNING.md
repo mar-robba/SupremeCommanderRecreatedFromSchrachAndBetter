@@ -284,6 +284,8 @@ Reference match `ai 30 256 42 hard,normal`: "WINNER: Player (Hard) after 15:35",
 T2/T3, shields and point defense trade at the front for a long time, and no army-control lever tried so far ends those
 games without losing more elsewhere; the next step is an AI decision change (siege of a fortified front with artillery
 and T3 units, a real "break the stalemate" mode), not more config values.
+After wave 6a (commander kit) the same match plays identically (same winner, time and stats) but hashes
+BF85B7DBBF03D949: the Overcharge / death blast / teleporter state is mixed into the world hash.
 
 ## Unit balance
 

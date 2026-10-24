@@ -18,6 +18,8 @@ public enum ProjectileFlags : byte
     Bomb = 8,
     /// <summary>Torpedo: runs under water, dies on shore, hits Water/Sub units (Naval/Torpedoes.cs).</summary>
     Torpedo = 16,
+    /// <summary>ACU Overcharge shot (Combat/OverchargeSystem): bigger visual, structure/commander damage rule.</summary>
+    Overcharge = 32,
 }
 
 /// <summary>SoA storage for projectiles in flight. Spawn/free only in sequential phases.</summary>

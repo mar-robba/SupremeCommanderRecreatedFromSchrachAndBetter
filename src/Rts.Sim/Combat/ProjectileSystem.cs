@@ -252,6 +252,7 @@ public static class ProjectileSystem
                 SourceArmy = army,
                 Layers = WeaponMask(w, p),
             });
+            if ((P.Flags[p] & ProjectileFlags.Overcharge) != 0) OverchargeSystem.TagLastAreaDamage(w, bp, P.WeaponIndex[p], imp.Pos, radius, army);
             CombatFx.Add(w, EffectKind.Explosion, imp.Pos, radius, army, bp, P.WeaponIndex[p]);
             return true;
         }

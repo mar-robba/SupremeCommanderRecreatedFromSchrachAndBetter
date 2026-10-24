@@ -43,6 +43,9 @@ public struct UnitView
     public UnitStatus Status;
     /// <summary>Fire state (Combat/FireStates).</summary>
     public FireState FireState;
+    /// <summary>Personal teleporter charge 0..1 of the current jump (Commander/TeleportSystem), -1 = not charging.
+    /// Visible for enemy units too (orders are not).</summary>
+    public float TeleportFrac;
 }
 
 public struct OrderView
@@ -60,6 +63,8 @@ public struct ProjectileView
     public int Army;
     public int SourceBp;
     public int WeaponIndex;
+    /// <summary>Behaviour bits (e.g. <see cref="ProjectileFlags.Overcharge"/>: draw it bigger).</summary>
+    public ProjectileFlags Flags;
 }
 
 /// <summary>

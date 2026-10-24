@@ -23,6 +23,11 @@ public struct AreaDamageEvent
     /// <summary>Only units currently on these layers are damaged (None = all layers). E.g. flak bursts only
     /// hurt aircraft, bombs exploding on the ground don't hurt planes flying overhead.</summary>
     public LayerMask Layers;
+    /// <summary>ACU Overcharge shot (Combat/OverchargeSystem.Scale): damage vs structures × OcStructureMult, vs
+    /// commanders capped at OcCommanderCap.</summary>
+    public bool Overcharge;
+    public float OcStructureMult;
+    public float OcCommanderCap;
 }
 
 public enum EffectKind : byte
@@ -51,6 +56,22 @@ public enum EffectKind : byte
     Nuke,
     /// <summary>A unit was captured (Economy/CaptureSystem): Pos = unit, Army = NEW owner, BlueprintIndex = unit.</summary>
     Captured,
+    // ---- Commander (Rts.Sim/Combat/OverchargeSystem) ----
+    /// <summary>An ACU fired an Overcharge shot: Pos = muzzle, Size = the shot's DamageRadius, Army = shooter,
+    /// BlueprintIndex/WeaponIndex = its weapon. Raised in addition to that shot's MuzzleFlash.</summary>
+    Overcharge,
+    /// <summary>An Overcharge shot hit: Pos = impact, Size = DamageRadius, BlueprintIndex/WeaponIndex = shooter's weapon.
+    /// Raised in addition to the shot's Explosion.</summary>
+    OverchargeHit,
+    // ---- Commander (Rts.Sim/Commander/TeleportSystem) ----
+    /// <summary>A personal teleporter started charging: Pos = unit, Size = unit radius, Army = owner, BlueprintIndex =
+    /// unit blueprint. Raised once per jump; the ongoing charge is <c>UnitView.TeleportFrac</c> (or the front order).</summary>
+    TeleportCharge,
+    /// <summary>A teleporting unit left: Pos = origin, Size = unit radius, Army = owner, BlueprintIndex = unit blueprint.</summary>
+    TeleportOut,
+    /// <summary>A teleporting unit arrived: Pos = arrival point, Size = unit radius, Army = owner, BlueprintIndex = unit
+    /// blueprint. Raised in the same tick as its TeleportOut.</summary>
+    TeleportIn,
 }
 
 /// <summary>Cosmetic events forwarded to the client (visual/audio effects). Never read by gameplay code.</summary>

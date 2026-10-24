@@ -118,12 +118,14 @@ public static class Hotkeys
     public static readonly Hotkey Patrol = new(KeyboardKey.P, N, U, "Orders", "Patrol mode (Shift: add points)");
     public static readonly Hotkey Guard = new(KeyboardKey.G, N, U, "Orders", "Guard / assist mode");
     public static readonly Hotkey Launch = new(KeyboardKey.L, N, U, "Orders", "Launch mode (missile launchers: click a ground target)");
+    public static readonly Hotkey Teleport = new(KeyboardKey.J, N, U, "Orders", "Teleport mode (commander with Personal Teleporter: click a ground point)");
     public static readonly Hotkey SelfDestruct = new(KeyboardKey.K, C, U, "Orders", "Self-destruct (asks for confirmation)");
 
     // ---------------------------------------------------------------- toggles
     public static readonly Hotkey FireState = new(KeyboardKey.Q, N, U, "Toggles", "Fire state: fire at will → return fire → hold fire (Shift: back)");
     public static readonly Hotkey Pause = new(KeyboardKey.H, N, U, "Toggles", "Pause / resume production, construction, upgrades, upkeep");
     public static readonly Hotkey Dive = new(KeyboardKey.D, N, U, "Toggles", "Dive / surface (submarines, Atlantis)", share: "D");
+    public static readonly Hotkey Overcharge = new(KeyboardKey.O, N, U, "Toggles", "Overcharge on / off (commander: shots spend stored energy, auto-fire while on)");
     public static readonly Hotkey Capture = new(KeyboardKey.E, N, U, "Toggles", "Capture mode (engineers / commander; with transports selected E = transport to)", share: "E");
 
     // ---------------------------------------------------------------- transports
@@ -178,8 +180,8 @@ public static class Hotkeys
     [
         Pan, Rotate, ResetRotation,
         GroupRecall, GroupSet, IdleEngineer, IdleFactory,
-        Stop, Move, AttackMove, Patrol, Guard, Launch, SelfDestruct,
-        FireState, Pause, Dive, Capture,
+        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct,
+        FireState, Pause, Dive, Overcharge, Capture,
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
         FactorySlots, FactoryRepeat, FactoryTier,

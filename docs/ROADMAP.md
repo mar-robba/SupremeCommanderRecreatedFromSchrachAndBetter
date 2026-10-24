@@ -2,38 +2,34 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-24 06:00 — read this first in a new session)
-main has waves 1-5: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, and since 2026-10-24
-(k) AI uses everything (344e2b5) + (k-navy) navy and transports AI (5b6ffb6). Tests: 423 sim + 227 client + 21 net.
+## ▶ NEXT STEPS (updated 2026-10-24 06:20 — read this first in a new session)
+main has waves 1-5: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
++ (k-navy) navy/transports AI (merged 2026-10-24), and wave 6a commander & engineers (Overcharge, death blast, engineer
+patrol, teleporter; merged 2026-10-24). Tests: 462 sim + 251 client + 21 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 15:35", hash
-**4E3F22FD0F8EED11** (agents that must not change sim results compare against it; older references: EC8B7A06DF52317E
-before the (k) balance data, EDCA8A729F29736E before the Cybran data). Agent ids:
+**BF85B7DBBF03D949** (agents that must not change sim results compare against it; 6a only added hashed commander
+state, the game is the same as (k)'s 4E3F22FD0F8EED11; older: EC8B7A06DF52317E before the (k) balance data). Agent ids:
 `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md` (valid only in the orchestrator session that
 started them). Each agent keeps `<worktree>/.claude/handoff.md` and writes `<worktree>/.claude/agent-report.md` when
-done. Wave 6 briefs: HISTORY "Wave 6" (from "Wave 6+ plan" below).
+done. Wave 6 briefs and reports: HISTORY "Wave 6". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-10-24 06:00, session fa417db4):
-- **Running (wave 6, 2 agents):**
-  - **(6a) Commander & engineers**: worktree `.claude/worktrees/wave6a` (branch `wave6a-commander`), coordinator 3
-    (cap 200k medium; was at ~155k at 05:45). Done: G3 patrol automation, G1 Overcharge (sim + client, key O), G2
-    commander death blast (sim + client), tests. In progress: G7 teleporter sim (WIP c874f7b + sub-agent). Left:
-    teleporter client, drones/jammer (or ROADMAP later), docs, `git merge main` (it must re-measure the hash: main
-    changed to 4E3F22FD0F8EED11), report. Its notes: `.claude/notes/` there.
-  - **(6b) Game options & team play** (G4, G5; G6 if time): worktree `.claude/worktrees/wave6b` (branch
-    `wave6b-options` from main 9f875d0), coordinator 1 (cap 200k medium), one sub-agent at a time.
-  - If cut off (usage limit or restart): commit WIP in the worktree, then a fresh coordinator there with the same
-    brief (HISTORY "Wave 6") + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
-    `agent_ctx.py --watch 135000 <id>=185000 ...`. Sub-agents of 6a hit their caps fast (client pieces: screenshots):
-    tell them to CHECKPOINT by SendMessage when the watcher fires.
-- **Then:** merge 6a and 6b (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW, then wave 7 (7a release + settings + autosave, 7b orders & selection UX; briefs in "Wave 6+ plan").
+**ON RESUME** (2026-10-24 06:20, session fa417db4):
+- **Running:** **(6b) Game options & team play** (G4, G5; G6 if time): worktree `.claude/worktrees/wave6b` (branch
+  `wave6b-options` from main 9f875d0), coordinator 1 (cap 200k medium), one sub-agent at a time. If cut off: commit
+  WIP there, fresh coordinator with the brief (HISTORY "Wave 6") + "continue from `.claude/handoff.md` and
+  `.claude/notes/`". Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...`.
+- **Running:** **(7a) Release, settings, autosave** (G45, G18, G40): worktree `.claude/worktrees/wave7a` (branch
+  `wave7a-release` from main 4cee893), coordinator 1 (cap 200k medium). It must not install the desktop shortcut on
+  the owner's real desktop: ask the owner when it is done. 7b (orders & selection UX) starts after 6b merges.
+- **Then:** merge 6b and 7a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
+  in WORKFLOW, then 7b orders & selection UX and wave 8 (briefs in "Wave 6+ plan").
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
   an AI decision change, planned for wave 9a (G30-G33).
 - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
-  2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30).
+  2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
@@ -318,6 +314,17 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
 - [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
+- [x] Commander kit & engineer automation (2026-10-24, wave 6a; ARCHITECTURE "Commander kit & engineer automation"):
+      G1 ACU Overcharge (energy-fed shot, damage from stored energy, structures x0.5, ACUs capped; key O + orders
+      button, fx/sounds), G2 commander death blast (two-ring nuke-like blast 1.5 s after death, smaller ACU mushroom),
+      G3 patrol automation (patrolling engineers/ACU/SCU repair > assist > reclaim props near the route), G7 Personal
+      Teleporter enhancement on both ACUs (10 s charge, 5000 E + 50 E per unit of distance; key J + button, arc/cost
+      overlay, charge/arrival fx and sounds, back-pack model); console `overcharge`, `kill r at x,z`, `teleport x,z`
+      Reference match `ai 30 256 42 hard,normal` unchanged in play (Hard 15:35, identical stats), new hash
+      BF85B7DBBF03D949 (the new commander state is mixed into the hash)
+      - [ ] later: UEF Engineering Drones (C-D1/C-D2 ACU enhancement), UEF SCU Radar Jammer enhancement (rest of G7)
+      - [ ] later: AI uses Overcharge, the teleporter and engineer patrols; Overcharge reload/charge in the snapshot (button
+            shows ready from stored energy only); patrol test for the unreachable-target cooldown (needs a cliff map)
 - [x] Transports/ferry, air staging, engineer assist chains (wave 4, agent h, 2026-10-13): one cargo mechanic
       (`Rts.Sim/Transport`; carried units off the map, untargetable, die with the carrier); C-6 (T1, 6 slots) and C-14
       (T2, 12 slots, AA + riot gun) VTOL transports; orders Load / Unload / Transport-to (cargo split among the

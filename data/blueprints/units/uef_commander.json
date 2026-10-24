@@ -12,6 +12,7 @@
   ],
   "MaxHealth": 11000,
   "RegenRate": 10,
+  "DeathBlast": {},
   "Radius": 1.2,
   "Economy": {
     "BuildCostMass": 18000,
@@ -35,6 +36,7 @@
   "Weapons": [
     {
       "Name": "Zephyr Anti Matter Cannon",
+      "Overcharge": {},
       "Range": 22,
       "Damage": 100,
       "RateOfFire": 1,
@@ -243,6 +245,20 @@
           "MissileCostEnergy": 900,
           "MissileBuildTime": 15
         }
+      }
+    },
+    {
+      "Id": "PersonalTeleporter",
+      "Name": "Personal Teleporter",
+      "Description": "Teleports the commander anywhere on the map: it stands still and charges for 10 s, using 5000 energy plus 50 per unit of distance, then reappears at the target. Any new order cancels the jump (energy spent is lost).",
+      "Slot": "Back",
+      "BuildCostMass": 1500,
+      "BuildCostEnergy": 37500,
+      "BuildTime": 1500,
+      "Visual": "teleporter",
+      "Icon": "TP",
+      "Effects": {
+        "Teleport": {}
       }
     }
   ]
