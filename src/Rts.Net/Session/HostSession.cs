@@ -420,6 +420,7 @@ public sealed class HostSession : NetSession, ITurnSink
     private void ApplySpeed(float speed, bool paused, string by)
     {
         var g = Game!;
+        speed = g.AllowedSpeed(speed); // locked game speed (lobby option): only pause/unpause go through
         if (g.Speed == speed && g.Paused == paused) return;
         g.SetSpeed(speed, paused);
         Broadcast(SpeedFrame(speed, paused, by));
