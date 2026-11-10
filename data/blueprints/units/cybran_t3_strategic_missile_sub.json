@@ -1,7 +1,7 @@
 {
   "Id": "cybran_t3_strategic_missile_sub",
   "Name": "Plan B",
-  "Description": "T3 strategic missile submarine: builds and launches nuclear missiles (like the nuke silo) and fires long-range tactical cruise missiles. No torpedoes. Submerged: only sonar can find it.",
+  "Description": "T3 strategic missile submarine: builds one nuclear missile at a time (like the nuke silo) and launches it even while submerged; fires tactical cruise missiles on its own. No torpedoes. Submerged: only sonar can find it.",
   "Tech": 3,
   "Categories": [
     "Mobile",
@@ -13,9 +13,9 @@
   "MaxHealth": 5500,
   "Radius": 1.6,
   "Economy": {
-    "BuildCostMass": 2400,
-    "BuildCostEnergy": 28000,
-    "BuildTime": 8600
+    "BuildCostMass": 4300,
+    "BuildCostEnergy": 57000,
+    "BuildTime": 14400
   },
   "Movement": {
     "Layer": "Sub",
@@ -65,7 +65,7 @@
   "Silo": {
     "Kind": "Strategic",
     "WeaponIndex": 0,
-    "MaxStorage": 2,
+    "MaxStorage": 1,
     "MissileCostMass": 6000,
     "MissileCostEnergy": 180000,
     "MissileBuildTime": 180,
@@ -73,7 +73,7 @@
     "OuterRadius": 38
   },
   "Visual": {
-    "Shape": "cy_sub",
+    "Shape": "cy_missile_sub",
     "Size": [
       2.2,
       1.8,

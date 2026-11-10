@@ -1,7 +1,7 @@
 {
   "Id": "uef_t3_strategic_missile_sub",
   "Name": "Ace",
-  "Description": "T3 strategic missile submarine: builds and launches nuclear missiles (like the nuke silo) and fires long-range tactical cruise missiles. No torpedoes. Submerged: only sonar can find it.",
+  "Description": "T3 strategic missile submarine: builds one nuclear missile at a time (like the nuke silo) and launches it even while submerged; fires tactical cruise missiles on its own. No torpedoes. Submerged: only sonar can find it.",
   "Tech": 3,
   "Categories": [
     "Mobile",
@@ -13,9 +13,9 @@
   "MaxHealth": 6000,
   "Radius": 1.6,
   "Economy": {
-    "BuildCostMass": 2500,
-    "BuildCostEnergy": 30000,
-    "BuildTime": 9000
+    "BuildCostMass": 4500,
+    "BuildCostEnergy": 60000,
+    "BuildTime": 15000
   },
   "Movement": {
     "Layer": "Sub",
@@ -82,7 +82,7 @@
   "Silo": {
     "Kind": "Strategic",
     "WeaponIndex": 0,
-    "MaxStorage": 2,
+    "MaxStorage": 1,
     "MissileCostMass": 6000,
     "MissileCostEnergy": 180000,
     "MissileBuildTime": 180,
@@ -90,7 +90,7 @@
     "OuterRadius": 38
   },
   "Visual": {
-    "Shape": "sub",
+    "Shape": "missile_sub",
     "Size": [
       2.2,
       1.8,

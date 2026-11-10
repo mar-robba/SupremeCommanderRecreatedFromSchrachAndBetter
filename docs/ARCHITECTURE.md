@@ -83,7 +83,8 @@ interpolates prev/cur by time
     tml, tmd, artillery_installation_t2, artillery_installation_t3, nuke_silo, anti_nuke, radar_t1, radar_t2, omni_t3,
     sonar_t1, sonar_t2, exp_land.
   - Optional: mobile_shield_t2, mobile_stealth_t2, siege_t3, sniper_t3, fighter_bomber_t2, gunship_t3, carrier_t3,
-    pd_t3, torpedo_t2, shield_t3, stealth_field_t2, exp_land_2, exp_air, exp_naval, exp_artillery.
+    pd_t3, torpedo_t2, shield_t3, stealth_field_t2, exp_land_2, exp_air, exp_naval, exp_artillery, light_assault_t1,
+    shield_ed2_t2, shield_ed3_t2, shield_ed4_t3, shield_ed5_t3, nuke_sub_t3, sonar_t3, wall_t1.
 - **New faction** (e.g. Cybran): add `data/factions/cybran.json` + `cybran_*` blueprints in `data/blueprints/units`
   (build lists via `Builds`/`BuiltBy` inside the faction); fill every required role and the optional ones it has; a
   unit that fits no role gets a new (optional) role. Nothing else: the client lists it automatically (setup FACTION

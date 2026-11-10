@@ -56,6 +56,9 @@ public static class FactionRoles
     public const string LightAssaultT1 = "light_assault_t1";
     public const string ShieldEd2T2 = "shield_ed2_t2", ShieldEd3T2 = "shield_ed3_t2", ShieldEd4T3 = "shield_ed4_t3",
         ShieldEd5T3 = "shield_ed5_t3";
+    // Added by wave 8a (missing units & walls): T3 strategic missile submarine, T3 sonar platform (upgrade of sonar_t2),
+    // T1 wall section. All optional: the AI does not build them yet.
+    public const string NukeSubT3 = "nuke_sub_t3", SonarT3 = "sonar_t3", WallT1 = "wall_t1";
 
     /// <summary>Every known role, in the documented order.</summary>
     public static readonly string[] All =
@@ -74,6 +77,7 @@ public static class FactionRoles
         RadarT1, RadarT2, OmniT3, SonarT1, SonarT2, StealthFieldT2,
         ExpLand, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
         LightAssaultT1, ShieldEd2T2, ShieldEd3T2, ShieldEd4T3, ShieldEd5T3,
+        NukeSubT3, SonarT3, WallT1,
     ];
 
     /// <summary>
@@ -85,6 +89,7 @@ public static class FactionRoles
         MobileShieldT2, MobileStealthT2, SiegeT3, SniperT3, FighterBomberT2, GunshipT3, CarrierT3,
         PdT3, TorpedoT2, ShieldT3, StealthFieldT2, ExpLand2, ExpAir, ExpNaval, ExpArtillery,
         LightAssaultT1, ShieldEd2T2, ShieldEd3T2, ShieldEd4T3, ShieldEd5T3,
+        NukeSubT3, SonarT3, WallT1,
     ];
 
     /// <summary>Roles every faction must fill (<see cref="All"/> minus <see cref="Optional"/>): AI/sim code may rely on them.</summary>

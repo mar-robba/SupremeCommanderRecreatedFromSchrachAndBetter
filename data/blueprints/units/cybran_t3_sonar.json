@@ -1,7 +1,7 @@
 {
   "Id": "cybran_t3_sonar",
   "Name": "T3 Sonar Platform",
-  "Description": "T3 sonar platform: 1.5x the range of the T2 sonar. Personal stealth: hidden from enemy radar and sonar.",
+  "Description": "T3 sonar platform: 1.5x the range of the T2 sonar, hidden from enemy radar and sonar. Upgrade of the T2 sonar.",
   "Tech": 3,
   "Categories": [
     "Structure",
@@ -35,8 +35,5 @@
       2.0
     ],
     "Icon": "intel"
-  },
-  "BuiltBy": [
-    "cybran_t3_engineer"
-  ]
+  }
 }

@@ -19,7 +19,7 @@
     "MaintenanceEnergy": 100
   },
   "Visual": {
-    "Shape": "radar",
+    "Shape": "stealth_field",
     "Size": [
       1.6,
       2.6,

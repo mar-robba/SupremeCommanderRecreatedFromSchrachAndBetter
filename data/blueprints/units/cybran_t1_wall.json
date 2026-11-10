@@ -21,7 +21,7 @@
     "VisionRadius": 2
   },
   "Visual": {
-    "Shape": "cy_storage",
+    "Shape": "cy_wall",
     "Size": [
       1.0,
       1.0,
