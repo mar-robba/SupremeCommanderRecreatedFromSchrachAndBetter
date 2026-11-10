@@ -41,6 +41,8 @@ public sealed class SelectionController
     /// <summary>(7b) Right-drag line formation and waypoint marker editing (Input/FormationDrag.cs, WaypointEditor.cs).</summary>
     public readonly FormationDrag Formation;
     public readonly WaypointEditor Waypoints;
+    /// <summary>(7b) Camera bookmarks (Input/CameraBookmarks.cs: Ctrl+Alt+1..5 saves, Alt+1..5 recalls).</summary>
+    public readonly CameraBookmarks Bookmarks = new();
 
     public SelectionController(GameContext ctx)
     {
@@ -139,9 +141,13 @@ public sealed class SelectionController
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
         TransportInput.Update(_ctx, this, ctrl || _ctx.ReadOnly); // U unload / E transport / F ferry / D dock (replays: none)
-        int set = Hotkeys.GroupSet.PressedIndex();
+        SelectionFilters.HandleHotkeys(_ctx, this, shift); // (7b) same types / combat / land / air / naval / engineers / commander
+        Bookmarks.HandleHotkeys(_ctx);
+        // Alt+digits = camera bookmarks (Hotkey.PressedIndex leaves an undeclared Alt free): no control groups then.
+        bool alt = Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt);
+        int set = alt ? -1 : Hotkeys.GroupSet.PressedIndex();
         if (set >= 0) { _groups[set].Clear(); _groups[set].AddRange(Selected); }
-        int g = Hotkeys.GroupRecall.PressedIndex();
+        int g = alt ? -1 : Hotkeys.GroupRecall.PressedIndex();
         if (g >= 0)
         {
             _groups[g].RemoveAll(h => !_ctx.Snapshots.Current.TryGetUnit(h.Index, h.Generation, out _));
