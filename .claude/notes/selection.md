@@ -1,7 +1,6 @@
 # (7b) G14 selection filters, commander key, camera bookmarks (agent 7b-sel-5, 2026-11-10) — client only, no sim change
 Commits: 67f3a2b (code + hotkeys), 7f942e9 (tests), + this note. Build Rts.slnx 0 errors; Rts.Client.Tests 297/297 green.
-Files (new): `src/Rts.Client/Input/SelectionFilters.cs`, `src/Rts.Client/Input/CameraBookmarks.cs`,
-  `tests/Rts.Client.Tests/SelectionFilterTests.cs` (9 tests).
+Files (new): `src/Rts.Client/Input/{SelectionFilters,CameraBookmarks}.cs`, `tests/Rts.Client.Tests/SelectionFilterTests.cs` (9 tests).
 Keys (all scope Game = also in replays; entries in Hotkeys.cs + `All`):
 - Ctrl+Z `SelectSameTypes`: ADD every unit of the selected (army, blueprint) types on screen (structures too).
 - Ctrl+Shift+Z `SelectSameTypesMap`: same, whole map.
@@ -21,7 +20,5 @@ Rules: pure `SelectionFilters.Matches(filter, bp, army, localArmy, selectedTypes
 Pitfalls: `Hotkey.Pressed()` leaves undeclared Shift/Alt free, so the handler checks the Ctrl+Shift entries first and
   the plain Ctrl+Z / Ctrl+A only without Shift (so no "Shift = add" for those; only Ctrl+C has it). Build menu /
   factory slot keys (Z X C V B N) already return on Ctrl/Alt, so no double action.
-NOT verified: nothing was run in the game window (no screenshot / manual key test; only build + unit tests).
-  Unknown whether a desktop grabs Alt+digit / Ctrl+Alt+digit before the game sees it.
-TODO: bookmarks are per session (not in saves); no on-screen list of bookmarks; no "Alt = add" for class filters;
-  ROADMAP/docs line for G14 is left to the coordinator.
+NOT verified: nothing run in the game window (only build + unit tests); a desktop may grab Alt+digit / Ctrl+Alt+digit.
+TODO: bookmarks are per session (not in saves), no on-screen list; no "add" variant for class filters; ROADMAP line for G14.
