@@ -23,3 +23,13 @@ CLI: `--ui-formation x1,z1:x2,z2` (8 tanks spawned 14 u in front, preview frozen
    demo start (run once, read the printed tank position), aim with --camera x,z,dist.
 3. Full suites Sim/Client/Net; then write the final short report (cmds in the brief).
 Pitfall: `sed -i` on this volume warns "Operazione non permessa" (perms) but still writes; prefer python edits.
+## Part A run (agent 7b-sel-4, 2026-11-10): hooks verified, nothing broken
+- Both hooks work as committed; pick radius 22 (7ad9342) kept: "[ui-orders] selected 8 tanks" / "6 tanks" (new print).
+- Demo map: local start 38,38 (256 map), flat plateau x 14..62, z 14..62; demo army stands at ~40..66 on both axes.
+  `--demo --ui-formation 14,22:34,22 --camera 24,29,45` -> screenshots/7b_formation_drag.png: green line, 8 slot rings
+  each with a white facing arrow, label "Line formation · 8 units", the 8 selected tanks below.
+  `--demo --ui-waypoints 8,16 --camera 26,35,62` -> screenshots/7b_waypoint_edit.png: 4 markers (3 green, 1 red
+  attack-move), 2nd one white-ringed with its ghost + "Release: move waypoint" (a lower camera hides wp 3 behind the HUD).
+- Screenshots are NOT committed: `screenshots/` is gitignored and the repo tracks no PNG at all (WORKFLOW: local only).
+- Possible polish (not done): marker rings are 0.7 world units (about 12 px at distance 62) and each unit draws its
+  own order line to its own slot, so the attack-move marker is hard to spot among the red lines when zoomed out.

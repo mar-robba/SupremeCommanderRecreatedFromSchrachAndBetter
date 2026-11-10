@@ -78,6 +78,7 @@ public sealed class OrdersUiDemo
             if (picked.Count == 0) return;
             _sel.Selected.Clear();
             _sel.Selected.AddRange(picked);
+            Console.WriteLine($"[ui-orders] selected {picked.Count} tanks");
             if (_line is var (from, to)) { _sel.Formation.Freeze(from, to, Facing(from, to), OrderType.Move); _step = 3; return; }
             var units = picked.ToArray();
             for (int k = 0; k < _route.Length; k++)
