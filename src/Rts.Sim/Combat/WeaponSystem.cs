@@ -89,7 +89,7 @@ public static class WeaponSystem
             ws.Cooldown -= dt;
             if (ws.Cooldown < -dt) ws.Cooldown = -dt; // no burst after idling
             if (winfo.Kind == WeaponKind.AntiTorpedo) continue; // torpedo defense: fired by Naval/Torpedoes.Intercept
-            if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp))
+            if ((submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp)) || Naval.WalkingShips.TorpedoesHeld(w, i, bp, winfo.Kind))
             {
                 ws.Target = UnitHandle.None; // own slot (parallel-safe); re-acquired after surfacing
                 ws.TurretHeading = DMath.RotateTowards(ws.TurretHeading, u.Heading[i], winfo.TurnRate * dt);

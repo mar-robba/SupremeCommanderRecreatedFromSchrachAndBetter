@@ -185,7 +185,7 @@ public sealed partial class AiMilitary
         {
             var bp = W.BpOf(e);
             if (bp.Movement.Layer == MotionLayer.Air) continue; // AA/interceptors handle air
-            if (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub) continue; // naval: not handled by land defense
+            if (Naval.WalkingShips.AtSea(W, e, bp)) continue; // naval: not handled by land defense
             float st = _b.Perception.IsIdentified(e) ? StrengthOf(e) : 50f;
             if (st <= 0) st = bp.Has(UnitCategory.Engineer) ? 15f : 0f;
             if (st <= 0) continue;
@@ -772,7 +772,7 @@ public sealed partial class AiMilitary
         foreach (int e in V.EnemyMobile)
         {
             if (!_b.Perception.IsIdentified(e)) continue;
-            if (W.BpOf(e).Movement.Layer is MotionLayer.Air or MotionLayer.Water or MotionLayer.Sub) continue;
+            if (W.BpOf(e).Movement.Layer == MotionLayer.Air || Naval.WalkingShips.AtSea(W, e, W.BpOf(e))) continue;
             if (Vector2.DistanceSquared(u.Pos[e], g.Anchor) < near * near) _focusEnemies.Add(e);
         }
         if (_focusEnemies.Count == 0) return;
@@ -840,7 +840,7 @@ public sealed partial class AiMilitary
         foreach (int e in V.EnemyMobile)
         {
             var layer = W.BpOf(e).Movement.Layer;
-            if (layer is MotionLayer.Air or MotionLayer.Water or MotionLayer.Sub) continue;
+            if (layer == MotionLayer.Air || Naval.WalkingShips.AtSea(W, e, W.BpOf(e))) continue;
             float d = Vector2.DistanceSquared(u.Pos[e], p);
             if (d < best) { best = d; pos = u.Pos[e]; }
         }

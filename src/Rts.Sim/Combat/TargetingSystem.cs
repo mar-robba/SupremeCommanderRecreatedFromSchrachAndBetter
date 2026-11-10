@@ -70,6 +70,7 @@ public static class TargetingSystem
             if (ws.RetargetTimer > 0) ws.RetargetTimer--;
             if (winfo.Kind == WeaponKind.AntiTorpedo) { ws.Target = UnitHandle.None; continue; } // torpedo defense: never targets units
             if (submerged && !Naval.Submarines.FiresSubmerged(winfo.Kind, wbp)) { ws.Target = UnitHandle.None; continue; }
+            if (Naval.WalkingShips.TorpedoesHeld(w, i, bp, winfo.Kind)) { ws.Target = UnitHandle.None; continue; } // torpedoes need water under the shooter
 
             if (ws.HasGroundTarget) { ws.Target = UnitHandle.None; continue; }
             // Forced targets are kept while alive and detected by the army (vision or radar); lost from intel -> dropped.

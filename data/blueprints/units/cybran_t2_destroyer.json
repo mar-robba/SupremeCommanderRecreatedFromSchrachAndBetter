@@ -1,7 +1,7 @@
 {
   "Id": "cybran_t2_destroyer",
   "Name": "Salem Destroyer",
-  "Description": "T2 destroyer: twin proton cannons, nanite torpedoes, anti-torpedo zapper. Hunts submarines.",
+  "Description": "T2 destroyer: twin proton cannons, nanite torpedoes, anti-torpedo zapper. Hunts submarines. Walks on land on its legs (slowly; guns only, no torpedoes there).",
   "Tech": 2,
   "Categories": [
     "Mobile",
@@ -18,8 +18,9 @@
     "BuildTime": 5400
   },
   "Movement": {
-    "Layer": "Water",
+    "Layer": "Hover",
     "MaxSpeed": 4.6,
+    "LandSpeedFactor": 0.35,
     "Acceleration": 2,
     "TurnRate": 45
   },

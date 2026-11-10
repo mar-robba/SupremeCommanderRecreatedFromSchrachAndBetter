@@ -191,11 +191,12 @@ public static partial class MovementSystem
                 if (to.LengthSquared() > 1e-6f)
                 {
                     desiredHeading = DMath.HeadingOf(to);
-                    float cap = mb.MaxSpeed;
+                    float maxSpeed = Naval.WalkingShips.MaxSpeedAt(w, mb, pos); // slower on dry ground (LandSpeedFactor)
+                    float cap = maxSpeed;
                     if (mv.GroupId != 0 && paths.Groups.TryGetValue(mv.GroupId, out var gp) && gp.Time > 0.05f)
                     {
                         float sync = MathF.Max(0, remaining - mv.ArriveRadius) / gp.Time;
-                        cap = MathF.Min(MathF.Max(sync, 0.5f * gp.MinSpeed), mb.MaxSpeed);
+                        cap = MathF.Min(MathF.Max(sync, 0.5f * gp.MinSpeed), maxSpeed);
                     }
                     // Brake along the remaining path: v = sqrt(2 a d).
                     float brake = mv.PathPartial
@@ -265,12 +266,12 @@ public static partial class MovementSystem
                 mv.BlockedTime = 0;
             }
             float moved = Vector2.Distance(newPos, pos);
-            if (moved < 0.15f * mb.MaxSpeed * dt) mv.StuckTime += dt;
+            if (moved < 0.15f * Naval.WalkingShips.MaxSpeedAt(w, mb, pos) * dt) mv.StuckTime += dt;
             else mv.StuckTime = MathF.Max(0, mv.StuckTime - 0.5f * dt);
             if (mv.StuckTime > 3f)
             {
                 mv.StuckTime = 0;
-                float crowdR = mb.Layer is MotionLayer.Water or MotionLayer.Sub ? Naval.NavalMotion.CrowdRadius(bp) : bp.Radius;
+                float crowdR = Naval.NavalMotion.IsNaval(bp) ? Naval.NavalMotion.CrowdRadius(bp) : bp.Radius;
                 if (remaining < mv.ArriveRadius + 4f + 2f * crowdR) Arrive(ref mv); // crowded destination: good enough
                 else if (mv.StuckRepaths < 8) { mv.RepathRequested = true; mv.StuckRepaths++; }
             }

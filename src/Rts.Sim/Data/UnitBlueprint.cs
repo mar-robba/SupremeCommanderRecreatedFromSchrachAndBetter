@@ -151,6 +151,8 @@ public sealed class MovementBlueprint
     public float MaxSlope = 0.75f;
     /// <summary>Divers (Layer Sub) only: spawn surfaced instead of submerged (Atlantis). See Naval/Submarines.</summary>
     public bool StartSurfaced;
+    /// <summary>Speed multiplier on dry ground (1 = none). Ships that walk on land (Salem): see Naval/WalkingShips.</summary>
+    public float LandSpeedFactor = 1f;
 }
 
 public sealed class IntelBlueprint

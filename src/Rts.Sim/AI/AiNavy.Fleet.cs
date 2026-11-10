@@ -103,7 +103,7 @@ public sealed partial class AiNavy
             if (_b.Perception.IsIdentified(e))
             {
                 var bp = W.BpOf(e);
-                naval = bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub;
+                naval = Naval.NavalMotion.IsNaval(bp);
                 st = AiPerception.Strength(W, e, bp);
             }
             else
@@ -300,7 +300,7 @@ public sealed partial class AiNavy
         {
             if (!_b.Perception.IsIdentified(e)) continue;
             var bp = W.BpOf(e);
-            if (bp.Movement.Layer is not (MotionLayer.Water or MotionLayer.Sub)) continue;
+            if (!Naval.NavalMotion.IsNaval(bp)) continue;
             var p = u.Pos[e];
             float d = Vector2.DistanceSquared(p, from);
             if (d >= best || g.ComponentOfCell(grid.CellOf(p)) != comp || BadGoal(p)) continue;
