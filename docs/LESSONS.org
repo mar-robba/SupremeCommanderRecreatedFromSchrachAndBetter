@@ -150,7 +150,7 @@ riprese.
 
 ** Per modulo
 Ordinati per costo. "$ / 1000 righe" confronta l'impegno con il risultato; per i moduli dell'onda 5 non è ancora
-significativo.
+significativo (conto definitivo: [[*Onde 5, 6 e 7a (conto dopo i merge, 2026-11-10)][Onde 5, 6 e 7a]]).
 
 | Modulo                                 | Agenti | Token (M) | Output (k) | $     | % costo |  Righe | $ / 1000 righe |
 |----------------------------------------+--------+-----------+------------+-------+---------+--------+----------------|
@@ -255,8 +255,36 @@ Quanto è costato il lavoro che non scrive direttamente il gioco.
 - Lezione: è un costo fisso del lavoro a onde. Va tenuto basso con report brevi degli agenti e docs che
   l'orchestratore non deve rileggere ogni volta.
 
-*** Onda 5 (in corso)
-- Dato: 53,5 $ finora per k, l, m, n, o. Gran parte del lavoro è ancora non committato nei worktree, fermato dal
-  limite di sessione delle 15:00, quindi il costo per riga non è ancora significativo (per esempio Cybran: 11 $ per
-  68 righe committate).
-- Lezione: rifare il conto dopo il merge dell'onda 5.
+*** Onde 5, 6 e 7a (conto dopo i merge, 2026-11-10)
+Costi dal registro dei token ([[file:tokens/summary.org][tokens/summary.org]]), righe misurate come sopra (aggiunte in ~src/~, ~tests/~,
+~tools/~, ~data/~ dal merge in ~main~). La tabella "Per modulo" resta la fotografia del 2026-10-15.
+
+| Modulo                              | Agenti |     $ |  Righe | $ / 1000 righe |
+|-------------------------------------+--------+-------+--------+----------------|
+| IA usa tutto (5k, con la marina)    |     18 |  76,4 |  3.905 |           19,6 |
+| Fazione Cybran (5l)                 |     20 |  46,3 |  9.466 |            4,9 |
+| Comandante e ingegneri (6a)         |     13 |  34,3 |  3.576 |            9,6 |
+| Scala e prestazioni (5m)            |      6 |  21,4 |  1.657 |           12,9 |
+| UX (5n)                             |      7 |  19,3 |  2.339 |            8,3 |
+| Opzioni partita e squadra (6b)      |      5 |  17,8 |  2.465 |            7,2 |
+| Multigiocatore lockstep (5o)        |      5 |  16,0 |  4.522 |            3,5 |
+| Rilascio e impostazioni (7a)        |      4 |  10,4 |  1.515 |            6,9 |
+|-------------------------------------+--------+-------+--------+----------------|
+| *Onda 5* (k, l, m, n, o)            |     56 | 179,4 | 21.889 |            8,2 |
+| *Onda 6* (6a, 6b)                   |     18 |  52,1 |  6.041 |            8,6 |
+
+Nel registro restano 29 agenti "da classificare" (77 $, l'11 % del totale): sono sub-agenti lanciati senza l'etichetta
+dello scopo, quindi i costi dei moduli qui sopra sono un minimo.
+- Dato: l'IA dell'onda 5 è il modulo più caro di sempre per riga (19,6 $ ogni 1000 righe, 11 coordinatori uno dopo
+  l'altro) e ha lasciato obiettivi non raggiunti (AI_TUNING "Final numbers of agent (k)"). Anche scala e prestazioni
+  costa molto per riga (12,9 $): è lavoro di misura e diagnosi, non di scrittura.
+- Lezione: conferma "L'IA costa in turni, non in righe". Per taratura e diagnosi il costo si prevede dal numero di
+  giri di misura, non dalle righe. Prima di un altro giro di taratura serve una modifica di progetto dell'IA
+  (onda 9a), perché altri giri con le stesse regole non hanno chiuso gli stalli.
+- Dato: i Cybran costano 4,9 $ ogni 1000 righe con 20 agenti: sono in gran parte dati (80 blueprint) e modelli, cioè
+  pezzi separabili con un contratto scritto. Il multigiocatore, codice nuovo in un progetto suo, 3,5 $.
+- Lezione: il contenuto nuovo e separabile regge bene molti agenti piccoli; conferma "Il codice nuovo costa meno".
+- Dato: 6a ha usato 13 agenti per 3.576 righe (9,6 $), 6b 5 agenti per 2.465 righe (7,2 $), 7a 4 agenti per 1.515
+  righe (6,9 $). Con il tetto di contesto a 150-200k le onde 6 e 7a costano per riga come l'onda 5 (8,2 $) o meno.
+- Lezione: il tetto più basso non ha fatto salire il costo per riga; il danno al risultato è seguito a parte
+  (WORKFLOW "Fragmentation"). Meno agenti per modulo resta la scelta più economica.
