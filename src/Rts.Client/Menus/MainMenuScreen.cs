@@ -41,7 +41,12 @@ public sealed class MainMenuScreen : IScreen
         by += h + gap;
         if (MenuUi.MenuEntry(Ui.R(x, by, w, h), "Quit", "Back to the desktop")) _app.QuitRequested = true;
 
-        Ui.Text("Prototype · C# / .NET 10 · raylib", x, Ui.Sh - Ui.P(34), Ui.F(11), Ui.TextFaint);
+        if (CrashLog.PreviousCrash is string crashLog) // the previous run crashed (CrashLog): say where the log is
+            Ui.Text("The game crashed last time: " + crashLog, x, Ui.Sh - Ui.P(34), Ui.F(11), Ui.Warn);
+        else
+            Ui.Text("Prototype · C# / .NET 10 · raylib", x, Ui.Sh - Ui.P(34), Ui.F(11), Ui.TextFaint);
+        string version = AppVersion.Label;
+        Ui.Text(version, Ui.Sw - Ui.Measure(version, Ui.F(11)) - Ui.P(24), Ui.Sh - Ui.P(34), Ui.F(11), Ui.TextFaint);
         if (MenuUi.Key(KeyboardKey.Enter) || MenuUi.Key(KeyboardKey.KpEnter) || (_app.Options.FlowTest && ++_frames == 20))
             _app.Go(new SkirmishSetupScreen(_app));
         Ui.DrawTooltip();

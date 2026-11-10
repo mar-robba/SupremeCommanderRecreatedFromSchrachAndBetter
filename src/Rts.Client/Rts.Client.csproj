@@ -8,6 +8,8 @@
     <!-- Methods with loops are JIT-optimized at once instead of tier-0 + on-stack replacement: the sim's per-unit
          loops ran unoptimized for their first ticks (10-30 ms tick spikes; docs/DEV_GUIDE.md "Reference numbers"). -->
     <TieredCompilationQuickJitForLoops>false</TieredCompilationQuickJitForLoops>
+    <!-- Game version (main menu label, crash.log); tools/package/package.sh adds the git describe after '+'. -->
+    <Version>0.7.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

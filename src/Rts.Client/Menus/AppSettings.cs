@@ -5,8 +5,8 @@ using Rts.Client.Audio;
 namespace Rts.Client.Menus;
 
 /// <summary>
-/// User settings (persisted as JSON in the user's config folder): volumes, fullscreen, window resolution and the
-/// last skirmish setup. Volumes are copied into the live <see cref="AudioSettings"/> with <see cref="ApplyVolume"/>
+/// User settings (persisted as JSON in the user's config folder): volumes, fullscreen, window resolution, the
+/// last skirmish setup, graphics and gameplay options (applied by <see cref="GraphicsSettings"/>). Volumes are copied into the live <see cref="AudioSettings"/> with <see cref="ApplyVolume"/>
 /// (the app-wide <see cref="AudioSystem"/> applies them every frame).
 /// </summary>
 public sealed class AppSettings
@@ -27,45 +27,103 @@ public sealed class AppSettings
     public string PlayerName { get; set; } = "";
     public string JoinAddress { get; set; } = "";
     public int HostPort { get; set; } = 47624;
+    // Graphics (wave 7a, applied by GraphicsSettings.Apply; defaults = the behavior before these settings existed).
+    public bool Shadows { get; set; } = true;
+    /// <summary>0 Low, 1 Medium, 2 High (= <see cref="GraphicsSettings.ParticleScales"/> index).</summary>
+    public int ParticleQuality { get; set; } = 2;
+    /// <summary>-1 = automatic terrain LOD, 0..3 = force that LOD (0 = full detail).</summary>
+    public int TerrainDetail { get; set; } = -1;
+    public bool VSync { get; set; } = true;
+    /// <summary>Frame-rate cap, 0 = off (one of <see cref="GraphicsSettings.FpsCaps"/>).</summary>
+    public int FpsCap { get; set; }
+    /// <summary>Multiplier on the automatic UI scale (one of <see cref="GraphicsSettings.UiScales"/>).</summary>
+    public float UiScale { get; set; } = 1f;
+    // Gameplay.
+    public bool EdgeScroll { get; set; } = true;
+    /// <summary>Camera keyboard/edge pan speed multiplier (0.5..2).</summary>
+    public float PanSpeed { get; set; } = 1f;
+    /// <summary>Mouse-wheel zoom step multiplier (0.5..2).</summary>
+    public float ZoomSpeed { get; set; } = 1f;
+    /// <summary>Autosave every 5 minutes of game time into 3 rolling slots (the autosave itself: Persistence).</summary>
+    public bool Autosave { get; set; } = true;
 
     /// <summary>The settings in use (loaded at startup).</summary>
     public static AppSettings Current { get; private set; } = new();
 
-    private static string FilePath =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "RtsGame", "settings.json");
+    /// <summary><c>$XDG_CONFIG_HOME/RtsGame/settings.json</c> (default ~/.config; Windows %APPDATA%), see <see cref="Rts.Sim.Persistence.UserDirs"/>.</summary>
+    public static string FilePath => Path.Combine(Rts.Sim.Persistence.UserDirs.Current.ConfigDir, "settings.json");
 
     /// <summary>Automated runs (screenshots) never read or write the user's file.</summary>
     public static bool Persist = true;
 
     public static AppSettings Load()
     {
-        if (Persist)
-        {
-            try
-            {
-                if (File.Exists(FilePath)) Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(FilePath)) ?? new AppSettings();
-            }
-            catch (Exception e)
-            {
-                Console.Error.WriteLine("Settings not loaded: " + e.Message);
-                Current = new AppSettings();
-            }
-        }
+        if (Persist) Current = LoadFrom(FilePath);
         return Current;
+    }
+
+    /// <summary>Reads a settings file (missing file or fields → defaults, out-of-range values clamped); never throws.</summary>
+    public static AppSettings LoadFrom(string path)
+    {
+        try
+        {
+            if (File.Exists(path)) return (JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path)) ?? new AppSettings()).Normalize();
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine("Settings not loaded: " + e.Message);
+        }
+        return new AppSettings();
     }
 
     public void Save()
     {
-        if (!Persist) return;
+        if (Persist) SaveTo(FilePath);
+    }
+
+    public void SaveTo(string path)
+    {
         try
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
+            File.WriteAllText(path, JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception e)
         {
             Console.Error.WriteLine("Settings not saved: " + e.Message);
         }
+    }
+
+    /// <summary>Clamps every value into its valid range (hand-edited or corrupt files); returns this.</summary>
+    public AppSettings Normalize()
+    {
+        var d = new AppSettings();
+        static float Clamp(float v, float lo, float hi, float def) => float.IsFinite(v) ? Math.Clamp(v, lo, hi) : def;
+        MasterVolume = Clamp(MasterVolume, 0f, 1f, d.MasterVolume);
+        SfxVolume = Clamp(SfxVolume, 0f, 1f, d.SfxVolume);
+        MusicVolume = Clamp(MusicVolume, 0f, 1f, d.MusicVolume);
+        ParticleQuality = Math.Clamp(ParticleQuality, 0, GraphicsSettings.ParticleScales.Length - 1);
+        TerrainDetail = Math.Clamp(TerrainDetail, -1, 3);
+        FpsCap = Nearest(GraphicsSettings.FpsCaps, FpsCap <= 0 ? 0 : FpsCap);
+        UiScale = GraphicsSettings.UiScales[NearestIndex(GraphicsSettings.UiScales, Clamp(UiScale, 0f, 10f, d.UiScale))];
+        PanSpeed = MathF.Round(Clamp(PanSpeed, 0.5f, 2f, d.PanSpeed) * 10f) / 10f;
+        ZoomSpeed = MathF.Round(Clamp(ZoomSpeed, 0.5f, 2f, d.ZoomSpeed) * 10f) / 10f;
+        return this;
+    }
+
+    private static int Nearest(int[] values, int v)
+    {
+        int best = values[0];
+        foreach (int x in values) if (Math.Abs(x - v) < Math.Abs(best - v)) best = x;
+        return best;
+    }
+
+    /// <summary>Index of the value closest to <paramref name="v"/>.</summary>
+    public static int NearestIndex(float[] values, float v)
+    {
+        int best = 0;
+        for (int i = 1; i < values.Length; i++) if (MathF.Abs(values[i] - v) < MathF.Abs(values[best] - v)) best = i;
+        return best;
     }
 
     /// <summary>Copies the saved volumes into the live audio settings.</summary>

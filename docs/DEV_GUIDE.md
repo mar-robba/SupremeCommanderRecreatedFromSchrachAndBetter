@@ -205,3 +205,47 @@ integrated GPU.
 | `tools/agents/handoffs.py` | Per purpose: attempts, CHECKPOINT hand-overs and "dead" attempts (read until the cap, no work) of agents and sub-agents (WORKFLOW "Fragmentation: does a small cap hurt the result?"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
 | `tools/token-ledger/` | Token ledger: tokens per session/agent and purpose, kept up to date by project hooks ([tokens/README.org](tokens/README.org)); `windows.py`: tokens used in each usage-limit window ([WORKFLOW.md](WORKFLOW.md) "Usage limits"). |
+
+## Packaging
+
+`bash tools/package/package.sh [linux|win|all] [-o OUTDIR]` (default `linux`, OUTDIR `release/` at the repo root,
+gitignored) builds a self-contained Release game: `RtsGame-<Version>-linux-x64.tar.gz` / `-win-x64.zip`, each with one
+`RtsGame/` folder: `Rts.Client` (+ runtime, .pdb kept for crash line numbers), `data/`, `release.txt`, `rtsgame.png`,
+`rtsgame.desktop` (template), `install-desktop.sh`, `README.txt`. No trimming / single-file / ReadyToRun: it runs
+the same code as `dotnet run`. It publishes with `--artifacts-path` into a `mktemp` dir, so it never touches the
+worktree's `bin/`/`obj/` (no dn.sh lock needed). Numbers (wave 7a): linux 146 s + win 86 s (first run, runtime packs
+downloaded from NuGet), 36 MB tar.gz / 37 MB zip.
+
+- **Version**: `<Version>` in `src/Rts.Client/Rts.Client.csproj`; the script passes `-p:SourceRevisionId=<git describe
+  --always --dirty>`, so InformationalVersion is `0.7.0+4cee893[-dirty]` (dev builds: SourceLink's full hash).
+  `AppVersion.Label` = `v0.7.0 (4cee893)` (+ ` dev` without the marker): main menu bottom-right and crash.log.
+  The global property also reaches Rts.Sim, so packaged saves record `GameVersion` `1.0.0+<describe>` (header text only).
+- **Release mode** = `release.txt` (one line: the label) next to the executable (`UserDirs`, `src/Rts.Sim/Persistence/
+  UserDirs.cs`, applied once by Program.cs). Then saves/replays/screenshots go to `$XDG_DATA_HOME/RtsGame` (default
+  `~/.local/share/RtsGame`; Windows `%APPDATA%\RtsGame`). Without it (dev, tests, Rts.Bench) they stay relative to
+  the current directory. `RTS_USER_DIR=<dir>` (env) replaces that folder in both modes (handy for tests of the
+  release layout). Settings are always `$XDG_CONFIG_HOME/RtsGame/settings.json` (default `~/.config`). `data/` is
+  found by walking up from the executable (`DataPaths.FindDataRoot`), so the cwd doesn't matter.
+- **Crash log**: unhandled exceptions (main thread try/catch in Program.cs, `AppDomain.UnhandledException`,
+  unobserved tasks as non-fatal) are appended to `<user data dir>/crash.log` (`~/.local/share/RtsGame/crash.log` in
+  dev runs too; trimmed to ~256 KB; time, version, OS, full stack) and still crash with the stderr trace. Bad
+  command-line arguments (thrown by `ClientOptions.Parse`) are not logged. A fatal crash of an interactive run writes
+  `crash.pending`; the next interactive start shows "The game crashed last time: <path>" in the main-menu footer.
+  Sim-thread faults: `SimRunner` catches them (`Fault`, shown by the HUD); `GameSession.Frame` logs the first one
+  (non-fatal entry "sim thread").
+- **Icon**: `AppIcon` draws it procedurally (SDFs, CPU `Image`, no window): window icon after InitWindow, and
+  `Rts.Client --export-icon FILE.png` (alone; no window) which the script uses. The Windows exe gets it too
+  (`ApplicationIcon` = an .ico wrapping the PNG, only with `all`, since the PNG comes from the linux build).
+- **Screenshots (F12)**: raylib's built-in capture (SUPPORT_SCREEN_CAPTURE is on in Raylib-cs 8.1) writes
+  `screenshotNNN.png` into the working directory and cannot be redirected without rebuilding raylib; the desktop
+  entry sets `Path=` to the user screenshots folder, so launcher starts put them there. `--screenshot path` is
+  unchanged (relative to the cwd).
+- **install-desktop.sh** (in the package): menu entry `$XDG_DATA_HOME/applications/rtsgame.desktop`, icon in
+  `icons/hicolor/256x256/apps/`, desktop shortcut in `xdg-user-dir DESKTOP` (or `~/Desktop`), `gio ... trusted`;
+  `--uninstall` removes them (saves kept). **Test it only with a temporary HOME**, never the owner's:
+  `HOME=<scratch>/home XDG_DATA_HOME= bash <unpacked>/RtsGame/install-desktop.sh`, then `desktop-file-validate` the
+  generated entry. Check a package: extract to a scratch dir, `cd` elsewhere, `HOME=<scratch> <dir>/Rts.Client --demo
+  --save-at 60 --screenshot <abs>.png` → the quicksave lands in `<scratch>/.local/share/RtsGame/saves`.
+- Pitfalls: the repo volume has no exec bits (`core.fileMode=false`) and `sed -i` fails there ("preserva i permessi"):
+  the script stages in `$TMPDIR` and sets modes before `tar`; edit files with python or the Edit tool.
+  `zip` may be missing: the script uses `python3 -m zipfile -c`.

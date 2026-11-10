@@ -12,6 +12,7 @@ namespace Rts.Client.Menus;
 /// Saving and loading inside a game (owned by <see cref="InGameScreen"/>): F5 quicksave, F6 quickload, the pause
 /// menu's "Save Game" dialog (name field, existing saves, overwrite warning) and --save-at N (quicksave at frame N,
 /// for tests). Works in skirmish and sandbox games; the world is captured on the sim thread, files are written on a worker.
+/// Autosave every 5 minutes of game time (<see cref="AutosaveStep"/>, rules in Persistence/Autosave.cs).
 /// </summary>
 public sealed class InGameSaveUi
 {
@@ -20,6 +21,7 @@ public sealed class InGameSaveUi
     private readonly ClientOptions _opt;
     private SandboxTextField? _field;
     private List<SaveEntry> _existing = new();
+    private Autosave? _autosave;
 
     public InGameSaveUi(AppHost app, GameSession session, ClientOptions opt)
     {
@@ -40,11 +42,26 @@ public sealed class InGameSaveUi
 
     public void QuickSave() => Save(SaveStore.QuickSaveName);
 
-    public void Save(string name)
+    public void Save(string name, string? toast = null)
     {
         if (_s.Recording == null) return;
         var cam = _s.Ctx.Camera;
-        _s.Recording.Save(_s.Runner, name, ClientGameData.From(_s.Config, new Vector3(cam.Focus.X, cam.Focus.Z, cam.TargetDistance)));
+        _s.Recording.Save(_s.Runner, name, ClientGameData.From(_s.Config, new Vector3(cam.Focus.X, cam.Focus.Z, cam.TargetDistance)), toast: toast);
+    }
+
+    /// <summary>
+    /// Playing state, every frame: writes the next rolling autosave (autosave_1..3) when 5 minutes of game time
+    /// (--autosave-every TICKS) passed since the game started / was loaded / the last autosave. <paramref name="ended"/>:
+    /// the local player was defeated or the game is over.
+    /// </summary>
+    public void AutosaveStep(bool ended)
+    {
+        bool forced = _opt.AutosaveEvery > 0;
+        var snap = _s.Snapshots.Current;
+        if (snap == null || !Autosave.Allowed(AppSettings.Current.Autosave, forced, _s.Recording != null, _s.Ctx.ReadOnly,
+                _s.Config.Sandbox, _s.Config.Scene != null, _opt.ScreenshotPath != null, ended || snap.WinningTeam >= 0)) return;
+        _autosave ??= new Autosave(forced ? _opt.AutosaveEvery : Autosave.DefaultIntervalTicks);
+        if (_autosave.Due(snap.Tick)) Save(_autosave.NextSlot(), "Autosaved");
     }
 
     /// <summary>Loads the quicksave (its header is checked first so a bad file doesn't end the current game).</summary>

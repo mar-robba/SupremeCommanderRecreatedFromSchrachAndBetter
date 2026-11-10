@@ -49,6 +49,8 @@ public sealed class ParticleSystem : IDisposable
     public int Count => _count;
     /// <summary>0..1 multiplier on optional particles (reduced when zoomed out or near capacity).</summary>
     public float Lod = 1f;
+    /// <summary>User setting (Settings → Graphics → Particles): multiplier folded into <see cref="Lod"/> each frame.</summary>
+    public static float Quality = 1f;
 
     public ParticleSystem(Terrain terrain)
     {

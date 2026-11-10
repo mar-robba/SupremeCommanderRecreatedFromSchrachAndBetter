@@ -705,6 +705,28 @@ fps cap, UI scale) and gameplay (edge scroll, camera/zoom speed), reachable from
 5 minutes, rolling 3. Tests: path resolution, settings round trip, autosave rotation; screenshots of the settings
 screens and the packaged build running; DEV_GUIDE "Packaging" section.
 
+**Delivered** (merged 2026-10-24; one coordinator, resumed once after a usage limit; 132k at the end). Report:
+- **G45 packaging:** `bash tools/package/package.sh [linux|win|all] [-o DIR]` builds self-contained
+  `release/RtsGame-0.7.0-linux-x64.tar.gz` (36 MB) and `-win-x64.zip` (37 MB) with `data/`, a `release.txt` marker,
+  a procedural icon, `rtsgame.desktop` and `install-desktop.sh`. The marker switches saves, replays and screenshots
+  to `~/.local/share/RtsGame` (`UserDirs`); without it (dev runs, tests, Bench) today's folders. Settings in
+  `~/.config/RtsGame`. Version label `v0.7.0 (hash)` in the main menu. Crash log `~/.local/share/RtsGame/crash.log`
+  (main, unhandled and sim-thread faults; notice on the next start). The desktop installer was tested only with a
+  temporary HOME (the owner decides about their desktop).
+- **G18 settings:** three tabs; Graphics: shadows, particles, terrain detail, VSync, FPS cap, UI scale; Gameplay:
+  edge scroll, pan and zoom speed, autosave. Applied live; `--novsync` / `--terrain-lod` still override. Settings
+  button in the pause menu.
+- **G40 autosave:** every 5 min of game time into `autosave_1..3` (empty slot first, then the oldest); skipped in
+  replays, sandbox, multiplayer, after the game end and in screenshot runs; "Autosave N" in Load.
+- **Try:** `--settings-tab graphics|gameplay`, `--autosave-every TICKS`, `--export-icon FILE.png`.
+- **Tests:** UserDirs 7 (Sim), CrashLog 9, AppSettings 6, Autosave (Client); after the merge Sim 507, Client 279,
+  Net 26. **Hotkeys:** none.
+- **Numbers:** reference match unchanged (BF85B7DBBF03D949, verified on main after the merge). Perf `2000 300`
+  1.75-1.88 vs main 1.74-1.96 ms. Publish takes 146 s (linux), 86 s (win).
+- **Shared files:** additive lines in GameApp.cs, GameSession.cs (fault log), Program.cs, Ui.cs; 3 lines in RtsCamera.cs.
+- **Known issues:** F12 screenshots land in the current folder (raylib built-in; the launcher sets `Path=`);
+  multiplayer has no Settings or autosave; the live effect of shadows/particles/UI scale is unit-tested only.
+
 ### (7b) Orders & selection UX — `Rts.Client/Input`, Hotkeys, SelectionController, Minimap, alerts, pings
 *brief* (gap rows G14, G15, G16, G17; G20 if time; started 2026-10-24 after the 6b merge): selection filters (all of
 a type on the map, all land / air / naval / engineers), commander key (select + center), camera bookmarks, jump to the
@@ -713,4 +735,15 @@ route editing through a new sim `Orders/QueueEditCommands.cs`; notification pass
 structure lost, construction/upgrade done, ally under attack); map pings (alert / move / attack, map + minimap,
 allies and MP, in replays) as a sim command; G20 range/intel overlays for the selection. Tests: hotkey table,
 queue-edit and ping sim tests, ping in a replay and an MP loopback. Screenshots.
+
+## Wave 8 (started 2026-10-24)
+
+### (8a) Missing units & walls — `data/blueprints`, `Naval`, `Strategic`, `Transport`, pathfinding blocked cells
+*brief* (gap rows G8, G9; Atlantis dive from G11; started while 7b runs, disjoint files): the SupCom1 vanilla units
+still missing for UEF and Cybran: UEF Mech Marine (T1 bot), T3 strategic missile submarines for both factions (nuke +
+tactical missiles launched from a submerged hull), Cybran T3 aircraft carrier (reuse the Atlantis cargo/factory
+code), T3 sonar platforms, the UEF T2 stealth field generator if it is vanilla SC1, the Cybran Salem destroyer
+walking on land; T1 wall sections for both factions (block movement and direct shots, Shift-drag line placement);
+Atlantis dive. Faction json roles stay optional (the AI ignores what it doesn't know). Tests: roster tests,
+submerged launch, walls block paths and shots, carrier; a `--scene` group; screenshots.
 

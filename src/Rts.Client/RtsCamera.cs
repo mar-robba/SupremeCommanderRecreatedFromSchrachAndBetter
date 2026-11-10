@@ -85,7 +85,7 @@ public sealed class RtsCamera
         Yaw += (_targetYaw - Yaw) * (1f - MathF.Exp(-dt * 14f));
 
         // Keyboard / edge pan, speed proportional to zoom. (WASD is left to unit hotkeys: A = attack-move, S = stop.)
-        float pan = Distance * 1.2f * dt;
+        float pan = Distance * 1.2f * dt * CameraSettings.PanSpeed;
         var fwd = new Vector3(MathF.Cos(Yaw), 0, MathF.Sin(Yaw));
         var right = new Vector3(-fwd.Z, 0, fwd.X);
         var move = Vector3.Zero;
@@ -93,7 +93,7 @@ public sealed class RtsCamera
         if (Raylib.IsKeyDown(KeyboardKey.Down)) move += fwd;
         if (Raylib.IsKeyDown(KeyboardKey.Left)) move += right;
         if (Raylib.IsKeyDown(KeyboardKey.Right)) move -= right;
-        if (Raylib.IsWindowFocused() && Raylib.IsCursorOnScreen() && !mouseOverUi)
+        if (CameraSettings.EdgeScroll && Raylib.IsWindowFocused() && Raylib.IsCursorOnScreen() && !mouseOverUi)
         {
             int sw = Raylib.GetScreenWidth(), sh = Raylib.GetScreenHeight();
             const int edge = 3;
@@ -117,7 +117,7 @@ public sealed class RtsCamera
         float wheel = mouseOverUi ? 0 : Raylib.GetMouseWheelMove();
         if (wheel != 0)
         {
-            TargetDistance = Math.Clamp(TargetDistance * MathF.Pow(0.82f, wheel), MinDistance, MaxDistance);
+            TargetDistance = Math.Clamp(TargetDistance * MathF.Pow(0.82f, wheel * CameraSettings.ZoomSpeed), MinDistance, MaxDistance);
             if (_zoomAnchor == null || Vector2.Distance(mouse, _anchorMouse) > 3f)
             {
                 _zoomAnchor = pickGround(mouse);

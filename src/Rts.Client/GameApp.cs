@@ -95,6 +95,8 @@ public sealed class ClientOptions
     public string? LoadPath, ReplayPath;
     public int SeekTick = -1, SaveAt = -1;
     public bool SaveDialog, WriteReplay;
+    /// <summary>--autosave-every TICKS: autosave interval for tests/screenshots (forces autosave on, also in --screenshot runs).</summary>
+    public int AutosaveEvery = -1;
     /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
     public int HostPort;
     public string? JoinAddress, PlayerName;
@@ -113,7 +115,7 @@ public sealed class ClientOptions
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
                 or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
-                or "--perf-log" or "--terrain-lod")) gameArg = true;
+                or "--perf-log" or "--terrain-lod" or "--settings-tab")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -135,6 +137,7 @@ public sealed class ClientOptions
                 case "--menu": screen = StartScreen.MainMenu; break;
                 case "--setup": screen = StartScreen.Setup; break;
                 case "--settings": screen = StartScreen.Settings; break;
+                case "--settings-tab": SettingsScreen.Tab = SettingsScreen.ParseTab(Next()); screen ??= StartScreen.Settings; break;
                 case "--pause-menu": o.PauseMenu = true; break;
                 case "--autostart": o.AutoStart = true; break;
                 case "--flow-test": o.FlowTest = o.AutoStart = true; break;
@@ -180,6 +183,7 @@ public sealed class ClientOptions
                 case "--save-at": o.SaveAt = int.Parse(Next()); break;
                 case "--save-dialog": o.SaveDialog = o.PauseMenu = true; break;
                 case "--write-replay": o.WriteReplay = true; break;
+                case "--autosave-every": o.AutosaveEvery = int.Parse(Next()); break;
                 case "--host":
                     o.HostPort = i + 1 < args.Length && int.TryParse(args[i + 1], out int hp) ? hp : Rts.Net.Session.NetSession.DefaultPort;
                     if (i + 1 < args.Length && int.TryParse(args[i + 1], out _)) i++;
@@ -242,6 +246,8 @@ public static class GameApp
         Rendering.FrameProfiler.GpuEnabled = opt.ScreenshotPath != null || Rendering.PerfLog.Enabled; // GPU stage timings
         Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
         Raylib.InitWindow(width, height, "RTS — Supreme Commander-like");
+        AppIcon.SetWindowIcon();
+        GraphicsSettings.Init(settings, opt); // shadows, particles, terrain detail, UI scale, VSync, FPS cap, camera (CLI wins)
         Raylib.SetExitKey(KeyboardKey.Null);
         Rlgl.SetClipPlanes(0.5, 6000);
         if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();

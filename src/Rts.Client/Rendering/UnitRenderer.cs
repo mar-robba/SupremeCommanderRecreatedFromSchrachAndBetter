@@ -144,7 +144,8 @@ public sealed unsafe partial class UnitRenderer : IDisposable
 
         FrameProfiler.Sub("units:gather");
         // 1) Shadow pass (units only).
-        if (_shadow.Supported)
+        bool shadowPass = _shadow.Supported && ShadowMap.Enabled;
+        if (shadowPass)
         {
             var target = fv.CamPos + fv.CamForward * Atmosphere.CameraDistance;
             _shadow.Fit(fv, target, Atmosphere.CameraDistance);
@@ -172,7 +173,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         sp.Use();
         foreach (var m in _active)
         {
-            if (_shadow.Supported) { m.Body.DrawAgain(); m.Turret?.DrawAgain(); }
+            if (shadowPass) { m.Body.DrawAgain(); m.Turret?.DrawAgain(); }
             else { m.Body.Draw(); m.Turret?.Draw(); }
             DrawCalls += m.Turret != null ? 2 : 1;
         }

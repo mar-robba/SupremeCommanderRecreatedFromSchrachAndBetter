@@ -22,7 +22,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   `resources=normal|low|high`, `fog=normal|explored|none`, `speed=adjustable|normal|fast`, `cheats=on|off`, `prebuilt=on|off`,
   e.g. `--options victory=supremacy,cap=500,cheats=off`; also presets `--setup` and `--host`; `--teams 1,1,2,2` = team per slot
   (0 = none); `--diplomacy` opens the F4 diplomacy panel at start; in-game chat Shift+Enter = to allies (multiplayer))
-  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
+  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--settings-tab audio|graphics|gameplay`; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis), `--scene cybran[:land|:air|:naval|:structures1|:structures2|:structures3|:experimental]` (every Cybran unit laid out by group) (scene positions are printed; aim with `--camera`))
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
@@ -37,9 +37,13 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (exit 1 = desync).
 - Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
   `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
-  (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`).
+  (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`;
+  autosave = `autosave_1..3` every 5 min of game time, `--autosave-every TICKS` forces/shortens it for tests).
   Headless replay check (exit 1 = desync): `dotnet run -c Release --project tools/Rts.Bench -- replay <file>`;
   save/load timings: `... -- savebench [minutes] [mapSize] [players] [preset] [seed] [extraUnitsPerArmy] [threads]`
+- Release package (DEV_GUIDE "Packaging"): `bash tools/package/package.sh [linux|win|all] [-o OUTDIR]` → `release/RtsGame-<ver>-linux-x64.tar.gz`
+  (+ `-win-x64.zip`; self-contained, ~4 min; `release.txt` next to the exe = release mode: saves/replays in `~/.local/share/RtsGame`);
+  `--export-icon FILE.png` writes the procedural game icon and exits; crashes are logged to `~/.local/share/RtsGame/crash.log`.
 - **Visual check (agents must use this after client changes):**
   `dotnet run --project src/Rts.Client -- --demo --screenshot screenshots/<name>.png --frames 120 --size 1280x720 [--camera x,z,dist]`
   then Read the PNG to look at it. A display is available (X11/XWayland).
