@@ -1,0 +1,42 @@
+{
+  "Id": "cybran_t3_sonar",
+  "Name": "T3 Sonar Platform",
+  "Description": "T3 sonar platform: 1.5x the range of the T2 sonar. Personal stealth: hidden from enemy radar and sonar.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Intel",
+    "Sonar",
+    "Tech3"
+  ],
+  "MaxHealth": 1400,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "MinWaterDepth": 0.3,
+  "Economy": {
+    "BuildCostMass": 600,
+    "BuildCostEnergy": 7000,
+    "BuildTime": 1200,
+    "MaintenanceEnergy": 90
+  },
+  "Intel": {
+    "VisionRadius": 30,
+    "SonarRadius": 345,
+    "RadarStealth": true,
+    "SonarStealth": true
+  },
+  "Visual": {
+    "Shape": "cy_sonar2",
+    "Size": [
+      2.0,
+      3.6,
+      2.0
+    ],
+    "Icon": "intel"
+  },
+  "BuiltBy": [
+    "cybran_t3_engineer"
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "Id": "uef_t1_mech_marine",
+  "Name": "Mech Marine",
+  "Description": "T1 light assault bot: cheap, fast raider with a riot gun.",
+  "Tech": 1,
+  "Categories": [
+    "Mobile",
+    "Land",
+    "DirectFire",
+    "Tech1"
+  ],
+  "MaxHealth": 150,
+  "Radius": 0.5,
+  "Economy": {
+    "BuildCostMass": 28,
+    "BuildCostEnergy": 140,
+    "BuildTime": 140
+  },
+  "Movement": {
+    "Layer": "Land",
+    "MaxSpeed": 3.3,
+    "Acceleration": 4,
+    "TurnRate": 130
+  },
+  "Intel": {
+    "VisionRadius": 18
+  },
+  "Weapons": [
+    {
+      "Name": "Riot Gun",
+      "Range": 15,
+      "Damage": 5,
+      "RateOfFire": 2,
+      "MuzzleVelocity": 40,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ]
+    }
+  ],
+  "Visual": {
+    "Shape": "bot",
+    "Size": [
+      0.7,
+      0.9,
+      0.7
+    ],
+    "Icon": "land_direct"
+  },
+  "BuiltBy": [
+    "uef_t1_land_factory",
+    "uef_t2_land_factory",
+    "uef_t3_land_factory"
+  ]
+}
