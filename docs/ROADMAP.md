@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-10 21:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-10 23:10 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -15,6 +15,17 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
 **ON RESUME** (2026-11-10 14:10, session 3de864d5; the work paused from 2026-10-24 11:25, when a usage limit cut both
 agents and the account was then blocked, to 2026-11-10):
+- **STOPPED BY THE OWNER (2026-11-10 23:05: "fermo, ti dico io quando continuare"): start or resume no agent until the
+  owner says so.** Nothing is running. State at the stop (both coordinators cut again by the 5-hour limit at 21:01,
+  after 8 minutes of work; worktrees clean, everything committed):
+  - 7b (HEAD ba24869): pieces 1-3 done, G14 selection filters / commander key / bookmarks done with tests (67f3a2b,
+    7f942e9, note `.claude/notes/selection.md`, not verified in game); piece 4 (pings UI, notifications, jump to
+    alert) just started: its sub-agent was cut at 78k with no commit and no note. Coordinator 2 is at 109k.
+  - 8a (HEAD 8762364 = WIP MissileSubTests draft, may not compile): Salem on land works (WalkingShipTests 60e5664,
+    note `.claude/notes/naval.md` with the ordered TODO); left: missile sub and carrier tests, walls, client models +
+    `--scene units8a`, finish. Coordinator 3 is at 80k.
+  - **Ask the owner first: which model for the agents** (WORKFLOW "Usage limits", Fable 5.2 bullet). On Fable 5.2 a
+    window gives 8-10 minutes of agent work; on Opus 5.5 it gave about an hour.
 - If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh coordinator there
   with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
   `agent_ctx.py --watch 135000 <id>=185000 ...`.

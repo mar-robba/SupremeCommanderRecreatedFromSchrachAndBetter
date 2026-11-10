@@ -196,6 +196,13 @@ mostly cache reads, of every session and agent of the project):
 - A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window
   end sooner, and each one is cut and needs a resume (about 1 $ of start-up reading each, plus its cache rewrite).
   So run **at most 2 agents at a time, without sub-agents**, and size each brief to finish within one window.
+- **On Fable 5.2 a window is about 5 times smaller** (measured 2026-11-10 from the transcripts' usage fields; all
+  numbers above are for Opus 5.5). The session and its agents ran on Fable 5.2 (the owner's `/model` choice; agents
+  inherit it): the 13:00 window ended after 129 calls and 10M tokens of this project (plus 2.3M of another session
+  of the owner), the 18:00 window after 93 calls and 7.7M (plus 1.9M elsewhere). That was 8-10 minutes of
+  2 coordinators + 2-3 sub-agents each time, and every resume first pays the re-read of each agent's context.
+  Open owner decision (asked 2026-11-10): agents on Opus 5.5 (`model: "opus"` in the Agent call; about 5 times more
+  agent work per window, as in waves 1-7a) or on Fable 5.2 (stronger model, short windows).
 
 ## Resuming (new orchestrator session)
 
