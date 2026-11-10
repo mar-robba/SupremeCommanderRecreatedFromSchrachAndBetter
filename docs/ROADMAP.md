@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-10 14:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-10 21:00 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -21,10 +21,13 @@ agents and the account was then blocked, to 2026-11-10):
 - **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
   `wave7b-orders` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
   commit 7ad9342; sim commands and the formation/waypoint UI code were done, selection keys, pings UI,
-  notifications and the finish were open; the branch was 15 commits behind main).
+  notifications and the finish were open; the branch was 15 commits behind main). Cut by the 5-hour limit at 14:08
+  (71k; main merged, orders UI hooks + screenshots done), resumed by SendMessage 2026-11-10 20:55.
 - **Running:** **(8a) Missing units & walls** (G8, G9, Atlantis dive): worktree `.claude/worktrees/wave8a` (branch
   `wave8a-units` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
-  commit 48673e7 = 9 untested blueprint drafts; all five pieces were open).
+  commit 48673e7 = 9 untested blueprint drafts; all five pieces were open). Cut by the 5-hour limit at 14:08 (125k;
+  data piece done 88955ec, AI reference hash now BBD1FF3C4E116A4A: blueprint index shift only, same winner and
+  time). **Coordinator 3** started 2026-11-10 20:55 from the handoff note (WIP commit 676de72 = untested Salem on land).
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
 - **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
@@ -37,6 +40,8 @@ agents and the account was then blocked, to 2026-11-10):
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
   2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
+  2026-11-10 14:08 (reset 18:00): both coordinators and their two sub-agents cut after 10 minutes of work; other
+  Claude sessions of the owner were open on the same account, so the window was probably nearly used up already.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
