@@ -29,12 +29,12 @@ Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). One sub-ag
    while a sub-agent ran); ai match "WINNER: Player (Hard) after 15:35", hash BF85B7DBBF03D949 (unchanged).
    Ping replay test (PingTests.ReplayRecreatesThePing) and MP loopback (PingNetTests) already exist.
 1. [x] sim commands + tests (24190b3, 299cd87, 4267983) -> notes/sim.md (contract). QueueEditTests 11/11.
-2. [~] selection filters, commander key, camera bookmarks -> sub-agent 7b-sel-5 (fresh, started 2026-11-10 21:00;
-   7b-sel-4 was cut by the usage limit with no Part B code), notes/selection.md
+2. [x] selection filters, commander key, camera bookmarks (7b-sel-5: 67f3a2b, 7f942e9; Client tests 297 green;
+   keys + shared edits in notes/selection.md; NOT tried in the game window).
 3. [x] formation drag + waypoint editing UI: hooks run + screenshots OK (4d412d4; PNGs local only, screenshots/ is
    gitignored: `screenshots/7b_formation_drag.png`, `7b_waypoint_edit.png`, commands in notes/orders-ui.md).
 4. [ ] pings UI + notification pass (AlertLog, minimap flash, toasts) + jump to last alert + ping replay test
-   -> sub-agent 7b-ping-1, notes/pings.md
+   -> sub-agent 7b-ping-1 (started 2026-11-10 ~21:30), notes/pings.md
 5. [ ] G20 range/intel overlays (if time) -> notes/overlays.md
 6. [ ] finish: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
    ROADMAP G14-G17 rows `[x] 2026-11-10 (7b)` + later items, CLAUDE.md CLI lines), `.claude/agent-report.md`
