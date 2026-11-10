@@ -83,9 +83,13 @@ e ogni scopo.
 
 * Costi
 
-Quanti token è costato costruire il gioco fin qui: per modulo, per scopo e per tipo di lavoro, e che cosa insegnano
-questi numeri. Dati dal 2026-10-10 al 2026-10-15 alle 22:30; l'onda 5 è ancora in corso, quindi i suoi numeri sono
-parziali.
+Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa
+insegnano questi numeri. Dati dal 2026-10-10 al 2026-11-10 alle 23:15 (dal 24 ottobre al 10 novembre non si è
+lavorato). I moduli 7b e 8a sono in corso: i loro numeri sono parziali.
+
+Le tabelle di questo capitolo sono una fotografia. Quelle sempre aggiornate (per area, per onda, per modulo, per
+giorno) le genera il registro dei token in [[file:tokens/summary.org][tokens/summary.org]]. Questo capitolo va riallineato dopo l'ultimo merge di
+ogni onda (WORKFLOW "Lifecycle of a wave", punto 7).
 
 ** Cos'è la cache
 - Il modello non ricorda niente tra una chiamata e l'altra. A ogni passo (leggere un file, lanciare un build,
@@ -94,7 +98,7 @@ parziali.
 - La cache dei prompt di Anthropic tiene sui server la parte iniziale del contesto già elaborata, per 5 minuti o per
   1 ora. Se la chiamata successiva comincia con lo stesso testo, quella parte non viene rielaborata.
 - Scrittura in cache: ogni pezzo nuovo di contesto (un file letto, l'output di un test) si paga una volta sola, un
-  po' più dell'input normale (5 $ o 8 $ invece di 4 $ per milione di token).
+  po' più dell'input normale (con Opus 5.5: 5 $ o 8 $ invece di 4 $ per milione di token).
 - Lettura dalla cache: il contesto già visto, riletto a ogni passo, costa 0,20 $ per milione, 20 volte meno
   dell'input normale.
 - Esempio: un agente con circa 100.000 token di contesto che fa 200 passi rilegge 20 milioni di token dalla cache
@@ -106,186 +110,269 @@ parziali.
   modello.
 
 ** Come sono stati misurati
-- Fonte: le trascrizioni di Claude Code di questo progetto (=~/.claude/projects/-run-media-marco-Volume-D-RTS/=):
-  14 sessioni principali (orchestratore) e 81 agenti (sub-agenti e sub-sub-agenti), 6.003 chiamate al modello.
-  Ogni chiamata è contata una volta sola. Ogni agente è assegnato a un modulo in base alla descrizione con cui è
-  stato lanciato; la sessione principale conta come "Fondazione" fino al lancio dei primi agenti (2026-10-10 19:24),
-  poi come "Orchestrazione".
-- Token di input (scritture in cache, letture dalla cache, input normale): esatti, presi dalle trascrizioni.
-- Token di output: *stimati*. In circa 4 chiamate su 5 la trascrizione registra solo il conteggio parziale
-  dell'inizio dello stream. Per quelle chiamate l'output è stimato dal testo e dalle chiamate agli strumenti visibili
-  (caratteri / 4) × 2,53, il rapporto misurato sulle 1.189 chiamate con il conteggio completo (comprende il
-  ragionamento nascosto). Errore plausibile: ±30 % sull'output, circa ±7 % sul costo totale.
-- Dollari: equivalente a listino API di Claude Opus 5.5 (per milione di token: input 4 $, scrittura in cache 5 $
-  (5 minuti) o 8 $ (1 ora), lettura dalla cache 0,20 $, output 20 $). Il proprietario usa un abbonamento e non paga
-  questa cifra: i dollari servono a confrontare i moduli tra loro. Il vincolo reale dell'abbonamento sono i limiti
-  di sessione (vedi [[*Costo del processo][Costo del processo]]).
+- Fonte: il registro dei token ([[file:tokens/README.org][tokens/README.org]]), che legge le trascrizioni di Claude Code di questo progetto:
+  23 sessioni principali (orchestratore, documentazione) e 152 agenti (sub-agenti e sub-sub-agenti),
+  10.875 chiamate al modello. Ogni chiamata è contata una volta sola. Ogni agente è assegnato a un modulo
+  dall'etichetta ~[scopo]~ all'inizio della sua descrizione (dal 2026-10-16) o da una regola sulla descrizione
+  (prima). La sessione principale conta come "Fondazione" fino al lancio dei primi agenti (2026-10-10 19:24), poi
+  come orchestrazione.
+- Claude Code cancella le trascrizioni dopo 30 giorni: quelle della prima sessione (fondazione, onde 1 e 2) non ci
+  sono più. Le loro righe restano nel registro con token e dollari; su quei giorni non si possono più fare analisi
+  chiamata per chiamata.
+- Token di input (scritture in cache, letture dalla cache, input normale): esatti.
+- Token di output: esatti per gli agenti dal 2026-10-23 (fine dell'onda 5, onde 6, 7 e 8) e per quasi tutte le
+  sessioni principali; *stimati* per gli agenti fino al 2026-10-22, perché lì la trascrizione registra solo il
+  conteggio parziale dell'inizio dello stream. La stima è (caratteri del testo e delle chiamate agli strumenti / 4)
+  × 3,06, il rapporto misurato sulle chiamate con il conteggio completo (comprende il ragionamento nascosto). In
+  tutto 75 righe del registro su 201 sono esatte. Errore plausibile: ±30 % sull'output, circa ±7 % sul
+  costo delle onde da 1 a 5.
+- Dollari: equivalente a listino API. Fino al 2026-10-24 tutto ha girato su Claude Opus 5.5 (per milione di token:
+  input 4 $, scrittura in cache 5 $ (5 minuti) o 8 $ (1 ora), lettura dalla cache 0,20 $, output 20 $). Il
+  2026-11-10 sessioni e agenti hanno girato su Claude Fable 5.2, che costa il doppio (input 8 $, scrittura in cache
+  10 $ o 16 $, output 40 $; la lettura dalla cache resta 0,20 $). Il proprietario usa un abbonamento e non paga
+  questa cifra: i dollari servono a confrontare moduli e onde tra loro. Il vincolo reale dell'abbonamento sono i
+  limiti di sessione (vedi [[*Costo del processo][Costo del processo]]).
 - Righe: righe aggiunte in ~src/~, ~tests/~, ~tools/~, ~data/~ dal merge del modulo in ~main~ (diff rispetto al
-  primo genitore). Per l'onda 5, solo le righe già committate sul ramo dell'agente.
-- Dal 2026-10-15 questi numeri si tengono aggiornati da soli nel registro dei token ([[file:tokens/README.org][tokens/README.org]], riepilogo in
-  [[file:tokens/summary.org][tokens/summary.org]]): da lì vengono i conti delle prossime onde.
+  primo genitore). Per 7b e 8a, segnate con *, le righe già committate sul ramo dell'agente.
+- Onde: i moduli sono raggruppati come in HISTORY. L'IA "d", lanciata con l'onda 3 e finita e fusa con la 4, è
+  contata nell'onda 4, come l'infrastruttura delle fazioni (j, "pre-onda 5").
+- Correzioni al registro del 2026-11-10, che cambiano alcuni numeri rispetto alle versioni precedenti di questo
+  capitolo: (1) il lavoro del 10 novembre su Fable 5.2 era contato al prezzo di Opus 5.5, cioè la metà; (2) gli
+  scopi delle onde 6, 7 e 8 non avevano un'area e nel riepilogo comparivano come "Da classificare" (37 agenti,
+  88 $): lo scopo però era giusto, quindi i costi per modulo erano già completi (la versione precedente diceva il
+  contrario); (3) dopo il ritorno all'ora solare il registro assegnava al giorno dopo il lavoro fatto tra le 23 e
+  le 24; (4) gli agenti che continuano il lavoro di un altro da una nota di handoff ("coordinator 2", "part 4")
+  ora contano come riprese; (5) l'IA delle onde 2-4 è divisa in due moduli, quello dell'onda 2 e quello "3d-4d".
 
 ** Totale
-In 6 giorni: *821,6 milioni di token, circa 423 $* (in media 70 $ al giorno), per circa 65.000 righe.
+In 11 giorni di lavoro: *1.364 milioni di token, circa 715 $* (in media 65 $ al giorno), per circa
+88.900 righe fuse in ~main~ più 3.100 sui rami di 7b e 8a.
 
-| Componente          | Token (M) | % token |   $ | % costo |
+| Componente          | Token (M) | % token | $   | % costo |
 |---------------------+-----------+---------+-----+---------|
-| Lettura dalla cache | 784,4     | 95,5    | 157 |      37 |
-| Scrittura in cache  | 32,5      | 4,0     | 174 |      41 |
-| Output (stimato)    | 4,6       | 0,6     |  92 |      22 |
+| Lettura dalla cache | 1.306,7   | 95,8    | 261 | 37      |
+| Scrittura in cache  | 49,0      | 3,6     | 273 | 38      |
+| Output              | 8,7       | 0,6     | 181 | 25      |
 
-L'input fuori cache è trascurabile (12.000 token).
+L'input fuori cache è trascurabile (22.000 token).
 
-| Giorno | Token (M) |   $ | Chiamate |
-|--------+-----------+-----+----------|
-|  10-10 | 89,8      |  52 |      483 |
-|  10-11 | 192,0     |  84 |      875 |
-|  10-12 | 204,4     | 105 |    1.673 |
-|  10-13 | 142,4     |  82 |    1.184 |
-|  10-14 | 91,7      |  46 |      843 |
-|  10-15 | 101,3     |  54 |      945 |
+| Giorno | Token (M) | $   | Chiamate | Agenti attivi |
+|--------+-----------+-----+----------+---------------|
+| 10-10  | 89,9      | 53  | 483      | 9             |
+| 10-11  | 192,1     | 85  | 875      | 9             |
+| 10-12  | 204,5     | 108 | 1.673    | 29            |
+| 10-13  | 142,6     | 85  | 1.184    | 20            |
+| 10-14  | 91,8      | 47  | 843      | 14            |
+| 10-15  | 115,5     | 63  | 1.003    | 18            |
+| 10-16  | 138,6     | 59  | 1.124    | 14            |
+| 10-22  | 54,8      | 26  | 501      | 8             |
+| 10-23  | 134,8     | 62  | 1.153    | 14            |
+| 10-24  | 174,9     | 92  | 1.775    | 27            |
+| 11-10  | 25,2      | 36  | 261      | 8             |
 
 Il picco del 12 ottobre è l'onda 3: cinque agenti in parallelo, ciascuno con i propri sub-agenti, più le loro
-riprese.
+riprese. Il 24 ottobre sono finiti l'IA dell'onda 5, l'onda 6 e 7a, e sono partiti 7b e 8a. Il 10 novembre ha
+25 milioni di token ma 36 $: è il giorno su Fable 5.2 ([[*Fable 5.2 costa il doppio per passo][Fable 5.2 costa il doppio per passo]]).
+
+** Per onda
+Risponde alla domanda "il costo aumenta man mano che si va avanti?". Ogni riga è il lavoro degli agenti dei moduli
+di un'onda (coordinatori, sotto-agenti, riprese, merge); l'orchestratore è contato a parte ([[*Costo del processo][Costo del processo]]).
+Una chiamata è un passo di un agente: leggere un file, lanciare un test, scrivere codice. "k token / chiamata" è il
+contesto medio riletto a ogni passo.
+
+| Onda          | Moduli | Agenti | $     | Righe   | $ / 1000 righe | Chiamate / 1000 righe | k token / chiamata | $ / chiamata | Riprese, % del costo |
+|---------------+--------+--------+-------+---------+----------------+-----------------------+--------------------+--------------+----------------------|
+| Fondazione    | 1      | —      | 5,1   | 5.113   | 1,0            | 7                     | 102                | 0,134        | —                    |
+| Onda 1        | 5      | 5      | 38,7  | 11.735  | 3,3            | 28                    | 209                | 0,117        | —                    |
+| Onda 2        | 4      | 9      | 59,6  | 10.407  | 5,7            | 62                    | 221                | 0,092        | —                    |
+| Onda 3        | 4      | 17     | 80,9  | 14.636  | 5,5            | 79                    | 136                | 0,070        | 34                   |
+| Onda 4        | 6      | 28     | 138,2 | 17.518  | 7,9            | 128                   | 117                | 0,061        | 33                   |
+| Onda 5        | 5      | 56     | 180,4 | 21.889  | 8,2            | 158                   | 112                | 0,052        | 57                   |
+| Onda 6        | 2      | 18     | 52,1  | 6.041   | 8,6            | 177                   | 93                 | 0,049        | 28                   |
+| 7a (fuso)     | 1      | 4      | 10,4  | 1.515   | 6,9            | 135                   | 86                 | 0,051        | —                    |
+| 7b (in corso) | 1      | 8      | 17,8  | 1.918 * | 9,3 *          | 141                   | 83                 | 0,066        | 26                   |
+| 8a (in corso) | 1      | 6      | 12,3  | 1.145 * | 10,7 *         | 158                   | 75                 | 0,068        | 39                   |
+
+(*) righe sul ramo al 2026-11-10 23:03, modulo non finito: valori provvisori.
+
+- *Per riga il costo è salito per quattro onde, poi si è fermato.* 3,3 $ ogni 1000 righe nell'onda 1, 5,7 e 5,5
+  nelle onde 2 e 3, 7,9 nella 4, poi 8,2 e 8,6 nelle onde 5 e 6. Dall'onda 1 alla 4 è cresciuto di 2,4 volte; dalla
+  4 alla 6 del 9 %. 7a, il solo modulo fuso dell'onda 7, è costato 6,9 $.
+- *Non è salito il prezzo di un passo: è salito il numero di passi.* Una chiamata costava 0,117 $ nell'onda 1 e
+  0,049 $ nell'onda 6, perché il contesto riletto a ogni passo si è più che dimezzato (da 209k a 93k token, con i
+  tetti di contesto del 12 e del 16 ottobre). Ma per 1000 righe servivano 28 chiamate nell'onda 1 e 177 nell'onda 6,
+  6 volte tanto.
+- Perché servono più passi (spiegazione probabile, non misurata causa per causa): c'è più codice esistente da
+  leggere prima di toccarlo; le verifiche sono cresciute con il progetto (test, partita di riferimento, screenshot,
+  salvataggi); il lavoro di un modulo passa per più mani (1 agente per modulo nell'onda 1, 4-5 nelle onde 3 e 4,
+  9-11 nelle onde 5 e 6) e ogni agente in più rilegge prima di scrivere. Anche l'output per riga è cresciuto: da
+  48k token ogni 1000 righe (onda 1) a 119k (onda 6), cioè note di handoff, rapporti e messaggi oltre al codice.
+- *Il costo totale di un'onda segue la sua dimensione.* 39, 60, 81, 138 e 180 $ dalle onde 1 alla 5, perché ogni
+  onda era più grande (da 5 a 56 agenti, da 12.000 a 22.000 righe). Dalla 6 le onde sono piccole per scelta (2
+  moduli, pensati per una finestra d'uso ciascuno): 52 $ l'onda 6.
+- *La parte che continua a salire è l'IA*: 4,4 $ ogni 1000 righe nell'onda 2, 14,8 $ nel modulo 3d-4d, 19,6 $ in
+  5k. Senza l'IA le onde 2, 4 e 5 costano 6,2, 7,0 e 5,8 $ ogni 1000 righe: l'onda 5 senza IA costa meno della 4,
+  grazie a Cybran (4,9 $) e multigiocatore (3,6 $).
+- *Le riprese pesano*: un terzo del costo delle onde 3 e 4, il 57 % dell'onda 5 (limiti d'uso e 11 coordinatori
+  uno dopo l'altro in 5k), il 28 % dell'onda 6.
+- *7b e 8a, in corso, sono per ora sopra la media* (9,3 e 10,7 $ ogni 1000 righe): il 60 % della loro spesa (18 $
+  su 30) è del 10 novembre, su Fable 5.2 e in due finestre d'uso finite dopo 8-10 minuti.
 
 ** Per modulo
-Ordinati per costo. "$ / 1000 righe" confronta l'impegno con il risultato; per i moduli dell'onda 5 non è ancora
-significativo (conto definitivo: [[*Onde 5, 6 e 7a (conto dopo i merge, 2026-11-10)][Onde 5, 6 e 7a]]).
+Ordinati per costo. "$ / 1000 righe" confronta l'impegno con il risultato.
 
-| Modulo                                 | Agenti | Token (M) | Output (k) | $     | % costo |  Righe | $ / 1000 righe |
-|----------------------------------------+--------+-----------+------------+-------+---------+--------+----------------|
-| Orchestrazione (sessioni principali)   |      — | 81,0      |        518 | 56,0  | 13,2    |      — | —              |
-| Rifinitura SupCom (4f)                 |      9 | 79,5      |        404 | 41,3  | 9,8     |  3.793 | 10,9           |
-| IA schermaglie (onde 2-4)              |      7 | 90,5      |        389 | 39,8  | 9,4     |  4.621 | 8,6            |
-| Navale (3c)                            |      4 | 61,0      |        229 | 31,5  | 7,4     |  3.143 | 10,0           |
-| Mappe, menu, flusso (onda 2)           |      3 | 64,8      |        231 | 24,6  | 5,8     |  3.807 | 6,5            |
-| Armi strategiche (3b)                  |      6 | 45,7      |        254 | 22,3  | 5,3     |  4.343 | 5,1            |
-| Sperimentali e comandanti (4g)         |      5 | 38,3      |        232 | 22,1  | 5,2     |  3.006 | 7,3            |
-| Trasporti (4h)                         |      4 | 37,9      |        225 | 20,1  | 4,8     |  3.350 | 6,0            |
-| Salvataggi e replay (4i)               |      3 | 30,9      |        210 | 16,8  | 4,0     |  4.473 | 3,8            |
-| Sandbox (3e)                           |      5 | 28,1      |        211 | 14,4  | 3,4     |  4.025 | 3,6            |
-| UX (5n, in corso)                      |      6 | 30,6      |        171 | 14,3  | 3,4     |  1.753 | —              |
-| Scala e prestazioni (5m, in corso)     |      5 | 26,0      |        139 | 13,3  | 3,2     |    810 | —              |
-| Nebbia di guerra e intel (onda 2)      |      2 | 30,9      |        135 | 12,7  | 3,0     |  1.332 | 9,5            |
-| Fazione Cybran (5l, in corso)          |      5 | 22,5      |        106 | 11,1  | 2,6     |     68 | —              |
-| Tecnologia T2/T3 (3a)                  |      2 | 22,2      |        120 | 10,5  | 2,5     |  3.125 | 3,3            |
-| Grafica client (onda 1)                |      1 | 20,7      |        162 | 9,9   | 2,3     |  3.361 | 2,9            |
-| Audio e rifinitura (onda 2)            |      2 | 20,6      |        107 | 9,7   | 2,3     |  2.622 | 3,7            |
-| Pathfinding e movimento (onda 1)       |      1 | 18,1      |        128 | 8,9   | 2,1     |  2.428 | 3,7            |
-| Multigiocatore lockstep (5o, in corso) |      4 | 13,8      |        126 | 8,6   | 2,0     |  2.854 | —              |
-| Combattimento (onda 1)                 |      1 | 11,9      |         66 | 7,3   | 1,7     |  1.506 | 4,8            |
-| UI e HUD (onda 1)                      |      1 | 12,0      |         97 | 6,6   | 1,6     |  2.674 | 2,5            |
-| IA usa tutto (5k, in corso)            |      2 | 12,9      |         51 | 6,2   | 1,5     |    368 | —              |
-| Economia e costruzione (onda 1)        |      1 | 6,7       |         77 | 5,5   | 1,3     |  1.644 | 3,3            |
-| Infrastruttura fazioni (j)             |      2 | 11,0      |         81 | 5,1   | 1,2     |    921 | 5,6            |
-| Fondazione (sessione principale)       |      — | 3,9       |        156 | 5,1   | 1,2     |  5.113 | 1,0            |
-|----------------------------------------+--------+-----------+------------+-------+---------+--------+----------------|
-| *Totale*                               |     81 | 821,6     |      4.625 | 423,5 | 100,0   | 65.140 | —              |
+| Modulo                                                | Onda | Agenti | Token (M) | Output (k) | $     | % costo | Righe   | $ / 1000 righe |
+|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+---------+----------------|
+| IA usa tutto (5k)                                     | 5    | 18     | 170,2     | 917        | 76,6  | 10,7    | 3.905   | 19,6           |
+| Fazione Cybran (5l)                                   | 5    | 20     | 88,6      | 617        | 46,6  | 6,5     | 9.466   | 4,9            |
+| Rifinitura SupCom (4f)                                | 4    | 9      | 79,6      | 476        | 42,7  | 6,0     | 3.793   | 11,3           |
+| Comandante e ingegneri (6a)                           | 6    | 13     | 65,9      | 470        | 34,3  | 4,8     | 3.576   | 9,6            |
+| Navale (3c)                                           | 3    | 4      | 61,1      | 260        | 32,1  | 4,5     | 3.143   | 10,2           |
+| IA schermaglie (3d-4d)                                | 4    | 5      | 64,7      | 297        | 29,2  | 4,1     | 1.975   | 14,8           |
+| Mappe, menu, flusso (onda 2)                          | 2    | 3      | 64,8      | 256        | 25,1  | 3,5     | 3.807   | 6,6            |
+| Armi strategiche (3b)                                 | 3    | 6      | 45,7      | 290        | 23,0  | 3,2     | 4.343   | 5,3            |
+| Sperimentali e comandanti (4g)                        | 4    | 5      | 38,4      | 268        | 22,8  | 3,2     | 3.006   | 7,6            |
+| Scala e prestazioni (5m)                              | 5    | 6      | 50,0      | 253        | 21,5  | 3,0     | 1.657   | 13,0           |
+| Trasporti (4h)                                        | 4    | 4      | 37,9      | 256        | 20,7  | 2,9     | 3.350   | 6,2            |
+| UX (5n)                                               | 5    | 7      | 42,8      | 264        | 19,5  | 2,7     | 2.339   | 8,3            |
+| Ordini e selezione (7b), in corso                     | 7    | 8      | 22,4      | 244        | 17,8  | 2,5     | 1.918 * | 9,3 *          |
+| Opzioni partita e squadra (6b)                        | 6    | 5      | 33,7      | 249        | 17,8  | 2,5     | 2.465   | 7,2            |
+| Salvataggi e replay (4i)                              | 4    | 3      | 31,0      | 234        | 17,3  | 2,4     | 4.473   | 3,9            |
+| Multigiocatore lockstep (5o)                          | 5    | 5      | 35,2      | 227        | 16,1  | 2,3     | 4.522   | 3,6            |
+| Sandbox (3e)                                          | 3    | 5      | 28,2      | 243        | 15,0  | 2,1     | 4.025   | 3,7            |
+| Nebbia di guerra e intel (onda 2)                     | 2    | 2      | 30,9      | 147        | 12,9  | 1,8     | 1.332   | 9,7            |
+| Unità mancanti e mura (8a), in corso                  | 8    | 6      | 13,6      | 150        | 12,3  | 1,7     | 1.145 * | 10,7 *         |
+| IA schermaglie (onda 2)                               | 2    | 2      | 25,9      | 147        | 11,6  | 1,6     | 2.646   | 4,4            |
+| Tecnologia T2/T3 (3a)                                 | 3    | 2      | 22,2      | 134        | 10,7  | 1,5     | 3.125   | 3,4            |
+| Rilascio e impostazioni (7a)                          | 7    | 4      | 17,5      | 169        | 10,4  | 1,5     | 1.515   | 6,9            |
+| Grafica client (onda 1)                               | 1    | 1      | 20,7      | 170        | 10,1  | 1,4     | 3.361   | 3,0            |
+| Audio e rifinitura (onda 2)                           | 2    | 2      | 20,6      | 115        | 9,9   | 1,4     | 2.622   | 3,8            |
+| Pathfinding e movimento (onda 1)                      | 1    | 1      | 18,1      | 135        | 9,0   | 1,3     | 2.428   | 3,7            |
+| Combattimento (onda 1)                                | 1    | 1      | 12,0      | 72         | 7,4   | 1,0     | 1.628   | 4,5            |
+| UI e HUD (onda 1)                                     | 1    | 1      | 12,0      | 103        | 6,7   | 0,9     | 2.674   | 2,5            |
+| Economia e costruzione (onda 1)                       | 1    | 1      | 6,7       | 82         | 5,6   | 0,8     | 1.644   | 3,4            |
+| Infrastruttura fazioni (j)                            | 4    | 2      | 11,0      | 92         | 5,3   | 0,7     | 921     | 5,8            |
+| Fondazione (sessione principale)                      | —    | —      | 3,9       | 156        | 5,1   | 0,7     | 5.113   | 1,0            |
+| Orchestrazione e pianificazione (sessioni principali) | —    | 1      | 151,0     | 826        | 89,6  | 12,5    | —       | —              |
+| Documentazione e analisi dei costi (sessioni)         | —    | —      | 38,3      | 381        | 29,7  | 4,2     | —       | —              |
+|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+---------+----------------|
+| *Totale*                                              | —    | 152    | 1.364,4   | 8.700      | 714,6 | 100,0   | 88.854  | —              |
+
+(*) righe sul ramo al 2026-11-10 23:03, modulo non finito. Il totale delle righe conta solo i moduli fusi.
 
 ** Per scopo
-Gli stessi moduli raggruppati per lo scopo che servono.
+Gli stessi moduli raggruppati per lo scopo che servono. Righe e "$ / 1000 righe" contano solo i moduli fusi.
 
-| Scopo                                                              | Token (M) |   $ | % costo |  Righe | $ / 1000 righe |
-|--------------------------------------------------------------------+-----------+-----+---------+--------+----------------|
-| Gameplay SupCom (unità e sistemi)                                  |       386 | 198 |      47 | 28.659 | 6,9            |
-| Esperienza client (grafica, UI, audio, menu, sandbox)              |       177 |  79 |      19 | 18.242 | 4,4            |
-| Coordinamento (orchestratore)                                      |        81 |  56 |      13 |      — | —              |
-| Avversario IA                                                      |       103 |  46 |      11 |  4.989 | 9,2            |
-| Infrastruttura tecnica (fondazione, salvataggi, rete, prestazioni) |        75 |  44 |      10 | 13.250 | 3,3            |
+| Scopo                                                                        | Token (M) | $   | % costo | Righe fuse | $ / 1000 righe |
+|------------------------------------------------------------------------------+-----------+-----+---------+------------+----------------|
+| Gameplay SupCom (unità e sistemi)                                            | 565       | 303 | 42      | 44.220     | 6,6            |
+| Avversario IA                                                                | 261       | 117 | 16      | 8.526      | 13,8           |
+| Esperienza client (grafica, UI, audio, menu, sandbox)                        | 211       | 104 | 15      | 18.828     | 4,6            |
+| Coordinamento (orchestratore, pianificazione)                                | 151       | 90  | 13      | —          | —              |
+| Infrastruttura tecnica (fondazione, salvataggi, rete, prestazioni, rilascio) | 137       | 70  | 10      | 17.280     | 4,1            |
+| Documentazione e analisi dei costi                                           | 38        | 30  | 4       | —          | —              |
 
 Gameplay: economia, combattimento, pathfinding, nebbia, T2/T3, strategiche, navale, sperimentali, trasporti,
-rifinitura 4f, fazioni, Cybran. Client: grafica, UI e HUD, audio, sandbox, UX, mappe e menu. Infrastruttura:
-fondazione, salvataggi e replay, multigiocatore, scala e prestazioni.
+rifinitura 4f, fazioni, Cybran, comandante e ingegneri (6a), opzioni partita e squadra (6b), unità mancanti (8a, in
+corso). Client: grafica, UI e HUD, audio, sandbox, UX, mappe e menu, ordini e selezione (7b, in corso).
+Infrastruttura: fondazione, salvataggi e replay, multigiocatore, scala e prestazioni, rilascio e impostazioni (7a).
 
-Metà della spesa è andata al gameplay. L'avversario IA è lo scopo più caro per riga (9,2 $ ogni 1000 righe),
-l'infrastruttura il più economico (3,3 $): è quasi tutto codice nuovo e separato dal resto.
+Il 42 % della spesa è andato al gameplay. L'avversario IA è lo scopo più caro per riga (13,8 $ ogni 1000 righe),
+l'infrastruttura il più economico (4,1 $): è quasi tutto codice nuovo e separato dal resto.
 
 ** Costo del processo
-Quanto è costato il lavoro che non scrive direttamente il gioco.
+Quanto è costato il lavoro per tipo di agente.
 
-| Voce                                                      | Quanti      | Token (M) |   $ | % costo |
-|-----------------------------------------------------------+-------------+-----------+-----+---------|
-| Agenti al primo lancio                                    | 58 agenti   | 523,6     | 263 |      62 |
-| Riprese (fresh, resume, finish, part 2/3, f2/g2/h2/i2/j2) | 20 agenti   | 179,0     |  86 |      20 |
-| Sessioni principali (orchestratore, fondazione)           | 14 sessioni | 84,8      |  61 |      14 |
-| Agenti di solo merge                                      | 3 agenti    | 34,3      |  13 |       3 |
+| Voce                                                                     | Quanti      | Token (M) | $   | % costo |
+|--------------------------------------------------------------------------+-------------+-----------+-----+---------|
+| Agenti al primo lancio                                                   | 102 agenti  | 726,3     | 379 | 53      |
+| Riprese e successori (fresh, resume, finish, part 2-4, coordinator 2-11) | 47 agenti   | 415,6     | 200 | 28      |
+| Sessioni principali (orchestratore, fondazione, documentazione)          | 23 sessioni | 188,2     | 122 | 17      |
+| Agenti di solo merge                                                     | 3 agenti    | 34,3      | 14  | 2       |
 
-- Avvio di un agente: in mediana un agente fa 24 chiamate, circa 1 $, prima della sua prima modifica a un file
-  (lettura di CLAUDE.md, dei docs e del codice). Sono circa 79 $ in tutto, il 24 % del costo degli agenti.
-- Sub-sub-agenti (lanciati da un agente): 90 $, il 21 % del totale.
-- Limiti dell'abbonamento: le trascrizioni registrano almeno 15 limiti di sessione e 1 limite settimanale. Hanno
-  interrotto 76 trascrizioni tra sessioni e agenti. Il limite vale per tutto l'account, quindi tutti gli agenti in
-  parallelo si fermano insieme, e quasi tutte le riprese della tabella vengono da qui o dal tetto di 300k token di
-  contesto.
+- Riprese e successori: agenti ripartiti dopo un limite d'uso e agenti nuovi che continuano il lavoro di un altro da
+  una nota di handoff (al tetto di contesto). Ognuno riparte da zero e rilegge nota, docs e codice.
+- Avvio di un agente (misura del 2026-10-15 sulle prime onde, non ripetibile: mancano le trascrizioni dei primi
+  giorni): in mediana 24 chiamate, circa 1 $, prima della prima modifica a un file (lettura di CLAUDE.md, dei docs
+  e del codice).
+- Sub-sub-agenti (lanciati da un agente): 70 agenti, 186 $, il 26 % del totale.
+- Coordinatori di modulo: dall'onda 5 l'agente di un modulo lancia sotto-agenti con contesti piccoli e ne integra i
+  pezzi. Sono 22 agenti, 82 $ (11 % del totale). Nei moduli 6a, 6b e 7a il coordinatore è un terzo del costo del
+  modulo (35, 33 e 38 %).
+- Limiti dell'abbonamento: almeno 25 limiti di sessione e 1 limite settimanale (elenco in ROADMAP "NEXT STEPS"). Il
+  limite vale per tutto l'account, quindi tutti gli agenti in parallelo si fermano insieme; quasi tutte le riprese
+  vengono da qui o dal tetto di contesto.
 
 ** Cosa insegnano i numeri
 
 *** Il contesto costa più del codice
-- Dato: il 95,5 % dei token sono riletture dalla cache; l'output, cioè il codice e il testo scritti, è il 22 % del
+- Dato: il 95,8 % dei token sono riletture dalla cache; l'output, cioè il codice e il testo scritti, è il 25 % del
   costo. Ogni chiamata rilegge tutto il contesto dell'agente, quindi il costo segue la dimensione del contesto per il
   numero di turni, non le righe scritte.
-- Lezione: contesti piccoli e pochi turni costano meno. Il tetto di 300k token per agente (WORKFLOW) serve anche
-  a contenere il costo, non solo la qualità.
+- Lezione: contesti piccoli e pochi turni costano meno. I tetti di contesto (300k dal 12 ottobre, 150k di base dal
+  16; WORKFLOW) hanno portato il contesto medio riletto a ogni passo da 209k token (onda 1) a 93k (onda 6) e il
+  costo di un passo da 0,117 a 0,049 $.
+
+*** Il costo per riga è salito fino all'onda 4, poi si è fermato
+- Dato: 3,3, 5,7, 5,5, 7,9, 8,2 e 8,6 $ ogni 1000 righe dalle onde 1 alla 6 ([[*Per onda][Per onda]]). I passi per 1000 righe sono
+  passati da 28 a 177 mentre il costo di un passo si dimezzava.
+- Lezione: il costo per riga non cresce da solo con l'età del progetto. Cresce con i passi che ogni riga richiede:
+  codice da leggere, verifiche, passaggi di mano tra agenti. Le leve sono brief che indicano già file e contratti,
+  meno agenti per modulo, meno riprese.
 
 *** Il codice nuovo costa meno del codice che tocca sistemi esistenti
-- Dato: fondazione 1,0 $ ogni 1000 righe, onda 1 da 2,5 a 4,8 $. Funzioni che toccano molti sistemi esistenti
-  costano da 2 a 4 volte tanto: rifinitura 4f 10,9 $, navale 10,0 $, nebbia 9,5 $, IA 8,6 $.
-- Lezione: il costo per riga cresce con il codebase, perché ogni agente deve prima leggere i sistemi che tocca. Un
-  brief che indica già i file e i contratti (ARCHITECTURE) fa risparmiare lettura.
+- Dato: fondazione 1,0 $ ogni 1000 righe, onda 1 da 2,5 a 4,5 $. Funzioni che toccano molti sistemi esistenti
+  costano da 2 a 4 volte tanto: rifinitura 4f 11,3 $, navale 10,2 $, nebbia 9,7 $. Vale anche a progetto avanzato:
+  nell'onda 5 i Cybran (80 blueprint e modelli, pezzi separabili con un contratto scritto) costano 4,9 $ con 20
+  agenti, il multigiocatore (codice nuovo in un progetto suo) 3,6 $; nell'onda 4 salvataggi e replay 3,9 $.
+- Lezione: ogni agente deve prima leggere i sistemi che tocca. Un brief che indica già i file e i contratti
+  (ARCHITECTURE) fa risparmiare lettura. Il contenuto nuovo e separabile regge bene molti agenti piccoli.
 
 *** Ogni agente in più ha un costo fisso
 - Dato: circa 1 $ di avvio per agente. La rifinitura 4f ha usato 9 agenti (sub-agenti, ripresa f2, merge) per
-  3.793 righe ed è il modulo più caro per riga.
+  3.793 righe: 11,3 $ ogni 1000 righe. Nelle onde 6 e 7: 6a 13 agenti per 3.576 righe (9,6 $), 6b 5 agenti per
+  2.465 righe (7,2 $), 7a 4 agenti per 1.515 righe (6,9 $).
 - Lezione: spezzare un lavoro in sub-agenti conviene solo se ogni pezzo è grande e indipendente. I lavori piccoli
-  conviene farli fare all'agente che ha già il contesto.
+  conviene farli fare all'agente che ha già il contesto. Meno agenti per modulo resta la scelta più economica.
 
-*** Le riprese costano un quinto del totale
-- Dato: 20 agenti di ripresa, 86 $ (20 %). Ogni ripresa riparte da zero e rilegge handoff, docs e codice.
+*** Le riprese costano più di un quarto del totale
+- Dato: 47 agenti di ripresa, 200 $ (28 %). Nell'onda 5 sono il 57 % del costo dell'onda. Ogni ripresa
+  riparte da zero e rilegge handoff, docs e codice.
 - Lezione: brief dimensionati per finire dentro una finestra di sessione; handoff scritti prima del limite (regola
   già in WORKFLOW); non lanciare un'onda intera poco prima di un limite di sessione.
 
 *** L'IA costa in turni, non in righe
-- Dato: l'IA è il modulo con più token (90,5 M) per 4.621 righe. La taratura gioca centinaia di partite headless e
-  ogni giro misura → modifica → misura rilegge il contesto.
-- Lezione: per l'IA conta tenere corto quello che ogni giro rilegge: dagli strumenti di misura basta il riassunto
-  (vittorie, sconfitte, durata, costo per tick), non i log.
+- Dato: l'IA è costata 117 $ per 8.526 righe (13,8 $ ogni 1000 righe) e sale a ogni giro: 4,4 $ nell'onda 2, 14,8 $
+  nel modulo 3d-4d, 19,6 $ in 5k, il modulo più caro di sempre (18 agenti, 11 coordinatori uno dopo l'altro), che ha
+  lasciato obiettivi non raggiunti (AI_TUNING "Final numbers of agent (k)"). La taratura gioca centinaia di partite
+  headless e ogni giro misura → modifica → misura rilegge il contesto. Anche scala e prestazioni (5m) costa molto
+  per riga (13,0 $): è lavoro di misura e diagnosi, non di scrittura.
+- Lezione: per taratura e diagnosi il costo si prevede dal numero di giri di misura, non dalle righe. Conta tenere
+  corto quello che ogni giro rilegge: dagli strumenti di misura basta il riassunto (vittorie, sconfitte, durata,
+  costo per tick), non i log. Prima di un altro giro di taratura serve una modifica di progetto dell'IA (onda 9a),
+  perché altri giri con le stesse regole non hanno chiuso gli stalli.
 
 *** Coordinamento
-- Dato: orchestratore 56 $ (13 %), agenti di solo merge 13 $ (3 %): il 16 % del totale per coordinare 81 agenti.
+- Dato: orchestratore e pianificazione 90 $ (12,5 %), agenti di solo merge 14 $ (1,9 %): il
+  14,5 % del totale per coordinare 152 agenti. Documentazione e analisi dei costi: 30 $ (4 %).
+  Sulla spesa di un giorno per orchestratore e moduli, l'orchestratore pesa dal 6 al 16 % nei giorni normali, il
+  20-22 % nei giorni con molte riprese (16 e 23 ottobre) e il 34 % il 10 novembre, quando due finestre d'uso sono
+  finite dopo 8-10 minuti di lavoro degli agenti.
 - Lezione: è un costo fisso del lavoro a onde. Va tenuto basso con report brevi degli agenti e docs che
-  l'orchestratore non deve rileggere ogni volta.
+  l'orchestratore non deve rileggere ogni volta. Una finestra d'uso troppo corta lo fa salire: l'orchestratore
+  spende comunque per fermare, annotare e far ripartire gli agenti.
 
-*** Onde 5, 6 e 7a (conto dopo i merge, 2026-11-10)
-Costi dal registro dei token ([[file:tokens/summary.org][tokens/summary.org]]), righe misurate come sopra (aggiunte in ~src/~, ~tests/~,
-~tools/~, ~data/~ dal merge in ~main~). La tabella "Per modulo" resta la fotografia del 2026-10-15.
+*** Il tetto di contesto più basso non ha fatto salire il costo per riga
+- Dato: con il tetto a 150-200k l'onda 6 costa per riga quasi quanto l'onda 5 (8,6 contro 8,2 $) e 7a meno (6,9 $).
+- Lezione: il danno al risultato è seguito a parte (WORKFLOW "Fragmentation").
 
-| Modulo                              | Agenti |     $ |  Righe | $ / 1000 righe |
-|-------------------------------------+--------+-------+--------+----------------|
-| IA usa tutto (5k, con la marina)    |     18 |  76,4 |  3.905 |           19,6 |
-| Fazione Cybran (5l)                 |     20 |  46,3 |  9.466 |            4,9 |
-| Comandante e ingegneri (6a)         |     13 |  34,3 |  3.576 |            9,6 |
-| Scala e prestazioni (5m)            |      6 |  21,4 |  1.657 |           12,9 |
-| UX (5n)                             |      7 |  19,3 |  2.339 |            8,3 |
-| Opzioni partita e squadra (6b)      |      5 |  17,8 |  2.465 |            7,2 |
-| Multigiocatore lockstep (5o)        |      5 |  16,0 |  4.522 |            3,5 |
-| Rilascio e impostazioni (7a)        |      4 |  10,4 |  1.515 |            6,9 |
-|-------------------------------------+--------+-------+--------+----------------|
-| *Onda 5* (k, l, m, n, o)            |     56 | 179,4 | 21.889 |            8,2 |
-| *Onda 6* (6a, 6b)                   |     18 |  52,1 |  6.041 |            8,6 |
-
-Nel registro restano 29 agenti "da classificare" (77 $, l'11 % del totale): sono sub-agenti lanciati senza l'etichetta
-dello scopo, quindi i costi dei moduli qui sopra sono un minimo.
-- Dato: l'IA dell'onda 5 è il modulo più caro di sempre per riga (19,6 $ ogni 1000 righe, 11 coordinatori uno dopo
-  l'altro) e ha lasciato obiettivi non raggiunti (AI_TUNING "Final numbers of agent (k)"). Anche scala e prestazioni
-  costa molto per riga (12,9 $): è lavoro di misura e diagnosi, non di scrittura.
-- Lezione: conferma "L'IA costa in turni, non in righe". Per taratura e diagnosi il costo si prevede dal numero di
-  giri di misura, non dalle righe. Prima di un altro giro di taratura serve una modifica di progetto dell'IA
-  (onda 9a), perché altri giri con le stesse regole non hanno chiuso gli stalli.
-- Dato: i Cybran costano 4,9 $ ogni 1000 righe con 20 agenti: sono in gran parte dati (80 blueprint) e modelli, cioè
-  pezzi separabili con un contratto scritto. Il multigiocatore, codice nuovo in un progetto suo, 3,5 $.
-- Lezione: il contenuto nuovo e separabile regge bene molti agenti piccoli; conferma "Il codice nuovo costa meno".
-- Dato: 6a ha usato 13 agenti per 3.576 righe (9,6 $), 6b 5 agenti per 2.465 righe (7,2 $), 7a 4 agenti per 1.515
-  righe (6,9 $). Con il tetto di contesto a 150-200k l'onda 6 costa per riga quanto l'onda 5 (8,6 contro 8,2 $) e
-  la 7a meno.
-- Lezione: il tetto più basso non ha fatto salire il costo per riga; il danno al risultato è seguito a parte
-  (WORKFLOW "Fragmentation"). Meno agenti per modulo resta la scelta più economica.
+*** Fable 5.2 costa il doppio per passo
+- Dato: il 10 novembre orchestratore e agenti hanno girato su Fable 5.2 (la scelta ~/model~ del proprietario, che
+  gli agenti ereditano). Sugli stessi due moduli, 7b e 8a, una chiamata è costata 0,047 $ il 24 ottobre con Opus 5.5
+  e 0,093 $ il 10 novembre con Fable 5.2, con contesti simili (83k e 75k token). Per riga: circa 2.060 righe per
+  12 $ il 24 ottobre (5,9 $ ogni 1000 righe), circa 1.000 righe per 18 $ il 10 novembre (18 $ ogni 1000 righe).
+  Il confronto per riga è solo indicativo: poche righe, lavoro diverso (test e correzioni invece di prime stesure)
+  e tre interruzioni per limite d'uso. Con Fable 5.2 una finestra d'uso contiene circa un quinto del lavoro
+  (WORKFLOW "Usage limits").
+- Lezione: il modello pesa sul costo più di ogni altra scelta misurata qui. Quale modello dare agli agenti è una
+  decisione aperta del proprietario (WORKFLOW "Usage limits").

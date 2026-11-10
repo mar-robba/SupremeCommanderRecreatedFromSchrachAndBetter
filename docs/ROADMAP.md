@@ -42,7 +42,9 @@ agents and the account was then blocked, to 2026-11-10):
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
 - **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW; then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
+  in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` and, after the last merge of
+  the wave, the "Costi" chapter of LESSONS (WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far: LESSONS
+  "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need

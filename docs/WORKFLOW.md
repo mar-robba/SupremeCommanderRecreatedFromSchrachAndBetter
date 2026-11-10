@@ -56,7 +56,9 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    in [HISTORY.md](HISTORY.md), in the wave's section, so the owner can read what is being built.
 3. **Start.** Give every agent (and every sub-agent) a description that starts with its purpose tag, e.g.
    `[Fazione Cybran (5l)] client models`, so the token ledger files its cost under that purpose
-   ([tokens/README.org](tokens/README.org)). One agent per area with `isolation: "worktree"`: it gets its own
+   ([tokens/README.org](tokens/README.org)). A new purpose also needs its area and its wave in
+   `tools/token-ledger/purposes.json` (`aree`, `onde`), or its cost shows up as "Da classificare" (it happened to
+   waves 6-8 until 2026-11-10; the session-start hook now names the purposes without an area). One agent per area with `isolation: "worktree"`: it gets its own
    branch and folder under `.claude/worktrees/`. The worktree may be created from `origin/main`, which is stale,
    so the agent's first step is `git merge main` (the local branch).
 4. **While they run.** Watch their context size (below) and handle usage limits (below). Answer questions; don't
@@ -69,8 +71,11 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    branch's worktree. It merges main into the branch there and resolves the conflicts. Then main merges the
    branch with no conflicts.
 7. **After the merge.** Copy the agent's report into [HISTORY.md](HISTORY.md) (its own section) and update ROADMAP
-   "NEXT STEPS". Commit `docs/tokens/` (the hooks keep it current); after the last merge of a wave, update the
-   "Costi" chapter of [LESSONS.org](LESSONS.org) with the wave's numbers. Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
+   "NEXT STEPS". Write the lines the module added into `purposes.json` (`righe`; the command is in
+   [tokens/README.org](tokens/README.org) "Onde e righe"), run `ledger.py update` and commit `docs/tokens/` (the hooks
+   keep it current): `summary.org` then shows the module's and the wave's cost per 1000 lines. After the last merge of
+   a wave, bring the whole "Costi" chapter of [LESSONS.org](LESSONS.org) up to date with `summary.org` (its tables,
+   not only a new paragraph: from 2026-10-15 to 2026-11-10 the main tables stayed at the wave 4 numbers). Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
    A locked worktree needs `git worktree unlock <path>` first.
 8. **Cross-module bugs** often appear only after a merge (example: anti-air vs orbiting aircraft). Send them to the
    agent that owns the area. That agent runs `git merge main` first.
