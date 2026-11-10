@@ -285,6 +285,7 @@ dello scopo, quindi i costi dei moduli qui sopra sono un minimo.
   pezzi separabili con un contratto scritto. Il multigiocatore, codice nuovo in un progetto suo, 3,5 $.
 - Lezione: il contenuto nuovo e separabile regge bene molti agenti piccoli; conferma "Il codice nuovo costa meno".
 - Dato: 6a ha usato 13 agenti per 3.576 righe (9,6 $), 6b 5 agenti per 2.465 righe (7,2 $), 7a 4 agenti per 1.515
-  righe (6,9 $). Con il tetto di contesto a 150-200k le onde 6 e 7a costano per riga come l'onda 5 (8,2 $) o meno.
+  righe (6,9 $). Con il tetto di contesto a 150-200k l'onda 6 costa per riga quanto l'onda 5 (8,6 contro 8,2 $) e
+  la 7a meno.
 - Lezione: il tetto più basso non ha fatto salire il costo per riga; il danno al risultato è seguito a parte
   (WORKFLOW "Fragmentation"). Meno agenti per modulo resta la scelta più economica.
