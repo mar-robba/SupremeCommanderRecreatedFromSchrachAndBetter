@@ -72,7 +72,7 @@ public sealed class OrdersUiDemo
             for (int k = 0; k < snap.UnitCount; k++)
             {
                 ref var v = ref snap.Units[k];
-                if (v.Army == army && v.Bp == tank && Vector2.Distance(new Vector2(v.Pos.X, v.Pos.Z), _spawn) < 14f)
+                if (v.Army == army && v.Bp == tank && Vector2.Distance(new Vector2(v.Pos.X, v.Pos.Z), _spawn) < 22f)
                     picked.Add(new UnitHandle(v.Index, v.Gen));
             }
             if (picked.Count == 0) return;
