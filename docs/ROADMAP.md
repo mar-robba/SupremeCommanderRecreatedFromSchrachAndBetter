@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-24 11:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-10 14:10 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -13,14 +13,18 @@ main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o)
 writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
 prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-10-24 11:10, session fa417db4):
+**ON RESUME** (2026-11-10 14:10, session 3de864d5; the work paused from 2026-10-24 11:25, when a usage limit cut both
+agents and the account was then blocked, to 2026-11-10):
 - If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh coordinator there
   with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
   `agent_ctx.py --watch 135000 <id>=185000 ...`.
 - **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
-  `wave7b-orders` from main), coordinator 1 (cap 200k medium).
+  `wave7b-orders` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
+  commit 7ad9342; sim commands and the formation/waypoint UI code were done, selection keys, pings UI,
+  notifications and the finish were open; the branch was 15 commits behind main).
 - **Running:** **(8a) Missing units & walls** (G8, G9, Atlantis dive): worktree `.claude/worktrees/wave8a` (branch
-  `wave8a-units` from main), coordinator 1 (cap 200k medium).
+  `wave8a-units` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
+  commit 48673e7 = 9 untested blueprint drafts; all five pieces were open).
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
 - **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
@@ -32,6 +36,7 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
 - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
+  2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
