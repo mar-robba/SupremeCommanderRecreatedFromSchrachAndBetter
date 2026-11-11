@@ -13,10 +13,16 @@ Sources (see docs/tokens/README.org):
 - ~/.claude.json projects[<repo>].last* : Claude Code's exact counter, kept for the LAST session only. `snapshot`
   copies it into docs/tokens/counters.jsonl, and `update` uses it to calibrate that session's output estimate.
 The ledger keeps rows whose transcripts were deleted (Claude Code removes transcripts after cleanupPeriodDays).
-Standard library only. Purposes: tools/token-ledger/purposes.json.
+Standard library only. Purposes, their areas and waves, and the lines each module merged: tools/token-ledger/purposes.json.
 """
 import csv, datetime, fcntl, glob, io, json, os, re, subprocess, sys, time
 from collections import Counter, defaultdict
+
+try:
+    from zoneinfo import ZoneInfo
+    LOCAL_TZ = ZoneInfo('Europe/Rome')  # only used to group rows by day
+except Exception:  # no time zone database on this machine
+    LOCAL_TZ = datetime.timezone(datetime.timedelta(hours=1))
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.dirname(os.path.dirname(HERE))
@@ -32,16 +38,17 @@ CACHE_DIR = os.path.join(os.environ.get('XDG_CACHE_HOME', os.path.expanduser('~/
 CACHE = os.path.join(CACHE_DIR, 'cache.json')
 LOCK = os.path.join(CACHE_DIR, 'lock')
 CACHE_VERSION = 2
-LOCAL_TZ = datetime.timezone(datetime.timedelta(hours=2))  # Europe/Rome (summer); only used to group rows by day
 
 # USD per million tokens: input, cache write 5 min, cache write 1 h, cache read, output (API list prices).
 PRICES = {
     'claude-opus-5-5': (4, 5, 8, 0.20, 20),
-    'claude-sonnet-5-5': (2, 2.5, 4, 0.20, 10),
+    'claude-sonnet-5-5': (2, 2.5, 4, 0.10, 10),
     'claude-haiku-5-5': (0.10, 0.125, 0.20, 0.01, 0.50),
     'claude-fable-5-1': (10, 12.5, 20, 0.25, 50),
+    'claude-fable-5-2': (8, 10, 16, 0.20, 40),  # cache writes = input x 1.25 (5 min) and x 2 (1 h), as for the others
 }
-DEFAULT_PRICE = PRICES['claude-opus-5-5']
+DEFAULT_PRICE = PRICES['claude-opus-5-5']  # a model missing above is priced like this and named in summary.org
+UNCLASSIFIED = 'Da classificare'
 
 FIELDS = ['chiave', 'giorno', 'sessione', 'agente', 'padre', 'tipo', 'scopo', 'area', 'descrizione', 'inizio', 'fine',
           'modelli', 'chiamate', 'input', 'cache_scrittura', 'cache_lettura', 'output', 'output_fonte', 'usd']
@@ -211,7 +218,9 @@ def agent_kind(desc):
     d = desc.lower()
     if d.startswith('merge') or '] merge' in d:
         return 'merge'
-    if any(s in d for s in ('fresh', 'resume', 'part 2', 'part 3', 'finish', 'agent g2', 'agent h2', 'agent i2', 'agent f2')):
+    if any(s in d for s in ('fresh', 'resume', 'finish', 'agent g2', 'agent h2', 'agent i2', 'agent f2')):
+        return 'ripresa'
+    if re.search(r'\b(coordinator|agent|part) ([2-9]|\d\d)\b', d):  # "coordinator 3", "navy agent 2", "part 4": a successor
         return 'ripresa'
     return 'agente'
 
@@ -250,6 +259,28 @@ def find_tag(tags, ident):
     return hit
 
 
+def valid_area(area, pur):
+    """The area as spelled in purposes.json 'aree_valide' (case does not matter), or '' if it is not one of them."""
+    for a in pur.get('aree_valide', []):
+        if a.lower() == (area or '').strip().lower():
+            return a
+    return ''
+
+
+def classify(sid, aid, desc, ts, tags, pur):
+    """-> (scopo, area) of a session or agent: tag > [scopo] in the description > rule > default."""
+    scopo = agent_scopo(desc, pur) if aid else session_scopo(sid, ts, pur)
+    area = ''
+    t = find_tag(tags, aid or sid)
+    if t:
+        scopo, area = t['scopo'], valid_area(t['area'], pur)
+    return scopo, area or pur['aree'].get(scopo, UNCLASSIFIED)
+
+
+def row_key(sid, aid, scopo, day):
+    return '%s/%s/%s/%s' % (sid, aid or 'main', scopo, day)
+
+
 def tag(ident, scopo, area):
     tags = [t for t in read_tags() if t['id'] != ident]
     tags.append(dict(id=ident, scopo=scopo, area=area or '', data=datetime.date.today().isoformat()))
@@ -269,9 +300,17 @@ def hello():
         sid = ''
     if not sid:
         return
+    try:  # never let a broken purposes.json or ledger.csv stop a session from starting
+        areas = ', '.join(load_purposes().get('aree_valide', []))
+        todo = sorted({r['scopo'] for r in read_ledger().values() if r['area'] == UNCLASSIFIED})
+    except Exception:
+        areas, todo = 'vedi docs/tokens/README.org', []
     msg = ('Registro token (docs/tokens/): questa sessione è %s. Quando lo scopo è chiaro, registralo con '
-           'python3 tools/token-ledger/ledger.py tag %s "SCOPO" --area AREA (aree: vedi docs/tokens/summary.org). '
-           'Agli agenti dai una descrizione che inizia con [SCOPO].' % (sid[:8], sid[:8]))
+           'python3 tools/token-ledger/ledger.py tag %s "SCOPO" --area AREA (aree: %s). '
+           'Agli agenti dai una descrizione che inizia con [SCOPO].' % (sid[:8], sid[:8], areas))
+    if todo:
+        msg += (' Scopi ancora senza area nel registro: %s. Aggiungili ad "aree" (e a "onde", "righe" dopo il merge) in '
+                'tools/token-ledger/purposes.json, poi ledger.py update.' % '; '.join(todo))
     print(json.dumps({'hookSpecificOutput': {'hookEventName': 'SessionStart', 'additionalContext': msg}}))
 
 
@@ -347,19 +386,15 @@ def build_rows(parsed, counters, pur):
     desc_of = {a: m.get('description', '') for a, m in meta.items()}
     for c in calls:
         path, sid, aid, ts, model = c[:5]
-        tag = find_tag(tags, aid or sid)
         if aid:
             desc = desc_of.get(aid, '')
-            scopo, kind = agent_scopo(desc, pur), agent_kind(desc)
+            kind = agent_kind(desc)
         else:
             desc = parsed[path].get('prompt') or ''
-            scopo, kind = session_scopo(sid, ts, pur), 'sessione'
-        area = pur['aree'].get(scopo, 'Da classificare')
-        if tag:
-            scopo = tag['scopo']
-            area = tag['area'] or pur['aree'].get(scopo, 'Da classificare')
+            kind = 'sessione'
+        scopo, area = classify(sid, aid, desc, ts, tags, pur)
         day = local_day(ts)
-        key = '%s/%s/%s/%s' % (sid, aid or 'main', scopo, day)
+        key = row_key(sid, aid, scopo, day)
         r = rows.get(key)
         if r is None:
             r = rows[key] = dict(chiave=key, giorno=day, sessione=sid, agente=aid,
@@ -394,6 +429,27 @@ def read_ledger():
             return {r['chiave']: r for r in csv.DictReader(f)}
     except OSError:
         return {}
+
+
+def keep_row(rows, r, tags, pur):
+    """Add a ledger row whose transcript is gone. Its tokens and dollars stay as they were; its purpose and area
+    follow today's tags and rules, so a purpose can still be renamed, split or given an area after 30 days."""
+    r = dict(r)
+    if r['agente']:
+        r['tipo'] = agent_kind(r['descrizione'])
+    r['scopo'], r['area'] = classify(r['sessione'], r['agente'], r['descrizione'], r['inizio'], tags, pur)
+    r['chiave'] = row_key(r['sessione'], r['agente'], r['scopo'], r['giorno'])
+    old = rows.get(r['chiave'])
+    if old is None:
+        rows[r['chiave']] = r
+        return
+    for k in ('chiamate', 'input', 'cache_scrittura', 'cache_lettura', 'output'):  # two rows became one purpose
+        old[k] = int(old[k]) + int(r[k])
+    old['usd'] = '%.2f' % (float(old['usd']) + float(r['usd']))
+    old['inizio'], old['fine'] = min(old['inizio'], r['inizio']), max(old['fine'], r['fine'])
+    old['modelli'] = '+'.join(sorted(set(old['modelli'].split('+')) | set(r['modelli'].split('+'))))
+    f = {old['output_fonte'], r['output_fonte']}
+    old['output_fonte'] = 'stimato' if 'stimato' in f else 'calibrato' if 'calibrato' in f else 'esatto'
 
 
 def write_text(path, text):
@@ -445,10 +501,11 @@ def org_table(header, rows):
 
 
 def group(rows, key):
-    g = defaultdict(lambda: dict(n=0, tok=0, out=0, usd=0.0, last='', agents=set()))
+    g = defaultdict(lambda: dict(n=0, calls=0, tok=0, out=0, usd=0.0, last='', agents=set()))
     for r in rows:
         e = g[key(r)]
         e['n'] += 1
+        e['calls'] += int(r['chiamate'])
         e['tok'] += tok(r)
         e['out'] += int(r['output'])
         e['usd'] += float(r['usd'])
@@ -460,29 +517,64 @@ def group(rows, key):
     return g
 
 
-def summary_tables(rows, days=None):
+def per_1000(usd, lines):
+    return it(1000 * usd / lines) if lines else '—'
+
+
+def wave_table(rows, pur, tot):
+    """One row per wave: the agents of its modules (coordinators, sub-agents, resumes, merges). Main sessions and
+    purposes without a wave in purposes.json 'onde' go to the last row. Lines come from purposes.json 'righe'
+    (written after each merge); a wave gets its $ per 1000 lines only when all its modules are merged."""
+    onde, righe = pur.get('onde', {}), pur.get('righe', {})
+    g = group(rows, lambda r: onde.get(r['scopo'], ''))
+    scopi = defaultdict(set)
+    for r in rows:
+        scopi[onde.get(r['scopo'], '')].add(r['scopo'])
+    body = []
+    for w, e in sorted(g.items(), key=lambda x: (x[0] == '', int(x[0]) if x[0].isdigit() else 0)):
+        done = w != '' and all(s in righe for s in scopi[w])
+        lines = sum(righe[s] for s in scopi[w]) if done else 0
+        name = 'Fuori onda' if not w else 'Fondazione' if w == '0' else 'Onda ' + w
+        body.append([name, str(len(scopi[w])) if w else '—', str(e['agents']), it(e['calls'], 0),
+                     it(e['tok'] / 1e6), it(e['tok'] / 1e3 / e['calls'], 0) if e['calls'] else '—',
+                     it(e['usd'] / e['calls'], 3) if e['calls'] else '—', it(e['usd']), it(100 * e['usd'] / tot),
+                     it(lines, 0) if done else '—' if not w else 'in corso', per_1000(e['usd'], lines),
+                     it(1000 * e['calls'] / lines, 0) if lines else '—', local_day(e['last'] + 'Z') if e['last'] else ''])
+    return org_table(['Onda', 'Moduli', 'Agenti', 'Chiamate', 'Token (M)', 'k token / chiamata', '$ / chiamata', '$',
+                      '% costo', 'Righe', '$ / 1000 righe', 'Chiamate / 1000 righe', 'Ultima attività'], body)
+
+
+def summary_tables(rows, pur, days=None):
     if days:
         cut = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)).strftime('%Y-%m-%dT%H:%M')
         rows = [r for r in rows if r['fine'] >= cut]
     tot = sum(float(r['usd']) for r in rows) or 1.0
-    def table(g, title):
-        body = [[k, str(e['agents']), it(e['tok'] / 1e6), it(e['out'] / 1e3, 0), it(e['usd']), it(100 * e['usd'] / tot),
-                 local_day(e['last'] + 'Z') if e['last'] else ''] for k, e in sorted(g.items(), key=lambda x: -x[1]['usd'])]
-        return org_table([title, 'Agenti', 'Token (M)', 'Output (k)', '$', '% costo', 'Ultima attività'], body)
-    return rows, tot, table(group(rows, lambda r: r['area']), 'Area'), table(group(rows, lambda r: r['scopo']), 'Scopo')
+    onde, righe = pur.get('onde', {}), pur.get('righe', {})
+    def table(g, title, by_purpose=False):
+        body = []
+        for k, e in sorted(g.items(), key=lambda x: -x[1]['usd']):
+            row = [k, str(e['agents']), it(e['tok'] / 1e6), it(e['out'] / 1e3, 0), it(e['usd']), it(100 * e['usd'] / tot)]
+            if by_purpose:
+                row += [onde.get(k, '—'), it(righe[k], 0) if k in righe else '—', per_1000(e['usd'], righe.get(k))]
+            body.append(row + [local_day(e['last'] + 'Z') if e['last'] else ''])
+        head = [title, 'Agenti', 'Token (M)', 'Output (k)', '$', '% costo']
+        return org_table(head + (['Onda', 'Righe', '$ / 1000 righe'] if by_purpose else []) + ['Ultima attività'], body)
+    return (rows, tot, table(group(rows, lambda r: r['area']), 'Area'),
+            table(group(rows, lambda r: r['scopo']), 'Scopo', True), wave_table(rows, pur, tot))
 
 
-def write_summary(rows, counters, ratio):
+def write_summary(rows, counters, ratio, pur):
     rows = list(rows.values())
-    rows, tot, by_area, by_scopo = summary_tables(rows)
+    rows, tot, by_area, by_scopo, by_onda = summary_tables(rows, pur)
     last = max((r['fine'] for r in rows), default='')
     days = group(rows, lambda r: r['giorno'])
     day_rows = [[d, it(e['tok'] / 1e6), it(e['usd']), str(e['agents'])] for d, e in sorted(days.items())]
     recent = sorted(rows, key=lambda r: (r['fine'], r['chiave']), reverse=True)[:20]
     recent_rows = [[r['fine'][:16].replace('T', ' '), r['tipo'], r['scopo'], (r['descrizione'] or '')[:50],
                     it(tok(r) / 1e6), r['usd'], r['output_fonte']] for r in recent]
-    todo = sorted({(r['scopo'], r['descrizione'][:60]) for r in rows if r['area'] == 'Da classificare'})
+    todo = group([r for r in rows if r['area'] == UNCLASSIFIED], lambda r: r['scopo'])
     fonti = Counter(r['output_fonte'] for r in rows)
+    unpriced = sorted({m for r in rows for m in r['modelli'].split('+') if m and 'claude-' + m not in PRICES})
     out = ['#+TITLE: Registro dei token',
            '#+LANGUAGE: it',
            '#+STARTUP: showall',
@@ -496,17 +588,29 @@ def write_summary(rows, counters, ratio):
                len({r['agente'] for r in rows if r['agente']})),
            'Output: %d righe esatte, %d calibrate sul contatore di Claude Code, %d stimate (testo visibile / 4 × %s).'
            % (fonti['esatto'], fonti['calibrato'], fonti['stimato'], it(ratio, 2)),
-           '',
-           '* Per area', by_area, '',
+           '']
+    if unpriced:
+        out += ['*Modelli senza prezzo* in ~ledger.py~ (contati al prezzo di Opus 5.5, da aggiungere a ~PRICES~): %s.'
+                % ', '.join(unpriced), '']
+    out += ['* Per area', by_area, '',
+           '* Per onda',
+           'Il lavoro degli agenti di ogni onda (coordinatori, sotto-agenti, riprese, merge). "Fuori onda": sessioni',
+           'principali (orchestratore, documentazione) e pianificazione. Una chiamata è un passo di un agente (leggere un',
+           'file, lanciare un test, scrivere codice); "k token / chiamata" è il contesto medio riletto a ogni passo.',
+           'Righe = righe aggiunte in ~src/~, ~tests/~, ~tools/~, ~data/~ dal merge del modulo (tabella ~righe~ di',
+           '~purposes.json~); "in corso" = almeno un modulo dell\'onda non è ancora fuso in ~main~. Lettura dei numeri:',
+           'capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].',
+           '', by_onda, '',
            '* Per scopo', by_scopo, '',
            '* Per giorno', org_table(['Giorno', 'Token (M)', '$', 'Agenti'], day_rows), '',
            '* Ultime attività', org_table(['Fine (UTC)', 'Tipo', 'Scopo', 'Descrizione', 'Token (M)', '$', 'Output'],
                                          recent_rows), '']
     if todo:
         out += ['* Da classificare',
-                'Etichettarli con ~ledger.py tag ID SCOPO --area AREA~, aggiungere una regola o l\'area dello scopo in',
-                '~tools/token-ledger/purposes.json~, oppure dare agli agenti una descrizione che inizi con ~[scopo]~.', '']
-        out += ['- %s: %s' % (s, d) for s, d in todo] + ['']
+                'Scopi senza area: aggiungerli alla tabella ~aree~ di ~tools/token-ledger/purposes.json~ (e a ~onde~; a',
+                '~righe~ dopo il merge), poi ~ledger.py update~. Un agente senza scopo si etichetta con',
+                '~ledger.py tag ID SCOPO --area AREA~; ai prossimi dare una descrizione che inizi con ~[scopo]~.', '']
+        out += ['- %s: %d agenti, %s $' % (s, e['agents'], it(e['usd'])) for s, e in sorted(todo.items())] + ['']
     write_text(SUMMARY, '\n'.join(out))
 
 
@@ -526,12 +630,13 @@ def update(quiet):
     rows, ratio = build_rows(parsed, counters, pur)
     old = read_ledger()
     live = {(r['sessione'], r['agente']) for r in rows.values()}
+    tags = read_tags()
     for k, r in old.items():  # rows whose transcript is gone stay in the ledger
-        if k not in rows and (r['sessione'], r['agente']) not in live:
-            rows[k] = r
+        if (r['sessione'], r['agente']) not in live:
+            keep_row(rows, r, tags, pur)
     os.makedirs(OUT_DIR, exist_ok=True)
     write_ledger(rows)
-    write_summary(read_ledger(), counters, ratio)
+    write_summary(read_ledger(), counters, ratio, pur)
     if not quiet:
         print('%d righe, %d trascrizioni lette -> %s' % (len(rows), len(parsed), os.path.relpath(LEDGER, REPO)))
 
@@ -541,10 +646,10 @@ def report(days):
     if not rows:
         print('Registro vuoto: eseguire prima "ledger.py update".')
         return
-    rows, tot, by_area, by_scopo = summary_tables(rows, days)
+    rows, tot, by_area, by_scopo, by_onda = summary_tables(rows, load_purposes(), days)
     print('Periodo: %s. Totale %s M token, %s $ (equivalente API).\n' % (
         'ultimi %d giorni' % days if days else 'tutto', it(sum(tok(r) for r in rows) / 1e6), it(tot)))
-    print(by_area + '\n\n' + by_scopo)
+    print(by_area + '\n\n' + by_onda + '\n\n' + by_scopo)
 
 
 def main(argv):
@@ -561,6 +666,11 @@ def main(argv):
         update(True)
     elif cmd == 'tag' and len(argv) >= 4:
         area = argv[argv.index('--area') + 1] if '--area' in argv else ''
+        pur = load_purposes()
+        if area and not valid_area(area, pur):
+            print('Area sconosciuta: "%s". Aree: %s.' % (area, ', '.join(pur.get('aree_valide', []))))
+            return 2
+        area = valid_area(area, pur)
         tag(argv[2], argv[3], area)
         update(True)
         print('%s -> %s%s' % (argv[2], argv[3], ' (%s)' % area if area else ''))

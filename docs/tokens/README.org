@@ -10,17 +10,18 @@ e le lezioni sui costi sono nel capitolo "Costi" di [[file:../LESSONS.org][LESSO
 | File             | Contenuto                                                                                | Chi lo scrive      |
 |------------------+------------------------------------------------------------------------------------------+--------------------|
 | ~ledger.csv~     | Una riga per sessione o agente e per giorno: scopo, area, token, output, dollari.        | ~ledger.py~        |
-| ~summary.org~    | Totali per area, per scopo, per giorno; ultime attività; righe da classificare.          | ~ledger.py~        |
+| ~summary.org~    | Totali per area, per onda, per scopo (con righe e $ ogni 1000 righe), per giorno.        | ~ledger.py~        |
 | ~counters.jsonl~ | Il contatore esatto di Claude Code, una riga per sessione. Non si può ricostruire dopo.  | ~ledger.py~        |
 | ~tags.csv~       | Lo scopo assegnato a mano a una sessione o a un agente.                                  | ~ledger.py tag~    |
 
-Lo strumento è ~tools/token-ledger/ledger.py~ (solo libreria standard di Python); le regole che assegnano lo scopo
-agli agenti sono in ~tools/token-ledger/purposes.json~.
+Lo strumento è ~tools/token-ledger/ledger.py~ (solo libreria standard di Python). ~tools/token-ledger/purposes.json~
+contiene le regole che assegnano lo scopo agli agenti e tre tabelle da tenere aggiornate a mano: ~aree~ (l'area di
+ogni scopo), ~onde~ (l'onda di ogni modulo) e ~righe~ (le righe che il modulo ha aggiunto al merge).
 
 * Come si riempie da solo
 Gli hook di Claude Code di questo progetto (~.claude/settings.json~, solo su questa macchina) lanciano lo strumento:
-- a inizio sessione: dicono al modello l'id della sessione e come registrarne lo scopo, poi aggiornano il registro
-  in background;
+- a inizio sessione: dicono al modello l'id della sessione, come registrarne lo scopo e quali scopi del registro
+  sono ancora senza area, poi aggiornano il registro in background;
 - alla fine di ogni agente: aggiornano il registro in background;
 - a fine sessione: copiano il contatore esatto della sessione, poi aggiornano il registro in un processo staccato
   che sopravvive alla chiusura.
@@ -28,14 +29,17 @@ I file cambiano quindi da soli: l'orchestratore li committa insieme agli aggiorn
 
 * Da dove vengono i numeri
 - Token di input (scritture in cache, letture dalla cache, input normale): esatti, dalle trascrizioni in
-  =~/.claude/projects/-run-media-marco-Volume-D-RTS/=.
+  =~/.claude/projects/-run-media-marco-RTS/= (fino al 2026-10-22 in =-run-media-marco-Volume-D-RTS=).
 - Token di output: esatti quando la trascrizione ha il conteggio finale (~output_fonte~ = ~esatto~). Altrimenti
   stimati dal testo visibile (~stimato~), oppure stimati e poi corretti con il contatore esatto della sessione
   (~calibrato~). Il contatore di Claude Code conserva solo l'ultima sessione chiusa: con più sessioni in parallelo
   si salva quella che chiude per ultima.
-- Dollari: equivalente a listino API (prezzi in ~ledger.py~). L'abbonamento non paga questa cifra; i dollari servono
-  a confrontare gli scopi tra loro.
-- Le trascrizioni vengono cancellate da Claude Code dopo 30 giorni; le righe già nel registro restano.
+- Dollari: equivalente a listino API (prezzi in ~ledger.py~, tabella ~PRICES~, uno per modello: Fable 5.2 costa il
+  doppio di Opus 5.5). L'abbonamento non paga questa cifra; i dollari servono a confrontare gli scopi tra loro. Un
+  modello che manca in ~PRICES~ viene contato al prezzo di Opus 5.5 e ~summary.org~ lo segnala in cima: va aggiunto.
+- Giorno: quello di Roma (ora legale e solare).
+- Le trascrizioni vengono cancellate da Claude Code dopo 30 giorni; le righe già nel registro restano, con i loro
+  token e dollari. Scopo, area, onda e righe si possono ancora cambiare: regole ed etichette valgono anche per loro.
 
 * Come si assegna lo scopo
 In ordine di priorità:
@@ -44,11 +48,24 @@ In ordine di priorità:
 2. per un agente, una descrizione che inizia con ~[SCOPO]~, per esempio ~[Fazione Cybran (5l)] client models~;
 3. la prima regola di ~purposes.json~ che compare nella descrizione dell'agente;
 4. altrimenti ~Orchestrazione (sessioni principali)~ per le sessioni e ~Da classificare~ per gli agenti.
-L'area viene da ~--area~, altrimenti dalla tabella ~aree~ di ~purposes.json~. Aree in uso: Gameplay SupCom,
-Esperienza client, Avversario IA, Infrastruttura tecnica, Coordinamento, Documentazione.
+L'area viene da ~--area~, altrimenti dalla tabella ~aree~ di ~purposes.json~. Le aree sono sei (~aree_valide~ in
+~purposes.json~; ~ledger.py tag~ rifiuta le altre): Gameplay SupCom, Esperienza client, Avversario IA,
+Infrastruttura tecnica, Coordinamento, Documentazione.
+
+Uno scopo nuovo (per esempio ~[Mappe (8b)]~ sugli agenti di un'onda nuova) non ha ancora un'area: finisce sotto
+"Da classificare" finché non lo si aggiunge a ~aree~ e a ~onde~. Va fatto quando si lancia l'onda.
+
+* Onde e righe
+La tabella "Per onda" di ~summary.org~ somma gli agenti dei moduli di ogni onda (tabella ~onde~) e ne calcola il
+costo ogni 1000 righe (tabella ~righe~). Dopo il merge di un modulo in ~main~:
+: git diff --numstat <merge>^1 <merge> -- src tests tools data | awk '{a+=$1} END {print a}'
+e il numero va scritto in ~righe~ (per un modulo fuso in più pezzi, la somma). Un modulo senza ~righe~ è "in corso".
 
 * Come si usa
 - Riepilogo: [[file:summary.org][summary.org]], oppure ~python3 tools/token-ledger/ledger.py report [--days N]~.
 - Prima di pianificare un'onda: guardare quanto sono costati scopi simili e dimensionare i brief di conseguenza.
-- Dopo il merge di un'onda: aggiornare il capitolo "Costi" di LESSONS.org con i numeri del registro.
+- Dopo il merge di un modulo: scrivere le sue righe in ~purposes.json~ (sopra). Ogni 2-3 onde, o quando il
+  proprietario lo chiede (decisione del 2026-11-10; prima era dopo ogni onda):
+  riallineare il capitolo "Costi" di LESSONS.org (tabelle "Totale", "Per onda", "Per modulo", "Per scopo", "Costo del
+  processo" e le lezioni) con ~summary.org~.
 - Ricalcolo a mano: ~python3 tools/token-ledger/ledger.py update~.

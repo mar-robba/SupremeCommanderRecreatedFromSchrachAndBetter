@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-10-24 11:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-10 23:55 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -13,18 +13,48 @@ main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o)
 writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
 prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-10-24 11:10, session fa417db4):
-- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh coordinator there
-  with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
+**ON RESUME** (2026-11-10 14:10, session 3de864d5; the work paused from 2026-10-24 11:25, when a usage limit cut both
+agents and the account was then blocked, to 2026-11-10):
+- **STOPPED BY THE OWNER (2026-11-10 23:05: "fermo, ti dico io quando continuare"): start or resume no agent until the
+  owner says so.** Nothing is running. State at the stop (both coordinators cut again by the 5-hour limit at 21:01,
+  after 8 minutes of work; worktrees clean, everything committed):
+  - 7b (HEAD ba24869): pieces 1-3 done, G14 selection filters / commander key / bookmarks done with tests (67f3a2b,
+    7f942e9, note `.claude/notes/selection.md`, not verified in game); piece 4 (pings UI, notifications, jump to
+    alert) just started: its sub-agent was cut at 78k with no commit and no note. Coordinator 2 is at 109k.
+  - 8a (HEAD 8762364 = WIP MissileSubTests draft, may not compile): Salem on land works (WalkingShipTests 60e5664,
+    note `.claude/notes/naval.md` with the ordered TODO); left: missile sub and carrier tests, walls, client models +
+    `--scene units8a`, finish. Coordinator 3 is at 80k.
+  - **Model decided (owner, 2026-11-10): agents on Opus 5.5.** Don't resume the coordinators and sub-agents above:
+    they were started on Fable 5.2, where a window gives 8-10 minutes of agent work (on Opus 5.5 it gave about an
+    hour). When the owner says to continue: one fresh agent per module with `model: "opus"`, cap 200k, in the
+    existing worktree, with the brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`; finish
+    the module yourself, no coordinator". 7b and 8a together are the 2 agents allowed, so neither starts
+    sub-agents while the other runs.
+- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
+  (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
   `agent_ctx.py --watch 135000 <id>=185000 ...`.
 - **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
-  `wave7b-orders` from main), coordinator 1 (cap 200k medium).
+  `wave7b-orders` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
+  commit 7ad9342; sim commands and the formation/waypoint UI code were done, selection keys, pings UI,
+  notifications and the finish were open; the branch was 15 commits behind main). Cut by the 5-hour limit at 14:08
+  (71k; main merged, orders UI hooks + screenshots done), resumed by SendMessage 2026-11-10 20:55.
 - **Running:** **(8a) Missing units & walls** (G8, G9, Atlantis dive): worktree `.claude/worktrees/wave8a` (branch
-  `wave8a-units` from main), coordinator 1 (cap 200k medium).
+  `wave8a-units` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
+  commit 48673e7 = 9 untested blueprint drafts; all five pieces were open). Cut by the 5-hour limit at 14:08 (125k;
+  data piece done 88955ec, AI reference hash now BBD1FF3C4E116A4A: blueprint index shift only, same winner and
+  time). **Coordinator 3** started 2026-11-10 20:55 from the handoff note (WIP commit 676de72 = untested Salem on land).
+- **Process rules changed by the owner (2026-11-10; WORKFLOW "Owner decisions" and "Review of the process
+  rules"):** every Agent call carries `model: "opus"`; one agent per module of about 1,500 lines, cap 200k, no
+  coordinator (sub-agents only for separable content: blueprints, models, tests); at most 2 agents at a time,
+  sub-agents counted, and no start when other sessions of the owner have used part of the window; LESSONS "Costi"
+  every 2-3 waves (next: after wave 9). Briefs written before this (8b and wave 9 in HISTORY) must be re-cut to
+  that module size before they start.
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
 - **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW; then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
+  in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` (the "Costi" chapter of
+  LESSONS only every 2-3 waves, next after wave 9: WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far:
+  LESSONS "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
@@ -32,6 +62,9 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
 - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
+  2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
+  2026-11-10 14:08 (reset 18:00): both coordinators and their two sub-agents cut after 10 minutes of work; other
+  Claude sessions of the owner were open on the same account, so the window was probably nearly used up already.
 - When an agent finishes (report + clean tree): merge it into main (`git merge --no-ff <branch>`), build, both tests,
   a screenshot, the AI match above (same hash unless the agent documents why it changes: (k) and (l) will change it),
   then `git worktree unlock` + `git worktree remove` + `git branch -d`, report → HISTORY.
