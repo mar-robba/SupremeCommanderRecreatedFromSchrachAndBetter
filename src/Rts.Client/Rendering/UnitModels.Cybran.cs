@@ -98,6 +98,9 @@ public static partial class UnitModels
             case "cy_cruiser": t = CyCruiser(b, pivots, w, h, l, hasWeapon); break;
             case "cy_battleship": t = CyBattleship(b, pivots, w, h, l, hasWeapon); break;
             case "cy_sub": CySub(b, w, h, l); break;
+            case "cy_missile_sub": CyMissileSub(b, w, h, l); break; // (8a) cy_missile_sub / cy_carrier / cy_wall: UnitModels.CybranUnits8a.cs
+            case "cy_carrier": t = CyCarrier(b, pivots, w, h, l); break;
+            case "cy_wall": CyWall(b, w, h, l); break;
             case "cy_naval_factory": CyNavalFactory(b, w, h, l, tier); break;
             case "cy_sonar": t = CySonar(b, pivots, w, h, l, 1); mode = TurretMode.Spin; spin = 1.5f; break;
             case "cy_sonar2": t = CySonar(b, pivots, w, h, l, 2); mode = TurretMode.Spin; spin = 2.0f; break;

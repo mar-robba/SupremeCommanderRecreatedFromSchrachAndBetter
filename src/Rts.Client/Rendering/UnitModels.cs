@@ -116,6 +116,9 @@ public static partial class UnitModels
                 b.BevelBox(V(0, h * 0.5f - 0.15f, 0), V(w, h + 0.3f, l), MathF.Min(w, h) * 0.18f, Hull, HullLight);
                 b.Box(V(0, h * 0.72f, 0), V(w * 1.01f, h * 0.1f, l * 0.9f), Team);
                 break;
+            case "mech_marine": t = MechMarine(b, pivots, w, h, l); break; // (8a) shapes: UnitModels.Units8a.cs
+            case "stealth_field": t = StealthFieldGenerator(b, pivots, w, h, l); mode = TurretMode.Spin; spin = 0.8f; break;
+            case "missile_sub": MissileSub(b, w, h, l); break;
             case "fighter": Fighter(b, w, h, l); break;
             case "bomber": Bomber(b, w, h, l); break;
             case "gunship": Gunship(b, w, h, l); break;

@@ -142,6 +142,7 @@ public sealed unsafe partial class UnitRenderer
             float s;
             if (UnitModels.BaseShape(shape) == "air_staging") { if (!UnitModels.StagingPad(k, size, out spot)) break; s = PadAircraftScale; }
             else if (shape == "atlantis") { if (!UnitModels.AtlantisSpot(k, size, out spot)) break; s = DeckAircraftScale; }
+            else if (UnitModels.BaseShape(shape) == "carrier") { if (!UnitModels.CyCarrierSpot(k, size, out spot)) break; s = DeckAircraftScale; }
             else
             {
                 spot = new Vector3((k % gridCols - (gridCols - 1) * 0.5f) * 2f, carrier.MaxY, (k / gridCols) * -2.2f + size.Z * 0.3f);
