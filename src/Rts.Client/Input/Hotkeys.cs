@@ -97,19 +97,27 @@ public readonly record struct MouseHelp(string Group, string Input, string Actio
 /// </summary>
 public static class Hotkeys
 {
-    private const KeyMods N = KeyMods.None, C = KeyMods.Ctrl, S = KeyMods.Shift;
+    private const KeyMods N = KeyMods.None, C = KeyMods.Ctrl, S = KeyMods.Shift, Al = KeyMods.Alt;
     private const HotkeyScope G = HotkeyScope.Game, Pl = HotkeyScope.Play, U = HotkeyScope.Units;
 
     // ---------------------------------------------------------------- camera
     public static readonly Hotkey Pan = new([KeyboardKey.Up, KeyboardKey.Down, KeyboardKey.Left, KeyboardKey.Right], N, G, "Camera", "Pan the camera (also screen edge / middle drag)", label: "Arrows");
     public static readonly Hotkey Rotate = new([KeyboardKey.PageUp, KeyboardKey.PageDown], N, G, "Camera", "Rotate the camera (also Alt + middle drag)", label: "PgUp / PgDn");
     public static readonly Hotkey ResetRotation = new(KeyboardKey.Home, N, G, "Camera", "Reset the camera rotation");
+    public static readonly Hotkey BookmarkRecall = new(Digits(1, 5), Al, G, "Camera", "Go to a camera bookmark (position, zoom, rotation)", label: "Alt+1-5");
+    public static readonly Hotkey BookmarkSave = new(Digits(1, 5), C | Al, G, "Camera", "Save the view as a camera bookmark", label: "Ctrl+Alt+1-5");
+    public static readonly Hotkey JumpToAlert = new(KeyboardKey.Backspace, N, G, "Camera", "Jump to the last alert (again: the one before; also pings)");
 
     // ---------------------------------------------------------------- selection
     public static readonly Hotkey GroupRecall = new(Digits(), N, G, "Selection", "Recall control group (Shift: add; press twice: center the camera on it)", label: "0-9");
     public static readonly Hotkey GroupSet = new(Digits(), C, G, "Selection", "Set control group to the selection", label: "Ctrl+0-9");
     public static readonly Hotkey IdleEngineer = new(KeyboardKey.Period, N, Pl, "Selection", "Next idle engineer (Shift: all idle engineers)", label: ".");
     public static readonly Hotkey IdleFactory = new(KeyboardKey.Comma, N, Pl, "Selection", "Next idle factory (Shift: all idle factories)", label: ",");
+    public static readonly Hotkey SelectSameTypes = new(KeyboardKey.Z, C, G, "Selection", "Add every unit of the selected types on screen");
+    public static readonly Hotkey SelectSameTypesMap = new(KeyboardKey.Z, C | S, G, "Selection", "Add every unit of the selected types on the whole map");
+    public static readonly Hotkey SelectCombat = new(KeyboardKey.A, C, G, "Selection", "All combat units (armed, mobile; no engineers / commander)");
+    public static readonly Hotkey SelectDomain = new([KeyboardKey.L, KeyboardKey.A, KeyboardKey.N, KeyboardKey.E], C | S, G, "Selection", "All land / air / naval units / engineers", label: "Ctrl+Shift+L / A / N / E");
+    public static readonly Hotkey SelectCommander = new(KeyboardKey.C, C, G, "Selection", "Select the commander and center the camera on it (Shift: add it)");
 
     // ---------------------------------------------------------------- orders
     public static readonly Hotkey Stop = new(KeyboardKey.S, N, U, "Orders", "Stop: clear all orders (also cancels an enhancement)");
@@ -120,6 +128,8 @@ public static class Hotkeys
     public static readonly Hotkey Launch = new(KeyboardKey.L, N, U, "Orders", "Launch mode (missile launchers: click a ground target)");
     public static readonly Hotkey Teleport = new(KeyboardKey.J, N, U, "Orders", "Teleport mode (commander with Personal Teleporter: click a ground point)");
     public static readonly Hotkey SelfDestruct = new(KeyboardKey.K, C, U, "Orders", "Self-destruct (asks for confirmation)");
+    public static readonly Hotkey PingAlert = new(KeyboardKey.Y, N, Pl, "Orders", "Alert ping at the cursor (map or minimap; allies see it)");
+    public static readonly Hotkey DeleteWaypoint = new(KeyboardKey.Delete, N, U, "Orders", "Delete the waypoint under the cursor (selected units' queued orders)", label: "Del");
 
     // ---------------------------------------------------------------- toggles
     public static readonly Hotkey FireState = new(KeyboardKey.Q, N, U, "Toggles", "Fire state: fire at will → return fire → hold fire (Shift: back)");
@@ -178,9 +188,10 @@ public static class Hotkeys
     /// <summary>Every hotkey, in help order.</summary>
     public static readonly Hotkey[] All =
     [
-        Pan, Rotate, ResetRotation,
+        Pan, Rotate, ResetRotation, BookmarkRecall, BookmarkSave, JumpToAlert,
         GroupRecall, GroupSet, IdleEngineer, IdleFactory,
-        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct,
+        SelectSameTypes, SelectSameTypesMap, SelectCombat, SelectDomain, SelectCommander,
+        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct, DeleteWaypoint, PingAlert,
         FireState, Pause, Dive, Overcharge, Capture,
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
@@ -199,6 +210,9 @@ public static class Hotkeys
         new("Selection", "Idle buttons", "Above the minimap: click = next idle engineer / factory, Shift+click = all"),
         new("Orders", "Right click", "Move / attack / assist / reclaim / repair / capture / load (Shift: queue)"),
         new("Orders", "Right click (factory)", "Set the rally point"),
+        new("Orders", "Right drag", "Line formation along the drag, facing away from the camera when dragged left to right (Shift: queue; attack-move mode: attack-move)"),
+        new("Orders", "Drag a waypoint", "Left-drag a selected unit's waypoint marker to move it (Del over it: delete it)"),
+        new("Orders", "Alt + click", "Map ping (map or minimap; allies see it): Alt+left = alert, Alt+Shift+left = attack, Alt+right = move"),
         new("Orders", "Minimap", "Left: camera; in an order mode: give it there · right: move"),
         new("Camera", "Wheel", "Zoom to the cursor (zoomed out: strategic icons)"),
         new("Factory", "Right-click", "On a unit button: remove one from the queue (Shift: 5)"),
@@ -264,4 +278,7 @@ public static class Hotkeys
     };
 
     private static KeyboardKey[] Digits() => Enumerable.Range(0, 10).Select(i => KeyboardKey.Zero + i).ToArray();
+
+    /// <summary>The digit keys first..last (index 0 = <paramref name="first"/>).</summary>
+    private static KeyboardKey[] Digits(int first, int last) => Enumerable.Range(first, last - first + 1).Select(i => KeyboardKey.Zero + i).ToArray();
 }

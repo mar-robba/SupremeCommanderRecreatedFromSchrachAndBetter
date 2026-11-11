@@ -86,6 +86,7 @@ public static class SnapshotWriter
                     Type = orders[o].Type,
                     Pos = DMath.To3(dest, w.Terrain.GetSurfaceHeight(dest)),
                     BlueprintIndex = orders[o].BlueprintIndex,
+                    Point = orders[o].Pos, Aux = orders[o].Aux, // (7b)
                 };
             }
 
@@ -147,6 +148,7 @@ public static class SnapshotWriter
 
         Strategic.StrategicSnapshotWriter.Write(w, s, viewArmy);
         Transport.TransportSnapshotWriter.Write(w, s, viewArmy);
+        PingSystem.WriteSnapshot(w, s, viewArmy); // (7b) map pings
         s.Effects.Clear();
         if (view != null) IntelSnapshotWriter.AddVisibleEffects(w, s, viewArmy);
         else s.Effects.AddRange(w.Events.Effects);

@@ -53,6 +53,10 @@ public struct OrderView
     public OrderType Type;
     public Vector3 Pos;
     public int BlueprintIndex;
+    /// <summary>(7b) Raw Order.Pos: the group point shared by the units ordered together (waypoint markers/editing).</summary>
+    public Vector2 Point;
+    /// <summary>(7b) Raw Order.Aux: Ferry = drop point, Patrol = leg start, Move/AttackMove = facing direction (0 = none).</summary>
+    public Vector2 Aux;
 }
 
 public struct ProjectileView
@@ -129,6 +133,12 @@ public sealed class SimSnapshot
     public int OrderCount;
     public int[] FactoryQueue = new int[64];
     public int FactoryQueueCount;
+
+    /// <summary>(7b) Live map pings of the view army's team (all with no view army), [0..PingCount); PingSerial =
+    /// total pings created (Orders/PingSystem).</summary>
+    public MapPingView[] Pings = new MapPingView[8];
+    public int PingCount;
+    public int PingSerial;
 
     public ProjectileView[] Projectiles = new ProjectileView[256];
     public int ProjectileCount;

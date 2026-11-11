@@ -45,6 +45,10 @@ public static class CommandSystem
                 case GiveUnitsCommand gu: DiplomacySystem.Apply(w, gu); break; // (6b) team play
                 case GiveResourcesCommand gr: DiplomacySystem.Apply(w, gr); break;
                 case EnableCheatToolsCommand ec: DiplomacySystem.Apply(w, ec); break;
+                case MoveWaypointCommand mw: QueueEditSystem.Apply(w, mw); break; // (7b) orders & selection UX
+                case DeleteWaypointCommand dw: QueueEditSystem.Apply(w, dw); break;
+                case FormationMoveCommand fm: QueueEditSystem.Apply(w, fm); break;
+                case MapPingCommand mp: PingSystem.Apply(w, mp); break;
                 case SelfDestructCommand sd:
                     foreach (var h in sd.Units)
                         if (Owns(w, c.Army, h)) w.KillUnit(h.Index, UnitHandle.None);
@@ -71,7 +75,9 @@ public static class CommandSystem
         ConstructionSystem.StopBuilder(w, i);
     }
 
-    private static void ApplyIssueOrder(SimWorld w, IssueOrderCommand io)
+    /// <param name="presetOffsets">(7b) formation offsets per collected unit (sorted by index), e.g. a line formation
+    /// (Orders/QueueEditSystem); null = the usual box formation.</param>
+    internal static void ApplyIssueOrder(SimWorld w, IssueOrderCommand io, Vector2[]? presetOffsets = null)
     {
         // Collect valid units (deduplicated, deterministic order by index).
         var units = new List<int>(io.Units.Length);
@@ -85,7 +91,8 @@ public static class CommandSystem
         if (order.Type == OrderType.Build && !CanBuild(w, units, order.BlueprintIndex)) return;
 
         bool formation = order.Type is OrderType.Move or OrderType.AttackMove or OrderType.Patrol;
-        Vector2[]? offsets = formation && units.Count > 1 ? FormationOffsets(w, units, order.Pos) : null;
+        Vector2[]? offsets = presetOffsets != null && presetOffsets.Length == units.Count ? presetOffsets
+            : formation && units.Count > 1 ? FormationOffsets(w, units, order.Pos) : null;
         if (!io.Queue) MovementSystem.AssignGroup(w, units, formation); // formation pace (pathfinding)
 
         for (int k = 0; k < units.Count; k++)

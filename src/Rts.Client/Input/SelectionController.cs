@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Audio;
+using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
@@ -38,11 +39,22 @@ public sealed class SelectionController
 
     /// <summary>What a right-click would do at the cursor (context orders, shown as a cursor hint).</summary>
     public ContextAction HoverAction = ContextAction.None;
+    /// <summary>(7b) Right-drag line formation and waypoint marker editing (Input/FormationDrag.cs, WaypointEditor.cs).</summary>
+    public readonly FormationDrag Formation;
+    public readonly WaypointEditor Waypoints;
+    /// <summary>(7b) Camera bookmarks (Input/CameraBookmarks.cs: Ctrl+Alt+1..5 saves, Alt+1..5 recalls).</summary>
+    public readonly CameraBookmarks Bookmarks = new();
+    /// <summary>(7b) Notification log (UI/AlertLog: minimap flashes, Backspace jump) and map ping input (Input/PingInput.cs).</summary>
+    public readonly AlertLog Alerts = new();
+    public readonly PingInput Pings;
 
     public SelectionController(GameContext ctx)
     {
         _ctx = ctx;
         Placement = new BuildPlacement(ctx);
+        Formation = new FormationDrag(ctx, this);
+        Waypoints = new WaypointEditor(ctx, this);
+        Pings = new PingInput(ctx, Alerts);
     }
 
     public bool IsDragging => _dragStart.HasValue && Vector2.Distance(_dragStart.Value, Raylib.GetMousePosition()) > 6;
@@ -62,10 +74,13 @@ public sealed class SelectionController
         PruneDead(snap);
         bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
-        if (InputBlocked) { _dragStart = null; return; }
+        if (InputBlocked) { _dragStart = null; Formation.Cancel(); return; }
 
         HandleHotkeys(ctrl, shift);
-        bool hover = !mouseOverUi && !_ctx.ReadOnly && !Placement.Active && Selected.Count > 0 && !IsDragging;
+        if (Pings.HandleWorld(mouseOverUi)) { _dragStart = null; return; } // (7b) Alt+click = map ping
+        Waypoints.Refresh(mouseOverUi || Placement.Active || Mode != CommandMode.Normal || IsDragging || Formation.Active);
+        bool hover = !mouseOverUi && !_ctx.ReadOnly && !Placement.Active && Selected.Count > 0 && !IsDragging
+            && Waypoints.Hover < 0 && Waypoints.Dragging == null && !Formation.Active;
         HoverAction = !hover ? ContextAction.None
             : Mode == CommandMode.Normal ? ContextOrders.Evaluate(_ctx, this, Raylib.GetMousePosition())
             : Mode == CommandMode.Capture ? UnitToggles.CaptureHover(_ctx, this, Raylib.GetMousePosition())
@@ -74,6 +89,7 @@ public sealed class SelectionController
         if (Placement.Active)
         {
             _dragStart = null;
+            Formation.Cancel();
             Placement.Update(mouseOverUi, Selected, shift);
             return;
         }
@@ -85,8 +101,9 @@ public sealed class SelectionController
                 if (IssueAtCursor(shift, Mode) && !shift) Mode = CommandMode.Normal;
                 return;
             }
-            _dragStart = Raylib.GetMousePosition();
+            if (!Waypoints.TryBeginDrag()) _dragStart = Raylib.GetMousePosition();
         }
+        Waypoints.Update();
         if (_dragStart.HasValue && Raylib.IsMouseButtonReleased(MouseButton.Left))
         {
             if (IsDragging) BoxSelect(DragRect, shift);
@@ -95,8 +112,21 @@ public sealed class SelectionController
         }
         if (!mouseOverUi && !_ctx.ReadOnly && Raylib.IsMouseButtonPressed(MouseButton.Right))
         {
-            if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+            // (7b) Normal / attack-move: wait for the release (a drag = line formation, a click = as before).
+            if (Mode is CommandMode.Normal or CommandMode.AttackMove && Waypoints.Dragging == null
+                && Formation.Begin(Raylib.GetMousePosition())) { }
+            else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
             else IssueAtCursor(shift, CommandMode.Normal);
+        }
+        switch (Formation.Update(shift, Mode))
+        {
+            case FormationDrag.Result.Click:
+                if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
+                else IssueAtCursor(shift, CommandMode.Normal);
+                break;
+            case FormationDrag.Result.Issued:
+                if (Mode != CommandMode.Normal && !shift) Mode = CommandMode.Normal;
+                break;
         }
     }
 
@@ -117,9 +147,14 @@ public sealed class SelectionController
         }
         else if (Mode != CommandMode.Normal) Mode = CommandMode.Normal;
         TransportInput.Update(_ctx, this, ctrl || _ctx.ReadOnly); // U unload / E transport / F ferry / D dock (replays: none)
-        int set = Hotkeys.GroupSet.PressedIndex();
+        SelectionFilters.HandleHotkeys(_ctx, this, shift); // (7b) same types / combat / land / air / naval / engineers / commander
+        Bookmarks.HandleHotkeys(_ctx);
+        Pings.HandleKeys(); // (7b) Backspace: jump to the last alert
+        // Alt+digits = camera bookmarks (Hotkey.PressedIndex leaves an undeclared Alt free): no control groups then.
+        bool alt = Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt);
+        int set = alt ? -1 : Hotkeys.GroupSet.PressedIndex();
         if (set >= 0) { _groups[set].Clear(); _groups[set].AddRange(Selected); }
-        int g = Hotkeys.GroupRecall.PressedIndex();
+        int g = alt ? -1 : Hotkeys.GroupRecall.PressedIndex();
         if (g >= 0)
         {
             _groups[g].RemoveAll(h => !_ctx.Snapshots.Current.TryGetUnit(h.Index, h.Generation, out _));
