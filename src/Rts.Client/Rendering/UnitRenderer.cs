@@ -121,15 +121,18 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             DrawnUnits++;
             var col = (uint)v.Army < (uint)teamCols.Length ? teamCols[v.Army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
             bool building = (v.Flags & UnitFlags.UnderConstruction) != 0;
+            float buildFrac = building ? v.BuildFrac : 1f;
+            if (!building && _fx != null && _fx.WarpFrac(v.Index, v.Gen, out float warp)) { building = true; buildFrac = warp; } // (9b) ACU warp-in hologram
             if (!building && IsSubmerged(model, pos)) { _submerged.Add((model, v.Index, pos, heading, turret, col)); continue; } // UnitRenderer.Submerged.cs
             if (!building && (v.Status & UnitStatus.Cloaked) != 0) continue; // translucent shimmer in DrawStatus (UnitRenderer.Status.cs)
             if (!building) pos = WalkingShip(model, in v, prev, pos, heading, col, time); // Salem ashore: UnitRenderer.WalkingShip.cs
-            AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
+            AddUnit(model, v.Index, pos, heading, turret, turn, col, building, buildFrac, time);
             // In-place upgrade: the target model grows around the structure as a construction hologram.
             if (v.UpgradeBp >= 0) AddUnit(Model(v.UpgradeBp), v.Index, pos, heading, turret, turn, col, true, MathF.Max(0.02f, v.UpgradeFrac), time);
         }
 
         AddCargo(cur, prev, alpha, teamCols, fv, time); // units inside transports / docked aircraft: UnitRenderer.Cargo.cs
+        AddDying(teamCols, fv); // (9b) death sequences: UnitRenderer.Death.cs
 
         // Fog of war: last-seen enemy structures ("ghosts"), greyed team color; the fog dims them further.
         for (int k = 0; k < cur.GhostCount; k++)
