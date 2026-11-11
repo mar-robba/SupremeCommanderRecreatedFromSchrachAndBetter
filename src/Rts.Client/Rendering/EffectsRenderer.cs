@@ -76,6 +76,7 @@ public sealed partial class EffectsRenderer : IDisposable
         if (SpawnStrategic(in e)) return; // EffectsRenderer.Strategic.cs
         if (SpawnOvercharge(in e)) return; // EffectsRenderer.Overcharge.cs
         if (SpawnTeleport(in e)) return; // EffectsRenderer.Teleport.cs
+        if (SpawnAnimatedDeath(in e)) return; // (9b) falling aircraft: EffectsRenderer.Death.cs
         float size = MathF.Max(0.3f, e.Size);
         var fv = FrameView.Current;
         if (!fv.SphereVisible(e.Pos, size * 6 + 4)) { if (e.Kind != EffectKind.UnitDeath) return; }
@@ -111,7 +112,9 @@ public sealed partial class EffectsRenderer : IDisposable
         var fv = FrameView.Capture();
         _ps.Lod = Math.Clamp(110f / MathF.Max(1f, Atmosphere.CameraDistance), 0.3f, 1f) * (_ps.Count > ParticleSystem.Capacity * 0.7f ? 0.4f : 1f) * ParticleSystem.Quality;
         HandleDebugKeys();
+        Deaths.Sync(); // (9b) match this snapshot's deaths before spawning them: EffectsRenderer.Death.cs
         foreach (var e in newEffects) Spawn(e);
+        UpdateDeaths(dt);
         if (FakeBattle) UpdateFakeBattle(dt, cur);
 
         FrameProfiler.Sub("fx:spawn");

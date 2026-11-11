@@ -101,6 +101,7 @@ public sealed partial class GameAudio : IDisposable
         _engine = system.Engine;
         _ambient = system.Ambient;
         Settings = system.Settings;
+        UnitFxSounds.Clear(); // (9b) no stale death sounds from a previous game
         var db = ctx.Db;
         _fire = new SoundId[db.Count][];
         _visual = new string[db.Count][];
@@ -132,13 +133,14 @@ public sealed partial class GameAudio : IDisposable
         HandleKeys(selectedCount, inputBlocked);
         var ui = UiSounds.Drain();
         _sys.Update(dt);
-        if (!_engine.Ready) return;
+        if (!_engine.Ready) { UnitFxSounds.Clear(); return; } // (9b) GameAudio.Death.cs
         _startFade = MathF.Min(1f, _startFade + dt / 2.5f);
 
         var cur = interp.Current;
         bool paused = _ctx.Runner.Paused;
         int combat = 0;
         foreach (var e in interp.NewEffects) combat += HandleEffect(e);
+        PlayDeathSounds(); // (9b) death sequences + warp-in: GameAudio.Death.cs
         if (cur.Tick != _lastTick)
         {
             ScanBombs(cur);

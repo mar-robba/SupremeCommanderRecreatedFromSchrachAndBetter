@@ -9,15 +9,15 @@ public static partial class SoundBank
         SoundId.AlertPing => new(0.4f, 2, 1f, 1, Ui: true),
         SoundId.AlertNotice => new(0.26f, 1, 1f, 1, Ui: true),
         SoundId.AlertStructureLost => new(0.42f, 1, 1f, 1, Ui: true),
-        _ => new(0.4f, 2, 1f, 1),
+        _ => DeathInfo(id), // SoundBank.Death.cs
     };
 
-    private static float[] GenerateAlert(SoundId id) => id switch
+    private static float[] GenerateAlert(SoundId id, ref SynthRng rng) => id switch
     {
         SoundId.AlertPing => AlertPing(),
         SoundId.AlertNotice => AlertNotice(),
         SoundId.AlertStructureLost => Warning(67, 60),
-        _ => Synth.Alloc(0.05f),
+        _ => GenerateDeath(id, ref rng), // SoundBank.Death.cs
     };
 
     private static float[] AlertPing()

@@ -89,6 +89,7 @@ public sealed class GameSession : IDisposable
         else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);
         else if (cfg.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.Setup(sim, cfg);
         else if (cfg.Scene?.StartsWith(Units8aScene.Name) == true) Units8aScene.Setup(sim, cfg);
+        else if (cfg.Scene?.StartsWith(DeathScene.Name) == true) DeathScene.Setup(sim, cfg); // (9b)
         return sim;
     }
 
@@ -137,6 +138,7 @@ public sealed class GameSession : IDisposable
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
         _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
         _alerts = new AlertMonitor(Ctx.Db, _selection.Alerts);
+        _unitR.Fx = _props.DeathFx = _fx.Deaths; // (9b) death sequences + ACU warp-in: Rendering/DeathAnimator.cs
 
         _opt = opt;
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);

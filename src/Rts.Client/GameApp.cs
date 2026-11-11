@@ -33,7 +33,7 @@ public sealed class ClientOptions
     /// null = CLI defaults <c>new GameOptions()</c> (cheats on). Also presets the --setup screen.</summary>
     public string? GameOptions;
     public bool Demo;
-    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) "transport" (TransportScene), "cybran[:land|:air|:naval|:structures|:experimental]" (CybranScene) or "units8a[:walls|:naval|:salem]" (Units8aScene).</summary>
+    /// <summary>--scene NAME: scripted visual test scene: "strategic[:shields|:tml|:nuke]" (StrategicScene), "naval" (NavalScene), "experimental[:mavor|:fog]" (ExperimentalScene) "transport" (TransportScene), "cybran[:land|:air|:naval|:structures|:experimental]" (CybranScene) or "units8a[:walls|:naval|:salem]" (Units8aScene); (9b) "deaths[:air|:naval|:structures|:big|:warp][:N]" (DeathScene).</summary>
     public string? Scene;
     public int Width = 1600;
     public int Height = 900;
@@ -211,6 +211,7 @@ public sealed class ClientOptions
         else if (o.Scene == TransportScene.Name) TransportScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(Units8aScene.Name) == true) Units8aScene.ApplyDefaults(o);
+        else if (o.Scene?.StartsWith(DeathScene.Name) == true) DeathScene.ApplyDefaults(o); // (9b)
         return o;
     }
 }

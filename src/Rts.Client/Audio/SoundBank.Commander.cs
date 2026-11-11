@@ -27,7 +27,7 @@ public static partial class SoundBank
         SoundId.TeleportCharge => TeleportCharge(ref rng),
         SoundId.TeleportOut => TeleportOut(ref rng),
         SoundId.TeleportIn => TeleportIn(ref rng),
-        _ => GenerateAlert(id), // SoundBank.Alerts.cs
+        _ => GenerateAlert(id, ref rng), // SoundBank.Alerts.cs
     };
 
     /// <summary>Overcharge shot: a deep electric "vwomm" (falling square + saw), a sub thump and a hissing zap tail.</summary>

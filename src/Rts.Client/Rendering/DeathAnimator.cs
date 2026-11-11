@@ -152,7 +152,7 @@ public sealed partial class DeathAnimator
             Vel = dtTicks > 0 ? (e.Pos - v.Pos) / dtTicks : Vector3.Zero,
             Heading = v.Heading, Height = height, Radius = radius, Floor = floor, Water = water,
             Seed = Hash(v.Index * 7919 + v.Gen, tick), Huge = huge,
-            BlastDelay = bp.DeathBlast?.Delay ?? (huge ? bp.DeathDelay : 0f),
+            BlastDelay = bp.DeathBlast?.Delay ?? (huge ? bp.Experimental?.DeathDelay ?? 1f : 0f),
         };
         ref var a = ref _anims[_count++];
         a = new Anim
