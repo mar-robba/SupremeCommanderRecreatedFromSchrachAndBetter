@@ -232,4 +232,64 @@ public class WalkingShipTests
         Assert.True(dp > (salemR + tankR) * 0.8f, $"the Salem stands on a parked tank (distance {dp:F2})");
         Assert.True(Vector2.Distance(w.Units.Pos[salem.Index], new Vector2(100, 100)) < 8f, "the Salem should get near its goal");
     }
+
+    /// <summary>A naval factory releases the Hover-layer Salem like any ship: it sails out of the footprint, no jumps.</summary>
+    [Fact]
+    public void NavalFactoryReleasesTheSalemOnTheWater()
+    {
+        var sim = Beach();
+        var w = sim.World;
+        var fac = NavalWorld.Spawn(sim, "cybran_t2_naval_factory", 0, 30, 64);
+        NavalWorld.Spawn(sim, "uef_t1_energy_storage", 0, 8, 120);
+        NavalWorld.Spawn(sim, "uef_t1_mass_storage", 0, 14, 120);
+        sim.Step([new FactoryEnqueueCommand(0, [fac], TestUtil.Db.IndexOf(Salem), 1)]);
+        var built = UnitHandle.None;
+        for (int t = 0; t < 2000; t++)
+        {
+            foreach (var a in w.Armies) { a.Eco.Mass = a.Eco.MassMax; a.Eco.Energy = a.Eco.EnergyMax; }
+            sim.Step();
+            var c = w.Units.Factory[fac.Index].Current;
+            if (!c.IsNone) built = c;
+            if (!built.IsNone && c.IsNone && w.Units.IsActive(built) && w.Units.IsComplete(built.Index)) break;
+        }
+        Assert.False(built.IsNone || w.Units.Factory[fac.Index].Current == built, "the Salem was not released");
+        var bp = w.BpOf(built.Index);
+        float maxStep = bp.Movement.MaxSpeed * SimWorld.Dt * 2.5f + 0.2f;
+        float half = ConstructionSystem.HalfSize(w.BpOf(fac.Index));
+        var last = w.Units.Pos[built.Index];
+        for (int t = 0; t < 150; t++)
+        {
+            sim.Step();
+            var p = w.Units.Pos[built.Index];
+            Assert.True(Vector2.Distance(p, last) <= maxStep, $"jumped {Vector2.Distance(p, last):F2} at tick {t}");
+            last = p;
+        }
+        var end = w.Units.Pos[built.Index];
+        Assert.True(MathF.Max(MathF.Abs(end.X - 30f), MathF.Abs(end.Y - 64f)) > half, $"the Salem should leave the factory, at {end}");
+        Assert.True(WalkingShips.AtSea(w, built.Index, bp));
+        Assert.Equal(LayerMask.Water, OrderSystem.LayerOf(w, built.Index));
+        Assert.Equal(w.Terrain.WaterLevel, w.Units.Elevation[built.Index], 2);
+    }
+
+    /// <summary>A Salem that dies on land leaves an ordinary wreck on the ground (the client sinks only wrecks over deep water).</summary>
+    [Theory]
+    [InlineData(90f)]
+    [InlineData(30f)]
+    public void SalemLeavesAWreckOnLandAndAtSea(float x)
+    {
+        var sim = Beach();
+        var w = sim.World;
+        var salem = NavalWorld.Spawn(sim, Salem, 0, x, 64);
+        TestUtil.Run(sim, 2);
+        Assert.Equal(x > Shore, WalkingShips.OnLand(w, salem.Index));
+        w.KillUnit(salem.Index, UnitHandle.None);
+        TestUtil.Run(sim, 2);
+        int bpi = TestUtil.Db.IndexOf(Salem);
+        int wreck = -1;
+        for (int p = 0; p < w.Props.Capacity; p++)
+            if (w.Props.Alive[p] && w.Props.BlueprintIndex[p] == bpi) wreck = p;
+        Assert.True(wreck >= 0, "no wreck");
+        Assert.True(Vector2.Distance(w.Props.Pos[wreck], new Vector2(x, 64)) < 0.5f);
+        Assert.True(w.Props.Mass[wreck] > 0f);
+    }
 }
