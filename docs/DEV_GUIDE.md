@@ -122,6 +122,8 @@ Things learned while building the project that are not about how a system works 
   ghost; the sandbox `--exec "spawn ...; wait 30; ..."` builds any situation.
 - `--screenshot screenshots/x.png` writes **nothing** (no error) if the `screenshots/` folder doesn't exist: a fresh
   worktree has none, so `mkdir -p screenshots` first.
+- Screenshot hooks that act at a moment must wait on `snapshot.Tick`, not on frames: a `--demo` run was only at tick 5
+  after 100 frames and tick ~72 after 420 (7b `--ui-pings`). Alert toasts last 2.5-3 s and minimap flashes 4 s.
 - Late-game screens (end-screen graphs, big bases) need game time a 120-frame run doesn't have: make a save with
   `Rts.Bench -- savebench 8 256 2` (writes `saves/savebench.rtssave`), then `--load saves/savebench.rtssave
   --endscreen --screenshot ...` (6b).
