@@ -43,7 +43,7 @@ public sealed class AudioSettings
 /// <summary>
 /// Game sound director. Each frame it turns new snapshot effects into positional one-shots (weapon fire per
 /// ProjectileVisual / weapon kind, impacts, explosions, deaths, building collapses, construction), raises
-/// alerts (unit / commander under attack, mass / energy stall, unit ready), drives the continuous layers of
+/// alerts (mass / energy stall, unit ready; under attack etc.: UI/AlertMonitor → Notify), drives the continuous layers of
 /// <see cref="AmbientSynth"/> (wind, generative music, reclaim and build hums) and plays UI sounds.
 /// <para>Mixing: the listener is the camera focus. Gain falls off with ground distance over a radius that grows
 /// with zoom; the strategic view ducks the whole SFX mix; pan follows the camera's right axis. Requests of one
@@ -77,7 +77,7 @@ public sealed partial class GameAudio : IDisposable
     private readonly int[] _reqPlayed = new int[SoundBank.Count];
     private int _lastTick = -1;
     private HashSet<int> _bombs = new(), _bombsNext = new();
-    private double _lastAlert = -100, _lastCmdAlert = -100, _lastMassWarn = -100, _lastEnergyWarn = -100, _lastReady = -100;
+    private double _lastMassWarn = -100, _lastEnergyWarn = -100, _lastReady = -100;
     private int _massLowTicks, _energyLowTicks;
     private float _combatRate, _startFade;
     private readonly List<(string text, Color color, double until)> _toasts = new();
@@ -142,7 +142,6 @@ public sealed partial class GameAudio : IDisposable
         if (cur.Tick != _lastTick)
         {
             ScanBombs(cur);
-            CheckUnderAttack(interp.Prev, cur);
             CheckResources(cur);
             CheckLaunches(cur);
             _lastTick = cur.Tick;
@@ -263,34 +262,7 @@ public sealed partial class GameAudio : IDisposable
 
     // ------------------------------------------------------------------ alerts
 
-    private void CheckUnderAttack(SimSnapshot? prev, SimSnapshot cur)
-    {
-        if (prev == null) return;
-        double now = Raylib.GetTime();
-        bool any = now - _lastAlert > 25, cmd = now - _lastCmdAlert > 20;
-        if (!any && !cmd) return;
-        for (int k = 0; k < cur.UnitCount; k++)
-        {
-            ref var v = ref cur.Units[k];
-            if (v.Army != _ctx.LocalArmy) continue;
-            if (!prev.TryGetUnit(v.Index, v.Gen, out var pv) || pv.HealthFrac - v.HealthFrac < 0.002f) continue;
-            if (_ctx.Db[v.Bp].Has(UnitCategory.Commander))
-            {
-                if (!cmd) continue;
-                PlayUi(SoundId.CommanderAlert);
-                Toast("Commander under attack!", new Color(255, 110, 90, 255), 3);
-                _lastCmdAlert = _lastAlert = now;
-                return;
-            }
-            if (any && !OnScreen(v.Pos))
-            {
-                PlayUi(SoundId.UnderAttack);
-                Toast("Units under attack", new Color(255, 170, 90, 255), 2.5);
-                _lastAlert = now;
-                return;
-            }
-        }
-    }
+    // (7b) Under-attack alerts moved to UI/AlertMonitor (also without an audio device): sound + toast via Notify.
 
     private void CheckResources(SimSnapshot cur)
     {
@@ -313,7 +285,8 @@ public sealed partial class GameAudio : IDisposable
         }
     }
 
-    private bool OnScreen(Vector3 p)
+    /// <summary>Is a world point inside the screen (last rendered frame)?</summary>
+    public static bool OnScreen(Vector3 p)
     {
         var fv = Rendering.FrameView.Current;
         if (fv.ScreenW <= 0 || !fv.WorldToScreen(p, out var s)) return false;

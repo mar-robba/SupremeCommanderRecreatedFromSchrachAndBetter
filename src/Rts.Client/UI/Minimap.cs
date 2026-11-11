@@ -160,6 +160,7 @@ public sealed class Minimap : IDisposable
         }
 
         _ctx.Fog?.DrawMinimapContacts(m, snap, dot); // fog of war: ghosts + radar blips
+        PingMarkers.DrawMinimap(snap, _sel.Alerts, (x, z) => ToScreen(m, x, z)); // (7b) alert flashes + map pings
         DrawCameraView(m);
         Raylib.EndScissorMode();
         Raylib.DrawRectangleLinesEx(Ui.Inset(m, -1), 1, Ui.PanelBorder);
@@ -170,6 +171,7 @@ public sealed class Minimap : IDisposable
                 new("Minimap", Ui.TextColor, 13, true),
                 new("Left click / drag: move camera", Ui.TextDim, 11.5f),
                 new("Right click: move selection (factory: rally point)", Ui.TextDim, 11.5f),
+                new("Alt+left: alert ping · Alt+Shift+left: attack ping · Alt+right: move ping · Y: alert ping", Ui.TextDim, 11.5f),
                 new("In an order mode (attack, patrol, unload, launch, guard, capture…): left click gives it there", Ui.TextDim, 11.5f),
             }, above: true);
     }
@@ -177,6 +179,13 @@ public sealed class Minimap : IDisposable
     private void HandleInput(Rectangle panel, Rectangle m)
     {
         bool over = Ui.Hover(panel);
+        // (7b) Alt+left = alert ping, Alt+Shift+left = attack, Alt+right = move; Y = alert ping at the cursor.
+        if (over && Ui.Alt && !_ctx.ReadOnly && (Ui.LeftClickIn(panel) || Ui.RightClickIn(panel)))
+        {
+            _sel.Pings.Send(Input.PingInput.KindFor(Raylib.IsMouseButtonPressed(MouseButton.Right), Ui.Shift), ToWorld(m, Ui.Mouse));
+            return;
+        }
+        if (over && Input.Hotkeys.PingAlert.Pressed()) _sel.Pings.Send(Rts.Sim.Orders.PingKind.Alert, ToWorld(m, Ui.Mouse));
         if (_dragging && !Raylib.IsMouseButtonDown(MouseButton.Left)) _dragging = false;
 
         if (over && Ui.LeftClickIn(panel))

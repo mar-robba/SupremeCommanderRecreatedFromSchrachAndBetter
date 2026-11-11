@@ -59,8 +59,10 @@ public static class OrderSystem
             {
                 var dest = w.Terrain.Clamp(o.Destination);
                 // ArrivedAt: also true at the nearest reachable point of an unreachable destination (and for air units).
-                if (Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp)) || MovementSystem.ArrivedAt(mv, dest))
+                if (o.Aux != Vector2.Zero && o.State > 0 // (7b) FormationMove: arrived, turning to face Aux
+                    || Vector2.DistanceSquared(u.Pos[i], dest) <= Sq(ArriveRadius(bp)) || MovementSystem.ArrivedAt(mv, dest))
                 {
+                    if (o.Aux != Vector2.Zero && QueueEditSystem.StillTurning(w, i, bp, q, ref o)) { mv.HasGoal = false; return; }
                     q.Pop();
                     mv.HasGoal = false;
                     return;

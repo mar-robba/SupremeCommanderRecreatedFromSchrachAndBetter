@@ -52,6 +52,7 @@ public sealed class GameSession : IDisposable
     private readonly ShieldRenderer _shields;
     private readonly StrategicHud _stratHud;
     private readonly ExperimentalAlert _expAlert;
+    private readonly AlertMonitor _alerts; // (7b) notifications: toasts, alert sounds, minimap flashes
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly FrameProfiler _prof = new(); // per-stage CPU ms (screenshot perf line, --perf-log)
@@ -60,6 +61,7 @@ public sealed class GameSession : IDisposable
     /// <summary>Sandbox panel/console/tools (null outside sandbox mode).</summary>
     private SandboxController? _sandbox; // (6b) also created later: cheat tools opened in a normal game (F9/F10)
     private readonly ClientOptions _opt;
+    private readonly OrdersUiDemo? _ordersDemo; // (7b) --ui-formation / --ui-waypoints
     /// <summary>(6b) F9/F10 pressed in a cheats-on game: 1 = open the panel, 2 = the console, once the sim enabled the tools.</summary>
     private int _cheatToolsPending;
     private readonly HashSet<long> _selectedSet = new();
@@ -126,12 +128,14 @@ public sealed class GameSession : IDisposable
         _selection = new SelectionController(Ctx);
         _hud = new Hud(Ctx, _selection);
         _hud.ApplyStartupOptions(opt);
+        _ordersDemo = OrdersUiDemo.Create(Ctx, _selection, opt);
         _stratHud = new StrategicHud(Ctx, _selection);
         _props = new PropRenderer(Ctx, _fx.Particles);
         _shields = new ShieldRenderer(Ctx);
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
         _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
+        _alerts = new AlertMonitor(Ctx.Db, _selection.Alerts);
 
         _opt = opt;
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
@@ -223,9 +227,11 @@ public sealed class GameSession : IDisposable
         if (interactive)
         {
             _camera.Update(dt, overUi, ctx.PickGround);
+            _ordersDemo?.Update();
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
+        _alerts.Poll(_interp.Prev, _interp.Current, _interp.NewEffects, ctx.LocalArmy, ctx.IsEnemy, GameAudio.OnScreen, Raylib.GetTime(), _audio.Notify);
         if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly && !KeyboardCaptured)
         {
             if (NetKeys != null) NetKeys();
@@ -248,6 +254,7 @@ public sealed class GameSession : IDisposable
         _prof.Lap("units");
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
+        OrderMarkers.Draw3D(ctx, _selection); // (7b) waypoint markers, formation drag preview
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();
         _stratHud.Draw3D(cur);
@@ -270,6 +277,7 @@ public sealed class GameSession : IDisposable
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
         _shields.DrawBars(cur, prev, alpha, _selectedSet);
         UpgradeOverlay.Draw(ctx, cur, prev, alpha);
+        PingMarkers.Draw2D(ctx, cur); // (7b) map pings
         _prof.Lap("overlays2d");
         if (interactive)
         {
@@ -283,6 +291,7 @@ public sealed class GameSession : IDisposable
             _prof.Lap("hud");
             _sandbox?.Draw();
             CursorHint.Draw(ctx, _selection, overUi);
+            OrderMarkers.Draw2D(ctx, _selection, overUi);
             TeleportHud.Draw2D(ctx, _selection, overUi);
         }
         _prof.Lap("cursor");

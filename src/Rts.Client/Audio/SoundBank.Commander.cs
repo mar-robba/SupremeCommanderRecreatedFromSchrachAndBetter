@@ -16,7 +16,7 @@ public static partial class SoundBank
         SoundId.TeleportCharge => new(0.55f, 2, 1.5f, 1),
         SoundId.TeleportOut => new(0.7f, 2, 1.8f, 1),
         SoundId.TeleportIn => new(0.8f, 2, 1.8f, 1),
-        _ => new(0.4f, 2, 1f, 1),
+        _ => AlertInfo(id), // SoundBank.Alerts.cs
     };
 
     private static float[] GenerateCommander(SoundId id, ref SynthRng rng) => id switch
@@ -27,7 +27,7 @@ public static partial class SoundBank
         SoundId.TeleportCharge => TeleportCharge(ref rng),
         SoundId.TeleportOut => TeleportOut(ref rng),
         SoundId.TeleportIn => TeleportIn(ref rng),
-        _ => Synth.Alloc(0.05f),
+        _ => GenerateAlert(id), // SoundBank.Alerts.cs
     };
 
     /// <summary>Overcharge shot: a deep electric "vwomm" (falling square + saw), a sub thump and a hissing zap tail.</summary>

@@ -27,6 +27,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-16 | The 150k cap is the **default, not a fixed size**: before starting an agent or sub-agent, judge from the task's requirements how much splitting it across fresh agents would hurt the *result* (not the token cost); when it would hurt a lot, give that agent a proportionally higher cap (up to 300k). Keep evaluating how much the small-context approach harms the success of the work. See "Sizing an agent's context cap" and "Fragmentation: does a small cap hurt the result?". |
 | 2026-10-23 | **Two factions are enough** (UEF + Cybran): don't create further factions (no Aeon/Seraphim). "Everything must be done" means the full feature set for these two. |
 | 2026-11-10 | The owner asked for a judgment of these rules and approved its four changes ("effettua le modifiche consigliate"; "Review of the process rules (2026-11-10)"): (1) agents and sub-agents run on **Opus 5.5** (`model: "opus"` in every Agent call); Fable 5.2 only for the orchestrator and for pieces of class high or critical. (2) **One agent per module, no coordinator**: modules of about 1,500 lines, cap 200k; sub-agents only for separable content with a written contract (blueprints, models, tests). (3) **At most 2 agents at a time, sub-agents counted**, and no start when other sessions of the owner have already used part of the usage window. (4) LESSONS "Costi" is brought up to date **every 2-3 waves** or when the owner asks, not after every wave. |
+| 2026-11-11 | **Improving the AI is no longer a goal of the project** ("l'ai non deve essere più un obbiettivo del progetto, terremo quella già fatta"; then "mantieni la doc sulla ai soltanto togli dal programma l'obbiettivo di migliorarla"). The skirmish AI stays as merged in wave 5. Removed from ROADMAP: wave 9a, gap rows G30-G33, the "later: AI ..." lines. The AI docs (ARCHITECTURE "Skirmish AI", AI_TUNING) stay unchanged. Agents plan no AI work and write no "later: AI uses X" lines; the AI only has to keep working (AI tests, the reference match at every merge). |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -296,7 +297,8 @@ The weak points:
 Two more observations:
 - **Tuning does not work as a relay.** (k) took 11 coordinators one after another and 76.6 $ (19.6 $ per 1000
   lines, the dearest module) and left its goals unmet. The raised cap of 2026-10-16 reduced the re-reading but did
-  not change the outcome: the next step there is an AI design change (wave 9a), then few measuring rounds that
+  not change the outcome: the next step there would have been an AI design change (wave 9a, removed from the plan by the owner on
+  2026-11-11: improving the AI is no longer a goal), then few measuring rounds that
   re-read only summaries.
 - **Bookkeeping** is cheap over the whole project (the 4.5 % above), but on 2026-11-10 it was 12 $ of the day's
   39 $ (three waves of cost tables brought up to date, on Fable 5.2), against 18 $ of module work.

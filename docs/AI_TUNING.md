@@ -3,6 +3,9 @@
 How the AI is measured, and every tuning result so far. How the AI works is in ARCHITECTURE "Skirmish AI". Read this
 before changing the AI or unit balance, so you don't repeat experiments that already failed.
 
+Status (owner decision, 2026-11-11): improving the AI is no longer a goal of the project. The AI stays as merged in
+wave 5; the unmet goals and "next step" notes below are a record, not a plan (WORKFLOW "Owner decisions").
+
 ## Method: many games, never one
 
 One AI-vs-AI game says almost nothing: the same change can win or lose a single match by chance. The noise

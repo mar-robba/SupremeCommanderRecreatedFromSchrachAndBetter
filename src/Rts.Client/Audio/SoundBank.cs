@@ -55,6 +55,10 @@ public enum SoundId
     TeleportCharge,
     TeleportOut,
     TeleportIn,
+    // (7b) Notifications: SoundBank.Alerts.cs
+    AlertPing,
+    AlertNotice,
+    AlertStructureLost,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>
