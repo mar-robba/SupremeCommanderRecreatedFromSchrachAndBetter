@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-10 23:55 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-11 13:25 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -13,36 +13,26 @@ main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o)
 writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
 prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-10 14:10, session 3de864d5; the work paused from 2026-10-24 11:25, when a usage limit cut both
-agents and the account was then blocked, to 2026-11-10):
-- **STOPPED BY THE OWNER (2026-11-10 23:05: "fermo, ti dico io quando continuare"): start or resume no agent until the
-  owner says so.** Nothing is running. State at the stop (both coordinators cut again by the 5-hour limit at 21:01,
-  after 8 minutes of work; worktrees clean, everything committed):
-  - 7b (HEAD ba24869): pieces 1-3 done, G14 selection filters / commander key / bookmarks done with tests (67f3a2b,
-    7f942e9, note `.claude/notes/selection.md`, not verified in game); piece 4 (pings UI, notifications, jump to
-    alert) just started: its sub-agent was cut at 78k with no commit and no note. Coordinator 2 is at 109k.
-  - 8a (HEAD 8762364 = WIP MissileSubTests draft, may not compile): Salem on land works (WalkingShipTests 60e5664,
-    note `.claude/notes/naval.md` with the ordered TODO); left: missile sub and carrier tests, walls, client models +
-    `--scene units8a`, finish. Coordinator 3 is at 80k.
-  - **Model decided (owner, 2026-11-10): agents on Opus 5.5.** Don't resume the coordinators and sub-agents above:
-    they were started on Fable 5.2, where a window gives 8-10 minutes of agent work (on Opus 5.5 it gave about an
-    hour). When the owner says to continue: one fresh agent per module with `model: "opus"`, cap 200k, in the
-    existing worktree, with the brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`; finish
-    the module yourself, no coordinator". 7b and 8a together are the 2 agents allowed, so neither starts
-    sub-agents while the other runs.
-- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
-  (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
-  `agent_ctx.py --watch 135000 <id>=185000 ...`.
-- **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
-  `wave7b-orders` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
-  commit 7ad9342; sim commands and the formation/waypoint UI code were done, selection keys, pings UI,
-  notifications and the finish were open; the branch was 15 commits behind main). Cut by the 5-hour limit at 14:08
-  (71k; main merged, orders UI hooks + screenshots done), resumed by SendMessage 2026-11-10 20:55.
-- **Running:** **(8a) Missing units & walls** (G8, G9, Atlantis dive): worktree `.claude/worktrees/wave8a` (branch
-  `wave8a-units` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
-  commit 48673e7 = 9 untested blueprint drafts; all five pieces were open). Cut by the 5-hour limit at 14:08 (125k;
-  data piece done 88955ec, AI reference hash now BBD1FF3C4E116A4A: blueprint index shift only, same winner and
-  time). **Coordinator 3** started 2026-11-10 20:55 from the handoff note (WIP commit 676de72 = untested Salem on land).
+**ON RESUME** (2026-11-11 13:25, session 9cdd3b47; the owner said "continua" after the stop of 2026-11-10 23:05):
+- **Running since 2026-11-11 13:25: two module agents on Opus 5.5** (`model: "opus"`, no coordinator, cap 200k
+  medium, 0 sub-agents each, since together they are the 2 agents allowed). Ids in the orchestrator file
+  `agents-wave5.md`. The usage window opened at 13:00 (reset 18:00); at the start the docs session of this morning
+  (Fable 5.2, 6 calls) and another session of the owner (home folder, Opus 5.5, still active) had used a part of it,
+  so a cut before 18:00 is possible.
+  - **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
+    `wave7b-orders`), agent `7b-mod-1` from HEAD ba24869. Done before: sim commands + tests, selection filters /
+    commander key / bookmarks (not tried in the game window), formation drag + waypoint editing UI. Its TODO: pings
+    UI + notification pass + jump to alert (from scratch: the old sub-agent left nothing), try the selection keys
+    in game, G20 overlays if the context allows, finish.
+  - **(8a) Missing units & walls** (G8, G9): worktree `.claude/worktrees/wave8a` (branch `wave8a-units`), agent
+    `8a-mod-1` from HEAD 8762364 (WIP MissileSubTests draft, may not compile). Done before: 9 blueprints + roster
+    tests, Salem on land + tests; Atlantis dive existed already. Its TODO: missile sub and carrier tests, walls,
+    client models + `--scene units8a`, finish. AI reference hash on this branch: BBD1FF3C4E116A4A (blueprint index
+    shift only, same winner and time).
+- If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
+  (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and
+  `.claude/notes/`" (the prompts of 2026-11-11 are the model: brief, state, ordered TODO, rules block). Don't resume
+  by SendMessage an agent above 100k. Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...`.
 - **Process rules changed by the owner (2026-11-10; WORKFLOW "Owner decisions" and "Review of the process
   rules"):** every Agent call carries `model: "opus"`; one agent per module of about 1,500 lines, cap 200k, no
   coordinator (sub-agents only for separable content: blueprints, models, tests); at most 2 agents at a time,
