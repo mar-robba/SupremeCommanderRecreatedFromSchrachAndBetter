@@ -1,6 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
 using Rts.Client.Audio;
+using Rts.Client.UI;
 using Rts.Sim;
 using Rts.Sim.Core;
 using Rts.Sim.Data;
@@ -43,6 +44,9 @@ public sealed class SelectionController
     public readonly WaypointEditor Waypoints;
     /// <summary>(7b) Camera bookmarks (Input/CameraBookmarks.cs: Ctrl+Alt+1..5 saves, Alt+1..5 recalls).</summary>
     public readonly CameraBookmarks Bookmarks = new();
+    /// <summary>(7b) Notification log (UI/AlertLog: minimap flashes, Backspace jump) and map ping input (Input/PingInput.cs).</summary>
+    public readonly AlertLog Alerts = new();
+    public readonly PingInput Pings;
 
     public SelectionController(GameContext ctx)
     {
@@ -50,6 +54,7 @@ public sealed class SelectionController
         Placement = new BuildPlacement(ctx);
         Formation = new FormationDrag(ctx, this);
         Waypoints = new WaypointEditor(ctx, this);
+        Pings = new PingInput(ctx, Alerts);
     }
 
     public bool IsDragging => _dragStart.HasValue && Vector2.Distance(_dragStart.Value, Raylib.GetMousePosition()) > 6;
@@ -72,6 +77,7 @@ public sealed class SelectionController
         if (InputBlocked) { _dragStart = null; Formation.Cancel(); return; }
 
         HandleHotkeys(ctrl, shift);
+        if (Pings.HandleWorld(mouseOverUi)) { _dragStart = null; return; } // (7b) Alt+click = map ping
         Waypoints.Refresh(mouseOverUi || Placement.Active || Mode != CommandMode.Normal || IsDragging || Formation.Active);
         bool hover = !mouseOverUi && !_ctx.ReadOnly && !Placement.Active && Selected.Count > 0 && !IsDragging
             && Waypoints.Hover < 0 && Waypoints.Dragging == null && !Formation.Active;
@@ -143,6 +149,7 @@ public sealed class SelectionController
         TransportInput.Update(_ctx, this, ctrl || _ctx.ReadOnly); // U unload / E transport / F ferry / D dock (replays: none)
         SelectionFilters.HandleHotkeys(_ctx, this, shift); // (7b) same types / combat / land / air / naval / engineers / commander
         Bookmarks.HandleHotkeys(_ctx);
+        Pings.HandleKeys(); // (7b) Backspace: jump to the last alert
         // Alt+digits = camera bookmarks (Hotkey.PressedIndex leaves an undeclared Alt free): no control groups then.
         bool alt = Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt);
         int set = alt ? -1 : Hotkeys.GroupSet.PressedIndex();

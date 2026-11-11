@@ -52,6 +52,7 @@ public sealed class GameSession : IDisposable
     private readonly ShieldRenderer _shields;
     private readonly StrategicHud _stratHud;
     private readonly ExperimentalAlert _expAlert;
+    private readonly AlertMonitor _alerts; // (7b) notifications: toasts, alert sounds, minimap flashes
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly FrameProfiler _prof = new(); // per-stage CPU ms (screenshot perf line, --perf-log)
@@ -134,6 +135,7 @@ public sealed class GameSession : IDisposable
         UiSounds.Drain(); // drop clicks queued by the menus
         _audio = audio != null ? new GameAudio(Ctx, audio) : new GameAudio(Ctx, opt.Audio, automated: opt.ScreenshotPath != null);
         _expAlert = new ExperimentalAlert(Ctx, _audio.PlayExperimentalAlert);
+        _alerts = new AlertMonitor(Ctx.Db, _selection.Alerts);
 
         _opt = opt;
         if (cfg.Sandbox) _sandbox = new SandboxController(Ctx, _selection, opt);
@@ -229,6 +231,7 @@ public sealed class GameSession : IDisposable
             _selection.Update(overUi);
         }
         _audio.Update(dt, _interp, _selection.Selected.Count, inputBlocked: !interactive || _selection.InputBlocked);
+        _alerts.Poll(_interp.Prev, _interp.Current, _interp.NewEffects, ctx.LocalArmy, ctx.IsEnemy, GameAudio.OnScreen, Raylib.GetTime(), _audio.Notify);
         if (interactive && _sandbox?.TextFocused != true && !ctx.ReadOnly && !KeyboardCaptured)
         {
             if (NetKeys != null) NetKeys();
@@ -274,6 +277,7 @@ public sealed class GameSession : IDisposable
         GameApp.DrawHealthBars(ctx, _selectedSet, cur, prev, alpha);
         _shields.DrawBars(cur, prev, alpha, _selectedSet);
         UpgradeOverlay.Draw(ctx, cur, prev, alpha);
+        PingMarkers.Draw2D(ctx, cur); // (7b) map pings
         _prof.Lap("overlays2d");
         if (interactive)
         {

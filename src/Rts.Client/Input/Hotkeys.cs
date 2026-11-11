@@ -106,6 +106,7 @@ public static class Hotkeys
     public static readonly Hotkey ResetRotation = new(KeyboardKey.Home, N, G, "Camera", "Reset the camera rotation");
     public static readonly Hotkey BookmarkRecall = new(Digits(1, 5), Al, G, "Camera", "Go to a camera bookmark (position, zoom, rotation)", label: "Alt+1-5");
     public static readonly Hotkey BookmarkSave = new(Digits(1, 5), C | Al, G, "Camera", "Save the view as a camera bookmark", label: "Ctrl+Alt+1-5");
+    public static readonly Hotkey JumpToAlert = new(KeyboardKey.Backspace, N, G, "Camera", "Jump to the last alert (again: the one before; also pings)");
 
     // ---------------------------------------------------------------- selection
     public static readonly Hotkey GroupRecall = new(Digits(), N, G, "Selection", "Recall control group (Shift: add; press twice: center the camera on it)", label: "0-9");
@@ -127,6 +128,7 @@ public static class Hotkeys
     public static readonly Hotkey Launch = new(KeyboardKey.L, N, U, "Orders", "Launch mode (missile launchers: click a ground target)");
     public static readonly Hotkey Teleport = new(KeyboardKey.J, N, U, "Orders", "Teleport mode (commander with Personal Teleporter: click a ground point)");
     public static readonly Hotkey SelfDestruct = new(KeyboardKey.K, C, U, "Orders", "Self-destruct (asks for confirmation)");
+    public static readonly Hotkey PingAlert = new(KeyboardKey.Y, N, Pl, "Orders", "Alert ping at the cursor (map or minimap; allies see it)");
     public static readonly Hotkey DeleteWaypoint = new(KeyboardKey.Delete, N, U, "Orders", "Delete the waypoint under the cursor (selected units' queued orders)", label: "Del");
 
     // ---------------------------------------------------------------- toggles
@@ -186,10 +188,10 @@ public static class Hotkeys
     /// <summary>Every hotkey, in help order.</summary>
     public static readonly Hotkey[] All =
     [
-        Pan, Rotate, ResetRotation, BookmarkRecall, BookmarkSave,
+        Pan, Rotate, ResetRotation, BookmarkRecall, BookmarkSave, JumpToAlert,
         GroupRecall, GroupSet, IdleEngineer, IdleFactory,
         SelectSameTypes, SelectSameTypesMap, SelectCombat, SelectDomain, SelectCommander,
-        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct, DeleteWaypoint,
+        Stop, Move, AttackMove, Patrol, Guard, Launch, Teleport, SelfDestruct, DeleteWaypoint, PingAlert,
         FireState, Pause, Dive, Overcharge, Capture,
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
@@ -210,6 +212,7 @@ public static class Hotkeys
         new("Orders", "Right click (factory)", "Set the rally point"),
         new("Orders", "Right drag", "Line formation along the drag, facing away from the camera when dragged left to right (Shift: queue; attack-move mode: attack-move)"),
         new("Orders", "Drag a waypoint", "Left-drag a selected unit's waypoint marker to move it (Del over it: delete it)"),
+        new("Orders", "Alt + click", "Map ping (map or minimap; allies see it): Alt+left = alert, Alt+Shift+left = attack, Alt+right = move"),
         new("Orders", "Minimap", "Left: camera; in an order mode: give it there · right: move"),
         new("Camera", "Wheel", "Zoom to the cursor (zoomed out: strategic icons)"),
         new("Factory", "Right-click", "On a unit button: remove one from the queue (Shift: 5)"),

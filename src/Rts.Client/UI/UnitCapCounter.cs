@@ -31,11 +31,10 @@ public sealed class UnitCapCounter
         return true;
     }
 
-    /// <summary>Draws the counter at <paramref name="x"/> in the top bar <paramref name="bar"/> and raises the alert.</summary>
+    /// <summary>Draws the counter at <paramref name="x"/> in the top bar <paramref name="bar"/> (the alert: UI/AlertMonitor).</summary>
     public void Draw(Rectangle bar, float x, SimSnapshot snap, in ArmyView a)
     {
         if (snap.Sandbox != null || a.UnitCap <= 0) return;
-        if (ShouldAlert(a.UnitCount, a.UnitCap)) Toasts.Show("Unit cap reached: factories and engineers wait for free slots", error: true);
         var lv = LevelOf(a.UnitCount, a.UnitCap);
         var col = lv switch { Level.Full => Ui.Bad, Level.Near => Ui.Warn, _ => Ui.TextDim };
         int fs = Ui.F(12);
