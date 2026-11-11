@@ -868,6 +868,51 @@ others receive it from the host in chunks with a progress line, and check the ha
 Owns `Rts.Net` lobby + transfer, the lobby screen, `TerrainRenderer` palettes. Tests: codec round trip, transfer in
 an MP loopback (file present and missing), hash mismatch refused. Screenshots: one per biome, the lobby picker.
 
+### (8b-1) Map props: trees and rocks — report (merged 2026-11-12, dd28b4a)
+Two module agents on Opus 5.5, one after the other in the same worktree (the first stopped at its context cap after
+the sim part, 19 minutes; the second finished in 17 minutes). 1,393 lines in `src` and `tests`.
+
+**What works.** Every map preset gets forests and rock fields, symmetric like the terrain, none on start plateaus,
+deposits, water or steep ground. Engineers and the AI reclaim them: trees give energy (and a little mass), rocks
+give mass. Trees fall when units drive over them and burn in area damage; fire spreads; a burnt tree is worth less
+(energy x0.25, mass x0.5); nukes knock down and set fire to forests. Client: instanced trees and rocks with a far
+LOD, the fall animation, burning crowns with flames and smoke, charred trunks; the cursor shows "Reclaim tree +N
+energy" / "Reclaim rock +N mass"; `PickProp` only checks props near the ground point under the mouse.
+How it works: ARCHITECTURE "Map props".
+
+**How to try it.** `dotnet run --project src/Rts.Client -- --scene props[:fire|:rocks]` (prints the positions), or
+any skirmish.
+
+**Tests.** `MapPropsTests` (19, sim: placement, symmetry, density, grid against a full scan, reclaim, patrol
+reclaim, fall, burn, nuke, save/load while burning), `PropsSceneTests` (2, client). `AiVersusAiReachesCombat` failed
+on every run with props (on seed 42 the rocks shift the two mirrored AI economies so that neither attacks within
+8 minutes: a timing edge, not an AI bug), so that test now clears the props; six tests that count wrecks call the
+new `TestUtil.ClearMapProps`. No new hotkeys.
+
+**Shared files** (a few lines each): Terrain, MapBuilder, GameSetup, SimWorld, Simulation, DamageSystem,
+MissileSystem, ConstructionSystem, AiEconomy, SimSnapshot, SnapshotWriter, GameApp, GameSession, ContextOrders,
+CLAUDE.md.
+
+**Numbers.**
+- Props with 4 players on Plains: 256 map = 460, 512 = 2,660, 1024 = 10,816.
+- Bench `2000 300`, 5 interleaved runs: main 2.29 ms per tick, branch 2.43 ms (+6 %).
+- `--perf-log` on a 1024 demo: main 2.32 ms per frame (CPU 0.61), branch 2.30 ms (CPU 0.68); the props stage costs 0.15 ms.
+- Reference match `ai 30 256 42 hard,normal`: before "Hard wins after 15:35", BBD1FF3C4E116A4A; now "Hard wins
+  after 12:18", **FB269C29202773C1**. Bench `2000 300` hash: EAED77303695A943 → **6A8312040EFA67F2**.
+- A replay of a 256 demo re-simulates in sync; `savebench 4 1024 4`: load 926 ms cold, 413 ms warm, same state hash.
+
+**Known issues.** Trees cast no shadows (the shadow pass is in `UnitRenderer`, outside this module); a tree that
+has fallen and then catches fire plays its fall again (needs its own fall tick); trees are not on the minimap;
+saves and replays made before this merge do not load (the saved prop layout changed).
+
+**Handoff review** (second agent). The first agent's note was accurate for the sim part. It had not run the full
+sim suite, so the test that really failed (`AiVersusAiReachesCombat`, not the one the note named) was diagnosed from
+scratch. Nothing was broken between the two agents' work.
+
+**Merge checks on main** (orchestrator, 2026-11-12 00:42-00:47): build 0 errors; tests 588 sim + 317 client + 27
+net green; reference match and bench give the two new hashes above; screenshot of `--scene props:fire` (standing,
+fallen and burning trees) looked right. The branch already contained main, so the merge changed nothing else.
+
 ## Wave 9: visual polish (briefs re-cut 2026-11-11, not started)
 9a (AI) was removed from the plan by the owner on 2026-11-11. 9b is cut into two modules of about 1,500 lines, one
 module agent each as in (8b). Their files are disjoint from 8b-1 and 8b-2, so the pairs 8b-1 + 9b-1 and

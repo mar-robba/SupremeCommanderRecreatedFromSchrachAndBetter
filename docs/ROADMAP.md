@@ -3,37 +3,33 @@
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
 ## ▶ NEXT STEPS (updated 2026-11-11 19:55 — read this first in a new session)
-main has waves 1-7 and (8a): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
-+ (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24),
-(7b) orders & selection UX and (8a) missing units & walls (both merged 2026-11-11). Tests: 569 sim + 315 client + 27 net.
-Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 15:35", hash
-**BBD1FF3C4E116A4A** (agents that must not change sim results compare against it; it is the same game as
-BF85B7DBBF03D949 before 8a and (k)'s 4E3F22FD0F8EED11: 6a added hashed commander state, 8a's new blueprints shift the
-blueprint indices). Bench `2000 300` hash EAED77303695A943 (F74F5FED38AC5D83 before 8a, same reason). Replays and saves
-made before 8a refuse to open ("unit blueprints changed"). Each agent keeps `<worktree>/.claude/handoff.md` and
+main has waves 1-7, (8a) and (8b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
+uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
+autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
+2026-11-11), (8b-1) map props: trees and rocks (merged 2026-11-12). Tests: 588 sim + 317 client + 27 net.
+Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
+**FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
+rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
+(EAED77303695A943 before 8b-1). Replays and saves made before 8b-1 refuse to open (the saved prop layout changed).
+Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
 **ON RESUME** (2026-11-12 00:15, orchestrator session 9cdd3b47, the one that began as 26701b91):
-- **Two module agents run, second generation since 2026-11-12 00:27** (Opus 5.5, cap 200k, 0 sub-agents; no
-  isolation flag: each works in the worktree of its predecessor; prompts in the transcript of session 26701b91 /
-  9cdd3b47). The first two (started 00:04) reached their cap in 19 minutes and stopped with CHECKPOINT:
-  - (8b-1) Map props: agent `a6285ba07c9b69783` (CTX-TAG `8b1-mod-2`; first: `a33fbe4e163f2c48c`), worktree
-    `.claude/worktrees/agent-a33fbe4e163f2c48c`, branch `worktree-agent-a33fbe4e163f2c48c`. Sim part done and
-    building at WIP 25fd255 (props placed, fall / burn, reclaim, snapshot fields, 19 tests); left: full sim suite,
-    client (`PropRenderer.Nature.cs`), tooltip, `--scene props`, perf, new reference hashes, docs.
-  - (9b-1) Death animations + ACU warp-in: agent `a0cfcf3371b11fcf2` (CTX-TAG `9b1-mod-2`; first:
-    `a189f850d1c3430f0`), worktree `.claude/worktrees/agent-a189f850d1c3430f0`, branch
-    `worktree-agent-a189f850d1c3430f0`. Most code written at WIP 3e4afce but never built; a patch that was not
-    applied is in the worktree's `.claude/pending-9b1.txt`; left: build, `--scene deaths`, tests, screenshots,
-    perf, docs. Client only: the reference hashes must stay.
-  Context watcher (background of the orchestrator session): `agent_ctx.py --watch 135000 a6285ba0=185000 a0cfcf33=185000`.
-  If the usage limit cuts them: after the reset, a fresh agent per worktree from its `.claude/handoff.md`.
-- **When one finishes** (report + clean tree): merge, checks and after-merge steps as written below and in WORKFLOW
-  "Lifecycle of a wave" steps 6-7. If both are ready, merge (9b-1) first (same hashes, so the check is exact), then
-  (8b-1) and write its new reference hashes at the top of this section. Then (8b-2) with (9b-2), then (8b-3) alone,
-  each after the merge of the module before it and only at the start of a usage window. Briefs: HISTORY "(8b) Maps"
-  and "Wave 9"; their ledger purposes are already in `tools/token-ledger/purposes.json`.
+- **(8b-1) Map props is merged (dd28b4a, 2026-11-12 00:42) and verified** on main: build, the three suites,
+  reference match, bench hash, a screenshot of `--scene props:fire`. Report: HISTORY "(8b-1)". Its worktree and
+  branch are removed. What it left: its "later:" lines in the Wave 8 list below.
+- **(9b-1) Death animations + ACU warp-in is still running**: second agent `a0cfcf3371b11fcf2` (CTX-TAG `9b1-mod-2`;
+  the first, `a189f850d1c3430f0`, stopped at its cap with the code written but never built), worktree
+  `.claude/worktrees/agent-a189f850d1c3430f0`, branch `worktree-agent-a189f850d1c3430f0`. At 00:46 it had merged
+  main with 8b-1 (f9492e7), had a clean tree and was at its final checks (157k of 200k). Client only: the reference
+  hashes of main must stay. If the usage limit cuts it: a fresh agent (`model: "opus"`, no isolation flag) in that
+  worktree from `.claude/handoff.md`.
+- **When (9b-1) finishes** (report + clean tree): merge, checks and after-merge steps as written below and in
+  WORKFLOW "Lifecycle of a wave" steps 6-7 (the script of the 8b-1 checks: build, three suites, reference match,
+  bench, is short: see HISTORY "(8b-1)" "Merge checks"). Then (8b-2) with (9b-2), then (8b-3) alone, each after the
+  merge of the module before it and only at the start of a usage window. Briefs: HISTORY "(8b) Maps" and "Wave 9";
+  their ledger purposes are already in `tools/token-ledger/purposes.json`.
 - **Usage window:** the current one began 2026-11-12 00:00. The evening window of 11-11 was 19:00-00:00, not
   18:00-23:00 as the orchestrator had worked out: the start job set for 23:04 was removed at 23:01, the session hit
   the limit at 23:02 ("resets 12am") and the agents started after 00:00 (WORKFLOW "Usage limits", "When a window
