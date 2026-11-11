@@ -68,12 +68,13 @@ public sealed unsafe partial class UnitRenderer
         {
             float ph = phase + ((leg++ is 0 or 3) ? 0 : MathF.PI); // diagonal pairs step together
             var hip = pos + right * (sd * HipX * w) + Vector3.UnitY * (HipY * h) + fwd * (zf * l);
-            var foot = pos + right * (sd * 0.98f * w) + fwd * (zf * l - amp * stride * MathF.Cos(ph));
+            float splay = (zf > 0 ? 0.07f : -0.07f) * l; // front feet reach forward, rear feet back
+            var foot = pos + right * (sd * 1.3f * w) + fwd * (zf * l + splay - amp * stride * MathF.Cos(ph));
             foot.Y = _terrain.GetHeight(foot.X, foot.Z) + amp * lift * MathF.Max(0, MathF.Sin(ph));
-            var knee = Vector3.Lerp(hip, foot, 0.55f) + right * (sd * 0.12f * w);
-            knee.Y = MathF.Max(hip.Y, foot.Y) + 0.24f * h;
-            _legModel.Body.Add(Segment(hip, knee, 0.075f * w), col);
-            _legModel.Turret!.Add(Segment(knee, foot, 0.055f * w), col);
+            var knee = Vector3.Lerp(hip, foot, 0.42f);
+            knee.Y = MathF.Max(hip.Y, foot.Y) + 0.42f * h; // spider knee well above the deck line
+            _legModel.Body.Add(Segment(hip, knee, 0.09f * w), col);
+            _legModel.Turret!.Add(Segment(knee, foot, 0.06f * w), col);
         }
         return pos;
     }

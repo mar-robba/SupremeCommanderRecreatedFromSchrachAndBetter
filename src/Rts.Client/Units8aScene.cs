@@ -131,8 +131,10 @@ public static class Units8aScene
 
         // One tick so every unit is alive, then dock the aircraft, give the orders, set the fire states.
         sim.Step();
+        int docked = 0;
         foreach (var (carrier, plane) in board)
-            if (!plane.IsNone && TransportSystem.CanCarry(w, carrier.Index, plane.Index)) TransportSystem.Board(w, carrier.Index, plane.Index);
+            if (!plane.IsNone && TransportSystem.CanCarry(w, carrier.Index, plane.Index)) { TransportSystem.Board(w, carrier.Index, plane.Index); docked++; }
+        Console.WriteLine($"units8a scene: {docked}/{board.Count} aircraft docked on the carrier");
         if (attackers.Count > 0) cmds.Add(new IssueOrderCommand(1, attackers.ToArray(), Order.AttackMoveTo(wc + new Vector2(0, 12f)), false));
         if (!salem.IsNone) cmds.Add(new IssueOrderCommand(0, [salem], Order.PatrolTo(sc + new Vector2(11f, 0)), false));
         for (int a = 0; a < 2 && a < w.Armies.Length; a++)
