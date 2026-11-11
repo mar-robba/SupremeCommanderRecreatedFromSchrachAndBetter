@@ -23,7 +23,7 @@ public sealed class OrdersUiDemo
 
     public static OrdersUiDemo? Create(GameContext ctx, SelectionController sel, ClientOptions o)
     {
-        if (o.UiFormation == null && o.UiWaypoints == null) return null;
+        if (o.UiFormation == null && o.UiWaypoints == null && o.UiPings == null) return null;
         return new OrdersUiDemo(ctx, sel, o);
     }
 
@@ -33,6 +33,33 @@ public sealed class OrdersUiDemo
         _sel = sel;
         if (o.UiFormation?.Split(':') is [var a, var b] && Xz(a) is Vector2 fa && Xz(b) is Vector2 fb) _line = (fa, fb);
         if (o.UiWaypoints != null) _wp = Xz(o.UiWaypoints);
+        if (o.UiPings != null) _ping = Xz(o.UiPings);
+    }
+
+    private Vector2? _ping;
+    private bool _pinged;
+
+    /// <summary>(7b) --ui-pings x,z: tick 50 = 4 enemy tanks on the local start (off-screen attack: toast + minimap
+    /// flash), tick 40 = alert / move / attack pings around x,z (aim the camera there).</summary>
+    private void PingDemo(Vector2 p)
+    {
+        int tank = _ctx.Db.IndexOf("uef_t1_tank"), army = _ctx.LocalArmy;
+        var snap = _ctx.Snapshots.Current;
+        if (_step == 0 && snap.Tick >= 50 && tank >= 0 && snap.Armies.Length > 1)
+        {
+            var start = _ctx.Terrain.StartPositions[army % _ctx.Terrain.StartPositions.Length];
+            _ctx.Runner.Enqueue(new DebugSpawnCommand((army + 1) % snap.Armies.Length, tank, new Vector2(start.X + 6, start.Y + 6), 4));
+            Console.WriteLine($"[ui-pings] enemy tanks at {start.X + 6:F0},{start.Y + 6:F0}");
+            _step = 1;
+        }
+        if (!_pinged && snap.Tick >= 40)
+        {
+            _pinged = true;
+            _ctx.Runner.Enqueue(new MapPingCommand(army, PingKind.Alert, p));
+            _ctx.Runner.Enqueue(new MapPingCommand(army, PingKind.Move, p + new Vector2(16, 4)));
+            _ctx.Runner.Enqueue(new MapPingCommand(army, PingKind.Attack, p + new Vector2(6, 14)));
+            Console.WriteLine($"[ui-pings] pings at {p.X:F0},{p.Y:F0}");
+        }
     }
 
     private static Vector2? Xz(string s) =>
@@ -43,6 +70,7 @@ public sealed class OrdersUiDemo
     public void Update()
     {
         _frame++;
+        if (_ping is Vector2 pp) { PingDemo(pp); return; }
         if (_step >= 3 || _frame > 900) return;
         int army = _ctx.LocalArmy;
         int tank = _ctx.Db.IndexOf("uef_t1_tank");

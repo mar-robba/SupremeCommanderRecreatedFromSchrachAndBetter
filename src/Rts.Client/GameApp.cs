@@ -70,7 +70,7 @@ public sealed class ClientOptions
     public string? UiPlace;
     public Vector2? MousePos;
     /// <summary>(7b) Screenshot hooks: --ui-formation x1,z1:x2,z2, --ui-waypoints x,z (Input/OrdersUiDemo.cs).</summary>
-    public string? UiFormation, UiWaypoints;
+    public string? UiFormation, UiWaypoints, UiPings; // (7b) --ui-pings x,z
     /// <summary>Extra mixed units per army spawned in the demo (performance testing).</summary>
     public int Stress;
     /// <summary>Client-side fake projectiles/effects for testing visuals (also toggled with F9).</summary>
@@ -161,6 +161,7 @@ public sealed class ClientOptions
                 case "--ui-place": o.UiPlace = Next(); break;
                 case "--ui-formation": o.UiFormation = Next(); break;
                 case "--ui-waypoints": o.UiWaypoints = Next(); break;
+                case "--ui-pings": o.UiPings = Next(); break;
                 case "--mouse":
                     var mp = Next().Split(',').Select(float.Parse).ToArray();
                     o.MousePos = new Vector2(mp[0], mp[1]);
