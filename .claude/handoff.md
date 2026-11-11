@@ -1,6 +1,6 @@
-# (7b) Orders & selection UX — handoff (coordinator 1, CTX 7b-coord-1)
-Worktree `/run/media/marco/RTS/.claude/worktrees/wave7b`, branch `wave7b-orders` (from main de11d52, merged).
-Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). One sub-agent at a time.
+# (7b) Orders & selection UX — handoff (module agent 7b-mod-1, no coordinator, no sub-agents, 2026-11-11)
+Worktree `/run/media/marco/RTS/.claude/worktrees/wave7b`, branch `wave7b-orders` (main merged 2026-11-11: abce0de).
+Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). The module agent does everything itself.
 
 ## Baselines (main == branch start)
 - `Rts.Bench -- 2000 300` (BENCH_WARMUP=1): total 0.9s, hash F74F5FED38AC5D83
@@ -34,7 +34,8 @@ Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). One sub-ag
 3. [x] formation drag + waypoint editing UI: hooks run + screenshots OK (4d412d4; PNGs local only, screenshots/ is
    gitignored: `screenshots/7b_formation_drag.png`, `7b_waypoint_edit.png`, commands in notes/orders-ui.md).
 4. [ ] pings UI + notification pass (AlertLog, minimap flash, toasts) + jump to last alert + ping replay test
-   -> sub-agent 7b-ping-1 (started 2026-11-10 ~21:30), notes/pings.md
+   -> 7b-ping-1 was cut with no commit; redone from scratch by 7b-mod-1, notes/pings.md
+   3b. [ ] try piece-2 keys in the game window once (filters, Ctrl+C, bookmarks)
 5. [ ] G20 range/intel overlays (if time) -> notes/overlays.md
 6. [ ] finish: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
    ROADMAP G14-G17 rows `[x] 2026-11-10 (7b)` + later items, CLAUDE.md CLI lines), `.claude/agent-report.md`
