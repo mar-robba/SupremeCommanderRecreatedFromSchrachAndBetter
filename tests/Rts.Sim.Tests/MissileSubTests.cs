@@ -170,7 +170,7 @@ public class MissileSubTests
         TestUtil.Run(sim, 50,
             new SetFireStateCommand(1, [target], FireState.HoldFire),
             new IssueOrderCommand(0, [sub], Order.MoveTo(new Vector2(20, 60)), false),
-            new IssueOrderCommand(0, [queued], Order.MoveTo(new Vector2(50, 110)), false),
+            new IssueOrderCommand(0, [queued], Order.MoveTo(new Vector2(20, 80)), false),
             new IssueOrderCommand(0, [queued], Order.LaunchAt(aim), true));
         Assert.True((w.Units.Flags[sub.Index] & UnitFlags.Moving) != 0);
         Assert.Empty(s.Missiles);
@@ -183,7 +183,7 @@ public class MissileSubTests
         AssertStaysDown(w, sub);
         var launchPos = w.Units.Pos[sub.Index];
 
-        // The queued launch waits for its move to end, then fires; both stay submerged, the first sub just stops.
+        // The queued launch waits for its move to end (along z: the shoal at x 40..44 is too shallow for a sub), then fires; both stay submerged, the first sub just stops.
         bool second = false;
         for (int t = 0; t < 900; t++)
         {
@@ -193,7 +193,7 @@ public class MissileSubTests
             if (s.Silo[queued.Index].Stock == 0 && !second)
             {
                 second = true;
-                Assert.True(w.Units.Pos[queued.Index].X > 40f, $"queued launch fired before the move ended, at {w.Units.Pos[queued.Index]}");
+                Assert.True(w.Units.Pos[queued.Index].Y < 84f, $"queued launch fired before the move ended, at {w.Units.Pos[queued.Index]}");
             }
             if (second && s.Missiles.Count == 0) break;
         }
