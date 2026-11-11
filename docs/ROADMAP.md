@@ -14,31 +14,23 @@ made before 8a refuse to open ("unit blueprints changed"). Each agent keeps `<wo
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-11 19:55, session da785bd8; the owner cleared the context at 19:49 and said "continua"):
-- **No agent is running, no agent worktree is open, nothing waits for a merge.** (7b) and (8a) are merged and
-  verified on main (build, three suites, reference match, interleaved bench, screenshots: HISTORY "(7b)", "(8a)").
-  What they left is in "later (7b)" and "later (8a)" below.
-- **FIRST THING TO DO: start (8b-1) Map props and (9b-1) Death animations + ACU warp-in**, together (disjoint
-  files), one module agent each: `model: "opus"`, `isolation: "worktree"`, cap 200k, no coordinator, 0 sub-agents
-  while both run. Briefs: HISTORY "(8b) Maps" and "Wave 9"; prompt = brief + the AGENT_RULES block (the prompts of
-  2026-11-11 in the session transcripts are the model: brief, state, ordered TODO, rules block). Then (8b-2) with
-  (9b-2), then (8b-3) alone, each after the merge of the module before it. The ledger purposes of the five modules
-  are already in `tools/token-ledger/purposes.json` (`aree`, `onde`): start each description with its tag, e.g.
-  `[Alberi e rocce (8b-1)]`.
-- **Start them at the beginning of a usage window.** Nothing was started on 2026-11-11 after the 8a merge: at
-  19:45 the 18:00-23:00 window already held 14 $ of this project (8a's agents and the merge checks; windows with the
-  orchestrator on Fable 5.2 ended at about 20 $), and two other Claude sessions of the owner were open.
-  `python3 -I tools/token-ledger/windows.py <ISO time of the last reset>` prints what the project used since then.
-  At 19:52 the window held 17.4 $ (Fable 5.2 10.0 $ + Opus 5.5 7.4 $; the mixed windows of 11-10 23:00 and 11-11
-  13:00 ended at 20 $), so session da785bd8 scheduled the start for the reset: a one-shot job (CronCreate, 23:04,
-  lives only while that session stays open) that checks the window and starts both agents. If that session was
-  closed, a new one starts them after 23:00 as written above.
-  The job survives `/clear`: the owner cleared again at 20:06 and said "continua"; the same process, now session
-  26701b91, still lists it (`CronList`: job 241e88cc, next run 23:04; its full prompt is in the transcript of
-  da785bd8). The window then held 19.0 $ and four other `claude` processes were open, so nothing was started.
-  The job fires only while the session is idle and open: after a restart of Claude Code, start the agents by hand.
-- Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
-  tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
+**ON RESUME** (2026-11-12 00:15, orchestrator session 9cdd3b47, the one that began as 26701b91):
+- **Two module agents run since 2026-11-12 00:10** (Opus 5.5, `isolation: "worktree"`, cap 200k, 0 sub-agents;
+  their prompts, brief + state + ordered TODO + rules block, are in the transcript of session 9cdd3b47):
+  - (8b-1) Map props: agent `a33fbe4e163f2c48c`, worktree `.claude/worktrees/agent-a33fbe4e163f2c48c`, branch
+    `worktree-agent-a33fbe4e163f2c48c`, CTX-TAG `8b1-mod-1`. It changes the two reference hashes and documents the new ones.
+  - (9b-1) Death animations + ACU warp-in: agent `a189f850d1c3430f0`, worktree `.claude/worktrees/agent-a189f850d1c3430f0`,
+    branch `worktree-agent-a189f850d1c3430f0`, CTX-TAG `9b1-mod-1`. Client only: the reference hashes must stay.
+  Context watcher (background of the orchestrator session): `agent_ctx.py --watch 135000 a33fbe4e=185000 a189f850=185000`.
+- **When one finishes** (report + clean tree): merge, checks and after-merge steps as written below and in WORKFLOW
+  "Lifecycle of a wave" steps 6-7. If both are ready, merge (9b-1) first (same hashes, so the check is exact), then
+  (8b-1) and write its new reference hashes at the top of this section. Then (8b-2) with (9b-2), then (8b-3) alone,
+  each after the merge of the module before it and only at the start of a usage window. Briefs: HISTORY "(8b) Maps"
+  and "Wave 9"; their ledger purposes are already in `tools/token-ledger/purposes.json`.
+- **Usage window:** the current one began 2026-11-12 00:00. The evening window of 11-11 was 19:00-00:00, not
+  18:00-23:00 as the orchestrator had worked out: the start job set for 23:04 was removed at 23:01, the session hit
+  the limit at 23:02 ("resets 12am") and the agents started after 00:00 (WORKFLOW "Usage limits", "When a window
+  resets"). Other `claude` sessions of the owner were open (4 processes at 00:01).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
   (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and
   `.claude/notes/`" (the prompts of 2026-11-11 are the model: brief, state, ordered TODO, rules block). Don't resume
@@ -63,7 +55,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   "Skirmish AI", AI_TUNING). Plan no AI work and write no "later: AI uses X" lines for new features: new units and
   mechanics stay things the AI ignores. Still required: the AI must not break (AI tests green, the reference match
   `Rts.Bench -- ai 30 256 42 hard,normal` as the regression check of every merge).
-- New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
+- Worktrees: git trusts every folder under `.claude/worktrees/` since 2026-11-12 (one `safe.directory` entry with `/*`, WORKFLOW "Incidents"); a worktree elsewhere still needs its own entry.
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
   2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
