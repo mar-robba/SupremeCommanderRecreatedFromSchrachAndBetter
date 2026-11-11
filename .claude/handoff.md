@@ -34,10 +34,12 @@ Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). The module
 3. [x] formation drag + waypoint editing UI: hooks run + screenshots OK (4d412d4; PNGs local only, screenshots/ is
    gitignored: `screenshots/7b_formation_drag.png`, `7b_waypoint_edit.png`, commands in notes/orders-ui.md).
 4. [x] 2026-11-11 pings UI + notification pass + Backspace jump: code + AlertTests 9/9 committed (7b-mod-1), see
-   notes/pings.md. NOT yet: full 3 suites, a screenshot (pings + toast + minimap flash), try in the game window.
-   3b. [ ] try piece-2 keys in the game window once (filters, Ctrl+C, bookmarks)
-5. [ ] G20 range/intel overlays (if time) -> notes/overlays.md
-6. [ ] finish: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
+   notes/pings.md. Suites green (Sim 522, Client 309, Net 27); screenshot `--demo --ui-pings 120,120 --camera
+   128,128,70 --frames 440 --size 960x540` shows 3 pings + 'Units under attack' toast (screenshots/7b_pings.png).
+   3b. [ ] SKIPPED (context): piece-2 keys never pressed by hand in a game window -> ROADMAP later line
+5. [ ] G20 NOT started (context) -> ROADMAP '- [ ] later (7b)' line
+6. [~] finish (7b-mod-1): docs committed (ARCHITECTURE section, ROADMAP rows, CLAUDE.md); bench + ai match run;
+   agent-report written. Left if cut: merge main again, verify bench hash F74F5FED38AC5D83 + ai BF85B7DBBF03D949. Was: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
    ROADMAP G14-G17 rows `[x] 2026-11-10 (7b)` + later items, CLAUDE.md CLI lines), `.claude/agent-report.md`
 
 Sub-agent rules file: .claude/notes/common.md (prompts point to it). One sub-agent at a time. `.claude/` is gitignored:
