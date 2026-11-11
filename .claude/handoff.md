@@ -12,8 +12,8 @@ Brief: G8, G9 (+ Atlantis dive of G11, already done before 8a). Notes: `.claude/
 ## Done by 8a-mod-2
 - main (7b) merged (6b6f5dc). Replay bug FIXED (19dc325): PropStore's lazy alive-list cache (stale tail past the
   count depended on who read AliveList when) was saved; now [NoSave] + rebuilt on access. Sim suite 569/569.
-- Client piece: models + carrier deck spots done (a67b600, 8a-client-3); sub-agent 8a-client-4 does Salem legs,
-  `--scene units8a`, wall-line check, screenshots: see `.claude/notes/models.md`.
+- Client piece: models + carrier deck spots done (a67b600, 8a-client-3); Salem legs, `--scene units8a[:land|:walls|:naval|:salem]`,
+  wall-line check (no change), screenshots DONE by 8a-client-4: see `.claude/notes/models.md`.
 - AI ref after fix + 7b merge: unchanged, WINNER Player (Hard) 15:35, hash BBD1FF3C4E116A4A.
 
 - Docs done (3d16688 + ARCHITECTURE section): ROADMAP G8/G9, Atlantis-dive lines, AI_TUNING, DEV_GUIDE pitfall.
