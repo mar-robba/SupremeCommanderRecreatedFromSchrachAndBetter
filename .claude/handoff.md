@@ -9,15 +9,13 @@ Brief: G8, G9 (+ Atlantis dive of G11, already done before 8a). Notes: `.claude/
 - Atlantis dive: done before 8a (AtlantisDiveTests): only stale docs lines to fix.
 - Walls sim (6f7e24d): Combat/Walls.cs + hooks, WallTests (11) green; see notes/walls.md.
 
+## Done by 8a-mod-2
+- main (7b) merged (6b6f5dc). Replay bug FIXED (19dc325): PropStore's lazy alive-list cache (stale tail past the
+  count depended on who read AliveList when) was saved; now [NoSave] + rebuilt on access. Sim suite 569/569.
+- Client piece: sub-agent 8a-client-3 (note `.claude/notes/models.md` when it ends).
+
 ## TODO in order
-1. FIX FIRST (known bug): whole sim suite = 553/554; `ReplayTests.RecordedReplayResimulatesToIdenticalHashes` fails
-   ("state differs: System.Int32[] (+260 bytes into body #297)", hashes match, end-state bytes differ). Passes on main.
-   NOT walls (fails with walls reverted), NOT data/, Data/*.cs or the AI files. Bisect in a `git archive main` copy
-   (dotnet test -nr:false there): copying Naval/NavalMotion.cs + Naval/Torpedoes.cs + Systems/MovementSystem.cs
-   (Salem hooks of 676de72; WalkingShips.cs needed to compile) makes it fail. Next: bisect those 3 files. Suspect a
-   Salem in PersistenceTestUtil.NewRich (Cybran destroyer = Salem) with state that differs fresh vs after load
-   (DEV_GUIDE "Fresh spawn vs blueprint swap", MoveState.OrbitDir; NavalMotion.KindOf Hover branch; IsNaval now
-   needs bp.IsMobile). Then AI ref hash check (must stay BBD1FF3C4E116A4A).
+1. AI ref hash check (was BBD1FF3C4E116A4A before 7b merge + fix).
 2. Client: models `mech_marine`, `stealth_field`, `missile_sub`, `cy_missile_sub`, `cy_carrier`, `cy_wall` (+ UEF wall /
    sonar if they fall back to default): new partial files + one `case` line each in UnitModels.cs; carrier deck spots
    (UnitRenderer.Cargo.cs ~144 keyed on shape "atlantis"); Salem legs/height on land (recipe at end of naval.md);
