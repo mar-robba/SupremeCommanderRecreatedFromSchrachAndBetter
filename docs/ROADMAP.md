@@ -203,6 +203,11 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
 - 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes; re-cut 2026-11-11 into 9b-1 and 9b-2:
   HISTORY "Wave 9"). Terrain shadows, unit LOD, death animations,
   ACU warp-in, minimap options. Owns `Rendering/`, `Audio/`, Minimap. Perf: `--perf-log` before/after; screenshots.
+  - [x] 9b-1 Death animations + ACU warp-in (2026-11-12): aircraft spiral down and crash on their wreck, ships list
+    and sink, structures collapse, land experimentals and commanders get longer sequences, ACU warp-in at game start
+    (flash, rings, hologram rise, sound); client only, hashes unchanged; `--scene deaths`, `DeathAnimTests`.
+  - [ ] later: a sound/particle for wrecks settling after a ship sinks in shallow water; death sequences for
+    units dying inside transports; per-model break-apart (parts flying off); the warp-in for commanders of a loaded save started at tick <= 5 is skipped only by the tick rule.
 
 **Wave 10: multiplayer robustness + keybindings**
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash

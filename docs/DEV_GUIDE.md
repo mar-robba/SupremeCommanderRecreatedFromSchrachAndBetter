@@ -113,6 +113,12 @@ Things learned while building the project that are not about how a system works 
   through `SnapshotInterpolator.LerpPos` (snaps beyond 20 units) (wave 6a).
 - Sandbox `--exec` timing: `wait N` counts frames (~60/s); the sim tick is about frames / 6. Console commands that read
   the snapshot (`overcharge`, `teleport`) need a `wait` of ~10-20 frames after `spawn` (wave 6a).
+- Death animations (9b-1) only exist on the client: a unit that leaves the snapshot is matched to its `UnitDeath`
+  event in `DeathAnimator.Sync`, which every renderer calls (audio runs before the effects renderer in the frame).
+  Anything that removes a unit without that event (reclaim, cancel, transport loading) must keep it that way, or
+  the unit would "die" visually. The unit shader's instance w is 0 for living units; a non-zero w darkens / dithers.
+- Screenshots of a moment in a sequence: pause the runner from the scene script on a snapshot tick
+  (`DeathScene.Update` sets `Runner.Paused`; game-time effects then freeze), not on a frame count.
 
 ## Visual checks
 
