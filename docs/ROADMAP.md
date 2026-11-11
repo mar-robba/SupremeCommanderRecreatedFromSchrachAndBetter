@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 13:25 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-11 13:50 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -47,8 +47,12 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
   LESSONS "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
-- (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
-  an AI decision change, planned for wave 9a (G30-G33).
+- **Improving the AI is no longer a goal of the project (owner, 2026-11-11):** the skirmish AI stays as merged in
+  wave 5 ((k) + (k-navy)); its unmet goals (stalls, finished games, tech v T1-only) stay unmet. Removed from the
+  plan: wave 9a, gap rows G30-G33 and every "later: AI ..." line below. The AI docs stay as they are (ARCHITECTURE
+  "Skirmish AI", AI_TUNING). Plan no AI work and write no "later: AI uses X" lines for new features: new units and
+  mechanics stay things the AI ignores. Still required: the AI must not break (AI tests green, the reference match
+  `Rts.Bench -- ai 30 256 42 hard,normal` as the regression check of every merge).
 - New worktrees need `git config --global --add safe.directory <path>` (disk mounted as root, WORKFLOW "Incidents").
   History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
@@ -122,10 +126,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G27 | Terrain biomes (temperate, desert, tundra, lava, tropical) | SC1 | S-M | TerrainRenderer palettes + generator option | — | 3 |
 | G28 | Italian localization (string table, language setting, UI/tooltips/help/unit names) | — | M-L | whole client + blueprint names | owner Q4, G25 | Q |
 | G29 | Map editor (SupCom1 had none in game) | — | L | — | owner Q2 | 3 |
-| G30 | AI personalities (Rush / Turtle / Tech / Horde / Adaptive), per slot | SC1 | M | `Rts.Sim/AI` presets, AiDifficulty append, AI LEVEL column | (k) | 2 |
-| G31 | AI team play: allied AIs attack together, defend an ally, answer pings, share overflow | SC1 | M | AI | G5, G17, (k) | 2 |
-| G32 | AI uses the new mechanics: overcharge, teleport snipes, stealth/cloak/EMP on purpose, capture, missile subs, carrier, walls | SC1 | M | AI | G1, G7, G8, (k) | 2 |
-| G33 | AI think ~11 ms on 1024 with 8 AIs; mid-game region graph ~14 ms | — | S-M | AI, Pathfinding | (k) | 2 |
+| G30-G33 | removed from the plan 2026-11-11 (owner: improving the AI is no longer a goal; the AI of wave 5 stays). They were: AI personalities, AI team play, AI use of the new mechanics, AI think cost on 1024 | — | — | — | — | — |
 | G34 | Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
 | G35 | Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
 | G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
@@ -179,10 +180,8 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   `Map/` (new MapFile, props placement), PropRenderer, TerrainRenderer palettes, map picker UI, `Rts.Net` map
   transfer. Tests: file round trip, props reclaim, MP map hash, MapScaleTests; screenshots per biome.
 
-**Wave 9: AI on top of the new features + visual polish**
-- 9a AI (G30, G31, G32, G33). Personalities as AiConfig presets (setup/lobby column), allied coordination with AIs
-  and humans (pings, defend ally, share), uses overcharge/teleport/stealth/cloak/EMP/capture/new units, think cost
-  on 1024 8p. Owns `Rts.Sim/AI`, AI_TUNING, the AI LEVEL column. Tests: AI tests + standard matrices (AI_TUNING).
+**Wave 9: visual polish**
+- 9a AI: removed from the plan (owner, 2026-11-11: improving the AI is no longer a goal).
 - 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes). Terrain shadows, unit LOD, death animations,
   ACU warp-in, minimap options. Owns `Rendering/`, `Audio/`, Minimap. Perf: `--perf-log` before/after; screenshots.
 
@@ -280,9 +279,6 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
             projects, enhancements, SCUs, air T2/T3; duel tool (`Rts.Bench duel/duelmatrix`), land balance pass, Cybran/UEF
             parity (UEF T1 tank shells 30 -> 40: CvU 51-21 -> 39-35), Normal defaults + Hard preset (HvN 102-52 at 45 min),
             lab scripts `tools/ai-lab`. Numbers: AI_TUNING "Final numbers of agent (k)".
-      - [ ] later: stalled mirror games (NvN 64/96 finished at 45 min, goal 80): an AI "break the stalemate" mode
-      - [ ] later: Hard only ~2:1 vs Normal (main had 96 % with the T1 artillery exploit): better decisions, focus fire
-            that does not cost firing time; tech AI vs T1-only 60 % (goal 65 %)
 - [x] Audio (merged 2026-10-11): 55 procedural SFX + ambient wind + generative music, positional, voice-limited,
       graceful without audio device (`--nosound`); wreck rendering; context orders (reclaim/repair/assist);
       kills + veterancy stars in unit panel; effects follow game speed
@@ -307,7 +303,6 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       handle), 30 UEF T2/T3 blueprints (engineers, factories, mex, pgen, mass fab, PD, flak, SAM, omni, Pillar,
       Riptide, Brimstone MML, Sky Boxer, Titan, Percival, Demolisher, gunship, Janus, Wasp, Ambassador, spy plane),
       T2/T3 models, upgrade tile/U hotkey/progress bars/hologram, build-menu tier pills, `--tech-demo`
-      - [ ] later: AI uses T2/T3 + upgrades (wave 4), adjacency, T3 engineers build experimentals
 - [x] Shields, tactical missiles, artillery structures, strategic nukes + anti-nuke (wave 3, agent b, 2026-10-12):
       `Rts.Sim/Strategic` (shield domes absorb outside shots/splash, collapse + recharge, drop on energy stall; silo
       stockpiles + `OrderType.Launch`; TML cruise missiles, TMD; nuke high arc + two-ring blast that knocks shields
@@ -315,7 +310,6 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       T2/T3 artillery), `StrategicApi.LaunchNuke` (used by the sandbox nuke), dome shader + ripples, missile trails,
       nuke explosion (`NukeFx`, shared with the sandbox) + flash + sound, launch mode (L), global launch warning,
       `--scene strategic`
-      - [ ] later: AI builds/uses shields, TML, nukes (wave 4)
 - [x] Naval (wave 3, agent c, 2026-10-12): naval factories T1→T2→T3 (in-place upgrades), frigate, attack sub,
       destroyer (guns + torpedoes + torpedo defense), cruiser (AA + missiles), battleship, T2 torpedo bomber, T1/T2
       sonar, torpedo launcher; water placement (`NavalRules`, client ghost), torpedoes (run under water, home, die on
@@ -330,13 +324,13 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
       **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
       **Mavor** (strategic artillery, range 1500, 20000 energy per shot via `EnergyPerShot`); "Experimental detected" alert + sound
-      - [ ] later: Monkeylord/Czar-like experimentals (2nd faction), Mavor/Fatboy AI use, crush animation, shield HP kept on enhancement swap,
+      - [ ] later: Monkeylord/Czar-like experimentals (2nd faction), crush animation, shield HP kept on enhancement swap,
         Mavor's low arc can hit hills at short range (higher/medium arc), Mavor target priority (it shoots any visible enemy)
 - [x] Commander enhancements (2026-10-13, wave 4g): slots LeftArm/RightArm/Back with prerequisites (blueprint variants per slot
       combination), built on itself over time like an upgrade (drain, assist with Guard, cancel refunds, any order interrupts),
       remove = instant without refund; ACU: Heavy Antimatter Cannon, Zephyr Amplifier, Advanced/T3 Engineering, Resource Allocation,
       Personal Shield → Shield Generator Field, Tactical Missile Pack; enhancement panel, model attachments
-      - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range, AI uses enhancements
+      - [ ] later: Stop cancels the enhancement, replace an occupied slot in one click, mobile TML moves into range
 - [x] Quantum Gateway + Support Commanders (2026-10-13, wave 4g): T3 gateway builds SCUs (T3 engineer + cannon, own enhancements:
       High Explosive Ordnance, Rapid Fabricator, Resource Allocation, Personal/Bubble Shield); SCU death never defeats the army
 - [x] Commander kit & engineer automation (2026-10-24, wave 6a; ARCHITECTURE "Commander kit & engineer automation"):
@@ -348,7 +342,7 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       Reference match `ai 30 256 42 hard,normal` unchanged in play (Hard 15:35, identical stats), new hash
       BF85B7DBBF03D949 (the new commander state is mixed into the hash)
       - [ ] later: UEF Engineering Drones (C-D1/C-D2 ACU enhancement), UEF SCU Radar Jammer enhancement (rest of G7)
-      - [ ] later: AI uses Overcharge, the teleporter and engineer patrols; Overcharge reload/charge in the snapshot (button
+      - [ ] later: Overcharge reload/charge in the snapshot (button
             shows ready from stored energy only); patrol test for the unreachable-target cooldown (needs a cliff map)
 - [x] Game options & team play (2026-10-24, wave 6b; ARCHITECTURE "Game options & team play"): G4 options in the
       skirmish setup AND the lobby (victory assassination/supremacy/annihilation/sandbox, unit cap 250-1000 + HUD
@@ -361,7 +355,7 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       - [ ] later: share-until-death / full share of a defeated ally's units (SupCom "share conditions"), alliances
             changed during the game (today teams are fixed by the lobby), gifting units beyond the receiver's cap
       - [ ] later: save field migrations for the new 6b fields (`SimWorld.Options`, `Army.UnitCap/StartBank*`,
-            `ArmyStats` gifts + `History`) so pre-6b saves load (header `GameInfo.Options = null` = defaults), AI gives/asks resources to allies, allies-only chat in
+            `ArmyStats` gifts + `History`) so pre-6b saves load (header `GameInfo.Options = null` = defaults), allies-only chat in
             the lobby and in single player (AI allies), score graph hover/values, frame-timing text overlaps the
             diplomacy header in screenshot mode
 - [x] Release, settings, autosave (2026-10-24, wave 7a; ARCHITECTURE "Client" user folders/settings bullets, "Save/load"
@@ -400,8 +394,6 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       shield chain); sim: radar/sonar stealth, cloak, stealth fields (omni beats them), EMP stun (Medusa, SCU),
       seabed walkers (Wagner, Monkeylord); distinct `cy_*` models for every unit; status visuals (own cloaked units
       translucent, stun sparks, stealth-field ring); `--scene cybran[:group]`; Cybran vs UEF AI 8/5/5 (AI_TUNING)
-  - [ ] later: AI uses stealth/cloak/EMP deliberately (Deceiver escorts, cloaked ACU, Medusa vs groups); Cybran
-        T2/T3 and experimentals in AI matches once (k) "AI uses everything" lands
 - [x] SupCom polish (2026-10-14, wave 4f): collapsed/paused shields pay no upkeep, recharge only without stall; domes
       absorb bombs/shells from above and bombs released inside; ship hull separation (subs vs subs, surfaced subs vs
       ships); sub dive/surface (D); adjacency bonus (pgens cut energy use, storages boost mex/pgens; placement lines);
@@ -409,7 +401,7 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       shields, radar); capture (E / right-click enemy with engineers); units drive out of factories, aircraft take off
       from the pad; Attack orders dropped when the target is lost in fog; idle aircraft engage; Shift+drag structure
       lines; sandbox selects/orders any army (`--select any:<id>`); default cameras for `--scene strategic[:x]`/naval
-      - [ ] later: AI uses capture/pause/adjacency/dive; the Fatboy drops units at its back without a drive-out
+      - [ ] later: the Fatboy drops units at its back without a drive-out
         (done in wave 5n: factory exits skip sides with parked units; fire states, captured targets held)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
@@ -420,8 +412,7 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       builds, goal-field array reuse (AI games 10 KB/tick, was ~125), intel 0.33 ms with 8 armies; client terrain
       chunk LOD + skirts (GPU 8.2 → 2.8 ms whole 1024 map), instanced particles, deposit/minimap culling (4.8k units
       in battle: CPU 1.6 ms/frame); 6/8-player maps on 512/1024 checked fair for every preset (`MapScaleTests`).
-      - [ ] later: one AI think costs ~11 ms on 1024 with 8 AIs (tick 2104 of `ai 40 1024 42 hard 0 8 plains`);
-            a region graph built mid-game (first unit of a new layer/size) costs ~14 ms on 1024; low-poly unit
+      - [ ] later: a region graph built mid-game (first unit of a new layer/size) costs ~14 ms on 1024; low-poly unit
             LOD (units:gather 0.8 ms + GPU 1.8 ms at 3.3k units drawn); snapshot build ~0.3 ms avg
 - [x] Save/load, replays, desync detection (wave 4, agent i, 2026-10-14): automatic deep serializer of the whole sim
       (`Rts.Sim/Persistence`: IL codecs, shared refs, blueprint/terrain by id, per-type layout check, Brotli files;
