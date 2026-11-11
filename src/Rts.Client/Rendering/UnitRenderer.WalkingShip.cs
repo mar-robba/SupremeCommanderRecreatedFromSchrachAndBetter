@@ -69,9 +69,9 @@ public sealed unsafe partial class UnitRenderer
             float ph = phase + ((leg++ is 0 or 3) ? 0 : MathF.PI); // diagonal pairs step together
             var hip = pos + right * (sd * HipX * w) + Vector3.UnitY * (HipY * h) + fwd * (zf * l);
             float splay = (zf > 0 ? 0.07f : -0.07f) * l; // front feet reach forward, rear feet back
-            var foot = pos + right * (sd * 1.3f * w) + fwd * (zf * l + splay - amp * stride * MathF.Cos(ph));
+            var foot = pos + right * (sd * 1.5f * w) + fwd * (zf * l + splay - amp * stride * MathF.Cos(ph));
             foot.Y = _terrain.GetHeight(foot.X, foot.Z) + amp * lift * MathF.Max(0, MathF.Sin(ph));
-            var knee = Vector3.Lerp(hip, foot, 0.42f);
+            var knee = Vector3.Lerp(hip, foot, 0.5f);
             knee.Y = MathF.Max(hip.Y, foot.Y) + 0.42f * h; // spider knee well above the deck line
             _legModel.Body.Add(Segment(hip, knee, 0.09f * w), col);
             _legModel.Turret!.Add(Segment(knee, foot, 0.06f * w), col);
@@ -94,12 +94,12 @@ public sealed unsafe partial class UnitRenderer
 
     private static UnitModel BuildLegModel()
     {
-        var hull = Mat.M(76, 72, 82); // Cybran hull / dark hull / team (UnitModels.Cybran.cs)
-        var dark = Mat.M(52, 49, 57);
+        var hull = Mat.M(122, 116, 132); // lighter than the Cybran hull (76, 72, 82) so the legs read against it
+        var dark = Mat.M(64, 60, 70);
         var upper = new MeshBuilder();
         upper.Box(new Vector3(0, 0, 0.5f), new Vector3(1, 1, 1.04f), hull, Mat.T(205));
         var lower = new MeshBuilder();
-        lower.Box(new Vector3(0, 0, 0.5f), new Vector3(1, 1, 1), dark);
+        lower.Box(new Vector3(0, 0, 0.5f), new Vector3(1, 1, 1), dark, Mat.T(205));
         lower.Box(new Vector3(0, 0, 0.97f), new Vector3(1.5f, 1.5f, 0.06f), Mat.G(255, 38, 26)); // glowing foot pad
         return new UnitModel { Body = new InstancedMesh(upper.Upload()), Turret = new InstancedMesh(lower.Upload()) };
     }
