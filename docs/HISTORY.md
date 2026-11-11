@@ -736,6 +736,47 @@ structure lost, construction/upgrade done, ally under attack); map pings (alert 
 allies and MP, in replays) as a sim command; G20 range/intel overlays for the selection. Tests: hotkey table,
 queue-edit and ping sim tests, ping in a replay and an MP loopback. Screenshots.
 
+**Delivered** (merged 2026-11-11, b8b9062; G14-G17, without G20). Three attempts: coordinator 1 on 2026-10-24 (cut by
+a usage limit after the sim commands), coordinator 2 on 2026-11-10 on Fable 5.2 (cut twice after 8-10 minutes: main
+merged, selection keys, orders UI), then one module agent on Opus 5.5 without coordinator or sub-agents on
+2026-11-11 (19 minutes, 80 calls, 176k at the end: pings UI, notifications, finish). Report:
+- **Orders (G15):** sim commands `MoveWaypoint`, `DeleteWaypoint` and `FormationMove` (`Orders/QueueEditCommands.cs`;
+  replays and lockstep carry them). Right-drag = line formation with a facing; left-drag a queued order or ferry
+  marker moves it, Del over a marker deletes it.
+- **Selection and camera (G14):** same types on screen / on the map, all combat, land / air / naval / engineers,
+  commander (select + center), five camera bookmarks.
+- **Pings (G17):** `MapPingCommand` (alert / move / attack), shown on map and minimap to allies and observers, kept
+  in replays, sent in multiplayer.
+- **Notifications (G16):** new `AlertMonitor`: own units, the commander or an ally under attack, structure lost,
+  construction or upgrade complete (repeats as xN), unit cap reached; each with a toast, an alert sound and a minimap
+  flash. It works without an audio device (the old under-attack alert did not). Backspace jumps to the last alert,
+  again to the one before.
+- **Try:** `--demo --ui-pings 120,120 --camera 128,128,70 --frames 440`; `--ui-formation 14,22:34,22 --camera
+  24,29,45`; `--ui-waypoints 8,16 --camera 26,35,62`.
+- **Tests:** QueueEditTests 11, PingTests 4 (one in a replay), PingNetTests (MP loopback), SelectionFilterTests 9,
+  AlertTests 9, OrderEditMathTests. After the merge: Sim 522, Client 309, Net 27, all green.
+- **Hotkeys:** Ctrl+Z / Ctrl+Shift+Z same types on screen / map; Ctrl+A combat units; Ctrl+Shift+L / A / N / E land /
+  air / naval / engineers; Ctrl+C commander; Alt+1-5 recall a bookmark, Ctrl+Alt+1-5 save it; Backspace last alert;
+  Y alert ping at the cursor; Del delete the waypoint under the cursor. Mouse: right-drag formation, left-drag a
+  marker, Alt+left / Alt+Shift+left / Alt+right = alert / attack / move ping.
+- **Numbers:** reference match unchanged on main after the merge ("WINNER: Player (Hard) after 15:35", hash
+  BF85B7DBBF03D949). Bench `2000 300`, three interleaved runs while the 8a agent was working: main before the merge
+  2.42-2.97 ms/tick, after it 2.14-2.58, same hash F74F5FED38AC5D83 (no regression; the agent had not done this check).
+  2,648 lines added in src, tests, tools and data. Screenshot `screenshots/7b_pings_main.png` (three pings on map and
+  minimap, "Units under attack" toast).
+- **Shared files:** CommandSystem (4 cases, a parameter on ApplyIssueOrder), OrderSystem and MovementSystem (one line
+  each: turn to the facing on arrival), Order.cs (`OrderQueue.RemoveAt`), SimSnapshot / SnapshotWriter (raw waypoint
+  point and `Aux` on orders, ping list), GameSession, GameApp (3 CLI options), SelectionController, Hotkeys, Minimap,
+  GameAudio (under-attack check moved to `AlertMonitor`), SoundBank (+3 sounds at the end of the enum),
+  UnitCapCounter (its toast moved to `AlertMonitor`).
+- **Not done / known issues:** G20 range overlays not started; the new keys were never pressed by hand in a game
+  window (unit tests and screenshot hooks only); bookmarks are not saved; "structure lost" also fires on
+  self-destruct; two toast stacks share the top centre of the screen; the AI neither sends nor reads pings (ROADMAP
+  "later (7b)").
+- **Handoff review:** the ping sub-agent cut on 2026-11-10 had left no commit and no note, so that piece was rebuilt
+  after a grep of GameAudio, Toasts and Minimap. The module agent was at about 100k after 30 calls (4 minutes) of
+  reading the notes and the existing code, half of its 200k cap, so it dropped the in-game try of the keys and G20.
+
 ## Wave 8 (started 2026-10-24)
 
 ### (8a) Missing units & walls — `data/blueprints`, `Naval`, `Strategic`, `Transport`, pathfinding blocked cells
