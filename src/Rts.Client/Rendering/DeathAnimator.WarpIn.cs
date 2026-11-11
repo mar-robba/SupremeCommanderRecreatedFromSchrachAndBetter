@@ -34,6 +34,9 @@ public sealed partial class DeathAnimator
     public int WarpCount => _warpCount;
 
     /// <summary>0..1 materialization of a warping commander (bottom-up hologram cut); false = not warping (draw normally).</summary>
+    /// <summary>The warp-in plays only when the first snapshot the client sees is at the very start of a game.</summary>
+    public static bool WarpsAtStart(long firstTick) => firstTick <= WarpMaxStartTick;
+
     public static bool WarpProgress(float t, out float frac)
     {
         frac = Math.Clamp((t - WarpDelay) / WarpRise, 0f, 1f);
@@ -54,7 +57,7 @@ public sealed partial class DeathAnimator
     {
         if (_warpChecked) return;
         _warpChecked = true;
-        if (cur.Tick > WarpMaxStartTick) return; // loaded save, replay seek: the commanders are already on the field
+        if (!WarpsAtStart(cur.Tick)) return; // loaded save, replay seek: the commanders are already on the field
         var db = _ctx.Db;
         for (int k = 0; k < cur.UnitCount && _warpCount < _warps.Length; k++)
         {

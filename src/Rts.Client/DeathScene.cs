@@ -11,13 +11,14 @@ using Rts.Sim.World;
 namespace Rts.Client;
 
 /// <summary>
-/// <c>--scene deaths[:air|:naval|:structures|:big|:warp][:N]</c>: the (9b) death sequences and the ACU warp-in, for
+/// <c>--scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]</c>: the (9b) death sequences and the ACU warp-in, for
 /// screenshots (<see cref="Rendering.DeathAnimator"/>).
 /// <list type="bullet">
 /// <item><b>air</b>: army 1 aircraft (T1-T3 and a Soul Ripper) patrolling over land.</item>
 /// <item><b>naval</b>: army 1 surface ships sailing in deep water.</item>
 /// <item><b>structures</b>: army 1 factories, generators and radars.</item>
-/// <item><b>big</b>: army 1 land experimentals and a second commander (its death blast is real).</item>
+/// <item><b>big</b>: army 1 land experimentals (Fatboy, Monkeylord).</item>
+/// <item><b>acu</b>: a second army 1 commander, far from the rest (its death blast is real).</item>
 /// <item><b>warp</b>: no stepping before the start, so both commanders warp in; the camera is on army 0's.</item>
 /// </list>
 /// Every group except warp is killed together (sandbox Kill command) 1.2 s after the client's first snapshot. The run
@@ -28,7 +29,7 @@ namespace Rts.Client;
 public static class DeathScene
 {
     public const string Name = "deaths";
-    private static readonly string[] Variants = ["", "air", "naval", "structures", "big", "warp"];
+    private static readonly string[] Variants = ["", "air", "naval", "structures", "big", "acu", "warp"];
 
     // Client-side scene script (never sim state): the units to kill, at which snapshot tick, when to pause.
     private static UnitHandle[] _victims = [];
@@ -40,7 +41,7 @@ public static class DeathScene
     {
         var (variant, _) = Parse(o.Scene!);
         if (!Variants.Contains(variant))
-            throw new ArgumentException("unknown scene " + o.Scene + " (deaths[:air|:naval|:structures|:big|:warp][:N])");
+            throw new ArgumentException("unknown scene " + o.Scene + " (deaths[:air|:naval|:structures|:big|:acu|:warp][:N])");
         if (!o.PresetGiven) o.Preset = MapPreset.Archipelago;
         if (!o.MapSizeGiven) o.MapSize = 512;
         o.GameOptions ??= "victory=sandbox";
@@ -64,7 +65,8 @@ public static class DeathScene
         "naval" => 45,
         "structures" => 13,
         "big" => 24,
-        "warp" => 9,
+        "acu" => 11,
+        "warp" => 15,
         _ => 0,
     };
 
@@ -146,12 +148,16 @@ public static class DeathScene
             Spawn(structures[k], sc + new Vector2(-13.5f + (k % 4) * 9f, k < 4 ? -4.5f : 5f), 0);
         cams.Add(("structures", sc, 45f));
 
-        // Big: two land experimentals and, apart (its death blast), a second commander.
-        var bc = LandRect(new Vector2(24f, 12f));
-        Spawn("uef_x_fatboy", bc + new Vector2(-14f, 0), face);
-        Spawn("cybran_x_monkeylord", bc + new Vector2(0f, 0), face);
-        Spawn("cybran_commander", bc + new Vector2(17f, 2f), face);
-        cams.Add(("big", bc, 50f));
+        // Big: two land experimentals.
+        var bc = LandRect(new Vector2(18f, 12f));
+        Spawn("uef_x_fatboy", bc + new Vector2(-8f, 0), face);
+        Spawn("cybran_x_monkeylord", bc + new Vector2(8f, 0), face);
+        cams.Add(("big", bc, 45f));
+
+        // ACU: a second commander, well away from the others (its death blast is a small nuke).
+        var cc = FindRect(t, new Vector2(8f, 8f), anchor + new Vector2(t.Width * 0.3f, 0), taken, Land) ?? anchor;
+        Spawn("cybran_commander", cc, face);
+        cams.Add(("acu", cc, 24f));
 
         // One tick so every unit is alive, then the orders and hold fire; 20 ticks to take off / get under way.
         sim.Step();
