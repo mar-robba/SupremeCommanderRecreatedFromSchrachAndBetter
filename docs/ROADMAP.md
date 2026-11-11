@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 19:15 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-11 19:40 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24),
 (7b) orders & selection UX (merged 2026-11-11). Tests: 522 sim + 309 client + 27 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -13,25 +13,40 @@ main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o)
 writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
 prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-11 19:15, session 9cdd3b47; the owner said "continua" on 2026-11-11 after the stop of 2026-11-10 23:05):
+**ON RESUME** (2026-11-11 19:40, session 9cdd3b47, reset by the owner; the owner said "continua" on 2026-11-11 after the stop of 2026-11-10 23:05):
 - **(7b) Orders & selection UX is merged** (2026-11-11, b8b9062; G14-G17, without G20): build, the three suites, the
   reference match (same hash), an interleaved bench and a screenshot were checked on main; report in HISTORY "(7b)";
   worktree and branch removed. Left by 7b (ROADMAP "later (7b)"): G20 overlays, the new keys were never pressed by
   hand in a game window, bookmarks are not saved.
-- **Running: (8a) Missing units & walls** (G8, G9): worktree `.claude/worktrees/wave8a` (branch `wave8a-units`),
-  module agent `8a-mod-2` on Opus 5.5 (`model: "opus"`, no coordinator, cap 200k medium, it may run 1 sub-agent
-  for the client models). Ids in the orchestrator file `agents-wave5.md`.
-  - `8a-mod-1` (13:19-13:42, CHECKPOINT at 175k, HEAD 21ab286) did the missile sub, carrier and wall tests and the
-    walls in the sim (`Combat/Walls.cs`).
-  - `8a-mod-2` started 13:44, merged main with 7b (6b6f5dc), then the 5-hour limit cut it at about 13:50 (55k) with
-    its client sub-agent (no call made). Resumed by SendMessage at 19:15 in the new window (reset 18:00).
-  - Its TODO: **fix `ReplayTests.RecordedReplayResimulatesToIdenticalHashes`** (fails on the branch: end-state bytes
-    differ after a replay, bisected to the Salem hooks in NavalMotion / Torpedoes / MovementSystem); AI reference
-    match (the branch had hash BBD1FF3C4E116A4A: blueprint index shift only); client models + `--scene units8a`
-    (fresh sub-agent `8a-client-3`); finish.
-- **After the 8a merge: untrack the agents' notes in main** (`git rm -r --cached .claude` + delete
-  `.claude/handoff.md`, `.claude/agent-report.md`, `.claude/notes/` in the main checkout): 7b tracked them with
-  `git add -f` and its merge brought them into main; 8a tracks its own, so doing it earlier gives conflicts.
+- **FIRST THING TO DO: finish the merge of (8a) Missing units & walls.** No agent is running. The owner reset the
+  orchestrator at 19:40 in the middle of the merge checks. State:
+  - 8a finished at 19:34 (branch `wave8a-units`, HEAD fa8738c, clean; report in
+    `.claude/worktrees/wave8a/.claude/agent-report.md`) and **is merged in main: fce92ee** (2,250 lines added in src,
+    tests, tools, data). The worktree and the branch still exist.
+  - **The merge is NOT verified yet.** The first check run is void: `dotnet build Rts.slnx` died with the known
+    flake "Internal CLR error (0x80131506)" (DEV_GUIDE "Profiling", last bullet: just build again), so the tests ran
+    with `--no-build` on stale binaries and failed in bulk (414 of 522): not a real result. Only the Release bench was
+    built: reference match on main = "WINNER: Player (Hard) after 15:35", hash **BBD1FF3C4E116A4A** (as the agent
+    reported: same game as BF85B7DBBF03D949, the new blueprints shift the indices). This is main's new reference hash.
+  - To do, in order: (1) `dotnet build Rts.slnx` until it succeeds; (2) the three suites (the agent had Sim 569,
+    Client 315, Net 27 green); (3) interleaved bench `2000 300` against the pre-merge main c28d102 (DEV_GUIDE "Perf
+    check"; the agent measured main 2.05-2.10, branch 1.85-1.92 ms/tick); (4) screenshots
+    `--scene units8a:land|walls|naval|salem --frames 200 --size 960x540` and look at two of them; (5) if something
+    fails, a fresh agent in the worktree (`model: "opus"`) fixes it there, never the orchestrator.
+  - Then the bookkeeping: report into HISTORY "(8a)" (attempts: coordinators 1-3 on 2026-10-24 and 2026-11-10;
+    module agent 8a-mod-1 13:19-13:42 CHECKPOINT at 173k; 8a-mod-2 13:44, cut by the usage limit at 13:50, resumed
+    19:15, finished at 142k; two client sub-agents: the first read to 116k before working and stopped at 131k after
+    the models, the second finished at 123k); a fragmentation row in WORKFLOW (replay bug: the handoff pointed at
+    three files, the cause was in PropStore: a saved alive-list cache, found by comparing the two states field by
+    field); `"Unità mancanti e mura (8a)": 2250` into `righe` of `tools/token-ledger/purposes.json` +
+    `ledger.py update`; the first lines of this section (8a merged, new test counts, new reference hash);
+    `git worktree remove .claude/worktrees/wave8a` + `git branch -d wave8a-units`; `git worktree prune` (a scratch
+    worktree `mainbench` of this session lives in /tmp).
+  - **Untrack the agents' notes in main** (`git rm -r --cached .claude`, then delete `.claude/handoff.md`,
+    `.claude/agent-report.md` and `.claude/notes/` in the main checkout, AFTER copying the 8a report into HISTORY):
+    7b and 8a tracked them with `git add -f` and the merges brought them into main.
+- **Next work after that:** 8b maps, then wave 9 (9b visual polish only: 9a AI is removed), each re-cut into modules
+  of about 1,500 lines for one agent (see "Process rules changed by the owner" below).
 - Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
   tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
