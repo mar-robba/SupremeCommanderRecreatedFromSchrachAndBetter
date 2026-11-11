@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 20:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-11 19:55 — read this first in a new session)
 main has waves 1-7 and (8a): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24),
 (7b) orders & selection UX and (8a) missing units & walls (both merged 2026-11-11). Tests: 569 sim + 315 client + 27 net.
@@ -14,7 +14,7 @@ made before 8a refuse to open ("unit blueprints changed"). Each agent keeps `<wo
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-11 20:00, session ef87f678; the owner said "continua" after the reset of 19:40):
+**ON RESUME** (2026-11-11 19:55, session da785bd8; the owner cleared the context at 19:49 and said "continua"):
 - **No agent is running, no agent worktree is open, nothing waits for a merge.** (7b) and (8a) are merged and
   verified on main (build, three suites, reference match, interleaved bench, screenshots: HISTORY "(7b)", "(8a)").
   What they left is in "later (7b)" and "later (8a)" below.
@@ -29,6 +29,10 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   19:45 the 18:00-23:00 window already held 14 $ of this project (8a's agents and the merge checks; windows with the
   orchestrator on Fable 5.2 ended at about 20 $), and two other Claude sessions of the owner were open.
   `python3 -I tools/token-ledger/windows.py <ISO time of the last reset>` prints what the project used since then.
+  At 19:52 the window held 17.4 $ (Fable 5.2 10.0 $ + Opus 5.5 7.4 $; the mixed windows of 11-10 23:00 and 11-11
+  13:00 ended at 20 $), so session da785bd8 scheduled the start for the reset: a one-shot job (CronCreate, 23:04,
+  lives only while that session stays open) that checks the window and starts both agents. If that session was
+  closed, a new one starts them after 23:00 as written above.
 - Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
   tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
