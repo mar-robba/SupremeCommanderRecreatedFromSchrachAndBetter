@@ -294,7 +294,8 @@ public static class ProjectileSystem
             if (!S.IsEnemyArmy(Army, u.Army[j])) return true;
             if ((S.Layer[j] & Mask) == 0) return true;
             if (!u.IsActive(j)) return true;
-            float t = Ballistics.SegmentSphere(A, B, S.Center(u, j), S.Catalog.Units[u.Bp[j]].HitRadius);
+            var info = S.Catalog.Units[u.Bp[j]];
+            float t = info.IsWall ? Walls.SegmentHit(W, j, A, B) : Ballistics.SegmentSphere(A, B, S.Center(u, j), info.HitRadius); // walls: box (Combat/Walls)
             if (t < 0 || t > BestT || (t == BestT && j > Best)) return true;
             BestT = t;
             Best = j;

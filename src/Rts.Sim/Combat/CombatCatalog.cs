@@ -59,6 +59,8 @@ public sealed class UnitCombatInfo
     public LayerMask ThreatMask;
     public bool Armed;
     public bool IsStructure;
+    /// <summary>Wall section (Combat/Walls): box hits, never auto-targeted.</summary>
+    public bool IsWall;
     /// <summary>Indirect-fire units (artillery) prefer armed structures over mobile units.</summary>
     public bool PrefersStructures;
     /// <summary>Radius added to weapon ranges when this unit is the target.</summary>
@@ -91,6 +93,7 @@ public sealed class CombatCatalog
                 Weapons = new WeaponInfo[nw],
                 Armed = nw > 0,
                 IsStructure = bp.IsStructure,
+                IsWall = Walls.IsWall(bp),
                 PrefersStructures = bp.HasAny(UnitCategory.IndirectFire | UnitCategory.Artillery),
                 TargetRadius = bp.Radius,
                 HitRadius = bp.Radius + 0.15f,

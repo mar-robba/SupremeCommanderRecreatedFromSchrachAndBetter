@@ -354,10 +354,19 @@ public static class WeaponSystem
         {
             var u = w.Units;
             var mask = w.Blueprints[shot.Bp].Weapons[shot.Weapon].TargetMask;
-            var hitPos = u.IsActive(shot.Target) ? CombatState.Of(w).Center(u, shot.Target.Index) : shot.TargetPos;
+            var target = shot.Target;
+            var cs = CombatState.Of(w);
+            var hitPos = u.IsActive(target) ? cs.Center(u, target.Index) : shot.TargetPos;
             // Enemy shield domes between the muzzle and the target absorb the beam (Strategic module).
             if (Strategic.ShieldSystem.TryBlockInstant(w, shot.Army, shot.Pos, hitPos, shot.Damage, shot.Bp, shot.Weapon)) return;
-            EmpStun.OnImpact(w, shot.Bp, shot.Weapon, shot.Army, new Vector2(hitPos.X, hitPos.Z), u.IsActive(shot.Target) ? shot.Target.Index : -1);
+            // An enemy wall on the beam's segment takes the hit instead (Combat/Walls).
+            int wall = Walls.FirstOnSegment(w, cs, shot.Army, mask, shot.Pos, hitPos, out float wallT);
+            if (wall >= 0 && wall != target.Index)
+            {
+                target = u.HandleOf(wall);
+                hitPos = Vector3.Lerp(shot.Pos, hitPos, wallT);
+            }
+            EmpStun.OnImpact(w, shot.Bp, shot.Weapon, shot.Army, new Vector2(hitPos.X, hitPos.Z), u.IsActive(target) ? target.Index : -1);
             if (shot.DamageRadius > 0)
             {
                 w.Events.AreaDamage.Add(new AreaDamageEvent
@@ -370,8 +379,8 @@ public static class WeaponSystem
             }
             else
             {
-                if (u.IsActive(shot.Target))
-                    w.Events.Damage.Add(new DamageEvent { Target = shot.Target, Source = shot.Source, SourceArmy = shot.Army, Amount = shot.Damage });
+                if (u.IsActive(target))
+                    w.Events.Damage.Add(new DamageEvent { Target = target, Source = shot.Source, SourceArmy = shot.Army, Amount = shot.Damage });
                 CombatFx.Add(w, EffectKind.Impact, hitPos, 0.5f, shot.Army, shot.Bp, shot.Weapon);
             }
             return;

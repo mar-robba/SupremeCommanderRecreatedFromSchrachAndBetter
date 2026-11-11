@@ -112,6 +112,7 @@ public static class TargetingSystem
         if (!s.IsEnemyArmy(army, u.Army[j])) return false;
         if ((u.Flags[j] & UnitFlags.Carried) != 0) return false; // inside a carrier: off the map
         if ((s.Layer[j] & mask) == 0) return false;
+        if (s.Catalog.Units[u.Bp[j]].IsWall) return false; // walls are never automatic targets (Combat/Walls)
         if (FireStates.CapturedByFriend(w, army, j)) return false; // we are capturing it: hold fire
         float d2 = Vector2.DistanceSquared(pos, u.Pos[j]);
         float r = range + s.Catalog.Units[u.Bp[j]].TargetRadius;
@@ -193,6 +194,7 @@ public static class TargetingSystem
             if (!S.IsEnemyArmy(Army, u.Army[j]) || j == Skip) return true;
             if ((S.Layer[j] & Mask) == 0) return true;
             if (!u.IsActive(j) || (u.Flags[j] & UnitFlags.Carried) != 0) return true; // boarded this tick: off the map
+            if (S.Catalog.Units[u.Bp[j]].IsWall) return true; // never auto-acquired (Combat/Walls); an Attack order still works
             float d2 = Vector2.DistanceSquared(u.Pos[j], Pos);
             float r = Range + S.Catalog.Units[u.Bp[j]].TargetRadius;
             if (d2 > r * r || d2 < MinRange2) return true;
