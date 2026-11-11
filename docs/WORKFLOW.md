@@ -2,8 +2,8 @@
 
 The owner does not write code. Everything is written by Claude agents. One Claude session, the **orchestrator**,
 plans the work, writes the agent prompts, starts the agents, merges their branches and checks the result. Each
-**agent** owns one area (e.g. "naval", "save/load") and works in its own git worktree. An agent may start
-**sub-agents** for separate pieces of its area.
+**agent** owns one module (e.g. "naval", "save/load"), cut to the size of one agent, and works in its own git
+worktree. It starts **sub-agents** only for separable content with a written contract ("Sub-agents").
 
 This file is the process. The state of the work is in [ROADMAP.md](ROADMAP.md), what was delivered is in
 [HISTORY.md](HISTORY.md), and the rules every agent gets are in [AGENT_RULES.md](AGENT_RULES.md).
@@ -14,10 +14,10 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 
 | Date | Decision |
 |---|---|
-| 2026-10-10 | Build a large-scale, multithreaded RTS like Supreme Commander 1. The owner doesn't code: AI agents build everything. The orchestrator may start as many agents as it needs. When the orchestrator's context gets full, continue in a new session. |
+| 2026-10-10 | Build a large-scale, multithreaded RTS like Supreme Commander 1. The owner doesn't code: AI agents build everything. The orchestrator may start as many agents as it needs (since 2026-11-10: at most 2 at a time). When the orchestrator's context gets full, continue in a new session. |
 | 2026-10-10 | No new system toolchains (the owner refused a rustup install). The project uses the installed .NET 10 SDK. NuGet packages are fine. If a system package is really needed, ask first (the owner can run `! sudo apt install ...`). Also CLAUDE.md hard rule 8. |
 | 2026-10-12 | Hard limit: **300k tokens of context per agent** (quality drops with very large contexts). See "Context limits and handoffs". |
-| 2026-10-12 | Agents may start their own sub-agents (rules in AGENT_RULES.md). |
+| 2026-10-12 | Agents may start their own sub-agents (rules in AGENT_RULES.md). Since 2026-11-10: only for separable content. |
 | 2026-10-12 | "Giudica contando che tutto deve essere fatto": everything must be done. The orchestrator chooses the next waves itself, aiming at the full SupCom feature set. |
 | 2026-10-14 | The owner restarts the orchestrator at about 200k context, so the orchestrator keeps its own context lean and prepares its handoff (ROADMAP "NEXT STEPS") early. |
 | 2026-10-14 | All durable documentation goes in `docs/`, organized (see [README.md](README.md)), never only in the agents' private memory. Only small transient working notes stay private. |
@@ -26,6 +26,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-16 | Context cap lowered: **150k tokens per agent and sub-agent** (CHECKPOINT at ~130k). Every agent and sub-agent, when it finishes or stops, saves only the essentials of its work (done + commits, what is left, decisions/pitfalls) in a short note in its worktree (`.claude/handoff.md`, sub-agents `.claude/notes/<piece>.md`), so the work continues after a restart of the orchestrator. |
 | 2026-10-16 | The 150k cap is the **default, not a fixed size**: before starting an agent or sub-agent, judge from the task's requirements how much splitting it across fresh agents would hurt the *result* (not the token cost); when it would hurt a lot, give that agent a proportionally higher cap (up to 300k). Keep evaluating how much the small-context approach harms the success of the work. See "Sizing an agent's context cap" and "Fragmentation: does a small cap hurt the result?". |
 | 2026-10-23 | **Two factions are enough** (UEF + Cybran): don't create further factions (no Aeon/Seraphim). "Everything must be done" means the full feature set for these two. |
+| 2026-11-10 | The owner asked for a judgment of these rules and approved its four changes ("effettua le modifiche consigliate"; "Review of the process rules (2026-11-10)"): (1) agents and sub-agents run on **Opus 5.5** (`model: "opus"` in every Agent call); Fable 5.2 only for the orchestrator and for pieces of class high or critical. (2) **One agent per module, no coordinator**: modules of about 1,500 lines, cap 200k; sub-agents only for separable content with a written contract (blueprints, models, tests). (3) **At most 2 agents at a time, sub-agents counted**, and no start when other sessions of the owner have already used part of the usage window. (4) LESSONS "Costi" is brought up to date **every 2-3 waves** or when the owner asks, not after every wave. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -48,7 +49,9 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
 ## Lifecycle of a wave
 
 1. **Plan.** Check what similar work cost in [tokens/summary.org](tokens/summary.org) and size the briefs to
-   finish within one usage window. Choose areas whose files barely overlap. Write the contracts they share (they
+   finish within one usage window. Cut the work into modules of about 1,500 lines (the size of 7a), each for one
+   agent with a 200k cap and no coordinator (owner, 2026-11-10); what needs more becomes two modules, one after the
+   other. Choose areas whose files barely overlap. Write the contracts they share (they
    become ARCHITECTURE sections): enums are append-only; `BuiltBy` / `UpgradesTo` in blueprints; faction roles
    instead of hard-coded `uef_*` ids; all sim state saveable.
 2. **Prompt.** Each agent gets its area brief (goal, must-haves, files it owns, what to leave to others) plus the
@@ -58,7 +61,14 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    `[Fazione Cybran (5l)] client models`, so the token ledger files its cost under that purpose
    ([tokens/README.org](tokens/README.org)). A new purpose also needs its area and its wave in
    `tools/token-ledger/purposes.json` (`aree`, `onde`), or its cost shows up as "Da classificare" (it happened to
-   waves 6-8 until 2026-11-10; the session-start hook now names the purposes without an area). One agent per area with `isolation: "worktree"`: it gets its own
+   waves 6-8 until 2026-11-10; the session-start hook now names the purposes without an area). Every Agent call carries
+   `model: "opus"` (owner, 2026-11-10: agents otherwise inherit the session's model, and a Fable 5.2 window holds a
+   fifth of the work); `model: "fable"` only for a piece of class high or critical, planned for a window of its own.
+   As a safety net `.claude/settings.json` sets `"env": {"CLAUDE_CODE_SUBAGENT_MODEL": "opus"}`, the default model
+   of sub-agents in sessions started after 2026-11-11 (the variable exists in Claude Code 2.1.322; its effect was
+   not checked with a real agent, and the file is local, not in git). Keep the explicit `model` in the call.
+   At most 2 agents run at a time, sub-agents counted, and none starts when other sessions of the owner have already
+   used part of the window ("Usage limits"). One agent per module with `isolation: "worktree"`: it gets its own
    branch and folder under `.claude/worktrees/`. The worktree may be created from `origin/main`, which is stale,
    so the agent's first step is `git merge main` (the local branch).
 4. **While they run.** Watch their context size (below) and handle usage limits (below). Answer questions; don't
@@ -73,9 +83,10 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
 7. **After the merge.** Copy the agent's report into [HISTORY.md](HISTORY.md) (its own section) and update ROADMAP
    "NEXT STEPS". Write the lines the module added into `purposes.json` (`righe`; the command is in
    [tokens/README.org](tokens/README.org) "Onde e righe"), run `ledger.py update` and commit `docs/tokens/` (the hooks
-   keep it current): `summary.org` then shows the module's and the wave's cost per 1000 lines. After the last merge of
-   a wave, bring the whole "Costi" chapter of [LESSONS.org](LESSONS.org) up to date with `summary.org` (its tables,
-   not only a new paragraph: from 2026-10-15 to 2026-11-10 the main tables stayed at the wave 4 numbers). Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
+   keep it current): `summary.org` then shows the module's and the wave's cost per 1000 lines. Every 2-3 waves, or
+   when the owner asks (owner, 2026-11-10; before: after every wave), bring the whole "Costi" chapter of
+   [LESSONS.org](LESSONS.org) up to date with `summary.org` (its tables, not only a new paragraph: from 2026-10-15
+   to 2026-11-10 the main tables stayed at the wave 4 numbers); its first lines say when it is next due. Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
    A locked worktree needs `git worktree unlock <path>` first.
 8. **Cross-module bugs** often appear only after a merge (example: anti-air vs orbiting aircraft). Send them to the
    agent that owns the area. That agent runs `git merge main` first.
@@ -100,7 +111,8 @@ To keep conflicts small:
 ## Context limits and handoffs
 
 - **Cap: 150k tokens of context per agent and sub-agent by default** (owner, 2026-10-16; it was 300k), raised per task
-  when splitting would hurt the result (next section). Every prompt states the agent's cap. About 20k below it the agent commits, updates its
+  when splitting would hurt the result (next section); a module agent, which since 2026-11-10 does its module alone,
+  is class medium (200k). Every prompt states the agent's cap. About 20k below it the agent commits, updates its
   handoff note and ends its turn with the word `CHECKPOINT`. The orchestrator then starts a **fresh agent in the
   same worktree**: absolute path in the prompt, no isolation flag, the original task plus "continue from the
   handoff note".
@@ -138,7 +150,7 @@ cannot carry to a fresh agent.
 | Class | Cap (CHECKPOINT) | Typical tasks |
 |---|---|---|
 | low | 150k (130k) | Separable pieces with a written contract: data files, one model/test/doc file per piece, a well-specified feature in 1-3 files. The note carries everything. |
-| medium | 200k (180k) | One feature across several files or modules whose design choices must stay consistent; integrating other agents' pieces; a merge with a few conflicts. |
+| medium | 200k (180k) | A module agent working alone (the default since 2026-11-10). One feature across several files or modules whose design choices must stay consistent; integrating other agents' pieces; a merge with a few conflicts. |
 | high | 250k (230k) | The result rests on a chain of evidence built during the work: diagnosing a non-obvious bug, AI/balance tuning that compares many runs, a performance investigation, a cross-cutting refactor, a conflict-heavy merge. |
 | critical | 300k (280k), the maximum | Searches where a restart means starting the search again: desync/determinism hunts. Above 300k quality drops (owner, 2026-10-12). |
 
@@ -200,14 +212,21 @@ mostly cache reads, of every session and agent of the project):
   expired) used the whole window in 9 minutes; on 11:00 the same five agents used it in 20 minutes.
 - A window holds a fixed amount of work, whatever the number of agents: more agents in parallel only make the window
   end sooner, and each one is cut and needs a resume (about 1 $ of start-up reading each, plus its cache rewrite).
-  So run **at most 2 agents at a time, without sub-agents**, and size each brief to finish within one window.
+  So run **at most 2 agents at a time, sub-agents counted** (owner rule since 2026-11-10; until then waves 6-8 ran
+  2 coordinators plus their sub-agents), and size each brief to finish within one window. Other sessions of the
+  owner use the same window: when part of it is already gone, wait for the reset.
 - **On Fable 5.2 a window is about 5 times smaller** (measured 2026-11-10 from the transcripts' usage fields; all
   numbers above are for Opus 5.5). The session and its agents ran on Fable 5.2 (the owner's `/model` choice; agents
   inherit it): the 13:00 window ended after 129 calls and 10M tokens of this project (plus 2.3M of another session
   of the owner), the 18:00 window after 93 calls and 7.7M (plus 1.9M elsewhere). That was 8-10 minutes of
   2 coordinators + 2-3 sub-agents each time, and every resume first pays the re-read of each agent's context.
-  Open owner decision (asked 2026-11-10): agents on Opus 5.5 (`model: "opus"` in the Agent call; about 5 times more
-  agent work per window, as in waves 1-7a) or on Fable 5.2 (stronger model, short windows).
+  Per window (`windows.py`, lines added by the work done in the window): the last five Opus 5.5 windows (Oct 23-24)
+  each held 480-670 calls, about 30 $ at list price and 800-4,000 lines (2,500 on average); the two Fable 5.2 windows
+  95-128 calls, about 12 $ and 200 and 830 lines. So a Fable window holds half the list-price dollars and, at twice
+  the price per token, a fifth of the work (LESSONS "Costi", "Fable 5.2 costa il doppio per passo").
+  Decided by the owner on 2026-11-10: agents on Opus 5.5 (`model: "opus"` in every Agent call; about 5 times more
+  agent work per window, as in waves 1-7a). Fable 5.2 stays for the orchestrator and for pieces of class high or
+  critical. Check again at the merge of 7b and 8a whether the work done on Fable 5.2 was much better.
 
 ## Resuming (new orchestrator session)
 
@@ -222,7 +241,11 @@ mostly cache reads, of every session and agent of the project):
 
 ## Sub-agents
 
-An agent may start sub-agents (general-purpose) for well-separated pieces, e.g. sim vs client:
+Since 2026-11-10 a module agent does its module itself: there is no coordinator, which cost a third of 6a, 6b and
+7a. It starts a sub-agent (general-purpose, `model: "opus"`) only for separable content with a written contract
+(blueprints, unit models, tests), not to split a feature into sim and client. Sub-agents count toward the limit of
+2 agents at a time, so the orchestrator writes in the prompt how many the agent may run at once: 1 when it runs
+alone, 0 when two module agents run. Rules for a sub-agent:
 - they work in the parent's worktree (absolute path, no isolation flag), on disjoint files;
 - only one `dotnet build`/`dotnet test` runs at a time per worktree: use `tools/agents/dn.sh` (see DEV_GUIDE);
 - they commit only their own files: `git add <files> && git commit -m "..." -- <files>`;
@@ -230,6 +253,68 @@ An agent may start sub-agents (general-purpose) for well-separated pieces, e.g. 
 
 Sub-agents cannot write outside their worktree, e.g. the orchestrator's private folder. That's why reports go to
 `<worktree>/.claude/agent-report.md`.
+
+## Review of the process rules (2026-11-10)
+
+The owner asked whether the rules in "Owner decisions" and this way of orchestrating are right or harmful. The
+answer, checked against the token ledger (numbers: [LESSONS.org](LESSONS.org) "Costi"; harm to the result: the
+fragmentation table above): **the framework is right. Three choices cost throughput (work done per usage window).
+None of them measurably hurt the result, except in the AI tuning of (k).** The table judges the rules as they stood
+before the changes at the end of this section.
+
+| Rule | Verdict | Evidence |
+|---|---|---|
+| Durable knowledge in `docs/`, handoff notes, WIP commits (2026-10-14, 2026-10-16) | Right, the most valuable one. | At least 25 session limits, one weekly limit and a 17-day account block: each time the work went on from ROADMAP "NEXT STEPS" and the notes, and no committed work was lost. |
+| Context cap sized by the task (2026-10-16) | Right. | The context re-read per step went from 209k to 93k tokens and the cost of a step from 0.117 $ to 0.049 $. In the fragmentation table the harm is none or low in 7 rows of 8, and medium for the (k) stall diagnosis and for (k) as a whole. |
+| Token ledger (2026-10-15) | Right. | Documentation and cost analysis are 4.5 % of the spend (32 $ of 718 $), and nothing in this review could be judged without it. |
+| Agents may start sub-agents (2026-10-12) | Harmful as a general rule. | Point 1. |
+| As many agents as needed, in parallel (2026-10-10) | Harmful under a subscription. | Point 2. |
+| Agents inherit the session's model (not a written rule: the owner's `/model` default) | The most harmful one today. | Point 3. |
+
+The weak points:
+
+1. **The relay between agents spent what the cap saved.** A step got 2.4 times cheaper, but 1000 lines took 28
+   steps in wave 1 and 177 in wave 6, and cost 3.3 $ and 8.6 $. Part of that is the project growing (more code to
+   read, more checks); how much the relay alone weighs is not measured. What is measured:
+   - resumes and successors are 28 % of the total spend;
+   - a module went through 1 agent in wave 1 and through 9-11 in waves 5 and 6;
+   - the coordinator is a third of the cost of 6a, 6b and 7a.
+
+   The coordinator layer follows from two rules together: with a 150k cap a module of 2,500-3,500 lines does not
+   fit in one agent. Fewer hands cost less: 7a (4 agents, 1,515 lines) 6.9 $ per 1000 lines, 6b (5 agents) 7.2 $,
+   6a (13 agents) 9.6 $. Sub-agents pay off on separable content with a written contract: Cybran, 20 agents, 4.9 $.
+   So the cap stands on the quality of the result and on cheaper cuts, not on savings: per line it was
+   cost-neutral (wave 6 8.6 $, wave 5 8.2 $).
+2. **Parallelism gains nothing under a usage limit.** A window holds a fixed amount of work ("Usage limits"), so
+   more agents only end it sooner, and every agent that is cut needs a resume. Twelve agents resumed together used
+   a window in 9 minutes (2026-10-15), and resumes were 57 % of the cost of wave 5. "Usage limits" already says "at
+   most 2 agents at a time, without sub-agents", but waves 6-8 ran 2 coordinators plus their sub-agents (4-5 agents
+   at a time on 2026-11-10): the written rule and the practice disagreed (change 3 below).
+3. **The model weighs more than any rule.** On Fable 5.2 a usage window holds about a fifth of the agent work of
+   an Opus 5.5 window ("Usage limits"; LESSONS "Fable 5.2 costa il doppio per passo").
+
+Two more observations:
+- **Tuning does not work as a relay.** (k) took 11 coordinators one after another and 76.6 $ (19.6 $ per 1000
+  lines, the dearest module) and left its goals unmet. The raised cap of 2026-10-16 reduced the re-reading but did
+  not change the outcome: the next step there is an AI design change (wave 9a), then few measuring rounds that
+  re-read only summaries.
+- **Bookkeeping** is cheap over the whole project (the 4.5 % above), but on 2026-11-10 it was 12 $ of the day's
+  39 $ (three waves of cost tables brought up to date, on Fable 5.2), against 18 $ of module work.
+
+**Changes. The owner approved all four on 2026-11-10 ("effettua le modifiche consigliate"). They are binding: see
+"Owner decisions", "Lifecycle of a wave" steps 1, 3 and 7, "Usage limits", "Sub-agents" and AGENT_RULES.** In
+order of effect:
+1. Agents on Opus 5.5 (`model: "opus"` in the Agent call). Fable 5.2 for the orchestrator and for pieces of class
+   high or critical (diagnosis, desync hunts). Check again at the merge of 7b and 8a whether the work done on
+   Fable 5.2 was much better.
+2. One agent per module, no coordinator: modules of about 1,500 lines (the size of 7a), cap 200k. Sub-agents only
+   for separable content with a written contract (blueprints, models, tests). The price: more and smaller merges
+   for the orchestrator.
+3. At most 2 agents at a time, sub-agents counted, and no start when other sessions of the owner have already
+   used part of the window (as on 2026-11-10 14:08).
+4. Bring LESSONS "Costi" up to date every 2-3 waves instead of after every wave (`summary.org` is always
+   current). This was the weakest of the four: earlier on 2026-11-10 the owner had asked for these tables to be
+   kept current, and chose this cadence with the other three.
 
 ## Where things live
 

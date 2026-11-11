@@ -2,6 +2,9 @@
 
 The orchestrator pastes the block below into every agent prompt, after the agent's own brief (goal, must-haves,
 files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](WORKFLOW.md).
+Start every agent with `model: "opus"` in the Agent call, and run at most 2 agents at a time, sub-agents counted
+(WORKFLOW "Owner decisions", 2026-11-10): so `<S>` below is 1 for an agent that runs alone and 0 when two module
+agents run.
 
 ---
 
@@ -26,8 +29,9 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
     (ARCHITECTURE "Factions": sim/AI code never hard-codes `uef_*` ids, it asks the faction's roles).
   - New hotkeys: check the HUD help for free keys and list every new key in your report (keys clash at merge).
 - `CTX-TAG: <unique tag>` (see the context cap bullet).
-- Context cap: HARD limit of `<CAP>`k tokens of context (default 150k; the orchestrator sizes it per task, WORKFLOW
-  "Sizing an agent's context cap": `Fragmentation sensitivity: <class>, because <reason>`). Stay lean:
+- Context cap: HARD limit of `<CAP>`k tokens of context (default: a module agent 200k, a sub-agent 150k; the
+  orchestrator sizes it per task, WORKFLOW "Sizing an agent's context cap": `Fragmentation sensitivity: <class>,
+  because <reason>`). Stay lean:
   - don't read huge files whole (grep, then read ranges);
   - read few screenshots (at most ~6 in your whole run; prefer `--size 960x540`);
   - pipe long outputs through tail/grep.
@@ -43,7 +47,12 @@ files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](
   Keep it SHORT (under ~60 lines): only what the next agent needs to continue (state + commits, TODO in order,
   decisions and pitfalls), not a diary.
   The orchestrator then commits your leftovers as "WIP" and starts a fresh agent from your note.
-- Sub-agents: you MAY start sub-agents (general-purpose) for well-separated pieces (e.g. sim vs client). Rules:
+- Sub-agents: do your module yourself; there is no coordinator role. You may start a sub-agent (general-purpose)
+  only for separable content with a written contract (blueprints, unit models, tests), never to split a feature
+  into sim and client, and at most `<S>` at a time (the project runs at most 2 agents at once, sub-agents counted;
+  each sub-agent pays its own start-up reading). Rules:
+  - pass `model: "opus"` in every Agent call (a sub-agent otherwise inherits the session's model, and on Fable 5.2
+    a usage window holds a fifth of the work);
   - they work in YOUR worktree (give them the absolute path; no isolation flag) on disjoint files;
   - only ONE `dotnet build`/`dotnet test` may run at a time per worktree: everyone runs dotnet through
     `bash tools/agents/dn.sh <dotnet args>` (call it through `bash`: the volume is mounted without exec bits and git has `core.fileMode=false`);

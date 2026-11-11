@@ -88,8 +88,9 @@ insegnano questi numeri. Dati dal 2026-10-10 al 2026-11-10 alle 23:15 (dal 24 ot
 lavorato). I moduli 7b e 8a sono in corso: i loro numeri sono parziali.
 
 Le tabelle di questo capitolo sono una fotografia. Quelle sempre aggiornate (per area, per onda, per modulo, per
-giorno) le genera il registro dei token in [[file:tokens/summary.org][tokens/summary.org]]. Questo capitolo va riallineato dopo l'ultimo merge di
-ogni onda (WORKFLOW "Lifecycle of a wave", punto 7).
+giorno) le genera il registro dei token in [[file:tokens/summary.org][tokens/summary.org]]. Questo capitolo va riallineato ogni 2-3 onde, o
+quando il proprietario lo chiede (decisione del 2026-11-10; prima era dopo ogni onda: WORKFLOW "Lifecycle of a
+wave", punto 7). Prossimo riallineamento: dopo l'onda 9.
 
 ** Cos'è la cache
 - Il modello non ricorda niente tra una chiamata e l'altra. A ogni passo (leggere un file, lanciare un build,
@@ -364,7 +365,16 @@ Quanto è costato il lavoro per tipo di agente.
 
 *** Il tetto di contesto più basso non ha fatto salire il costo per riga
 - Dato: con il tetto a 150-200k l'onda 6 costa per riga quasi quanto l'onda 5 (8,6 contro 8,2 $) e 7a meno (6,9 $).
-- Lezione: il danno al risultato è seguito a parte (WORKFLOW "Fragmentation").
+- Dato: non l'ha nemmeno fatto scendere. Un passo costa 2,4 volte meno che nell'onda 1 (0,049 contro 0,117 $), ma
+  per 1000 righe servono 6 volte i passi (177 contro 28). Il risparmio del tetto è stato rispeso nella staffetta
+  che il tetto richiede: più agenti per modulo (da 1 a 9-11), un coordinatore che pesa un terzo del modulo,
+  riprese e successori al 28 % del totale. Quanti di quei passi in più vengano dalla staffetta e quanti dal
+  progetto che cresce non è misurato.
+- Lezione: il tetto si giustifica con la qualità del risultato e con interruzioni meno care, non con un risparmio.
+  Per spendere meno bisogna ridurre le mani per modulo. Il danno al risultato è seguito a parte (WORKFLOW
+  "Fragmentation"). Il giudizio complessivo sulle regole di lavoro e le modifiche che il
+  proprietario ha approvato il 2026-11-10 (tra cui un solo agente per modulo, senza coordinatore) sono in WORKFLOW
+  "Review of the process rules (2026-11-10)".
 
 *** Fable 5.2 costa il doppio per passo
 - Dato: il 10 novembre orchestratore e agenti hanno girato su Fable 5.2 (la scelta ~/model~ del proprietario, che
@@ -374,5 +384,18 @@ Quanto è costato il lavoro per tipo di agente.
   Il confronto per riga è solo indicativo: poche righe, lavoro diverso (test e correzioni invece di prime stesure)
   e tre interruzioni per limite d'uso. Con Fable 5.2 una finestra d'uso contiene circa un quinto del lavoro
   (WORKFLOW "Usage limits").
-- Lezione: il modello pesa sul costo più di ogni altra scelta misurata qui. Quale modello dare agli agenti è una
-  decisione aperta del proprietario (WORKFLOW "Usage limits").
+- Dato per finestra d'uso (misurato il 2026-11-10 con ~tools/token-ledger/windows.py~; righe = righe aggiunte in
+  ~src/~, ~tests/~, ~tools/~, ~data/~ dal lavoro fatto nella finestra, WIP lasciati al limite compresi): le ultime
+  cinque finestre su Opus 5.5 (23 e 24 ottobre) hanno fatto 480-670 chiamate in 50-130 minuti di lavoro degli
+  agenti, circa 30 $ di listino e da 800 a 4.000 righe ciascuna (12.600 in tutto, 2.500 in media); le due finestre
+  su Fable 5.2 del 10 novembre 95-128 chiamate in 8-11 minuti, circa 12 $ di listino (più 1,5-3 $ di altre sessioni del
+  proprietario) e 200 e 830 righe (1.030 in tutto). Una finestra di Fable 5.2 contiene circa metà dei dollari di
+  listino di una di Opus 5.5 e, a prezzo doppio, un quinto delle chiamate e delle righe. Tutto compreso
+  (orchestratore e riprese) sono 12 $ ogni 1000 righe su Opus 5.5 e 26 $ su Fable 5.2. Sulla qualità i dati non
+  dicono nulla: due finestre, nessun modulo fuso.
+- Lezione: il modello pesa sul costo più di ogni altra scelta misurata qui, e con l'abbonamento ancora di più del
+  prezzo: a parità di finestre il lavoro avanza circa 5 volte più piano su Fable 5.2. Le finestre corte peggiorano
+  anche il resto: ogni ripresa rilegge i contesti degli agenti, e in 8-11 minuti quella rilettura è una parte grande
+  della finestra (le riprese sono il 46 % della spesa di 7b e 8a del 10 novembre). Il proprietario ha deciso
+  il 2026-11-10: agenti su Opus 5.5, Fable 5.2 per l'orchestratore e per i pezzi di diagnosi (WORKFLOW "Owner
+  decisions"). È la scelta che i numeri indicano per il lavoro a onde con più agenti, da rivalutare se al merge di 7b e 8a il lavoro fatto su Fable 5.2 risultasse molto migliore.

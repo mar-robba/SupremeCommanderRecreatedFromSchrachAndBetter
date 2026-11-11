@@ -64,7 +64,8 @@ e il numero va scritto in ~righe~ (per un modulo fuso in più pezzi, la somma). 
 * Come si usa
 - Riepilogo: [[file:summary.org][summary.org]], oppure ~python3 tools/token-ledger/ledger.py report [--days N]~.
 - Prima di pianificare un'onda: guardare quanto sono costati scopi simili e dimensionare i brief di conseguenza.
-- Dopo il merge di un modulo: scrivere le sue righe in ~purposes.json~ (sopra). Dopo l'ultimo merge di un'onda:
+- Dopo il merge di un modulo: scrivere le sue righe in ~purposes.json~ (sopra). Ogni 2-3 onde, o quando il
+  proprietario lo chiede (decisione del 2026-11-10; prima era dopo ogni onda):
   riallineare il capitolo "Costi" di LESSONS.org (tabelle "Totale", "Per onda", "Per modulo", "Per scopo", "Costo del
   processo" e le lezioni) con ~summary.org~.
 - Ricalcolo a mano: ~python3 tools/token-ledger/ledger.py update~.

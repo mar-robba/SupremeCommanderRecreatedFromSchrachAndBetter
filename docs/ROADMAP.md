@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-10 23:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-10 23:55 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
 279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
@@ -24,10 +24,14 @@ agents and the account was then blocked, to 2026-11-10):
   - 8a (HEAD 8762364 = WIP MissileSubTests draft, may not compile): Salem on land works (WalkingShipTests 60e5664,
     note `.claude/notes/naval.md` with the ordered TODO); left: missile sub and carrier tests, walls, client models +
     `--scene units8a`, finish. Coordinator 3 is at 80k.
-  - **Ask the owner first: which model for the agents** (WORKFLOW "Usage limits", Fable 5.2 bullet). On Fable 5.2 a
-    window gives 8-10 minutes of agent work; on Opus 5.5 it gave about an hour.
-- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh coordinator there
-  with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
+  - **Model decided (owner, 2026-11-10): agents on Opus 5.5.** Don't resume the coordinators and sub-agents above:
+    they were started on Fable 5.2, where a window gives 8-10 minutes of agent work (on Opus 5.5 it gave about an
+    hour). When the owner says to continue: one fresh agent per module with `model: "opus"`, cap 200k, in the
+    existing worktree, with the brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`; finish
+    the module yourself, no coordinator". 7b and 8a together are the 2 agents allowed, so neither starts
+    sub-agents while the other runs.
+- If an agent below is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
+  (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and `.claude/notes/`". Context watcher:
   `agent_ctx.py --watch 135000 <id>=185000 ...`.
 - **Running:** **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
   `wave7b-orders` from main), coordinator 2 (cap 200k medium; started 2026-11-10 14:05 from the handoff note; WIP
@@ -39,12 +43,18 @@ agents and the account was then blocked, to 2026-11-10):
   commit 48673e7 = 9 untested blueprint drafts; all five pieces were open). Cut by the 5-hour limit at 14:08 (125k;
   data piece done 88955ec, AI reference hash now BBD1FF3C4E116A4A: blueprint index shift only, same winner and
   time). **Coordinator 3** started 2026-11-10 20:55 from the handoff note (WIP commit 676de72 = untested Salem on land).
+- **Process rules changed by the owner (2026-11-10; WORKFLOW "Owner decisions" and "Review of the process
+  rules"):** every Agent call carries `model: "opus"`; one agent per module of about 1,500 lines, cap 200k, no
+  coordinator (sub-agents only for separable content: blueprints, models, tests); at most 2 agents at a time,
+  sub-agents counted, and no start when other sessions of the owner have used part of the window; LESSONS "Costi"
+  every 2-3 waves (next: after wave 9). Briefs written before this (8b and wave 9 in HISTORY) must be re-cut to
+  that module size before they start.
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
 - **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
-  in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` and, after the last merge of
-  the wave, the "Costi" chapter of LESSONS (WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far: LESSONS
-  "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
+  in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` (the "Costi" chapter of
+  LESSONS only every 2-3 waves, next after wave 9: WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far:
+  LESSONS "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - (k) left goals unmet (stalls, finished games, tech v T1-only; AI_TUNING "Final numbers of agent (k)"): they need
