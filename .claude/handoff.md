@@ -20,13 +20,7 @@ Brief: G8, G9 (+ Atlantis dive of G11, already done before 8a). Notes: `.claude/
 - Bench 2000 300 interleaved: main 2.05-2.10 / branch 1.85-1.92 ms avg (no regression).
 
 ## TODO in order
-2. Client: models `mech_marine`, `stealth_field`, `missile_sub`, `cy_missile_sub`, `cy_carrier`, `cy_wall` (+ UEF wall /
-   sonar if they fall back to default): new partial files + one `case` line each in UnitModels.cs; carrier deck spots
-   (UnitRenderer.Cargo.cs ~144 keyed on shape "atlantis"); Salem legs/height on land (recipe at end of naval.md);
-   `--scene units8a`.
-3. Finish: merge main, build, 3 test projects, AI ref + bench 2000 300, screenshots, docs (ARCHITECTURE
-   `## Missing units & walls (8a)`, CLAUDE.md --scene line, ROADMAP G8/G9 `[x] 2026-11-11 (8a)`, stale Atlantis-dive
-   lines ~364 + G11, AI_TUNING hash note, "- [ ] later:"), `.claude/agent-report.md`.
+- NOTHING LEFT: module finished (merge main b5da511, 3 suites green, docs, report `.claude/agent-report.md`).
 
 ## Owner decision 2026-11-11 (coordinator message)
 - AI improvement is no longer a goal: write NO "- [ ] later: AI builds/uses <new units>" lines anywhere (stating
