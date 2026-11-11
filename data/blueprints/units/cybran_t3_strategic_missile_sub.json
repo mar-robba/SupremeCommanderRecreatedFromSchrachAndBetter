@@ -1,0 +1,87 @@
+{
+  "Id": "cybran_t3_strategic_missile_sub",
+  "Name": "Plan B",
+  "Description": "T3 strategic missile submarine: builds one nuclear missile at a time (like the nuke silo) and launches it even while submerged; fires tactical cruise missiles on its own. No torpedoes. Submerged: only sonar can find it.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "Strategic",
+    "IndirectFire",
+    "Tech3"
+  ],
+  "MaxHealth": 5500,
+  "Radius": 1.6,
+  "Economy": {
+    "BuildCostMass": 4300,
+    "BuildCostEnergy": 57000,
+    "BuildTime": 14400
+  },
+  "Movement": {
+    "Layer": "Sub",
+    "MaxSpeed": 3.3,
+    "Acceleration": 1.2,
+    "TurnRate": 35
+  },
+  "Intel": {
+    "VisionRadius": 30,
+    "SonarRadius": 60
+  },
+  "Weapons": [
+    {
+      "Name": "Strategic Nuclear Missile",
+      "Range": 5000,
+      "Damage": 40000,
+      "DamageRadius": 22,
+      "RateOfFire": 0.01,
+      "MuzzleVelocity": 38,
+      "TargetLayers": [
+        "Land",
+        "Water",
+        "Air"
+      ],
+      "ProjectileVisual": "nuke",
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180
+    },
+    {
+      "Name": "Loa Tactical Missile Launcher",
+      "Range": 200,
+      "MinRange": 15,
+      "Damage": 750,
+      "DamageRadius": 2,
+      "RateOfFire": 0.08,
+      "MuzzleVelocity": 18,
+      "TurretTurnRate": 0,
+      "FiringTolerance": 180,
+      "TargetLayers": [
+        "Land",
+        "Water"
+      ],
+      "ProjectileVisual": "missile",
+      "FiresSubmerged": true
+    }
+  ],
+  "Silo": {
+    "Kind": "Strategic",
+    "WeaponIndex": 0,
+    "MaxStorage": 1,
+    "MissileCostMass": 6000,
+    "MissileCostEnergy": 180000,
+    "MissileBuildTime": 180,
+    "OuterDamage": 3000,
+    "OuterRadius": 38
+  },
+  "Visual": {
+    "Shape": "cy_missile_sub",
+    "Size": [
+      2.2,
+      1.8,
+      10.0
+    ],
+    "Icon": "naval"
+  },
+  "BuiltBy": [
+    "cybran_t3_naval_factory"
+  ]
+}

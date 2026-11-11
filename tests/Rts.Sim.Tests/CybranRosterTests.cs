@@ -61,7 +61,7 @@ public class CybranRosterTests
     public void EveryCybranBlueprintLoadsWithACybranShape()
     {
         var all = Cybran.ToList();
-        Assert.Equal(80, all.Count);
+        Assert.Equal(84, all.Count); // 80 (wave 5l) + wall, T3 sonar, carrier, strategic missile sub (wave 8a)
         foreach (var b in all)
         {
             Assert.StartsWith("cybran_", b.Id);
@@ -118,7 +118,7 @@ public class CybranRosterTests
         foreach (var kind in new[] { "land_factory", "air_factory", "naval_factory", "mass_extractor" })
             Chain($"cybran_t1_{kind}", $"cybran_t2_{kind}", $"cybran_t3_{kind}");
         Chain("cybran_t1_radar", "cybran_t2_radar", "cybran_t3_omni_sensor");
-        Chain("cybran_t1_sonar", "cybran_t2_sonar");
+        Chain("cybran_t1_sonar", "cybran_t2_sonar", "cybran_t3_sonar");
         Chain("cybran_t2_shield_ed1", "cybran_t2_shield_ed2", "cybran_t2_shield_ed3", "cybran_t3_shield_ed4", "cybran_t3_shield_ed5");
         Assert.Equal(-1, Db["cybran_t2_shield_ed1"].UpgradesFromIndex);
         Assert.Equal(3, Db["cybran_t3_shield_ed4"].Tech);

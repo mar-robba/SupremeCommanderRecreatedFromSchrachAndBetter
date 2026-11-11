@@ -123,6 +123,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             bool building = (v.Flags & UnitFlags.UnderConstruction) != 0;
             if (!building && IsSubmerged(model, pos)) { _submerged.Add((model, v.Index, pos, heading, turret, col)); continue; } // UnitRenderer.Submerged.cs
             if (!building && (v.Status & UnitStatus.Cloaked) != 0) continue; // translucent shimmer in DrawStatus (UnitRenderer.Status.cs)
+            if (!building) pos = WalkingShip(model, in v, prev, pos, heading, col, time); // Salem ashore: UnitRenderer.WalkingShip.cs
             AddUnit(model, v.Index, pos, heading, turret, turn, col, building, building ? v.BuildFrac : 1f, time);
             // In-place upgrade: the target model grows around the structure as a construction hologram.
             if (v.UpgradeBp >= 0) AddUnit(Model(v.UpgradeBp), v.Index, pos, heading, turret, turn, col, true, MathF.Max(0.02f, v.UpgradeFrac), time);

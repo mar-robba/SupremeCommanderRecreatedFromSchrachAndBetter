@@ -30,9 +30,12 @@ public sealed class PropStore
     /// <summary>Blueprint of the unit this wreck came from (visuals), -1 for generic props.</summary>
     public readonly int[] BlueprintIndex;
 
-    private readonly int[] _aliveList;
-    private int _aliveCount;
-    private bool _dirty;
+    // Lazy cache of the live slots: [NoSave] because its stale tail (slots past _aliveCount) depends on WHEN it was last
+    // rebuilt, i.e. on who read AliveList (state hash, sandbox, AI), not on the game: saved, it made a replay's end
+    // state differ from the recorded game's (ReplayTests, wave 8a). After a load it is null/invalid and rebuilt on access.
+    [Persistence.NoSave] private int[]? _aliveList;
+    [Persistence.NoSave] private int _aliveCount;
+    [Persistence.NoSave] private bool _aliveValid;
     private readonly Stack<int> _free;
     private int _nextId = 1;
 
@@ -50,7 +53,6 @@ public sealed class PropStore
         MassMax = new float[capacity];
         EnergyMax = new float[capacity];
         BlueprintIndex = new int[capacity];
-        _aliveList = new int[capacity];
         _free = new Stack<int>(capacity);
         for (int i = capacity - 1; i >= 0; i--) _free.Push(i);
     }
@@ -62,12 +64,13 @@ public sealed class PropStore
     {
         get
         {
-            if (_dirty)
+            if (!_aliveValid)
             {
+                _aliveList ??= new int[Capacity];
                 int n = 0;
                 for (int i = 0; i < Capacity; i++) if (Alive[i]) _aliveList[n++] = i;
                 _aliveCount = n;
-                _dirty = false;
+                _aliveValid = true;
             }
             return _aliveList.AsSpan(0, _aliveCount);
         }
@@ -91,7 +94,7 @@ public sealed class PropStore
         Mass[i] = MassMax[i] = MathF.Max(0, mass);
         Energy[i] = EnergyMax[i] = MathF.Max(0, energy);
         BlueprintIndex[i] = blueprintIndex;
-        _dirty = true;
+        _aliveValid = false;
         return i;
     }
 
@@ -100,7 +103,7 @@ public sealed class PropStore
         if (!Alive[i]) return;
         Alive[i] = false;
         _free.Push(i);
-        _dirty = true;
+        _aliveValid = false;
     }
 
     /// <summary>Nearest live prop whose edge is within maxDist of pos, or -1. Ties: lowest index.</summary>

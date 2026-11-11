@@ -13,6 +13,7 @@
 
     "scout_t1": "uef_t1_scout",
     "tank_t1": "uef_t1_tank",
+    "light_assault_t1": "uef_t1_mech_marine",
     "artillery_t1": "uef_t1_artillery",
     "mobile_aa_t1": "uef_t1_mobile_aa",
     "amphibious_t2": "uef_t2_amphibious_tank",
@@ -42,6 +43,7 @@
     "destroyer_t2": "uef_t2_destroyer",
     "cruiser_t2": "uef_t2_cruiser",
     "battleship_t3": "uef_t3_battleship",
+    "nuke_sub_t3": "uef_t3_strategic_missile_sub",
 
     "land_factory_t1": "uef_t1_land_factory",
     "land_factory_t2": "uef_t2_land_factory",
@@ -87,6 +89,9 @@
     "omni_t3": "uef_t3_omni_sensor",
     "sonar_t1": "uef_t1_sonar",
     "sonar_t2": "uef_t2_sonar",
+    "sonar_t3": "uef_t3_sonar",
+    "stealth_field_t2": "uef_t2_stealth_field_generator",
+    "wall_t1": "uef_t1_wall",
 
     "exp_land": "uef_x_fatboy",
     "exp_naval": "uef_x_atlantis",

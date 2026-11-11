@@ -289,6 +289,8 @@ games without losing more elsewhere; the next step is an AI decision change (sie
 and T3 units, a real "break the stalemate" mode), not more config values.
 After wave 6a (commander kit) the same match plays identically (same winner, time and stats) but hashes
 BF85B7DBBF03D949: the Overcharge / death blast / teleporter state is mixed into the world hash.
+After wave 8a (missing units & walls, 9 new blueprint files) it again plays identically (Hard after 15:35) but hashes
+BBD1FF3C4E116A4A: the new files shift the blueprint indices that the world hash mixes in (the AI builds none of them).
 
 ## Unit balance
 

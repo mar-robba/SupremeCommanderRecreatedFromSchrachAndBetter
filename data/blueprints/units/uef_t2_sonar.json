@@ -33,5 +33,6 @@
       1.7
     ],
     "Icon": "intel"
-  }
+  },
+  "UpgradesTo": "uef_t3_sonar"
 }

@@ -320,7 +320,7 @@ public sealed class AiPerception
                     continue;
                 }
                 if (IsAirUnit(bp)) { v.AirUnits.Add(i); v.OwnAirStrength += Strength(_w, i, bp); }
-                else if (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub)
+                else if (Naval.NavalMotion.IsNaval(bp)) // ships, subs, walking ships (Salem)
                 {
                     v.NavalUnits.Add(i);
                     v.OwnNavalStrength += Strength(_w, i, bp);
@@ -365,7 +365,7 @@ public sealed class AiPerception
                 v.EnemyAirCount++;
                 v.EnemyAirStrength += MathF.Max(30, bp.Economy.BuildCostMass);
             }
-            else if (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub) v.EnemyNavalStrength += st;
+            else if (Naval.NavalMotion.IsNaval(bp)) v.EnemyNavalStrength += st;
             else v.EnemyLandStrength += st;
             if (st <= 0) continue;
             var targets = TargetsOf(bp);

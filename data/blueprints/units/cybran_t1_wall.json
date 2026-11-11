@@ -1,0 +1,38 @@
+{
+  "Id": "cybran_t1_wall",
+  "Name": "Wall Section",
+  "Description": "Cheap, sturdy wall segment: blocks movement and soaks up direct fire.",
+  "Tech": 1,
+  "Categories": [
+    "Structure",
+    "Wall",
+    "Tech1"
+  ],
+  "MaxHealth": 2800,
+  "Radius": 0.5,
+  "FootprintX": 1,
+  "FootprintZ": 1,
+  "Economy": {
+    "BuildCostMass": 3,
+    "BuildCostEnergy": 20,
+    "BuildTime": 15
+  },
+  "Intel": {
+    "VisionRadius": 2
+  },
+  "Visual": {
+    "Shape": "cy_wall",
+    "Size": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "Icon": "defense"
+  },
+  "BuiltBy": [
+    "cybran_commander",
+    "cybran_t1_engineer",
+    "cybran_t2_engineer",
+    "cybran_t3_engineer"
+  ]
+}

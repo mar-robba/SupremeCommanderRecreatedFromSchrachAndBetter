@@ -1,0 +1,37 @@
+{
+  "Id": "uef_t3_sonar",
+  "Name": "T3 Sonar Platform",
+  "Description": "T3 sonar platform: 1.5x the range of the T2 sonar. Upgrade of the T2 sonar.",
+  "Tech": 3,
+  "Categories": [
+    "Structure",
+    "Naval",
+    "Intel",
+    "Sonar",
+    "Tech3"
+  ],
+  "MaxHealth": 1500,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "MinWaterDepth": 0.3,
+  "Economy": {
+    "BuildCostMass": 600,
+    "BuildCostEnergy": 7000,
+    "BuildTime": 1200,
+    "MaintenanceEnergy": 60
+  },
+  "Intel": {
+    "VisionRadius": 30,
+    "SonarRadius": 345
+  },
+  "Visual": {
+    "Shape": "sonar",
+    "Size": [
+      2.0,
+      3.6,
+      2.0
+    ],
+    "Icon": "intel"
+  }
+}

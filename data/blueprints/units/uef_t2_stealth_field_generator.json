@@ -1,0 +1,38 @@
+{
+  "Id": "uef_t2_stealth_field_generator",
+  "Name": "T2 Stealth Field Generator",
+  "Description": "Hides allied units and structures within 30 from enemy radar and sonar (vision and omni still see them). Needs 100 energy/s.",
+  "Tech": 2,
+  "Categories": [
+    "Structure",
+    "Intel",
+    "Tech2"
+  ],
+  "MaxHealth": 750,
+  "Radius": 0.9,
+  "FootprintX": 2,
+  "FootprintZ": 2,
+  "Economy": {
+    "BuildCostMass": 200,
+    "BuildCostEnergy": 2500,
+    "BuildTime": 550,
+    "MaintenanceEnergy": 100
+  },
+  "Visual": {
+    "Shape": "stealth_field",
+    "Size": [
+      1.6,
+      2.6,
+      1.6
+    ],
+    "Icon": "intel"
+  },
+  "Intel": {
+    "VisionRadius": 20,
+    "StealthFieldRadius": 30
+  },
+  "BuiltBy": [
+    "uef_t2_engineer",
+    "uef_t3_engineer"
+  ]
+}

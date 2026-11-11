@@ -1,46 +1,42 @@
-# (7b) Orders & selection UX — handoff (module agent 7b-mod-1, no coordinator, no sub-agents, 2026-11-11)
-Worktree `/run/media/marco/RTS/.claude/worktrees/wave7b`, branch `wave7b-orders` (main merged 2026-11-11: abce0de).
-Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). The module agent does everything itself.
+# (8a) Missing units & walls — handoff (module agent 8a-mod-1: no coordinator, no sub-agents)
+Worktree `.claude/worktrees/wave8a`, branch `wave8a-units` (main 584dc9a merged 2026-11-11; merge again at the finish).
+Brief: G8, G9 (+ Atlantis dive of G11, already done before 8a). Notes: `.claude/notes/naval.md`, `walls.md`.
 
-## Baselines (main == branch start)
-- `Rts.Bench -- 2000 300` (BENCH_WARMUP=1): total 0.9s, hash F74F5FED38AC5D83
-- `Rts.Bench -- ai 30 256 42 hard,normal` must stay "WINNER: Player (Hard) after 15:35", hash BF85B7DBBF03D949
+## Done
+- Data (88955ec): 9 blueprints, roles `nuke_sub_t3`, `sonar_t3`, `wall_t1` (optional), roster tests.
+- Salem on land (676de72) + WalkingShipTests (10, incl. naval factory roll-off and wreck on land/at sea).
+- MissileSubTests (8) and CarrierTests (6) green, no sim fix needed (da9c66f and after).
+- Atlantis dive: done before 8a (AtlantisDiveTests): only stale docs lines to fix.
+- Walls sim (6f7e24d): Combat/Walls.cs + hooks, WallTests (11) green; see notes/walls.md.
 
-## Design (one design across sim + client)
-- Sim commands (new files `src/Rts.Sim/Orders/QueueEditCommands.cs`, `PingCommands.cs`; one `case` each in CommandSystem):
-  - `MoveWaypointCommand(Army, Units, From, To)`: every queued order of the units whose group point `Pos`≈From
-    (position orders: Move/AttackMove/Patrol/Ferry/Unload/Teleport/Launch? see notes/sim.md) gets Pos=To;
-    Ferry `Aux`≈From → Aux=To (ferry route editing); patrol Aux (= previous order's Destination) follows.
-  - `DeleteWaypointCommand(Army, Units, At)`: removes those orders.
-  - `FormationMoveCommand(Army, Units, OrderType Move|AttackMove, From, To, Facing, Queue)`: line formation across
-    the drag, facing given by the client (normalized in sim).
-  - `MapPingCommand(Army, PingKind Alert|Move|Attack, Pos)`: throttled per army, kept ~10 s, snapshot `Pings`
-    (client draws only allies' pings).
-- Snapshot additions: `OrderView` gets the raw group point (for markers), `Pings` array.
-- Client: markers clustered by group point; left-drag a marker = MoveWaypoint, Delete over marker = delete.
-- Keys (proposed; check HotkeyTableTests): Ctrl+Z / Ctrl+Shift+Z same type on screen / map; Ctrl+A all mobile
-  combat; Ctrl+Shift+L/A/N/E land/air/naval/engineers; Ctrl+C commander + center; Alt+1..5 recall camera
-  bookmark, Ctrl+Alt+1..5 save; Backspace jump to last alert; pings: Alt+left = alert, Alt+right = move,
-  Alt+Shift+left = attack (map + minimap), key Y = alert ping at the cursor.
+## Done by 8a-mod-2
+- main (7b) merged (6b6f5dc). Replay bug FIXED (19dc325): PropStore's lazy alive-list cache (stale tail past the
+  count depended on who read AliveList when) was saved; now [NoSave] + rebuilt on access. Sim suite 569/569.
+- Client piece: models + carrier deck spots done (a67b600, 8a-client-3); Salem legs, `--scene units8a[:land|:walls|:naval|:salem]`,
+  wall-line check (no change), screenshots DONE by 8a-client-4: see `.claude/notes/models.md`.
+- AI ref after fix + 7b merge: unchanged, WINNER Player (Hard) 15:35, hash BBD1FF3C4E116A4A.
 
-## Pieces (status) — coordinator 2 (CTX 7b-coord-2) from 2026-11-10
-0. [x] 2026-11-10 `git merge main` (7a in; clean, no conflicts, 5a89b0a). Build 0 errors; Sim 522, Client 288, Net 27 green.
-   Reference runs on the merged branch: bench 2000 300 hash F74F5FED38AC5D83 avg 1.98 ms/tick (p50 1.74, measured
-   while a sub-agent ran); ai match "WINNER: Player (Hard) after 15:35", hash BF85B7DBBF03D949 (unchanged).
-   Ping replay test (PingTests.ReplayRecreatesThePing) and MP loopback (PingNetTests) already exist.
-1. [x] sim commands + tests (24190b3, 299cd87, 4267983) -> notes/sim.md (contract). QueueEditTests 11/11.
-2. [x] selection filters, commander key, camera bookmarks (7b-sel-5: 67f3a2b, 7f942e9; Client tests 297 green;
-   keys + shared edits in notes/selection.md; NOT tried in the game window).
-3. [x] formation drag + waypoint editing UI: hooks run + screenshots OK (4d412d4; PNGs local only, screenshots/ is
-   gitignored: `screenshots/7b_formation_drag.png`, `7b_waypoint_edit.png`, commands in notes/orders-ui.md).
-4. [x] 2026-11-11 pings UI + notification pass + Backspace jump: code + AlertTests 9/9 committed (7b-mod-1), see
-   notes/pings.md. Suites green (Sim 522, Client 309, Net 27); screenshot `--demo --ui-pings 120,120 --camera
-   128,128,70 --frames 440 --size 960x540` shows 3 pings + 'Units under attack' toast (screenshots/7b_pings.png).
-   3b. [ ] SKIPPED (context): piece-2 keys never pressed by hand in a game window -> ROADMAP later line
-5. [ ] G20 NOT started (context) -> ROADMAP '- [ ] later (7b)' line
-6. [~] finish (7b-mod-1): docs committed (ARCHITECTURE section, ROADMAP rows, CLAUDE.md); bench + ai match run;
-   agent-report written. Left if cut: merge main again, verify bench hash F74F5FED38AC5D83 + ai BF85B7DBBF03D949. Was: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
-   ROADMAP G14-G17 rows `[x] 2026-11-10 (7b)` + later items, CLAUDE.md CLI lines), `.claude/agent-report.md`
+- Docs done (3d16688 + ARCHITECTURE section): ROADMAP G8/G9, Atlantis-dive lines, AI_TUNING, DEV_GUIDE pitfall.
+- Bench 2000 300 interleaved: main 2.05-2.10 / branch 1.85-1.92 ms avg (no regression).
 
-Sub-agent rules file: .claude/notes/common.md (prompts point to it). One sub-agent at a time. `.claude/` is gitignored:
-notes are tracked with `git add -f`.
+## TODO in order
+- NOTHING LEFT: module finished (merge main b5da511, 3 suites green, docs, report `.claude/agent-report.md`).
+
+## Owner decision 2026-11-11 (coordinator message)
+- AI improvement is no longer a goal: write NO "- [ ] later: AI builds/uses <new units>" lines anywhere (stating
+  "the AI does not build them" as a fact is fine). When fixing the stale ROADMAP line "- [ ] later: AI uses
+  transports/ferries/air staging (wave 5), Atlantis dive (...)", delete its "AI uses transports..." part too.
+- Main's ROADMAP/WORKFLOW/AI_TUNING changed for this (after 8c35e70): at the final `git merge main` keep MAIN's side
+  for those AI lines. AI tests must stay green, reference hash as below.
+
+## Reference numbers
+- AI ref `Rts.Bench -- ai 30 256 42 hard,normal`: "WINNER: Player (Hard) after 15:35", hash BBD1FF3C4E116A4A
+  (main BF85B7DBBF03D949: blueprint index shift only). Bench `2000 300`: ~1.75-1.95 ms/tick.
+
+## Pitfalls
+- zsh: `command grep`, `/usr/bin/find`; quote globs (`--include='*.cs'`). `sed -i` errors on this disk: edit with python.
+- dotnet only via `bash tools/agents/dn.sh ...`; test output Italian (`Superato|Non superat`).
+- NavalWorld.Basin has a shoal at x 40..44 (depth 0.4): subs/ships stop there.
+- Older replays/saves refuse to open after the new blueprints: expected, say so in the report.
+- Handoff review material: coord-2 note lacked "Atlantis dive already done" and "line placement already exists";
+  the naval sub-agent left no note (WIP read from the diff); the MissileSubTests draft failed only on test geometry.

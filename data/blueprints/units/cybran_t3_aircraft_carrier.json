@@ -1,0 +1,91 @@
+{
+  "Id": "cybran_t3_aircraft_carrier",
+  "Name": "Command Aircraft Carrier",
+  "Description": "T3 aircraft carrier: builds aircraft like an air factory, carries and repairs up to 16 slots of aircraft (Dock) and launches them (Unload). SAMs and anti-torpedo flares.",
+  "Tech": 3,
+  "Categories": [
+    "Mobile",
+    "Naval",
+    "Factory",
+    "AntiAir",
+    "Tech3"
+  ],
+  "MaxHealth": 12000,
+  "Radius": 2.6,
+  "Economy": {
+    "BuildCostMass": 3800,
+    "BuildCostEnergy": 40000,
+    "BuildTime": 10000,
+    "BuildRate": 45
+  },
+  "Movement": {
+    "Layer": "Water",
+    "MaxSpeed": 3.0,
+    "Acceleration": 1,
+    "TurnRate": 25
+  },
+  "Intel": {
+    "VisionRadius": 45,
+    "RadarRadius": 150,
+    "SonarRadius": 60
+  },
+  "Cargo": {
+    "Layer": "Air",
+    "Capacity": 16,
+    "LoadRange": 4,
+    "RepairRate": 0.02,
+    "RefuelRate": 0.2,
+    "KeepDocked": true
+  },
+  "Weapons": [
+    {
+      "Name": "Nanodart SAM Launcher",
+      "Range": 48,
+      "Damage": 45,
+      "DamageRadius": 1.2,
+      "RateOfFire": 1.2,
+      "MuzzleVelocity": 30,
+      "TurretTurnRate": 240,
+      "FiringTolerance": 30,
+      "TargetLayers": [
+        "Air"
+      ],
+      "ProjectileVisual": "missile"
+    },
+    {
+      "Name": "Anti-Torpedo Flares",
+      "Range": 10,
+      "RateOfFire": 0.6,
+      "Damage": 0,
+      "TargetLayers": [
+        "Water",
+        "Sub"
+      ],
+      "ProjectileVisual": "antitorpedo"
+    }
+  ],
+  "Visual": {
+    "Shape": "cy_carrier",
+    "Size": [
+      4.5,
+      3.6,
+      16.0
+    ],
+    "Icon": "naval"
+  },
+  "Builds": [
+    "cybran_t1_air_scout",
+    "cybran_t1_interceptor",
+    "cybran_t1_bomber",
+    "cybran_t2_gunship",
+    "cybran_t2_torpedo_bomber",
+    "cybran_t3_air_superiority",
+    "cybran_t3_strategic_bomber",
+    "cybran_t3_spy_plane",
+    "cybran_t1_transport",
+    "cybran_t2_transport"
+  ],
+  "BuiltBy": [
+    "cybran_t3_naval_factory"
+  ]
+}

@@ -27,7 +27,7 @@ public sealed partial class UnitBlueprint
         get
         {
             if (TransportSize >= 0) return TransportSize;
-            if (!IsMobile || Has(UnitCategory.Experimental)) return 0;
+            if (!IsMobile || Has(UnitCategory.Experimental) || Has(UnitCategory.Naval)) return 0; // ships, also the walking ones
             switch (Movement.Layer)
             {
                 case MotionLayer.Air: return Tech >= 3 ? 2 : 1;

@@ -285,6 +285,7 @@ public static class Torpedoes
             var list = Table.Weapons[u.Bp[j]];
             if (list.Length == 0 || !S.IsEnemyArmy(Army, u.Army[j]) || !u.IsActive(j) || !u.IsComplete(j)) return true;
             var bp = W.Blueprints[u.Bp[j]];
+            if (WalkingShips.TorpedoesHeld(W, j, bp, WeaponKind.AntiTorpedo)) return true; // walked ashore: no torpedo defense
             float d2 = Vector2.DistanceSquared(u.Pos[j], Pos);
             foreach (int wi in list)
             {

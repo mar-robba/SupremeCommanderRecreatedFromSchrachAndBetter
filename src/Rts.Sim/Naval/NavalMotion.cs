@@ -60,7 +60,8 @@ public static class NavalMotion
         return s;
     }
 
-    public static bool IsNaval(UnitBlueprint bp) => bp.IsMobile && bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub;
+    public static bool IsNaval(UnitBlueprint bp) =>
+        bp.IsMobile && (bp.Movement.Layer is MotionLayer.Water or MotionLayer.Sub || WalkingShips.IsWalkingShip(bp));
 
     /// <summary>
     /// Hull capsule of a naval unit: half-length of the center segment (along the heading) and half-width, from the
@@ -80,6 +81,7 @@ public static class NavalMotion
         MotionLayer.Air => KindAir,
         MotionLayer.Water => KindShip,
         MotionLayer.Sub => (u.Flags[i] & UnitFlags.Surfaced) != 0 ? KindShip : KindSubmerged,
+        MotionLayer.Hover when WalkingShips.IsWalkingShip(bp) => KindShip, // a hull on water and on land
         _ => KindSurface,
     };
 

@@ -41,6 +41,8 @@
     "destroyer_t2": "cybran_t2_destroyer",
     "cruiser_t2": "cybran_t2_cruiser",
     "battleship_t3": "cybran_t3_battleship",
+    "carrier_t3": "cybran_t3_aircraft_carrier",
+    "nuke_sub_t3": "cybran_t3_strategic_missile_sub",
 
     "land_factory_t1": "cybran_t1_land_factory",
     "land_factory_t2": "cybran_t2_land_factory",
@@ -88,7 +90,9 @@
     "omni_t3": "cybran_t3_omni_sensor",
     "sonar_t1": "cybran_t1_sonar",
     "sonar_t2": "cybran_t2_sonar",
+    "sonar_t3": "cybran_t3_sonar",
     "stealth_field_t2": "cybran_t2_stealth_field_generator",
+    "wall_t1": "cybran_t1_wall",
 
     "exp_land": "cybran_x_monkeylord",
     "exp_air": "cybran_x_soul_ripper",
