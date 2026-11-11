@@ -211,6 +211,7 @@ public sealed class ClientOptions
         else if (o.Scene == TransportScene.Name) TransportScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.ApplyDefaults(o);
         else if (o.Scene?.StartsWith(Units8aScene.Name) == true) Units8aScene.ApplyDefaults(o);
+        else if (o.Scene?.StartsWith(PropsScene.Name) == true) PropsScene.ApplyDefaults(o); // (8b) map props
         return o;
     }
 }

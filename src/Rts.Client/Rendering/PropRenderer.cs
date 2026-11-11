@@ -64,6 +64,7 @@ public sealed partial class PropRenderer : IDisposable
         float fade = UnitRenderer.MeshFade(Atmosphere.CameraDistance);
         if (fade <= 0.001f || cur.PropCount == 0) return;
         var fv = FrameView.Current;
+        DrawNature(cur, gameDt, fade, fv); // (8b) trees and rocks, PropRenderer.Nature.cs
 
         foreach (var im in _used) im.Clear();
         _used.Clear();
@@ -74,6 +75,7 @@ public sealed partial class PropRenderer : IDisposable
         for (int k = 0; k < cur.PropCount; k++)
         {
             ref var p = ref cur.Props[k];
+            if (p.Kind != Rts.Sim.World.PropKind.Wreck) continue; // (8b) nature props: DrawNature
             var model = Model(p.Bp);
             bool rubble = (uint)p.Bp >= (uint)_ctx.Db.Count;
             var bp = rubble ? null : _ctx.Db[p.Bp];
@@ -154,6 +156,7 @@ public sealed partial class PropRenderer : IDisposable
         _alive.Clear();
         for (int k = 0; k < cur.PropCount; k++)
         {
+            if (cur.Props[k].Kind != Rts.Sim.World.PropKind.Wreck) continue; // (8b) only wrecks age (embers)
             int id = cur.Props[k].Id;
             _alive.Add(id);
             _born.TryAdd(id, _gameTime);
@@ -176,6 +179,7 @@ public sealed partial class PropRenderer : IDisposable
         for (int k = 0; k < cur.PropCount; k++)
         {
             ref var p = ref cur.Props[k];
+            if (p.Kind != Rts.Sim.World.PropKind.Wreck) continue; // (8b) no dots for trees/rocks
             if (!fv.WorldToScreen(p.Pos, out var s)) continue;
             if (s.X < -4 || s.Y < -4 || s.X > fv.ScreenW + 4 || s.Y > fv.ScreenH + 4) continue;
             int size = p.Radius >= 2f ? 4 : 3;
@@ -215,6 +219,7 @@ public sealed partial class PropRenderer : IDisposable
         _models.Clear();
         _rubble?.Body.Dispose();
         _rubble = null;
+        DisposeNature(); // (8b)
     }
 
     // ------------------------------------------------------------------ shader
