@@ -98,6 +98,7 @@ public sealed partial class PropRenderer : IDisposable
             float scale = rubble ? MathF.Max(0.6f, p.Radius) : 1f;
             float baseY = p.Pos.Y - sink, vis = 1f;
             if (SinkInDeepWater(p, model, bp, h, age, smoke, ref baseY, ref pitch, ref ember, out vis) && vis <= 0.01f) continue; // PropRenderer.Naval.cs
+            if (DeathFxHides(in p, age, ref vis)) continue; // (9b) hidden while its unit's death sequence plays: PropRenderer.DeathFx.cs
 
             var body = Matrix4x4.CreateScale(scale, squash * scale, scale)
                        * Matrix4x4.CreateRotationX(pitch) * Matrix4x4.CreateRotationZ(roll)

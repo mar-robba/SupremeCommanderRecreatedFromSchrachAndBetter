@@ -59,6 +59,12 @@ public enum SoundId
     AlertPing,
     AlertNotice,
     AlertStructureLost,
+    // (9b) Death sequences + ACU warp-in: SoundBank.Death.cs
+    AircraftFall,
+    AircraftCrash,
+    ShipSink,
+    StructureCrumble,
+    WarpIn,
 }
 
 /// <summary>Mixing info for a sound: playback gain, max simultaneous voices, hearing range multiplier.</summary>

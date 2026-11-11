@@ -202,12 +202,18 @@ public static unsafe class Shaders
         out vec4 finalColor;
         void main() {
             if (fade < 0.999 && bayer4(gl_FragCoord.xy) >= fade) discard;
+            // (9b) dying units (DeathAnim.PackShaderW): w = fade-out level (integer, /16) + char (fraction); 0 = alive.
+            float fadeQ = floor(vInst.w);
+            if (fadeQ > 0.5 && bayer4(gl_FragCoord.xy + vec2(2.0, 1.0)) >= 1.0 - fadeQ / 16.0) discard;
+            float charF = vInst.w - fadeQ;
             vec3 n = normalize(vNormal);
             float m = vColor.a;
             vec3 albedo = vColor.rgb;
             float glow = 0.0;
             if (m < 0.25) albedo = vInst.rgb * (vColor.r * 1.08);
             else if (m < 0.75) glow = 1.0;
+            albedo = mix(albedo, vec3(0.075, 0.068, 0.06), charF * 0.8);
+            glow *= 1.0 - charF;
             vec3 V = normalize(camPos - vWorld);
             float ndl = max(dot(n, sunDir), 0.0);
             float sh = shadowFactor(vWorld, n);

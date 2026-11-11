@@ -946,3 +946,29 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   strategic dots for trees). `ContextOrders`: "Reclaim tree +N energy" / "Reclaim rock +N mass"; `PickProp` only
   projects props near the ground point under the mouse.
 
+## Death animations & ACU warp-in (9b-1: `Rts.Client/Rendering/DeathAnim.cs`, `DeathAnimator*.cs`, client only)
+- No sim change: the client reads `EffectKind.UnitDeath` (Pos = death point = wreck point, Army, BlueprintIndex) and
+  matches each one to the unit of the previous snapshot missing from the current one (same blueprint and army,
+  nearest, < 6 u; `DeathAnimator.Sync`, idempotent per snapshot, called by every renderer that needs it because the
+  frame order is audio → units → props → effects). Reclaimed / cancelled units (`RemoveUnitSilently`) raise no event,
+  so they never animate. A replay seek (tick backwards or > 50 ticks ahead) clears everything.
+- `DeathAnim` (pure, `DeathAnimTests`): `Choose` picks the kind per unit: AirCrash (aircraft ≥ 1.5 u over the
+  surface: one descending loop of shrinking radius, lerped from the last drawn position to the death point so it ends
+  ON its wreck, 1.5-3.2 s, ×1.6 for experimentals), ShipSink (surface ships/surfaced subs over water: lists, then sinks
+  bow up, char + dither fade; deep water (≥ 1 u) as long as the wreck's own sinking in `PropRenderer.Naval`),
+  Collapse (structures: shake, squash, sink into the wreck), BigFall (land experimentals: stagger until the death
+  blast after `Experimental.DeathDelay`, then topple), CommanderFall (kneel with an overloading core until the
+  `DeathBlast.Delay` nuke), None (land units, submerged subs: the regular explosion and the wreck at once).
+  `WreckVisibility` hides / fades in the wreck (`PropRenderer.DeathFx.cs`) while the sequence plays.
+- Limits that keep big battles cheap: at most `MaxActive` = 64 sequences in a fixed array, none for deaths off-screen
+  or under fog (those get the wreck at once). Dying units go into the same instanced draws as the living
+  (`UnitRenderer.Death.cs`): the unit shader's instance w packs fade (integer part, 16 dither levels) and char
+  (fraction) with `DeathAnim.PackShaderW`; living units send 0, so they render exactly as before.
+- Particles and sounds per kind in `DeathAnimator.Fx.cs`; sounds go through the fixed queue `Audio/UnitFxSounds`
+  (drained by `GameAudio.Death.cs`, recipes `SoundBank.Death.cs`: AircraftFall, AircraftCrash, ShipSink,
+  StructureCrumble, WarpIn). An animated aircraft gets a smaller mid-air burst (`EffectsRenderer.Death.cs`).
+- ACU warp-in (`DeathAnimator.WarpIn.cs`): only when the first snapshot the client sees is at tick ≤ 5
+  (`WarpsAtStart`; never after a load or a seek): flash, light column, expanding rings, sparks, sound, and the model
+  rises bottom-up as a hologram (`WarpFrac` read by `UnitRenderer`) over 0.35 + 1.5 s.
+- Test scene `--scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]` (`DeathScene.cs`): army 1 groups killed
+  together by a sandbox Kill 1.2 s after start, the run pauses N ticks later (defaults per group) for screenshots.
