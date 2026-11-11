@@ -881,3 +881,37 @@ enhancement variants clone them (EnhancementCatalog). New sim state lives in per
   kind within 30 u / 8 s, minimap flash 4 s, Backspace cycle); toasts + sounds go through `GameAudio.Notify` with
   per-kind cooldowns (own attack: only off screen, 25 s; commander 20 s; ally 30 s). `PingMarkers` draws pings on the
   map (screen space) and pings + flashes on the minimap. Screenshot hooks: `--ui-formation`, `--ui-waypoints`, `--ui-pings`.
+
+## Missing units & walls (8a: `Rts.Sim/Combat/Walls.cs`, `Naval/WalkingShips.cs`, `data/blueprints/units`)
+
+The SupCom 1 vanilla units UEF and Cybran still lacked (gap rows G8, G9). Almost all data: the existing modules
+(silos, subs, Atlantis cargo, intel fields, upgrades) carry them. Faction roles are optional (`FactionRoles`
+`NukeSubT3`, `SonarT3`, `WallT1`; json also `light_assault_t1`, `stealth_field_t2`, `carrier_t3`): the AI does not
+build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commander, build lists, sonar upgrade chain).
+- **Units**: UEF Mech Marine `uef_t1_mech_marine` (T1 land factory bot); UEF T2 stealth field generator; T3 sonar
+  platforms (`uef_t3_sonar`, `cybran_t3_sonar`, `UpgradesTo` from the T2 sonar; Cybran's is radar/sonar stealthed);
+  T3 strategic missile subs `uef_t3_strategic_missile_sub` / `cybran_t3_strategic_missile_sub` (T3 naval factory);
+  Cybran T3 carrier `cybran_t3_aircraft_carrier`; T1 walls `uef_t1_wall` / `cybran_t1_wall` (commander + engineers).
+- **Strategic missile subs** = a mobile, diving strategic silo (`Silo.Kind: Strategic`, `Movement.Layer: Sub`): the
+  Strategic module builds and launches the nuke while submerged and on the move (queued after a move works too);
+  the cruise missiles fire submerged through weapon json `FiresSubmerged` (Naval/Submarines). `MissileSubTests`.
+- **Cybran carrier** = the generic Atlantis code (Cargo Air + Factory + Mobile, KeepDocked) on a `Water`-layer ship
+  that cannot dive: builds aircraft at sea, 16 deck slots, repairs/carries/launches them, docked aircraft die with
+  it. `CarrierTests`.
+- **Salem walks on land** (`Naval/WalkingShips`): a Naval-category unit with `Movement.Layer: Hover` is a walking ship
+  (`IsWalkingShip`). It is a hull for separation on both terrains (`NavalMotion.KindOf` → KindShip, `IsNaval` true),
+  a Water-layer target at sea and a Land-layer target ashore (`OrderSystem.LayerOf`), drives at `MaxSpeed ×
+  Movement.LandSpeedFactor` (0.35) on dry ground (`MaxSpeedAt` in MovementSystem, also for the stuck check), holds
+  torpedoes and its anti-torpedo zapper on land (`TorpedoesHeld`: Torpedoes + WeaponSystem), and is not
+  transportable (`CargoSize` 0 for every Naval unit). Naval factories release it like any ship; it leaves an
+  ordinary wreck on land. `WalkingShipTests`.
+- **Walls** (`Combat/Walls.cs`): 1×1 structures (`UnitCombatInfo.IsWall`) that stamp occupancy, so paths go round
+  them (A* has no corner cutting: a diagonal line is closed too). They absorb direct shots as a box (`SegmentBox`,
+  `SegmentHit`; ProjectileSystem's HitVisitor tests walls by box, not sphere, so diagonal lines have no gaps) and
+  beams (`FirstOnSegment` = DDA over occupancy cells, checked in WeaponSystem after the shield check). Only ENEMY
+  walls stop shots (own and allied walls let them through); ballistic (arcing) shots fly over; the box is
+  `Visual.Size.Y` high, so a tall muzzle firing far past a wall can clear it. Walls are never auto-targeted
+  (TargetingSystem ScanVisitor + CanEngage skip them) but a forced Attack order works. `WallTests`.
+- **Client**: models in `UnitModels.Units8a.cs` (UEF) and `UnitModels.CybranUnits8a.cs` (Cybran, incl. carrier deck
+  spots `CyCarrierSpot`, used by `UnitRenderer.Cargo`); wall lines use the existing Shift-drag line placement
+  (`Input/PlacementLine.cs`).
