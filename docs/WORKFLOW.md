@@ -231,6 +231,14 @@ mostly cache reads, of every session and agent of the project):
   agent work per window, as in waves 1-7a). Fable 5.2 stays for the orchestrator and for pieces of class high or
   critical. Check again at the merge of 7b and 8a whether the work done on Fable 5.2 was much better.
 
+**When a window resets.** Only the limit message ("resets 12am") or the owner's `/usage` tells it; `windows.py`
+knows the resets of the windows that were hit, not of the current one. On 2026-11-11 the orchestrator worked out
+"previous reset 18:00 + 5 h = 23:00" (first call of the project 18:09) and scheduled the next agents for 23:04 with
+CronCreate; the window in fact reset at 00:00, and at 23:02 it had 1 $ left. So schedule a start for the reset time
+of a limit message, or one hour later than the estimate, and let the job first make one small call: if the limit
+message comes, its time is the real reset. A CronCreate job survives `/clear` (same process) but not a restart of
+Claude Code, and fires only while the session is idle.
+
 ## Resuming (new orchestrator session)
 
 1. Read ROADMAP "▶ NEXT STEPS", especially its "ON RESUME" list.
@@ -348,3 +356,8 @@ order of effect:
   worktree), the worktrees pointed at the old path (`git worktree repair <new paths>` from main), and Claude Code
   filed the transcripts under a new project key (`-run-media-marco-RTS`; the ledger and `handoffs.py` also read the
   old folder). New worktrees need their own `safe.directory` entry.
+- **Isolation worktrees refused (2026-11-12):** both Agent calls with `isolation: "worktree"` failed with "git could
+  not be run to resolve it": Claude Code creates the worktree and then runs git in it, which git refused for the
+  same ownership reason, before any agent could add its entry. Fixed for good with one prefix entry (git 2.46+):
+  `git config --global --add safe.directory '/run/media/marco/RTS/.claude/worktrees/*'`. The two empty worktrees
+  of the failed calls stay behind, locked: `git worktree unlock`, `git worktree remove`, `git branch -d`.
