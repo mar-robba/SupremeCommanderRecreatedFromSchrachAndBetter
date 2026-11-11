@@ -16,7 +16,7 @@ GameApp (3 options), SelectionController, Hotkeys, Minimap, GameAudio (CheckUnde
 UnitCapCounter (toast moved).
 **Numbers:** ai 30 256 42 = WINNER Player (Hard) 15:35, hash BF85B7DBBF03D949; bench 2000 300 hash F74F5FED38AC5D83,
 2.46-2.83 ms/tick (1.98 earlier; machine shared with 8a, no interleaved main run; this session changed no sim code).
-**Not done:** G20 overlays; keys never pressed by hand in a game window; bookmarks not saved; see ROADMAP "later (7b)".
+**Not done:** G20 overlays (the AI does not send or read pings, by design); keys never pressed by hand in a game window; bookmarks not saved; see ROADMAP "later (7b)".
 **Handoff review:** the cut 7b-ping-1 left nothing, so piece 4 was redone from a grep of GameAudio/Toasts/Minimap;
 the old under-attack alert only ran with an audio device (now fixed); two toast stacks (Persistence.Toasts and
 GameAudio) still share the top center. Context: ~115k used before any work (prompt + notes), so piece 3/5 were dropped.
