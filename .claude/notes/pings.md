@@ -1,5 +1,13 @@
 # (7b) piece 4: pings UI + notification pass + jump to last alert (agent 7b-mod-1, 2026-11-11)
-Status: IN PROGRESS (design fixed, code being written).
+Status: code done + committed; AlertTests 9/9, HotkeyTableTests + SynthTests green. No screenshot yet.
+Keys: Alt+left = alert ping, Alt+Shift+left = attack ping, Alt+right = move ping (map + minimap), Y = alert ping at
+the cursor (Hotkeys.PingAlert, scope Play), Backspace = jump to the last alert, again = older (Hotkeys.JumpToAlert, Game).
+Shared edits: GameSession (field, ctor, Poll line after _audio.Update, PingMarkers.Draw2D after UpgradeOverlay);
+SelectionController (Alerts, Pings fields; HandleWorld line after HandleHotkeys; HandleKeys line); Minimap (Alt-click
++ Y block in HandleInput, DrawMinimap line, tooltip line); GameAudio (CheckUnderAttack removed, OnScreen public static);
+SoundBank enum +3 (AlertPing, AlertNotice, AlertStructureLost), SoundBank.Commander 2 default arms -> SoundBank.Alerts.cs;
+UnitCapCounter: its Toasts.Show line removed (the monitor raises it). New: UI/AlertLog.cs, UI/AlertMonitor.cs,
+UI/PingMarkers.cs, Input/PingInput.cs, Audio/GameAudio.Alerts.cs, Audio/SoundBank.Alerts.cs, tests AlertTests.cs.
 ## Design
 - `UI/AlertLog.cs` (pure, no raylib): `AlertKind` (UnderAttack, CommanderUnderAttack, AllyUnderAttack, StructureLost,
   ConstructionDone, UpgradeDone, UnitCapReached, Ping), entries (kind, pos, time, text); per-area cooldown for

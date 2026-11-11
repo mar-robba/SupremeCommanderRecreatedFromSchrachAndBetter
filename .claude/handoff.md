@@ -33,8 +33,8 @@ Brief: ROADMAP "Wave 6+ plan" row 7b; G14 G15 G16 G17 (+G20 if time). The module
    keys + shared edits in notes/selection.md; NOT tried in the game window).
 3. [x] formation drag + waypoint editing UI: hooks run + screenshots OK (4d412d4; PNGs local only, screenshots/ is
    gitignored: `screenshots/7b_formation_drag.png`, `7b_waypoint_edit.png`, commands in notes/orders-ui.md).
-4. [ ] pings UI + notification pass (AlertLog, minimap flash, toasts) + jump to last alert + ping replay test
-   -> 7b-ping-1 was cut with no commit; redone from scratch by 7b-mod-1, notes/pings.md
+4. [x] 2026-11-11 pings UI + notification pass + Backspace jump: code + AlertTests 9/9 committed (7b-mod-1), see
+   notes/pings.md. NOT yet: full 3 suites, a screenshot (pings + toast + minimap flash), try in the game window.
    3b. [ ] try piece-2 keys in the game window once (filters, Ctrl+C, bookmarks)
 5. [ ] G20 range/intel overlays (if time) -> notes/overlays.md
 6. [ ] finish: merge main, build, 3 suites, bench 2000 300, ai ref match, screenshots, docs (ARCHITECTURE section,
