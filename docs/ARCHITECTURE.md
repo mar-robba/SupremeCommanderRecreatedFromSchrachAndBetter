@@ -920,3 +920,29 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   Shift-drag line placement (`Input/PlacementLine.Layout`: one 1×1 section per cell, diagonal drags give
   corner-touching sections, which still block paths and shots). Visual test scene `--scene units8a[:land|:walls|:naval|:salem]`
   (`Units8aScene.cs`).
+
+## Map props: trees and rocks (8b-1: `Rts.Sim/Map/MapProps.cs`, `World/PropStore.cs` + `PropSystem.cs`, `Rts.Client/Rendering/PropRenderer.Nature.cs`)
+- `PropStore` holds wrecks, trees and rocks (`PropKind`, `PropFlags` Fallen/Burning/Burnt, `Variant`, `FallHeading`,
+  `StateTick` = tick of the last flag change, `BurnEnd`; `Burning` list saved). Spatial grid (cell 4) is `[NoSave]`,
+  built lazily, kept by Spawn/Free; `FindNearest` / `QueryRadius` return the same picks as a full scan (ascending
+  index). Use `QueryRadius` instead of scanning `AliveList` (maps have up to ~11k props).
+- Placement (`MapProps.Place`, called by `MapBuilder.Build` into `Terrain.Props`, spawned by `GameSetup`): jittered
+  grid in sector 0 of `MapSymmetry`, forest/rock noise densities with preset factors, copied in all N rotations and
+  kept only if every copy fits (land above water + 0.4, not steep, off start plateaus and deposits, spacing).
+  Values: tree mass 0.4·size, energy 10·size (size 0.75..1.35); rock mass 5·r² (r 0.7..2.2). Counts (4 players,
+  Plains): 256 = 460, 512 = 2660, 1024 = 10816. `SimWorld` sizes the store as max(4096, unit cap) + map props.
+- `PropSystem.Run` (after ExperimentalSystem): ground movers (speed ≥ 0.3, not structures) knock over trees they
+  touch (parallel detection → ChunkedBuffer → sequential `Fell`); burning trees spread fire before burning out
+  (p 0.3 within 2.6) and become Burnt (energy × 0.25, mass × 0.5). `OnDamage` (first line of DamageSystem): area
+  damage ≥ 25 ignites, ≥ 400 also knocks over away from the blast; nuke detonations knock over and ignite their
+  outer radius. Trees never block movement or placement (structures absorb props under their footprint).
+- Snapshot: every prop every tick (`PropView` incl. Kind/Flags/Variant/FallHeading/StateTick/BurnEnd).
+- Client: `PropRenderer.Nature` buckets the nature props into 32-unit cells once per snapshot (counting sort), culls
+  cells then props against the frustum, and fills 8 instanced meshes (4 tree species: 0,1 conifers, 2,3 broadleaf;
+  4 rock shapes) with a near or a low-poly far mesh (beyond 150 from the camera). Fall: 1.3 s ease-in rotation about
+  (dz,0,-dx) from `StateTick`; burning = glowing crown + `ParticleSystem.Fireball`/`Smoke` (≤ 64 trees per emit);
+  burnt = charred, foliage mostly discarded. Own shader: vertex alpha = material (255 foliage with sway, 128 bark,
+  0 rock), shadows received, fog of war, dithered out with the unit meshes. The wreck code skips non-wrecks (no
+  strategic dots for trees). `ContextOrders`: "Reclaim tree +N energy" / "Reclaim rock +N mass"; `PickProp` only
+  projects props near the ground point under the mouse.
+
