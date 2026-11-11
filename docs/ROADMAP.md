@@ -2,10 +2,10 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 13:50 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-11 19:15 — read this first in a new session)
 main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
-+ (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24). Tests: 507 sim +
-279 client + 26 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
++ (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24),
+(7b) orders & selection UX (merged 2026-11-11). Tests: 522 sim + 309 client + 27 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
 15:35", hash **BF85B7DBBF03D949** (agents that must not change sim results compare against it; the game equals (k)'s
 4E3F22FD0F8EED11, 6a only added hashed commander state). Replays made before the (k) balance data refuse to open
 ("unit blueprints changed"). Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md`
@@ -13,26 +13,32 @@ main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o)
 writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
 prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-11 13:25, session 9cdd3b47; the owner said "continua" after the stop of 2026-11-10 23:05):
-- **Running since 2026-11-11 13:25: two module agents on Opus 5.5** (`model: "opus"`, no coordinator, cap 200k
-  medium, 0 sub-agents each, since together they are the 2 agents allowed). Ids in the orchestrator file
-  `agents-wave5.md`. The usage window opened at 13:00 (reset 18:00); at the start the docs session of this morning
-  (Fable 5.2, 6 calls) and another session of the owner (home folder, Opus 5.5, still active) had used a part of it,
-  so a cut before 18:00 is possible.
-  - **(7b) Orders & selection UX** (G14-G17; G20 if time): worktree `.claude/worktrees/wave7b` (branch
-    `wave7b-orders`), agent `7b-mod-1` from HEAD ba24869. Done before: sim commands + tests, selection filters /
-    commander key / bookmarks (not tried in the game window), formation drag + waypoint editing UI. Its TODO: pings
-    UI + notification pass + jump to alert (from scratch: the old sub-agent left nothing), try the selection keys
-    in game, G20 overlays if the context allows, finish.
-  - **(8a) Missing units & walls** (G8, G9): worktree `.claude/worktrees/wave8a` (branch `wave8a-units`), agent
-    `8a-mod-1` from HEAD 8762364 (WIP MissileSubTests draft, may not compile). Done before: 9 blueprints + roster
-    tests, Salem on land + tests; Atlantis dive existed already. Its TODO: missile sub and carrier tests, walls,
-    client models + `--scene units8a`, finish. AI reference hash on this branch: BBD1FF3C4E116A4A (blueprint index
-    shift only, same winner and time).
+**ON RESUME** (2026-11-11 19:15, session 9cdd3b47; the owner said "continua" on 2026-11-11 after the stop of 2026-11-10 23:05):
+- **(7b) Orders & selection UX is merged** (2026-11-11, b8b9062; G14-G17, without G20): build, the three suites, the
+  reference match (same hash), an interleaved bench and a screenshot were checked on main; report in HISTORY "(7b)";
+  worktree and branch removed. Left by 7b (ROADMAP "later (7b)"): G20 overlays, the new keys were never pressed by
+  hand in a game window, bookmarks are not saved.
+- **Running: (8a) Missing units & walls** (G8, G9): worktree `.claude/worktrees/wave8a` (branch `wave8a-units`),
+  module agent `8a-mod-2` on Opus 5.5 (`model: "opus"`, no coordinator, cap 200k medium, it may run 1 sub-agent
+  for the client models). Ids in the orchestrator file `agents-wave5.md`.
+  - `8a-mod-1` (13:19-13:42, CHECKPOINT at 175k, HEAD 21ab286) did the missile sub, carrier and wall tests and the
+    walls in the sim (`Combat/Walls.cs`).
+  - `8a-mod-2` started 13:44, merged main with 7b (6b6f5dc), then the 5-hour limit cut it at about 13:50 (55k) with
+    its client sub-agent (no call made). Resumed by SendMessage at 19:15 in the new window (reset 18:00).
+  - Its TODO: **fix `ReplayTests.RecordedReplayResimulatesToIdenticalHashes`** (fails on the branch: end-state bytes
+    differ after a replay, bisected to the Salem hooks in NavalMotion / Torpedoes / MovementSystem); AI reference
+    match (the branch had hash BBD1FF3C4E116A4A: blueprint index shift only); client models + `--scene units8a`
+    (fresh sub-agent `8a-client-3`); finish.
+- **After the 8a merge: untrack the agents' notes in main** (`git rm -r --cached .claude` + delete
+  `.claude/handoff.md`, `.claude/agent-report.md`, `.claude/notes/` in the main checkout): 7b tracked them with
+  `git add -f` and its merge brought them into main; 8a tracks its own, so doing it earlier gives conflicts.
+- Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
+  tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
   (`model: "opus"`, no coordinator) with its brief (HISTORY) + "continue from `.claude/handoff.md` and
   `.claude/notes/`" (the prompts of 2026-11-11 are the model: brief, state, ordered TODO, rules block). Don't resume
-  by SendMessage an agent above 100k. Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...`.
+  by SendMessage an agent above 100k. Context watcher: `agent_ctx.py --watch 135000 <id>=185000 ...` (stop it by
+  its process id: `pkill -f` with that text also kills the shell that runs the command).
 - **Process rules changed by the owner (2026-11-10; WORKFLOW "Owner decisions" and "Review of the process
   rules"):** every Agent call carries `model: "opus"`; one agent per module of about 1,500 lines, cap 200k, no
   coordinator (sub-agents only for separable content: blueprints, models, tests); at most 2 agents at a time,
@@ -41,7 +47,7 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
   that module size before they start.
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
-- **Then:** merge 7b and 8a (one at a time, all tests, hash, screenshot), reports into HISTORY, fragmentation rows
+- **Then:** merge 8a (all tests, hash, screenshot), report into HISTORY, fragmentation row
   in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` (the "Costi" chapter of
   LESSONS only every 2-3 waves, next after wave 9: WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far:
   LESSONS "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
