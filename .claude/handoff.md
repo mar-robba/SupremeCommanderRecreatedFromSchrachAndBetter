@@ -16,6 +16,9 @@ Brief: G8, G9 (+ Atlantis dive of G11, already done before 8a). Notes: `.claude/
   `--scene units8a`, wall-line check, screenshots: see `.claude/notes/models.md`.
 - AI ref after fix + 7b merge: unchanged, WINNER Player (Hard) 15:35, hash BBD1FF3C4E116A4A.
 
+- Docs done (3d16688 + ARCHITECTURE section): ROADMAP G8/G9, Atlantis-dive lines, AI_TUNING, DEV_GUIDE pitfall.
+- Bench 2000 300 interleaved: main 2.05-2.10 / branch 1.85-1.92 ms avg (no regression).
+
 ## TODO in order
 2. Client: models `mech_marine`, `stealth_field`, `missile_sub`, `cy_missile_sub`, `cy_carrier`, `cy_wall` (+ UEF wall /
    sonar if they fall back to default): new partial files + one `case` line each in UnitModels.cs; carrier deck spots
