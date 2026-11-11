@@ -15,13 +15,20 @@ writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: 
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
 **ON RESUME** (2026-11-12 00:15, orchestrator session 9cdd3b47, the one that began as 26701b91):
-- **Two module agents run since 2026-11-12 00:10** (Opus 5.5, `isolation: "worktree"`, cap 200k, 0 sub-agents;
-  their prompts, brief + state + ordered TODO + rules block, are in the transcript of session 9cdd3b47):
-  - (8b-1) Map props: agent `a33fbe4e163f2c48c`, worktree `.claude/worktrees/agent-a33fbe4e163f2c48c`, branch
-    `worktree-agent-a33fbe4e163f2c48c`, CTX-TAG `8b1-mod-1`. It changes the two reference hashes and documents the new ones.
-  - (9b-1) Death animations + ACU warp-in: agent `a189f850d1c3430f0`, worktree `.claude/worktrees/agent-a189f850d1c3430f0`,
-    branch `worktree-agent-a189f850d1c3430f0`, CTX-TAG `9b1-mod-1`. Client only: the reference hashes must stay.
-  Context watcher (background of the orchestrator session): `agent_ctx.py --watch 135000 a33fbe4e=185000 a189f850=185000`.
+- **Two module agents run, second generation since 2026-11-12 00:27** (Opus 5.5, cap 200k, 0 sub-agents; no
+  isolation flag: each works in the worktree of its predecessor; prompts in the transcript of session 26701b91 /
+  9cdd3b47). The first two (started 00:04) reached their cap in 19 minutes and stopped with CHECKPOINT:
+  - (8b-1) Map props: agent `a6285ba07c9b69783` (CTX-TAG `8b1-mod-2`; first: `a33fbe4e163f2c48c`), worktree
+    `.claude/worktrees/agent-a33fbe4e163f2c48c`, branch `worktree-agent-a33fbe4e163f2c48c`. Sim part done and
+    building at WIP 25fd255 (props placed, fall / burn, reclaim, snapshot fields, 19 tests); left: full sim suite,
+    client (`PropRenderer.Nature.cs`), tooltip, `--scene props`, perf, new reference hashes, docs.
+  - (9b-1) Death animations + ACU warp-in: agent `a0cfcf3371b11fcf2` (CTX-TAG `9b1-mod-2`; first:
+    `a189f850d1c3430f0`), worktree `.claude/worktrees/agent-a189f850d1c3430f0`, branch
+    `worktree-agent-a189f850d1c3430f0`. Most code written at WIP 3e4afce but never built; a patch that was not
+    applied is in the worktree's `.claude/pending-9b1.txt`; left: build, `--scene deaths`, tests, screenshots,
+    perf, docs. Client only: the reference hashes must stay.
+  Context watcher (background of the orchestrator session): `agent_ctx.py --watch 135000 a6285ba0=185000 a0cfcf33=185000`.
+  If the usage limit cuts them: after the reset, a fresh agent per worktree from its `.claude/handoff.md`.
 - **When one finishes** (report + clean tree): merge, checks and after-merge steps as written below and in WORKFLOW
   "Lifecycle of a wave" steps 6-7. If both are ready, merge (9b-1) first (same hashes, so the check is exact), then
   (8b-1) and write its new reference hashes at the top of this section. Then (8b-2) with (9b-2), then (8b-3) alone,
