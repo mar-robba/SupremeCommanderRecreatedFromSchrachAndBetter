@@ -77,6 +77,12 @@ Things learned while building the project that are not about how a system works 
 - **Saveable state** (CLAUDE.md rule 9): static scratch lists and cached delegates get `[NoSave]` and are rebuilt
   lazily (`??=`). An unsupported framework type in sim state makes the serializer throw with a hint;
   `SaveCoverageTests` catches it first.
+- **Lazy caches rebuilt "on read" must be `[NoSave]`** (wave 8a). `PropStore`'s alive list was rebuilt when someone
+  read `AliveList` (state hash, sandbox, AI) and left stale slots past its count; saved, those slots depended on WHO
+  read it WHEN, not on the game, so a replay ended with the same `StateHash` but different state bytes
+  (`ReplayTests`: "state differs: System.Int32[] (+N bytes into body #K)"). A change that only shifts the game's
+  trajectory (here: the Salem hooks) can expose such a cache. To find the field: walk both `Simulation`s with
+  reflection, skipping `[NoSave]` fields, and print the first differing field paths (a 60-line throwaway test).
 - **Static scratch buffers must be `[ThreadStatic]`.** Several `SimWorld`s can step at the same time in one process
   (multiplayer loopback tests, `Rts.Bench -- mp`): a shared static `List<int>` in `ConstructionSystem` threw
   "Collection was modified" once in ~3 runs and froze a peer. Pattern: `[ThreadStatic, NoSave] static List<int>? t_tmp;

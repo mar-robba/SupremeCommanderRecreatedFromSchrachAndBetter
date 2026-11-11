@@ -57,7 +57,7 @@ public static class FactionRoles
     public const string ShieldEd2T2 = "shield_ed2_t2", ShieldEd3T2 = "shield_ed3_t2", ShieldEd4T3 = "shield_ed4_t3",
         ShieldEd5T3 = "shield_ed5_t3";
     // Added by wave 8a (missing units & walls): T3 strategic missile submarine, T3 sonar platform (upgrade of sonar_t2),
-    // T1 wall section. All optional: the AI does not build them yet.
+    // T1 wall section. All optional: the AI does not build them.
     public const string NukeSubT3 = "nuke_sub_t3", SonarT3 = "sonar_t3", WallT1 = "wall_t1";
 
     /// <summary>Every known role, in the documented order.</summary>

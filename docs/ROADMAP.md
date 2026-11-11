@@ -104,10 +104,10 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G5 | [x] 2026-10-24 (6b) **Team play**: give units and mass/energy to allies, allied overflow sharing, allies-only chat | SC1 | M | UnitTransfer, new `Economy/EconomyShare.cs`, new `Orders/DiplomacyCommands.cs`, new `UI/DiplomacyPanel` | G4 | 1 |
 | G6 | [x] 2026-10-24 (6b) Score history (income, units, kills every 30 s) + end-screen graphs, score column in the players panel | SC1 | S | ArmyStats (saveable), EndScreen | G4 | 3 |
 | G7 | Missing enhancements: Personal Teleporter (both ACUs), UEF Engineering Drones (C-D1/C-D2), UEF SCU Radar Jammer | SC1 | M | `Commander`, blueprints, client models/fx | — | 2 |
-| G8 | Missing units: UEF Mech Marine (T1 bot); T3 strategic missile subs (UEF Ace, Cybran; nuke + TML from a submerged hull); Cybran T3 aircraft carrier; T3 sonar platforms; UEF T2 stealth field generator (verify vanilla); Salem destroyer walks on land | SC1 | M | `data/blueprints`, faction json (optional roles), `Naval`, `Strategic` (mobile silo), `Transport` (carrier), models | — | 2 |
-| G9 | **Walls** (T1 wall sections, both factions: block movement and shots, Shift-drag lines) | SC1 | S-M | data, Pathfinding blocked cells, Combat projectile hits | — | 2 |
+| G8 | [x] 2026-11-11 (8a) Missing units: UEF Mech Marine (T1 bot); T3 strategic missile subs (UEF Ace, Cybran; nuke + TML from a submerged hull); Cybran T3 aircraft carrier; T3 sonar platforms; UEF T2 stealth field generator (verify vanilla); Salem destroyer walks on land | SC1 | M | `data/blueprints`, faction json (optional roles), `Naval`, `Strategic` (mobile silo), `Transport` (carrier), models | — | 2 |
+| G9 | [x] 2026-11-11 (8a) **Walls** (T1 wall sections, both factions: block movement and shots, Shift-drag lines) | SC1 | S-M | data, Pathfinding blocked cells, Combat projectile hits | — | 2 |
 | G10 | Map props: trees (energy) and rocks (mass) to reclaim; trees fall / burn | SC1 | M | PropStore kinds, `Map/` generator, PropRenderer | — | 2 |
-| G11 | Leftovers: Atlantis dive (Sub layer), swap an occupied enhancement slot in one click, mobile TML moves into range, shield HP kept on enhancement swap, Mavor arc/priority, crush animation, emergency drop, staging repair cost, fog wrecks/deposits, sandbox selects enemies | SC1 | M (many S) | various | — | 3 |
+| G11 | Leftovers: swap an occupied enhancement slot in one click, mobile TML moves into range, shield HP kept on enhancement swap, Mavor arc/priority, crush animation, emergency drop, staging repair cost, fog wrecks/deposits, sandbox selects enemies | SC1 | M (many S) | various | — | 3 |
 | G12 | Pathing: exact unit clearance, per-unit MaxSlope, ships steering in narrow channels | SC1 | M | Pathfinding, MovementSystem | — | 3 |
 | G13 | FA-only units for UEF/Cybran (Broadsword, Wailer, Continental, Novax, Megalith, Brick, Hoplite, Kennel/Hive); some FA units exist (Percival, Janus, Ravager) | FA | L | data + models | owner Q8 | 3 |
 | G14 | [x] 2026-11-11 (7b) Selection/camera keys: all of a type on the map, all land / air / naval / engineers, ACU (select + center), camera bookmarks, jump to last alert | SC1 | S | Hotkeys (new entries), SelectionController, new `Input/SelectionFilters.cs` | — | 2 |
@@ -382,9 +382,8 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       aircraft); engineer assist chains (guard a guard → helps the root builder; guards repair first); client:
       models, cargo hanging under transports, context clicks, order buttons, cargo counter, fuel bar, ferry lines,
       `--scene transport`
-      - [ ] later: AI uses transports/ferries/air staging (wave 5), Atlantis dive (the sub toggle exists now: needs
-            Sub layer + surfaced by default + no dock/launch/SAM while submerged), staging repair cost, T3 heavy
-            transport, emergency drop, gunship VTOL hover
+      - [x] Atlantis dive (Sub layer + `StartSurfaced`, no dock/launch/SAM while submerged; AtlantisDiveTests)
+      - [ ] later: staging repair cost, T3 heavy transport, emergency drop, gunship VTOL hover
       - [x] merged with wave 4f polish (2026-10-14): shared hotkeys E (transport-to with transports selected, else
             capture) and D (subs dive + aircraft dock); captured carriers take their cargo along (not when carrying a
             commander); pausable Atlantis factory; boarding ends the factory roll-out
