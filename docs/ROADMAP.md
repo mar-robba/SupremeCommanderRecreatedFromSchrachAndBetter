@@ -2,51 +2,33 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 19:40 — read this first in a new session)
-main has waves 1-6: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
+## ▶ NEXT STEPS (updated 2026-11-11 20:00 — read this first in a new session)
+main has waves 1-7 and (8a): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI uses everything
 + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings + autosave (all merged by 2026-10-24),
-(7b) orders & selection UX (merged 2026-11-11). Tests: 522 sim + 309 client + 27 net. Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after
-15:35", hash **BF85B7DBBF03D949** (agents that must not change sim results compare against it; the game equals (k)'s
-4E3F22FD0F8EED11, 6a only added hashed commander state). Replays made before the (k) balance data refuse to open
-("unit blueprints changed"). Agent ids: `~/.claude/projects/-run-media-marco-RTS/orchestrator/agents-wave5.md`
-(valid only in the orchestrator session that started them). Each agent keeps `<worktree>/.claude/handoff.md` and
-writes `<worktree>/.claude/agent-report.md` when done. Briefs and reports: HISTORY "Wave 6" and "Wave 7". Every
-prompt carries a `CTX-TAG:` line (AGENT_RULES).
+(7b) orders & selection UX and (8a) missing units & walls (both merged 2026-11-11). Tests: 569 sim + 315 client + 27 net.
+Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 15:35", hash
+**BBD1FF3C4E116A4A** (agents that must not change sim results compare against it; it is the same game as
+BF85B7DBBF03D949 before 8a and (k)'s 4E3F22FD0F8EED11: 6a added hashed commander state, 8a's new blueprints shift the
+blueprint indices). Bench `2000 300` hash EAED77303695A943 (F74F5FED38AC5D83 before 8a, same reason). Replays and saves
+made before 8a refuse to open ("unit blueprints changed"). Each agent keeps `<worktree>/.claude/handoff.md` and
+writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
+Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-11 19:40, session 9cdd3b47, reset by the owner; the owner said "continua" on 2026-11-11 after the stop of 2026-11-10 23:05):
-- **(7b) Orders & selection UX is merged** (2026-11-11, b8b9062; G14-G17, without G20): build, the three suites, the
-  reference match (same hash), an interleaved bench and a screenshot were checked on main; report in HISTORY "(7b)";
-  worktree and branch removed. Left by 7b (ROADMAP "later (7b)"): G20 overlays, the new keys were never pressed by
-  hand in a game window, bookmarks are not saved.
-- **FIRST THING TO DO: finish the merge of (8a) Missing units & walls.** No agent is running. The owner reset the
-  orchestrator at 19:40 in the middle of the merge checks. State:
-  - 8a finished at 19:34 (branch `wave8a-units`, HEAD fa8738c, clean; report in
-    `.claude/worktrees/wave8a/.claude/agent-report.md`) and **is merged in main: fce92ee** (2,250 lines added in src,
-    tests, tools, data). The worktree and the branch still exist.
-  - **The merge is NOT verified yet.** The first check run is void: `dotnet build Rts.slnx` died with the known
-    flake "Internal CLR error (0x80131506)" (DEV_GUIDE "Profiling", last bullet: just build again), so the tests ran
-    with `--no-build` on stale binaries and failed in bulk (414 of 522): not a real result. Only the Release bench was
-    built: reference match on main = "WINNER: Player (Hard) after 15:35", hash **BBD1FF3C4E116A4A** (as the agent
-    reported: same game as BF85B7DBBF03D949, the new blueprints shift the indices). This is main's new reference hash.
-  - To do, in order: (1) `dotnet build Rts.slnx` until it succeeds; (2) the three suites (the agent had Sim 569,
-    Client 315, Net 27 green); (3) interleaved bench `2000 300` against the pre-merge main c28d102 (DEV_GUIDE "Perf
-    check"; the agent measured main 2.05-2.10, branch 1.85-1.92 ms/tick); (4) screenshots
-    `--scene units8a:land|walls|naval|salem --frames 200 --size 960x540` and look at two of them; (5) if something
-    fails, a fresh agent in the worktree (`model: "opus"`) fixes it there, never the orchestrator.
-  - Then the bookkeeping: report into HISTORY "(8a)" (attempts: coordinators 1-3 on 2026-10-24 and 2026-11-10;
-    module agent 8a-mod-1 13:19-13:42 CHECKPOINT at 173k; 8a-mod-2 13:44, cut by the usage limit at 13:50, resumed
-    19:15, finished at 142k; two client sub-agents: the first read to 116k before working and stopped at 131k after
-    the models, the second finished at 123k); a fragmentation row in WORKFLOW (replay bug: the handoff pointed at
-    three files, the cause was in PropStore: a saved alive-list cache, found by comparing the two states field by
-    field); `"Unità mancanti e mura (8a)": 2250` into `righe` of `tools/token-ledger/purposes.json` +
-    `ledger.py update`; the first lines of this section (8a merged, new test counts, new reference hash);
-    `git worktree remove .claude/worktrees/wave8a` + `git branch -d wave8a-units`; `git worktree prune` (a scratch
-    worktree `mainbench` of this session lives in /tmp).
-  - **Untrack the agents' notes in main** (`git rm -r --cached .claude`, then delete `.claude/handoff.md`,
-    `.claude/agent-report.md` and `.claude/notes/` in the main checkout, AFTER copying the 8a report into HISTORY):
-    7b and 8a tracked them with `git add -f` and the merges brought them into main.
-- **Next work after that:** 8b maps, then wave 9 (9b visual polish only: 9a AI is removed), each re-cut into modules
-  of about 1,500 lines for one agent (see "Process rules changed by the owner" below).
+**ON RESUME** (2026-11-11 20:00, session ef87f678; the owner said "continua" after the reset of 19:40):
+- **No agent is running, no agent worktree is open, nothing waits for a merge.** (7b) and (8a) are merged and
+  verified on main (build, three suites, reference match, interleaved bench, screenshots: HISTORY "(7b)", "(8a)").
+  What they left is in "later (7b)" and "later (8a)" below.
+- **FIRST THING TO DO: start (8b-1) Map props and (9b-1) Death animations + ACU warp-in**, together (disjoint
+  files), one module agent each: `model: "opus"`, `isolation: "worktree"`, cap 200k, no coordinator, 0 sub-agents
+  while both run. Briefs: HISTORY "(8b) Maps" and "Wave 9"; prompt = brief + the AGENT_RULES block (the prompts of
+  2026-11-11 in the session transcripts are the model: brief, state, ordered TODO, rules block). Then (8b-2) with
+  (9b-2), then (8b-3) alone, each after the merge of the module before it. The ledger purposes of the five modules
+  are already in `tools/token-ledger/purposes.json` (`aree`, `onde`): start each description with its tag, e.g.
+  `[Alberi e rocce (8b-1)]`.
+- **Start them at the beginning of a usage window.** Nothing was started on 2026-11-11 after the 8a merge: at
+  19:45 the 18:00-23:00 window already held 14 $ of this project (8a's agents and the merge checks; windows with the
+  orchestrator on Fable 5.2 ended at about 20 $), and two other Claude sessions of the owner were open.
+  `python3 -I tools/token-ledger/windows.py <ISO time of the last reset>` prints what the project used since then.
 - Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
   tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
@@ -62,10 +44,9 @@ prompt carries a `CTX-TAG:` line (AGENT_RULES).
   that module size before they start.
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
-- **Then:** merge 8a (all tests, hash, screenshot), report into HISTORY, fragmentation row
-  in WORKFLOW, each module's merged lines into `tools/token-ledger/purposes.json` `righe` (the "Costi" chapter of
-  LESSONS only every 2-3 waves, next after wave 9: WORKFLOW "Lifecycle of a wave" step 7; cost per wave so far:
-  LESSONS "Per onda"); then 8b maps (after 8a: data/props overlap is small, but 8a owns `data/blueprints`), then wave 9.
+- **After each merge:** report into HISTORY, a fragmentation row in WORKFLOW, the module's merged lines into
+  `tools/token-ledger/purposes.json` `righe` + `ledger.py update` (WORKFLOW "Lifecycle of a wave" step 7). The
+  "Costi" chapter of LESSONS is next due after wave 9 (cost per wave so far: LESSONS "Per onda").
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - **Improving the AI is no longer a goal of the project (owner, 2026-11-11):** the skirmish AI stays as merged in
@@ -204,14 +185,15 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   on land, wall sections. Owns `data/blueprints`, faction json (optional roles: AI ignores what it doesn't know),
   `Naval`, `Strategic`, `Transport`, Pathfinding blocked cells, model partials + `case` lines. Tests: roster tests,
   submerged launch, walls block paths/shots, carrier; `--scene` group; screenshots.
-- 8b Maps (G10, G26; G27 if time). Trees/rocks props (reclaim, fall/burn), map file format + 8-12 curated named maps
+- 8b Maps (G10, G26, G27; re-cut 2026-11-11 into the modules 8b-1, 8b-2, 8b-3: HISTORY "(8b) Maps"). Trees/rocks props (reclaim, fall/burn), map file format + 8-12 curated named maps
   with thumbnails, map picker in setup/lobby, host sends the map in MP; biomes. Owns PropStore (additive kinds),
   `Map/` (new MapFile, props placement), PropRenderer, TerrainRenderer palettes, map picker UI, `Rts.Net` map
   transfer. Tests: file round trip, props reclaim, MP map hash, MapScaleTests; screenshots per biome.
 
 **Wave 9: visual polish**
 - 9a AI: removed from the plan (owner, 2026-11-11: improving the AI is no longer a goal).
-- 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes). Terrain shadows, unit LOD, death animations,
+- 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes; re-cut 2026-11-11 into 9b-1 and 9b-2:
+  HISTORY "Wave 9"). Terrain shadows, unit LOD, death animations,
   ACU warp-in, minimap options. Owns `Rendering/`, `Audio/`, Minimap. Perf: `--perf-log` before/after; screenshots.
 
 **Wave 10: multiplayer robustness + keybindings**

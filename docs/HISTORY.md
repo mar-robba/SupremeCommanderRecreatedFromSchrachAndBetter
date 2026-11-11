@@ -788,3 +788,102 @@ walking on land; T1 wall sections for both factions (block movement and direct s
 Atlantis dive. Faction json roles stay optional (the AI ignores what it doesn't know). Tests: roster tests,
 submerged launch, walls block paths and shots, carrier; a `--scene` group; screenshots.
 
+**Delivered** (merged 2026-11-11, fce92ee; G8 and G9). Attempts: coordinators 1-3 on 2026-10-24 and 2026-11-10, each
+cut by a usage limit; then two module agents on Opus 5.5 without coordinator on 2026-11-11: 8a-mod-1 (13:19-13:42,
+CHECKPOINT at 173k) and 8a-mod-2 (started 13:44, cut by the usage limit at 13:50, resumed 19:15, finished 19:34 at
+142k: main with 7b merged, the replay bug, docs), with two client sub-agents one after the other (the first read to
+116k before working and stopped at 131k after the models; the second did the Salem legs, the scene and the
+screenshots and finished at 123k). Report:
+- **Units (G8):** 9 new blueprints. UEF Mech Marine (T1 bot); UEF T2 stealth field generator; T3 sonars for both
+  factions (upgrades of the T2 ones); T3 strategic missile subs for both factions (they build and launch the nuke
+  submerged and on the move, cruise missiles fire submerged); Cybran T3 carrier (the Atlantis code on a ship: builds,
+  docks, repairs and launches 16 aircraft). The Salem destroyer walks on land at 35 % speed (torpedoes held ashore);
+  the client lifts the hull and draws 4 legs. Models for every new shape. The faction roles `nuke_sub_t3`,
+  `sonar_t3`, `wall_t1` are optional; the AI does not build these units. The Atlantis dive of the brief was already
+  done before 8a (AtlantisDiveTests).
+- **Walls (G9):** T1 wall sections for both factions (`Combat/Walls.cs`): they block paths, absorb enemy direct shots
+  and beams up to their height, and are never auto-targeted. Shift-drag line placement already existed.
+- **Try:** `--scene units8a[:land|:walls|:naval|:salem]`; sandbox `spawn uef_t1_wall me at x,z`.
+- **Tests:** MissingUnitsRosterTests, WalkingShipTests 10, MissileSubTests 8, CarrierTests 6, WallTests 11, client
+  WalkingShipRenderTests 6. After the merge: Sim 569, Client 315, Net 27, all green.
+- **Hotkeys:** none.
+- **Replay bug found on the way:** `PropStore`'s alive list was a lazy cache that got saved. The slots past its count
+  depended on who had read `AliveList` and when, not on the game. The Salem hooks changed the course of the game,
+  and that exposed it. The cache is now `[NoSave]` and rebuilt when read (DEV_GUIDE pitfall).
+- **Numbers (checked on main after the merge):** reference match "WINNER: Player (Hard) after 15:35", hash
+  BBD1FF3C4E116A4A (the same game as BF85B7DBBF03D949: the new blueprint files shift the blueprint indices, AI_TUNING
+  note). Bench `2000 300`, four interleaved runs: main before the merge (c28d102) 1.92-1.97 ms/tick, after it
+  1.90-2.10 (2.10 on the first run, then 1.90-1.97); bench hash EAED77303695A943 (was F74F5FED38AC5D83; same units,
+  projectiles and path solves). 2,250 lines added in src, tests, tools and data. Screenshots
+  `screenshots/8a_merge_{land,walls,naval,salem}.png` (walls and salem looked at: the two wall lines with units on
+  both sides; the Salem on land on four legs). The first check run after the merge was void: the build died with the
+  CLR flake of DEV_GUIDE "Profiling" and the tests ran on stale binaries (414 of 522 "failed"); the second run was clean.
+- **Shared files:** one line each in GameApp.cs, GameSession.cs, UnitModels.cs (3 cases), UnitModels.Cybran.cs,
+  UnitRenderer.cs, UnitRenderer.Cargo.cs; small hooks in MovementSystem (land speed), Combat (Projectile / Targeting /
+  Weapon systems, CombatCatalog), PropStore. Nothing in `Input/`.
+- **Not done / known issues:** saves and replays from before 8a refuse to open (new blueprints); the rest is in
+  ROADMAP "later (8a)".
+- **Handoff review:** the note described the replay bug accurately and named three suspect files; the cause was in a
+  fourth (PropStore). Bisecting by file would not have found it; comparing the two states field by field with
+  reflection found it in one run. One client sub-agent stopped at its context limit; the next one found that the
+  carrier deck spots were never used (`BaseShape` keeps "cy_carrier") and fixed it.
+
+### (8b) Maps — three modules, one after the other (re-cut 2026-11-11)
+The brief of 2026-10-23 (ROADMAP "Wave 8": G10, G26, G27 in one agent) is cut into three modules of about 1,500
+lines, each for one module agent on Opus 5.5 (cap 200k, no coordinator; WORKFLOW "Lifecycle of a wave"). Each starts
+from main after the one before it is merged. None is started yet.
+
+*brief (8b-1) Map props: trees and rocks* (G10; ledger purpose "Alberi e rocce (8b-1)"): the generator places forests
+(trees: energy, a little mass) and rock fields (rocks: mass) on every preset, deterministic per seed and symmetric
+like the terrain (`MapSymmetry`), never on start plateaus, deposits, water or steep ground; density scales with the
+map size (a 1024 map has thousands, so `PropStore` capacity, its linear `FindNearest` and the snapshot must be
+sized and measured). `PropStore` gets a prop kind (wreck / tree / rock, additive arrays, saveable). Engineers
+reclaim them like wrecks (single order, area reclaim on patrol). Trees do not block movement: they fall when a unit
+walks over them and burn in area damage (a burnt tree is worth less; a nuke clears the forest). Client: instanced
+trees and rocks in `PropRenderer` with a far LOD, fall and burn effects, reclaim value in the tooltip. Owns
+`World/PropStore.cs`, new `Map/MapProps.cs` (+ one call in the generator), new sim file for fall/burn, `PropRenderer*`.
+Leaves alone: map files, setup screens, `TerrainRenderer` (8b-2, 8b-3, 9b-2). The reference match will change (the
+AI reclaims props): document the new hash and that the game still ends with a winner. Tests: placement
+deterministic, symmetric and off starts / deposits / water; reclaim values; fall and burn; save/load and a replay
+with props; `MapScaleTests` at 1024. Perf: interleaved bench `2000 300` and `--perf-log` on a 1024 map before and
+after. A `--scene` group and screenshots.
+
+*brief (8b-2) Map files, map pack, map picker* (G26 without multiplayer; purpose "File mappa e scelta mappa (8b-2)";
+after 8b-1): a versioned map file (`Map/MapFile.cs`: heightmap, water level, deposits, start positions, props, name,
+players, a content hash) with exact save / load round trip; a headless command that exports generated maps
+(`Rts.Bench -- mapexport ...`); 8-12 named maps for 2-8 players and the three sizes in `data/maps/`, chosen from
+seeds and checked by the generator's guarantees (starts connected, deposits buildable); the skirmish setup gets a
+map picker (name, size, players, thumbnail drawn from the file as `MapPreview` does; "random map" keeps today's
+generator options) and the client a `--mapfile NAME` option. Saves and replays record the map by name + hash and
+refuse a different file. Owns `Map/MapFile.cs`, `GameSetup` / `Persistence/GameInfo` (additive), `Menus`
+setup screen and `GameConfig`, the export command. Leaves alone: `Rts.Net` and the lobby (8b-3). Sim results on
+generated maps must not change (same reference hash as after 8b-1). Tests: file round trip, every pack map valid,
+a game + replay + save on a file map. Screenshots of the picker.
+
+*brief (8b-3) Maps in multiplayer + biomes* (G26 lobby part, G27; purpose "Mappe in rete e biomi (8b-3)"; after
+8b-2 and 9b-2): the host picks a map file in the lobby; clients that have the same file (name + hash) use it, the
+others receive it from the host in chunks with a progress line, and check the hash; lobby codec version bump;
+`Rts.Bench -- mp` on a file map. Biomes (temperate, desert, tundra, lava, tropical): a generator / map file field,
+`TerrainRenderer` palettes, tree and rock looks per biome, a setup and lobby option, no effect on sim results.
+Owns `Rts.Net` lobby + transfer, the lobby screen, `TerrainRenderer` palettes. Tests: codec round trip, transfer in
+an MP loopback (file present and missing), hash mismatch refused. Screenshots: one per biome, the lobby picker.
+
+## Wave 9: visual polish (briefs re-cut 2026-11-11, not started)
+9a (AI) was removed from the plan by the owner on 2026-11-11. 9b is cut into two modules of about 1,500 lines, one
+module agent each as in (8b). Their files are disjoint from 8b-1 and 8b-2, so the pairs 8b-1 + 9b-1 and
+8b-2 + 9b-2 can run together (at most 2 agents at a time).
+
+*brief (9b-1) Death animations + ACU warp-in* (G23 first half; purpose "Animazioni di morte e warp-in (9b-1)"):
+aircraft spiral down and crash where they fall, ships list and sink, structures collapse into their wreck, big
+units get a longer death sequence; the ACUs warp in at the start of a game (flash, rings, sound). Client only
+(`Rendering/` unit and effects renderers, `Audio/`); if an effect event needs one more field it is additive and the
+sim results stay the same (reference hash unchanged). Leaves alone: `PropRenderer` (8b-1), `TerrainRenderer` and
+`Minimap` (9b-2). Tests where there is logic (animation timing, the sink / fall paths); `--perf-log` on the 5k-unit
+scene of DEV_GUIDE before and after; screenshots of each death kind and of the warp-in.
+
+*brief (9b-2) Terrain self-shadows, unit LOD, minimap options* (G23 second half, G22; purpose "Ombre terreno, LOD,
+minimappa (9b-2)"; after 9b-1): terrain self-shadows (baked from the heightmap, sun direction of the unit shadows),
+a low-poly LOD for far units (measured on the 5k-unit scene), minimap resize / zoom / show-hide resources and units,
+saved in the settings. Owns `TerrainRenderer*`, the LOD part of the unit renderer, `Minimap`, settings entries.
+G24 (voice announcer) and G25 (TTF font) only if the owner says yes ("Questions for the owner"). `--perf-log` before
+and after; screenshots.

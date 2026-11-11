@@ -96,7 +96,12 @@
     "Comandante e ingegneri (6a)": "Gameplay SupCom",
     "Opzioni partita e squadra (6b)": "Gameplay SupCom",
     "Unità mancanti e mura (8a)": "Gameplay SupCom",
+    "Alberi e rocce (8b-1)": "Gameplay SupCom",
     "Grafica client (onda 1)": "Esperienza client",
+    "File mappa e scelta mappa (8b-2)": "Esperienza client",
+    "Mappe in rete e biomi (8b-3)": "Esperienza client",
+    "Animazioni di morte e warp-in (9b-1)": "Esperienza client",
+    "Ombre terreno, LOD, minimappa (9b-2)": "Esperienza client",
     "UI e HUD (onda 1)": "Esperienza client",
     "Audio e rifinitura (onda 2)": "Esperienza client",
     "Mappe, menu, flusso (onda 2)": "Esperienza client",
@@ -144,7 +149,12 @@
     "Opzioni partita e squadra (6b)": "6",
     "Rilascio e impostazioni (7a)": "7",
     "Ordini e selezione (7b)": "7",
-    "Unità mancanti e mura (8a)": "8"
+    "Unità mancanti e mura (8a)": "8",
+    "Alberi e rocce (8b-1)": "8",
+    "File mappa e scelta mappa (8b-2)": "8",
+    "Mappe in rete e biomi (8b-3)": "8",
+    "Animazioni di morte e warp-in (9b-1)": "9",
+    "Ombre terreno, LOD, minimappa (9b-2)": "9"
   },
   "righe": {
     "Fondazione (sessione principale)": 5113,
@@ -175,6 +185,7 @@
     "Comandante e ingegneri (6a)": 3576,
     "Opzioni partita e squadra (6b)": 2465,
     "Rilascio e impostazioni (7a)": 1515,
-    "Ordini e selezione (7b)": 2648
+    "Ordini e selezione (7b)": 2648,
+    "Unità mancanti e mura (8a)": 2250
   }
 }

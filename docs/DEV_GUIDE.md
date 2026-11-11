@@ -177,7 +177,10 @@ your branch, not one run against an old number:
 - Tick spikes that hit stages which are normally ~0 (Construction, Economy, Factory at 1–7 ms in the same tick) are
   JIT tiering, not GC: try `DOTNET_TieredCompilation=0` to confirm. Hence `TieredCompilationQuickJitForLoops=false`
   in the client and bench csproj (ARCHITECTURE "Performance & scale").
-- `dotnet build` may die with `Internal CLR error (0x80131506)` once in a while: just run it again.
+- `dotnet build` may die with `Internal CLR error (0x80131506)` once in a while: just run it again. After such a
+  failure never run tests with `--no-build`: they run the stale binaries and fail in bulk (8a merge, 2026-11-11:
+  414 of 522 "failed"). That day the machine had 1.4 GB of RAM free and 9 of 11 GB of swap used; the next build
+  passed in the same state, so low memory is not shown to be the cause.
 
 ## Reference numbers
 
