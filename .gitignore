@@ -12,3 +12,4 @@ obj/
 
 # Release packages (tools/package/package.sh)
 /release/
+__pycache__/
