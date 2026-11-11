@@ -855,3 +855,28 @@ enhancement variants clone them (EnhancementCatalog). New sim state lives in per
   `ArmyStats.Score` = mass collected / 10 + energy collected / 100 + 10 per kill + 2 per unit or structure built
   (snapshot `ArmyView.Score`). End screen: `Menus/ScoreGraph.cs` line chart per army (army colors, metric tabs,
   live last point).
+
+## Orders & selection UX (wave 7b: `Rts.Sim/Orders/QueueEditCommands.cs` + `PingCommands.cs`, `Rts.Client/Input`, `UI/Alert*`, `UI/PingMarkers.cs`)
+
+- **Queue editing (sim, sequential, one `case` each in CommandSystem):** `MoveWaypointCommand(Army, Units, From, To)`
+  moves every queued Move/AttackMove/Patrol/Ferry/Unload order of those units whose group point `Order.Pos` is within
+  `QueueEditSystem.MatchEpsilon` (0.05) of From (Ferry: also the drop point `Aux`; patrol `Aux` chains follow; a moved
+  front order re-paths). `DeleteWaypointCommand` removes the same matches. `FormationMoveCommand(..., From, To, Facing,
+  Queue)` = line formation across a right-drag: `QueueEditSystem.LineOffsets` (spacing = largest radius × 2 + 1.2,
+  rows ordered by side position so paths do not cross), `Aux` = facing, and a unit that arrives turns to it
+  (`StillTurning`, ≤ 60 ticks). The snapshot's `OrderView.Point` / `Aux` carry the raw group point for the markers.
+- **Pings:** `MapPingCommand(Army, PingKind Alert|Move|Attack, Pos)` → `PingState` (per-world CWT, plain list, saved;
+  not in StateHash), throttled 3 per army per 3 s, live 10 s, max 32. `SimSnapshot.Pings/PingCount/PingSerial` holds
+  only the view army's non-enemies (observers / replays: all). Like every command they ride replays and lockstep
+  (`PingTests.ReplayRecreatesThePing`, `PingNetTests`).
+- **Client input:** `SelectionFilters` (Ctrl+Z / Ctrl+Shift+Z same types, Ctrl+A combat, Ctrl+Shift+L/A/N/E, Ctrl+C
+  commander), `CameraBookmarks` (Alt / Ctrl+Alt+1-5, per session), `FormationDrag` (right-drag), `WaypointEditor`
+  (left-drag a marker, Del), `PingInput` (Alt+left / Alt+Shift+left / Alt+right on map and minimap, Y; Backspace =
+  `AlertLog.NextJump`). All keys are entries of `Hotkeys`.
+- **Notifications:** `AlertMonitor.Poll` (GameSession, every frame, with or without an audio device) compares the
+  previous and current snapshot + new effects: own / allied health drops, own complete structure `UnitDeath`, own
+  structure `BuildComplete` (an upgrade keeps the unit handle, so "same handle, other blueprint in prev" = upgrade done),
+  unit cap reached, new pings. Every alert with a position goes to `SelectionController.Alerts` (`AlertLog`: merges a
+  kind within 30 u / 8 s, minimap flash 4 s, Backspace cycle); toasts + sounds go through `GameAudio.Notify` with
+  per-kind cooldowns (own attack: only off screen, 25 s; commander 20 s; ally 30 s). `PingMarkers` draws pings on the
+  map (screen space) and pings + flashes on the minimap. Screenshot hooks: `--ui-formation`, `--ui-waypoints`, `--ui-pings`.
