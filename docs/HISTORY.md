@@ -932,3 +932,48 @@ a low-poly LOD for far units (measured on the 5k-unit scene), minimap resize / z
 saved in the settings. Owns `TerrainRenderer*`, the LOD part of the unit renderer, `Minimap`, settings entries.
 G24 (voice announcer) and G25 (TTF font) only if the owner says yes ("Questions for the owner"). `--perf-log` before
 and after; screenshots.
+
+### (9b-1) Death animations + ACU warp-in — report (merged 2026-11-12, 3a000b0)
+Two module agents on Opus 5.5, one after the other in the same worktree (the first wrote most of the code and
+stopped at 213k of context, 30k past its checkpoint, before the first build; the second made it compile and finished
+in 23 minutes). 1,557 lines in `src` and `tests`. Client only: no sim change, same reference hashes as main.
+
+**What works.** Aircraft spiral down and crash where their wreck is (the wreck stays hidden until the impact, a
+smaller burst plays in mid-air); surface ships list, sink bow-up and fade out under the water; structures shake
+and collapse while their wreck fades in; land experimentals stagger and fall over; commanders kneel until their
+death blast. At game start the ACUs warp in: flash, beam, rings, the model rising bottom-up as a hologram, a sound.
+Five new sounds (AircraftFall, AircraftCrash, ShipSink, StructureCrumble, WarpIn). Limits: at most 64 sequences at
+once, none off-screen or under fog; land units other than experimentals and commanders get no sequence (keeps 5k
+battles cheap); the warp-in plays only when the first snapshot is at tick 5 or earlier, so never after a load or a
+replay seek. The wreck hiding (`PropRenderer.DeathFx.cs`) acts on wrecks only, never on 8b-1's trees and rocks.
+How it works: ARCHITECTURE, the death animations section.
+
+**How to try it.** `dotnet run --project src/Rts.Client -- --scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]`
+(N = ticks after the kill at which the game pauses; the scene prints each group's position and a `--camera`).
+No new hotkeys.
+
+**Tests.** `DeathAnimTests` (6, client): the sequence each unit kind gets, the aircraft path ending on the wreck,
+the ship sinking and fading, wreck visibility, shader packing, the warp-in tick rule.
+
+**Shared files** (additive): GameSession.cs (scene line, one wiring line), GameApp.cs (scene line), EffectsRenderer.cs
+(3 hook lines), PropRenderer.cs (1 line), the unit shader in Shaders.cs (the instance w value darkens and dithers
+dying units; living units send 0), SoundId (5 values appended), GameAudio.cs (drains the new sound queue), CLAUDE.md.
+
+**Numbers** (`--perf-log`, Release, before → after; taken before the merge of 8b-1).
+- 5k-unit scene, 900 frames: CPU 2.49 → 2.38 ms, GPU 5.90 → 5.79 ms; 2400 frames: CPU 2.46 → 2.17 / 2.51, GPU 5.94 → 5.92 / 5.87
+  (one run had a single 1 s frame that did not repeat: most likely machine load).
+- Scene with many deaths (5k units + 600 interceptors + 400 generators, a nuke): CPU 3.73 → 3.67 ms, GPU 10.19 →
+  10.07 ms. The nuke goes off at about tick 13, so that run mostly exercised structure collapses (capped at 64).
+- Reference match and bench `2000 300`: the hashes of main (FB269C29202773C1, 6A8312040EFA67F2).
+
+**Known issues.** No sequence for units that die inside a transport; models do not break into pieces; a
+commander's death blast whites out the sequences near it (the scene keeps the ACU apart for that reason).
+
+**Handoff review** (second agent). The note was accurate and the pending patch applied almost verbatim: one compile
+error (`bp.DeathDelay` lives in `bp.Experimental`). The note did not say that `wait N` in `--exec` counts frames,
+not ticks. The scene class had to be written from scratch; its warp variant must not step the sim before the start.
+
+**Merge checks on main** (orchestrator, 2026-11-12 00:48-00:52): the first build died with the CLR flake of
+DEV_GUIDE and passed when run again (0 warnings, 0 errors); tests 588 sim + 331 client + 27 net green; reference
+match and bench give the hashes of main; screenshots of `--scene deaths:air` (a Soul Ripper burning on its way
+down), `:naval` and `:warp` (the commander rising as a blue hologram inside a ring) looked right.
