@@ -10,7 +10,7 @@ public sealed partial class PropRenderer
 
     private bool DeathFxHides(in PropView p, double age, ref float vis)
     {
-        if (DeathFx == null || age > DeathAnim.MaxDuration) return false;
+        if (DeathFx == null || age > DeathAnim.MaxDuration || p.Kind != Rts.Sim.World.PropKind.Wreck) return false; // (8b) never trees/rocks
         vis *= DeathFx.WreckVisibility(p.Id, p.Bp, p.Pos);
         return vis <= 0.01f;
     }

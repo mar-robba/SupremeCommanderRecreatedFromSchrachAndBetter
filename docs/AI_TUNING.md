@@ -291,6 +291,8 @@ After wave 6a (commander kit) the same match plays identically (same winner, tim
 BF85B7DBBF03D949: the Overcharge / death blast / teleporter state is mixed into the world hash.
 After wave 8a (missing units & walls, 9 new blueprint files) it again plays identically (Hard after 15:35) but hashes
 BBD1FF3C4E116A4A: the new files shift the blueprint indices that the world hash mixes in (the AI builds none of them).
+After 8b-1 (map props: trees and rocks on every map, AI engineers and ACUs reclaim rocks) the match changes: Hard
+wins after 12:18, hash FB269C29202773C1; bench `2000 300` hash 6A8312040EFA67F2 (was EAED77303695A943).
 
 ## Unit balance
 

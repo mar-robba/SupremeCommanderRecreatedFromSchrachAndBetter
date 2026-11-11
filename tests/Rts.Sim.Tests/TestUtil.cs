@@ -22,6 +22,13 @@ public static class TestUtil
     public static UnitHandle Spawn(Simulation sim, string bp, int army, Vector2 pos, float heading = 0) =>
         sim.World.SpawnUnit(Db.IndexOf(bp), army, pos, heading, complete: true);
 
+    /// <summary>Removes the generator's trees and rocks (tests that count wrecks).</summary>
+    public static void ClearMapProps(Rts.Sim.World.SimWorld w)
+    {
+        foreach (int p in w.Props.AliveList.ToArray())
+            if (w.Props.Kind[p] != Rts.Sim.World.PropKind.Wreck) w.Props.Free(p);
+    }
+
     public static void Run(Simulation sim, int ticks, params Command[] firstTickCommands)
     {
         sim.Step(firstTickCommands);

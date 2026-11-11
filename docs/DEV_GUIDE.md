@@ -102,6 +102,11 @@ Things learned while building the project that are not about how a system works 
 - The fog filter (`IntelSnapshotWriter.AddVisibleEffects`) drops effects at points the viewer cannot see yet, even for
   its own units: an effect where an own unit has just arrived (teleport) needs an exemption (wave 6a).
 
+- (8b) Maps carry thousands of trees/rocks in `PropStore`: never scan `Props.AliveList` per unit or per tick, use
+  `QueryRadius`/`FindNearest`. Tests that count wrecks or reclaim call `TestUtil.ClearMapProps(w)` first. Rocks shift
+  mirrored AI-vs-AI economies: `AiVersusAiReachesCombat` (seed 42) launched no wave in 8 min with them, so it clears
+  the props (knife edge, not an AI bug).
+
 ## Client pitfalls
 
 - Unit models are built lazily per blueprint index (`UnitRenderer.ModelFor` → `UnitModels.Build`), so every
@@ -111,6 +116,9 @@ Things learned while building the project that are not about how a system works 
 - In the model partials (`UnitModels.*.cs`) `Color` is ambiguous inside local functions: write `Raylib_cs.Color`.
 - A unit that jumps between two snapshots (teleport) slides across the map with `Vector3.Lerp`: unit positions go
   through `SnapshotInterpolator.LerpPos` (snaps beyond 20 units) (wave 6a).
+- (8b) Trees/rocks are not wrecks: wreck code in `PropRenderer` must skip `Kind != Wreck` (ages, strategic dots).
+  The nature renderer re-buckets props only when the snapshot (reference + Tick) changes; a fallen tree that later
+  ignites replays its fall animation (`StateTick` is re-stamped by every flag change).
 - Sandbox `--exec` timing: `wait N` counts frames (~60/s); the sim tick is about frames / 6. Console commands that read
   the snapshot (`overcharge`, `teleport`) need a `wait` of ~10-20 frames after `spawn` (wave 6a).
 - Death animations (9b-1) only exist on the client: a unit that leaves the snapshot is matched to its `UnitDeath`

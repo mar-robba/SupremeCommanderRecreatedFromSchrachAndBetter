@@ -820,7 +820,11 @@ public sealed partial class AiEconomy
         float radius = isCommander ? Cfg.CommanderRadius : 45f;
         int best = -1;
         float bestScore = 0;
-        foreach (int p in props.AliveList)
+        // Grid query (ascending index = the old AliveList order, so the same pick): maps have thousands of trees/rocks.
+        var near = _propTmp ??= new List<int>();
+        near.Clear();
+        props.QueryRadius(isCommander ? _b.BasePos : pos, radius, near);
+        foreach (int p in near)
         {
             float m = props.Mass[p];
             if (m < minMass) continue;
@@ -838,7 +842,9 @@ public sealed partial class AiEconomy
         _b.Cmd.Order(unit, Order.ReclaimAt(UnitHandle.None, props.Pos[best]));
         // Queue further wrecks around it (reclaim fields).
         int queued = 0;
-        foreach (int p in props.AliveList)
+        near.Clear();
+        props.QueryRadius(props.Pos[best], 12f, near);
+        foreach (int p in near)
         {
             if (queued >= 3) break;
             if (p == best || props.Mass[p] < minMass) continue;
@@ -849,6 +855,8 @@ public sealed partial class AiEconomy
         SetTask(unit, AiTask.Reclaim, props.Pos[best], 10f + 8f * queued, -1);
         return true;
     }
+
+    [Persistence.NoSave] private List<int>? _propTmp;
 
     private bool ClaimedProp(int prop, int self)
     {

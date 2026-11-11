@@ -427,6 +427,14 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
         (done in wave 5n: factory exits skip sides with parked units; fire states, captured targets held)
 - [x] Mass fabricators (T2/T3), adjacency bonus (wave 4f)
 
+- [x] Map props: trees and rocks (2026-11-12, module 8b-1; ARCHITECTURE "Map props"): `PropStore` kinds (wreck /
+      tree / rock) + unsaved spatial grid; `Map/MapProps` places symmetric forests and rock fields on every preset
+      (4 players: 256 = 460, 512 = 2660, 1024 = 10816 props); engineers/AI reclaim them (trees energy, rocks mass);
+      trees fall under moving units, burn in area damage (burnt = less value, spreads), nukes clear forests;
+      `PropRenderer.Nature` (instanced, near/far LOD, fall/burn looks); reclaim tooltip; `--scene props[:fire|:rocks]`
+      - [ ] later: trees cast no shadows (the shadow pass is in UnitRenderer); a fallen tree that ignites replays its
+        fall animation (needs a FallTick field); trees on the minimap; old saves/replays refused (layout change)
+
 ## Phase 4 — Scale and polish
 - [x] 1024 maps with 4–8 players, 5k+ units at 60 FPS (wave 5m, 2026-10-16; ARCHITECTURE "Performance & scale"):
       Par worker pool without allocations, stage profiler (bench + client `--perf-log`), JIT warm-up thread + loops

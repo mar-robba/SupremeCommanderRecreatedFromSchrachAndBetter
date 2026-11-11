@@ -15,6 +15,7 @@ public static class DamageSystem
     public static void Run(SimWorld w)
     {
         var u = w.Units;
+        PropSystem.OnDamage(w); // area damage and nukes ignite / knock over trees (before the events are consumed)
         Strategic.MissileSystem.ApplyDetonations(w); // nuke blasts (ignore shields)
         foreach (var a in w.Events.AreaDamage)
         {

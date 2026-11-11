@@ -53,7 +53,8 @@ public sealed class SimWorld
         Projectiles = new ProjectileStore(projectileCapacity);
         Grid = new SpatialGrid(terrain.Width, terrain.Height, 8f, unitCapacity);
         Occupancy = new OccupancyGrid(terrain.Width, terrain.Height);
-        Props = new PropStore(Math.Max(4096, unitCapacity));
+        Props = new PropStore(Math.Max(4096, unitCapacity) + terrain.Props.Length); // + map trees/rocks (Map/MapProps)
+        Props.SetBounds(terrain.Width, terrain.Height);
         Paths = new PathService(this);
         Intel = new IntelService(this);
         Cargo = new Transport.CargoState(unitCapacity);

@@ -88,6 +88,7 @@ public static class GameSetup
         }
 
         var world = new SimWorld(db, terrain, armies, (ulong)s.Seed, s.UnitCapacity);
+        MapProps.SpawnInto(world); // generator trees and rocks (before any unit: their slots/ids come first)
         var o = world.Options = s.Options.Clone();
         world.CheatsEnabled = o.Cheats;
         // SupCom: storage comes from units (the commander at start); games begin with full storage.

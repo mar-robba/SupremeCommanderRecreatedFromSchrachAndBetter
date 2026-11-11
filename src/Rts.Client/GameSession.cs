@@ -89,6 +89,7 @@ public sealed class GameSession : IDisposable
         else if (cfg.Scene == TransportScene.Name) TransportScene.Spawn(sim, cfg);
         else if (cfg.Scene?.StartsWith(CybranScene.Name) == true) CybranScene.Setup(sim, cfg);
         else if (cfg.Scene?.StartsWith(Units8aScene.Name) == true) Units8aScene.Setup(sim, cfg);
+        else if (cfg.Scene?.StartsWith(PropsScene.Name) == true) PropsScene.Setup(sim, cfg); // (8b) map props
         else if (cfg.Scene?.StartsWith(DeathScene.Name) == true) DeathScene.Setup(sim, cfg); // (9b)
         return sim;
     }
