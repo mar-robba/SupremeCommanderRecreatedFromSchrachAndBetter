@@ -80,6 +80,7 @@ public class ConstructionTests
     {
         var (sim, f) = WithFactory();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         w.Armies[0].Eco.Mass = 200; // storage not full, so the refund is not clipped
         TestUtil.Run(sim, 60, new FactoryEnqueueCommand(0, [f], Bp("uef_t1_tank"), 2));
         var cur = w.Units.Factory[f.Index].Current;
@@ -122,6 +123,7 @@ public class ConstructionTests
     {
         var (sim, f) = WithFactory();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         TestUtil.Run(sim, 20, new FactoryEnqueueCommand(0, [f], Bp("uef_t1_tank"), 1));
         var cur = w.Units.Factory[f.Index].Current;
         Assert.True(w.Units.IsActive(cur));

@@ -129,6 +129,8 @@ public static class SnapshotWriter
                 Id = props.Id[i], Bp = props.BlueprintIndex[i], Pos = DMath.To3(props.Pos[i], w.Terrain.GetHeight(props.Pos[i])),
                 Heading = props.Heading[i], Radius = props.Radius[i],
                 Mass = props.Mass[i], MassMax = props.MassMax[i], Energy = props.Energy[i], EnergyMax = props.EnergyMax[i],
+                Kind = props.Kind[i], Flags = props.Flags[i], Variant = props.Variant[i], FallHeading = props.FallHeading[i],
+                StateTick = props.StateTick[i], BurnEnd = props.BurnEnd[i],
             };
         }
 

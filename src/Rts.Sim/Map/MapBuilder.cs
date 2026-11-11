@@ -101,7 +101,9 @@ internal sealed partial class MapBuilder
             t = new Terrain(_n, _n, _h, _w, [], _starts, _s.Seed);
         }
         var valid = deposits.Where(d => DepositFits(t, d)).ToArray();
-        return new Terrain(_n, _n, _h, _w, valid, _starts, _s.Seed);
+        var final = new Terrain(_n, _n, _h, _w, valid, _starts, _s.Seed);
+        final.Props = MapProps.Place(final, _sym, _seed, _preset, _flatR); // trees and rocks (Map/MapProps.cs)
+        return final;
     }
 
     private int V(int x, int z) => z * _stride + x;

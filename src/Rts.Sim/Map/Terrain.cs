@@ -38,6 +38,8 @@ public sealed class Terrain
     public readonly Deposit[] Deposits;
     public readonly Vector2[] StartPositions;
     public readonly int Seed;
+    /// <summary>Trees and rocks placed by the generator (<see cref="MapProps"/>); spawned into SimWorld.Props by GameSetup.</summary>
+    public MapProp[] Props { get; internal set; } = [];
 
     /// <summary>Max rise/run per cell for land passability.</summary>
     public const float DefaultMaxSlope = 0.75f;
