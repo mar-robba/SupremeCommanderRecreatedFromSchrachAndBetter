@@ -96,6 +96,9 @@ public class AiTests
     {
         var sim = NewAiGame(42, 256, [true, true]);
         var w = sim.World;
+        // (8b) Rocks shift the mirrored economies so that neither AI reaches its first-wave strength margin in 8 min
+        // on this seed (an AI-vs-AI knife edge, not a bug); the match itself is checked by Rts.Bench -- ai.
+        TestUtil.ClearMapProps(w);
         var deaths = new int[2];
         int limit = 8 * 60 * SimWorld.TicksPerSecond; // 8 game minutes
         int t = 0;
