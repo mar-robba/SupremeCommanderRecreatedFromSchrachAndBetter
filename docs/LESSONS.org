@@ -350,7 +350,8 @@ Quanto è costato il lavoro per tipo di agente.
   per riga (13,0 $): è lavoro di misura e diagnosi, non di scrittura.
 - Lezione: per taratura e diagnosi il costo si prevede dal numero di giri di misura, non dalle righe. Conta tenere
   corto quello che ogni giro rilegge: dagli strumenti di misura basta il riassunto (vittorie, sconfitte, durata,
-  costo per tick), non i log. Prima di un altro giro di taratura serve una modifica di progetto dell'IA (onda 9a),
+  costo per tick), non i log. Prima di un altro giro di taratura servirebbe una modifica di progetto dell'IA (era l'onda 9a, tolta dal
+  programma dal proprietario il 2026-11-11: migliorare l'IA non è più un obiettivo),
   perché altri giri con le stesse regole non hanno chiuso gli stalli.
 
 *** Coordinamento
