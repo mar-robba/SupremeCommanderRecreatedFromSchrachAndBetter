@@ -39,6 +39,7 @@ public class ArmyStatsTests
     {
         var sim = TestUtil.NewSkirmish();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         var cmd = w.Armies[0].Commander;
         var tank = TestUtil.Spawn(sim, "uef_t1_tank", 1, CommanderPos(w) + new Vector2(14, 3));
         sim.Step();

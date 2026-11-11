@@ -62,6 +62,7 @@ public sealed class Simulation
         MovementSystem.Run(w);
         pf.Lap(SimProfile.Stage.Movement);
         Experimental.ExperimentalSystem.Run(w); // crush, death blasts, mobile factories, energy-per-shot charging
+        PropSystem.Run(w); // trees: knocked over by moving units, burning (World/PropSystem)
         Commander.CommanderDeathBlast.Run(w); // commander death blasts (queued by OnUnitDeath) -> strategic detonation queue
         Strategic.StrategicSystem.Run(w); // shields, silos, launches, missile defense
         pf.Lap(SimProfile.Stage.Special);
@@ -114,7 +115,7 @@ public sealed class Simulation
             if (!p.Alive[i]) continue;
             Mix((ulong)i); MixF(p.Pos[i].X); MixF(p.Pos[i].Y); MixF(p.Pos[i].Z);
         }
-        foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); }
+        foreach (int i in w.Props.AliveList) { Mix((ulong)i); MixF(w.Props.Mass[i]); MixF(w.Props.Energy[i]); Mix((ulong)w.Props.Flags[i]); }
         foreach (var a in w.Armies) { MixF(a.Eco.Mass); MixF(a.Eco.Energy); }
         Mix(Strategic.StrategicSystem.Hash(w));
         Mix(Transport.TransportSystem.Hash(w));

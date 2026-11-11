@@ -384,9 +384,10 @@ public static class MissileSystem
             if (tick >= w.Tick) continue;
             s.Craters.RemoveAt(k);
             _tmp.Clear();
-            foreach (int i in props.AliveList)
-                if (Vector2.Distance(props.Pos[i], center) <= radius + props.Radius[i]) _tmp.Add(i);
-            foreach (int i in _tmp) props.Free(i);
+            props.EnsureGrid();
+            props.QueryRadius(center, radius + props.MaxRadius, _tmp); // ascending, like the old AliveList scan
+            foreach (int i in _tmp)
+                if (Vector2.Distance(props.Pos[i], center) <= radius + props.Radius[i]) props.Free(i);
         }
     }
 

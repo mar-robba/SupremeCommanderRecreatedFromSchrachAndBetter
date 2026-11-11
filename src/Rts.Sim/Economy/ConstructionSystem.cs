@@ -606,8 +606,9 @@ public static class ConstructionSystem
         if (props.Count == 0) return;
         var (x0, z0, x1, z1) = OccupancyGrid.Footprint(sbp, site);
         var eco = w.Armies[army].Eco;
-        // Free() only marks the list dirty; the span we iterate stays valid until the next AliveList access.
-        foreach (int p in props.AliveList)
+        var near = new List<int>(); // rare (structure completion)
+        props.QueryRadius(site, MathF.Sqrt((x1 - x0 + 2f) * (x1 - x0 + 2f) + (z1 - z0 + 2f) * (z1 - z0 + 2f)) + 1f, near); // ascending index
+        foreach (int p in near)
         {
             var pp = props.Pos[p];
             if (pp.X < x0 || pp.X > x1 + 1 || pp.Y < z0 || pp.Y > z1 + 1) continue;

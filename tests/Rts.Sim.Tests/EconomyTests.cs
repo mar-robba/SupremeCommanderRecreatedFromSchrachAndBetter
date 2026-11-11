@@ -148,6 +148,7 @@ public class EconomyTests
     {
         var sim = TestUtil.NewSkirmish();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         var cmd = w.Armies[0].Commander;
         var tank = TestUtil.Spawn(sim, "uef_t1_tank", 1, CommanderPos(w) + new Vector2(14, 3));
         sim.Step();
@@ -179,6 +180,7 @@ public class EconomyTests
     {
         var sim = TestUtil.NewSkirmish();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         var site = FindSite(w, "uef_t1_power_generator", CommanderPos(w), 8);
         var h = w.SpawnUnit(Bp("uef_t1_power_generator"), 0, site, 0, complete: false);
         sim.Step();

@@ -294,6 +294,7 @@ public class SandboxTests
     {
         var sim = NewSandbox();
         var w = sim.World;
+        TestUtil.ClearMapProps(w); // this test counts wrecks only
         var cpos = CommanderPos(w, 1);
         TestUtil.Run(sim, 2, new SandboxSpawnCommand(0, 1, Bp("uef_t1_tank"), cpos + new Vector2(6, 0), 30));
         Assert.Equal(30, Count(w, 1, "uef_t1_tank"));

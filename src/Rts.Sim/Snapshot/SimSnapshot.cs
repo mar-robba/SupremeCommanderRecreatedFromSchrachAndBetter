@@ -89,6 +89,19 @@ public struct PropView
     /// <summary>Remaining reclaimable mass / energy and the initial amounts (Mass/MassMax = how much is left).</summary>
     public float Mass, MassMax;
     public float Energy, EnergyMax;
+    // ---- wave 8b: map props (trees, rocks)
+    /// <summary>Wreck / tree / rock (<see cref="Rts.Sim.World.PropKind"/>).</summary>
+    public Rts.Sim.World.PropKind Kind;
+    /// <summary>Tree state: fallen / burning / burnt.</summary>
+    public Rts.Sim.World.PropFlags Flags;
+    /// <summary>Tree species / rock shape.</summary>
+    public byte Variant;
+    /// <summary>Direction a fallen tree points to.</summary>
+    public float FallHeading;
+    /// <summary>Sim tick of the last Flags change (fall / burn animations: age = snapshot Tick - StateTick).</summary>
+    public int StateTick;
+    /// <summary>Sim tick when a burning tree burns out.</summary>
+    public int BurnEnd;
 }
 
 public struct ArmyView
