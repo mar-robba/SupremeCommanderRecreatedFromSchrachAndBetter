@@ -149,6 +149,10 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
   no on-screen list; class filters (Ctrl+Shift+L/A/N/E) have no "add" variant; Ctrl+A/Z/C, Alt+1-5, Backspace, Y and
   Alt+click pings were tested by unit tests and screenshot hooks only, not by hand in a game window (a desktop may grab
   Alt+digit / Alt+click); "structure lost" also fires on self-destruct; wall-sized structures toast "×N".
+- [ ] later (8a): wall sections are separate 1×1 blocks (no joined corner/segment meshes); walls stop only direct
+  shots of ENEMY armies and only up to their box height (arcing shells and tall far shots pass); the Salem's legs are
+  client-only (no gait sound, far lower legs look like masts in steep top views); Shift-drag wall lines were checked
+  in code, not by hand in a game window.
 
 ### Proposed waves (2 agents each, disjoint files, one usage window each; start after (k) and (k-navy) merge)
 Free keys today: O, I, J, W, F2-F4, F11, F12 (`HotkeyTableTests`). Each agent: AGENT_RULES block, cap 150k.

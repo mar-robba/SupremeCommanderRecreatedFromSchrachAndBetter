@@ -913,5 +913,10 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   `Visual.Size.Y` high, so a tall muzzle firing far past a wall can clear it. Walls are never auto-targeted
   (TargetingSystem ScanVisitor + CanEngage skip them) but a forced Attack order works. `WallTests`.
 - **Client**: models in `UnitModels.Units8a.cs` (UEF) and `UnitModels.CybranUnits8a.cs` (Cybran, incl. carrier deck
-  spots `CyCarrierSpot`, used by `UnitRenderer.Cargo`); wall lines use the existing Shift-drag line placement
-  (`Input/PlacementLine.cs`).
+  spots `CyCarrierSpot`, used by `UnitRenderer.Cargo` for shape `cy_carrier`: `BaseShape` keeps that name). Walking
+  Salem (`UnitRenderer.WalkingShip.cs`, from snapshot + blueprint + terrain only): on dry ground the hull is lifted by
+  its draft (`WalkingShipY` = max(snapshot Y, ground − model MinY + 0.35 h)) and 4 spider legs step with a diagonal
+  gait, amplitude = speed / (MaxSpeed × LandSpeedFactor); `WalkingShipRenderTests`. Wall lines use the existing
+  Shift-drag line placement (`Input/PlacementLine.Layout`: one 1×1 section per cell, diagonal drags give
+  corner-touching sections, which still block paths and shots). Visual test scene `--scene units8a[:land|:walls|:naval|:salem]`
+  (`Units8aScene.cs`).
