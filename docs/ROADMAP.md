@@ -33,6 +33,10 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   13:00 ended at 20 $), so session da785bd8 scheduled the start for the reset: a one-shot job (CronCreate, 23:04,
   lives only while that session stays open) that checks the window and starts both agents. If that session was
   closed, a new one starts them after 23:00 as written above.
+  The job survives `/clear`: the owner cleared again at 20:06 and said "continua"; the same process, now session
+  26701b91, still lists it (`CronList`: job 241e88cc, next run 23:04; its full prompt is in the transcript of
+  da785bd8). The window then held 19.0 $ and four other `claude` processes were open, so nothing was started.
+  The job fires only while the session is idle and open: after a restart of Claude Code, start the agents by hand.
 - Usage windows of 2026-11-11: the 13:00 window ended at about 13:50 (two Opus module agents for 20 minutes = 21M
   tokens, plus 7.5M of another session of the owner and 5M of orchestrator and docs work on Fable 5.2).
 - If an agent is cut off (usage limit or restart): commit WIP in its worktree, then a fresh agent there
