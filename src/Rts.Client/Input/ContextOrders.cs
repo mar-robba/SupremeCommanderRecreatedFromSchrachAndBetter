@@ -12,7 +12,8 @@ namespace Rts.Client.Input;
 public enum ContextKind : byte { None, Move, Attack, Guard, Assist, Repair, Finish, Reclaim, Capture, Load, PickUp, Dock, Unload }
 
 /// <summary>What a right-click at the cursor would do (shown as a cursor hint, see UI/CursorHint).</summary>
-public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target, Vector2 Pos, int PropId = -1, float Mass = 0, float Radius = 0)
+public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target, Vector2 Pos, int PropId = -1, float Mass = 0, float Radius = 0,
+    float Energy = 0, Rts.Sim.World.PropKind PropKind = Rts.Sim.World.PropKind.Wreck)
 {
     public static readonly ContextAction None = new(ContextKind.None, UnitHandle.None, default);
 
@@ -23,7 +24,13 @@ public readonly record struct ContextAction(ContextKind Kind, UnitHandle Target,
         ContextKind.Assist => "Assist",
         ContextKind.Repair => "Repair",
         ContextKind.Finish => "Assist construction",
-        ContextKind.Reclaim => Mass >= 1f ? $"Reclaim  +{Mass:0} mass" : "Reclaim",
+        ContextKind.Reclaim => PropKind switch
+        {
+            // (8b) map props: trees give mostly energy, rocks mass.
+            Rts.Sim.World.PropKind.Tree => Mass >= 1f ? $"Reclaim tree  +{Energy:0} energy, +{Mass:0} mass" : $"Reclaim tree  +{Energy:0} energy",
+            Rts.Sim.World.PropKind.Rock => $"Reclaim rock  +{Mass:0} mass",
+            _ => Mass >= 1f ? $"Reclaim  +{Mass:0} mass" : "Reclaim",
+        },
         ContextKind.Capture => "Capture",
         ContextKind.Load => "Load",
         ContextKind.PickUp => "Pick up",
@@ -95,7 +102,7 @@ public static class ContextOrders
         if (builders && PickProp(ctx, snap, mouse) is int k)
         {
             ref var p = ref snap.Props[k];
-            return new ContextAction(ContextKind.Reclaim, UnitHandle.None, new Vector2(p.Pos.X, p.Pos.Z), p.Id, p.Mass, p.Radius);
+            return new ContextAction(ContextKind.Reclaim, UnitHandle.None, new Vector2(p.Pos.X, p.Pos.Z), p.Id, p.Mass, p.Radius, p.Energy, p.Kind);
         }
         if (transports && TransportInput.GroundContext(cargo) == ContextKind.Unload && ctx.PickGround(mouse) is Vector3 g)
             return new ContextAction(ContextKind.Unload, UnitHandle.None, new Vector2(g.X, g.Z), Radius: 2.5f);
@@ -187,16 +194,22 @@ public static class ContextOrders
         return null;
     }
 
-    /// <summary>Index in snap.Props of the wreck under the mouse (closest in screen space), or null.</summary>
+    /// <summary>Index in snap.Props of the prop (wreck, tree, rock) under the mouse (closest in screen space), or null.
+    /// (8b) Maps have thousands of trees: only props near the ground point under the mouse are projected.</summary>
     public static int? PickProp(GameContext ctx, SimSnapshot snap, Vector2 mouse)
     {
         float best = float.MaxValue;
         int? result = null;
         var cam = ctx.Camera.Camera;
+        var ground = ctx.PickGround(mouse);
+        bool filter = ground.HasValue;
+        var g = ground.GetValueOrDefault();
+        float reach = 14f + ctx.Camera.Distance * 0.08f;
         for (int k = 0; k < snap.PropCount; k++)
         {
             ref var p = ref snap.Props[k];
-            var c = p.Pos + new Vector3(0, 0.3f, 0);
+            if (filter && (MathF.Abs(p.Pos.X - g.X) > reach + p.Radius || MathF.Abs(p.Pos.Z - g.Z) > reach + p.Radius)) continue;
+            var c = p.Pos + new Vector3(0, p.Kind == Rts.Sim.World.PropKind.Tree ? 1.1f : 0.3f, 0);
             var sp = Raylib.GetWorldToScreen(c, cam);
             var edge = Raylib.GetWorldToScreen(c + new Vector3(MathF.Max(0.8f, p.Radius), 0, 0), cam);
             float rPx = MathF.Max(9f, Vector2.Distance(sp, edge));
