@@ -206,7 +206,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     and sink, structures collapse, land experimentals and commanders get longer sequences, ACU warp-in at game start
     (flash, rings, hologram rise, sound); client only, hashes unchanged; `--scene deaths`, `DeathAnimTests`.
   - [ ] later: a sound/particle for wrecks settling after a ship sinks in shallow water; death sequences for
-    units dying inside transports; per-model break-apart (parts flying off); the warp-in for commanders of a loaded save started at tick <= 5 is skipped only by the tick rule.
+    units dying inside transports; per-model break-apart (parts flying off).
 
 **Wave 10: multiplayer robustness + keybindings**
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash
