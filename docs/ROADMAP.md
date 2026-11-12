@@ -30,12 +30,11 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Pair 1 is merged and verified**: (10b-1) keybinding editor (2af6abf) and (10a-1) deterministic math (f3a50a6),
   2026-11-12 (HISTORY reports). Both modules took two agents each (checkpoint at 170-175k after 15-21 minutes, then a
   fresh agent). Pair 1 ran in the half-used 15:40 window at the owner's request; that window was at ~30 $ at 18:50.
-- **FIRST, answer the owner's questions (asked 2026-11-12 19:20, "rispondi alle domande nella prossima sessione"):**
-  is LESSONS.org kept up regularly? The owner thinks that after 2026-10-14 only the "Costi" chapter was updated and
-  the design/architecture errors stopped being recorded. Check the dates of its entries against the waves since
-  then (HISTORY known issues, WORKFLOW "Incidents", the fix commits). If it is true, write the serious errors that
-  were never recorded (the owner asks for it); the owner also wonders whether they had stopped that analysis because
-  it cost too much: check WORKFLOW "Owner decisions" and the 2026-11-10 review before answering. Answer in Italian.
+- **Answered 2026-11-12 ~21:10** (owner's question on LESSONS.org): yes, its error entries stopped at 2026-10-14;
+  no decision stopped them (the 2026-11-10 cadence change was only for "Costi"), the lifecycle simply had no step for
+  them. Seven missing entries written (2026-10-16 → 11-12), the Hard-preset entry corrected (it was an exploit), and
+  WORKFLOW "Lifecycle of a wave" step 7 now adds a LESSONS entry at every merge that shows a design error.
+  `LESSONS.pdf`/`.tex` are the owner's Emacs export of 2026-10-15 (stale).
 - **Pair 2 started at 20:48 on 2026-11-12** (orchestrator session 8d3780e7, fresh 20:40 window, both agents in
   their own worktrees under `.claude/worktrees/`, context watcher 170k): (10a-2) observers + vote to drop + lobby
   pings + chat sounds and (10b-2) selection overlays + client leftovers (HISTORY "Wave 10" briefs). Prompts:
