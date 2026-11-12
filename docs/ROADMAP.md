@@ -19,11 +19,14 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
 
 **ON RESUME** (2026-11-12 11:32, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
 - **(8b-2) is merged and verified** (9528229; HISTORY "(8b-2)" report); its worktree and branch are removed.
-- **One module agent is running: (9b-2) Terrain self-shadows + unit LOD + minimap options**, agent 2
-  ac5141e246be5f8c5 (CTX-TAG `9b2-mod-2`, `model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents), since 11:15
+- **One module agent is running: (9b-2) Terrain self-shadows + unit LOD + minimap options**, agent 3
+  a17d2992679a474f5 (CTX-TAG `9b2-mod-3`, `model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents), since 11:37
   in worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`), continuing
-  from `.claude/handoff.md`. Agent 1 (a0aac67ba2177f048) CHECKPOINTed at 185k at 11:12 with the shadow bake, the
-  mesh simplifier and the LOD maths written but never built. The worktree also holds a nested worktree
+  from `.claude/handoff.md`. Agent 1 (a0aac67ba2177f048) CHECKPOINTed at 185k at 11:12 (bake, simplifier, LOD maths
+  written, never built); agent 2 (ac5141e246be5f8c5) at 170k at 11:35 with everything working and 337 client tests
+  green, but the GPU at camera 700 is +15 % over main (the terrain shadow fetch, ~0.4 ms; at cameras 110 / 200 the
+  LOD makes the GPU 30 % faster). Agent 3 has a time-boxed try at that cost; if it stays over +10 % it reports the
+  numbers and the orchestrator asks the owner whether to accept it. The worktree also holds a nested worktree
   `.claude/mainbench` (a main build for perf runs) that the agent removes at the end. Context watcher at 170k in the
   background of session e3d118ad. Prompts in that session's transcript.
 - Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
