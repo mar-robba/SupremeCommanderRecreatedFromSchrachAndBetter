@@ -34,8 +34,10 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   first calls were 10:34-10:41): mod-1 stopped at 162k (its TODO 1 committed by the orchestrator as WIP 3f2880a,
   unbuilt), its sub-agent a882f8ecab5f18722 (`8b3-sub-1`, biome visuals, 67k) resumed by SendMessage at 15:43;
   **15:44 fresh module agent a34d9f569f785d81e (`8b3-mod-2`)** in the same worktree, from `.claude/handoff.md`
-  (TODO 2-7: net transfer, lobby, bench, tests, docs). Watcher: `--watch 135000 a34d9f569f785d81e=170000
-  a882f8ecab5f18722=140000`. Prompt of mod-1:
+  (TODO 2-7: net transfer, lobby, bench, tests, docs). sub-1 stopped at its 130k checkpoint (34f82b2: palettes,
+  lava water, biome trees/rocks, `--biome`; one screenshot checked); **15:58 sub-agent add10aa761933ea0f
+  (`8b3-sub-2`, cap 120k)**: per-biome screenshots, tuning, minimap palette. Watcher: `--watch 135000
+  a34d9f569f785d81e=170000 add10aa761933ea0f=110000`. Prompt of mod-1:
   `/tmp/claude-1000/-run-media-marco-RTS/e3d118ad-a778-43e1-9527-d5456edbcaae/scratchpad/prompt-8b3.md` (with
   "main = 63a9028"). If the orchestrator is gone: a fresh agent in that worktree (no isolation) with that prompt +
   "read `.claude/handoff.md` first" and a new CTX-TAG. Merge checks: `bash tools/agents/merge-check.sh <log> [screenshot args]`.
