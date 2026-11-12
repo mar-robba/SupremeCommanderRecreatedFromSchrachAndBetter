@@ -3,18 +3,18 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-11-12 20:42 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-11-12 20:43 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.653,2 milioni di token, 881,4 $, 36 sessioni e 184 agenti.
-Output: 122 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,17).
+1.653,6 milioni di token, 882,1 $, 37 sessioni e 184 agenti.
+Output: 123 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,17).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 87     | 612,7     | 4.090      | 325,4 | 36,9    | 2026-11-12      |
-| Esperienza client      | 47     | 336,7     | 2.329      | 160,6 | 18,2    | 2026-11-12      |
-| Coordinamento          | 1      | 229,9     | 1.504      | 157,6 | 17,9    | 2026-11-12      |
+| Gameplay SupCom        | 87     | 612,7     | 4.089      | 325,4 | 36,9    | 2026-11-12      |
+| Esperienza client      | 47     | 336,7     | 2.328      | 160,6 | 18,2    | 2026-11-12      |
+| Coordinamento          | 1      | 230,4     | 1.507      | 158,3 | 17,9    | 2026-11-12      |
 | Avversario IA          | 25     | 260,8     | 1.381      | 117,9 | 13,4    | 2026-10-24      |
 | Infrastruttura tecnica | 23     | 168,4     | 1.313      | 85,3  | 9,7     | 2026-11-12      |
 | Documentazione         | 1      | 44,7      | 462        | 34,6  | 3,9     | 2026-11-12      |
@@ -34,13 +34,13 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Onda 2     | 4      | 9      | 644      | 142,2     | 221                | 0,093        | 59,6  | 6,8     | 10.407 | 5,7            | 62                    | 2026-10-11      |
 | Onda 3     | 4      | 17     | 1.158    | 157,2     | 136                | 0,070        | 81,4  | 9,2     | 14.636 | 5,6            | 79                    | 2026-10-12      |
 | Onda 4     | 6      | 28     | 2.248    | 262,6     | 117                | 0,062        | 139,2 | 15,8    | 17.518 | 7,9            | 128                   | 2026-10-14      |
-| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,4 | 20,6    | 21.889 | 8,3            | 158                   | 2026-10-24      |
+| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,3 | 20,6    | 21.889 | 8,3            | 158                   | 2026-10-24      |
 | Onda 6     | 2      | 18     | 1.070    | 99,6      | 93                 | 0,049        | 52,1  | 5,9     | 6.041  | 8,6            | 177                   | 2026-10-24      |
 | Onda 7     | 2      | 13     | 554      | 49,4      | 89                 | 0,058        | 32,3  | 3,7     | 4.163  | 7,8            | 133                   | 2026-11-11      |
 | Onda 8     | 4      | 20     | 1.117    | 110,6     | 99                 | 0,050        | 56,3  | 6,4     | 6.243  | 9,0            | 179                   | 2026-11-12      |
 | Onda 9     | 2      | 6      | 397      | 44,7      | 113                | 0,049        | 19,6  | 2,2     | 2.639  | 7,4            | 150                   | 2026-11-12      |
 | Onda 10    | 4      | 10     | 568      | 59,2      | 104                | 0,048        | 27,0  | 3,1     | 3.912  | 6,9            | 145                   | 2026-11-12      |
-| Fuori onda | —      | 2      | 1.852    | 267,5     | 144                | 0,102        | 188,8 | 21,4    | —      | —              | —                     | 2026-11-12      |
+| Fuori onda | —      | 2      | 1.855    | 267,9     | 144                | 0,102        | 189,5 | 21,5    | —      | —              | —                     | 2026-11-12      |
 
 * Per scopo
 | Scopo                                                                | Agenti | Token (M) | Output (k) | $    | % costo | Onda | Righe | $ / 1000 righe | Ultima attività |
@@ -59,10 +59,10 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Ordini e selezione (7b)                                              | 9      | 31,9      | 311        | 21,9 | 2,5     | 7    | 2.648 | 8,3            | 2026-11-11      |
 | Scala e prestazioni (5m)                                             | 6      | 50,0      | 262        | 21,7 | 2,5     | 5    | 1.657 | 13,1           | 2026-10-16      |
 | Documentazione e analisi costi                                       | 1      | 28,0      | 289        | 21,7 | 2,5     | —    | —     | —              | 2026-11-12      |
-| Trasporti (4h)                                                       | 4      | 37,9      | 264        | 20,9 | 2,4     | 4    | 3.350 | 6,2            | 2026-10-14      |
-| UX (5n)                                                              | 7      | 42,8      | 273        | 19,7 | 2,2     | 5    | 2.339 | 8,4            | 2026-10-16      |
+| Trasporti (4h)                                                       | 4      | 37,9      | 263        | 20,9 | 2,4     | 4    | 3.350 | 6,2            | 2026-10-14      |
+| UX (5n)                                                              | 7      | 42,8      | 272        | 19,7 | 2,2     | 5    | 2.339 | 8,4            | 2026-10-16      |
 | Opzioni partita e squadra (6b)                                       | 5      | 33,7      | 249        | 17,8 | 2,0     | 6    | 2.465 | 7,2            | 2026-10-24      |
-| Salvataggi e replay (4i)                                             | 3      | 31,0      | 240        | 17,4 | 2,0     | 4    | 4.473 | 3,9            | 2026-10-14      |
+| Salvataggi e replay (4i)                                             | 3      | 31,0      | 239        | 17,4 | 2,0     | 4    | 4.473 | 3,9            | 2026-10-14      |
 | Mappe in rete e biomi (8b-3)                                         | 5      | 36,4      | 261        | 17,2 | 2,0     | 8    | 1.563 | 11,0           | 2026-11-12      |
 | Multigiocatore lockstep (5o)                                         | 5      | 35,2      | 232        | 16,2 | 1,8     | 5    | 4.522 | 3,6            | 2026-10-16      |
 | Sandbox (3e)                                                         | 5      | 28,2      | 250        | 15,2 | 1,7     | 3    | 4.025 | 3,8            | 2026-10-12      |
@@ -91,7 +91,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Matematica deterministica (10a-1)                                    | 2      | 15,0      | 137        | 7,1  | 0,8     | 10   | 1.104 | 6,5            | 2026-11-12      |
 | Orchestrazione onde 8b-9b                                            | 0      | 14,2      | 90         | 6,8  | 0,8     | —    | —     | —              | 2026-11-12      |
 | UI e HUD (onda 1)                                                    | 1      | 12,0      | 103        | 6,7  | 0,8     | 1    | 2.674 | 2,5            | 2026-10-10      |
-| Orchestrazione onda 10 coppia 2                                      | 0      | 6,8       | 63         | 6,3  | 0,7     | —    | —     | —              | 2026-11-12      |
+| Orchestrazione onda 10 coppia 2                                      | 0      | 7,2       | 65         | 6,6  | 0,8     | —    | —     | —              | 2026-11-12      |
 | File mappa e scelta mappa (8b-2)                                     | 3      | 13,4      | 98         | 6,1  | 0,7     | 8    | 1.037 | 5,8            | 2026-11-12      |
 | Economia e costruzione (onda 1)                                      | 1      | 6,7       | 82         | 5,6  | 0,6     | 1    | 1.644 | 3,4            | 2026-10-10      |
 | Infrastruttura fazioni (j)                                           | 2      | 11,0      | 95         | 5,4  | 0,6     | 4    | 921   | 5,9            | 2026-10-14      |
@@ -105,6 +105,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Analisi costo/progresso Fable 5.2 vs Opus 5.5                        | 0      | 2,8       | 26         | 2,1  | 0,2     | —    | —     | —              | 2026-11-10      |
 | Domanda: rapporto output / cache                                     | 0      | 1,3       | 16         | 1,4  | 0,2     | —    | —     | —              | 2026-11-10      |
 | Orchestratore ondata 5-6                                             | 0      | 0,8       | 9          | 0,8  | 0,1     | —    | —     | —              | 2026-10-23      |
+| Orchestrazione onda 10                                               | 0      | 0,1       | 0          | 0,3  | 0,0     | —    | —     | —              | 2026-11-12      |
 | Giudizio su regole orchestrazione e token                            | 0      | 0,0       | 0          | 0,2  | 0,0     | —    | —     | —              | 2026-11-10      |
 | Domanda: come avviare il gioco                                       | 0      | 0,1       | 1          | 0,0  | 0,0     | —    | —     | —              | 2026-11-10      |
 
@@ -123,12 +124,13 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | 2026-10-24 | 174,9     | 91,7  | 27     |
 | 2026-11-10 | 33,2      | 44,4  | 8      |
 | 2026-11-11 | 53,3      | 41,3  | 5      |
-| 2026-11-12 | 227,4     | 114,7 | 27     |
+| 2026-11-12 | 227,8     | 115,3 | 27     |
 
 * Ultime attività
 | Fine (UTC)       | Tipo     | Scopo                                                                | Descrizione                                        | Token (M) | $    | Output |
 |------------------+----------+----------------------------------------------------------------------+----------------------------------------------------+-----------+------+--------|
-| 2026-11-12 20:42 | sessione | Orchestrazione onda 10 coppia 2                                      | continua                                           | 6,8       | 6.29 | esatto |
+| 2026-11-12 20:43 | sessione | Orchestrazione onda 10                                               | continua                                           | 0,1       | 0.34 | esatto |
+| 2026-11-12 20:43 | sessione | Orchestrazione onda 10 coppia 2                                      | continua                                           | 7,2       | 6.62 | esatto |
 | 2026-11-12 20:30 | ripresa  | Osservatori e voto di espulsione (10a-2)                             | [Osservatori e voto di espulsione (10a-2)] module  | 8,6       | 3.44 | esatto |
 | 2026-11-12 20:26 | ripresa  | Overlay di portata e rifiniture client (10b-2)                       | [Overlay di portata e rifiniture client (10b-2)] m | 7,4       | 3.08 | esatto |
 | 2026-11-12 20:09 | sessione | Orchestrazione onda 10 coppia 2 (10a-2, 10b-2) e risposta su LESSONS | continua                                           | 9,4       | 4.36 | esatto |
@@ -147,4 +149,3 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | 2026-11-12 14:56 | ripresa  | Mappe in rete e biomi (8b-3)                                         | [Mappe in rete e biomi (8b-3)] module agent 2      | 8,1       | 3.62 | esatto |
 | 2026-11-12 14:50 | agente   | Mappe in rete e biomi (8b-3)                                         | [Mappe in rete e biomi (8b-3)] biome visuals       | 4,3       | 2.67 | esatto |
 | 2026-11-12 14:15 | agente   | Mappe in rete e biomi (8b-3)                                         | [Mappe in rete e biomi (8b-3)] module agent        | 5,2       | 2.54 | esatto |
-| 2026-11-12 11:16 | sessione | Orchestrazione onde 8b-9b                                            | continua                                           | 14,2      | 6.78 | esatto |

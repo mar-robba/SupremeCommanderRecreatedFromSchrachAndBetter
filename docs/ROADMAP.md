@@ -45,7 +45,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 22:00, written by orchestrator session 4ebba5f4 on Fable 5.2 before the owner's `/clear`):
+**ON RESUME** (2026-11-12 21:55, orchestrator session 5473885b on Fable 5.2, started after the owner's `/clear` at 21:43):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -67,7 +67,15 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   message of 21:02 that cut both agents; Opus 5.5 calls worked again from 21:08). Don't ask again: go on with the
   next module. The 5-hour window began about 20:45 and has had about 50 agent-minutes (next fresh window about
   01:45 on 2026-11-13, an estimate); if an agent is cut, the usual resume applies (WIP commit, fresh agent).
-- **Next: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
+- **(10a-3) multiplayer save/load is running** since 2026-11-12 21:52, alone (no wave 11 pair: the window that
+  began about 20:45 is partly used): module agent 1 on Opus 5.5, tag `10a3-mod-1`, worktree
+  `.claude/worktrees/agent-ae3f156b0aa925428` (branch `worktree-agent-ae3f156b0aa925428`), cap 200k, CHECKPOINT
+  170k, may run 1 sub-agent. Its prompt (brief, state, design guidance, TODO, rules) is in the scratchpad of this
+  session, `prompt-10a3.md` (lost at a reboot: the brief is in HISTORY, the design guidance is repeated in the
+  worktree's `.claude/handoff.md` once the agent writes it). If this session is gone: look at the worktree
+  (`git -C <worktree> log --oneline -5`, `.claude/handoff.md`, `.claude/agent-report.md`), commit leftovers as WIP,
+  start a fresh agent there. What follows is how the module was planned:
+- **Planned: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
   "Salvataggi in multiplayer (10a-3)"; it builds on 10a-2, now on main: protocol 5, observers). Its pair is a
   wave 11 module, but wave 11 is not cut into modules ("Wave 11+" below is a list that depends on "Questions for
   the owner"; without answers the recommendations hold): start 10a-3 alone, or cut one wave 11 module with files
