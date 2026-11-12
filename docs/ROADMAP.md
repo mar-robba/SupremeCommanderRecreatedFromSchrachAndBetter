@@ -26,9 +26,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   by 12:01 (two module chains of 3 and 4 agents), too little left for a module. Brief: HISTORY "(8b) Maps", brief
   8b-3; it now builds on 8b-2's `MapFile` / `MapLibrary` (ARCHITECTURE "Map files") and 9b-2's terrain shader
   (ground lit value in the chunk vertex colours: biome palettes must keep the G channel free or move it).
-- **LESSONS "Costi" is due now** (it said "after wave 9"): a documentation agent (a9ec871a91326fb57, CTX-TAG
-  `costi-w9`, Opus 5.5, cap 150k, its own worktree) re-aligns the chapter since 12:08; merge its branch (only
-  `docs/LESSONS.org`) when it reports.
+- **LESSONS "Costi" re-aligned after wave 9** (merged e43f997, 2026-11-12 12:20); next after wave 11.
 - **(8b-3) is scheduled for 15:07** by a one-shot job (CronCreate d3a5e76d) of session e3d118ad: the window began at
   10:00 (first calls 10:34) and should reset at 15:00. The job carries the facts for the prompt and a guard against a
   double start. It lives only while that session stays open and idle; otherwise a new session starts 8b-3 by hand
@@ -45,7 +43,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   rules"):** every Agent call carries `model: "opus"`; one agent per module of about 1,500 lines, cap 200k, no
   coordinator (sub-agents only for separable content: blueprints, models, tests); at most 2 agents at a time,
   sub-agents counted, and no start when other sessions of the owner have used part of the window; LESSONS "Costi"
-  every 2-3 waves (next: after wave 9). Briefs written before this (8b and wave 9 in HISTORY) must be re-cut to
+  every 2-3 waves (next: after wave 11). Briefs written before this (8b and wave 9 in HISTORY) must be re-cut to
   that module size before they start.
 - **Owner to decide:** install the packaged game + desktop shortcut (7a, `tools/package/`; the tar.gz must be unpacked
   on the home disk: the data partition has no exec bits).
