@@ -6,8 +6,8 @@ namespace Rts.Client.Rendering;
 /// (9b-2) Terrain self-shadows baked from the heightmap (pure, no GL; <c>TerrainShadowBakeTests</c>).
 /// For every height vertex the bake marches towards the sun and stores the <b>shadow line</b>
 /// S = max over t of (h(p + t·sunXZ) − t·tan(sun elevation)): a point at height y above that vertex is in the
-/// terrain's shadow iff y &lt; S. The ground uses S − h (continuous, so the bilinear texture gives smooth edges at any
-/// terrain LOD); units, props and aircraft compare their own height with S, so a tank in a canyon's shadow is dark
+/// terrain's shadow iff y &lt; S. The ground's lit factor (<see cref="GroundLit"/>, from S − h) goes into the terrain
+/// vertex colours; units, props and aircraft compare their own height with S, so a tank in a canyon's shadow is dark
 /// and an aircraft above it is lit. Flat or sun-facing ground gets S ≈ h − 1 (lit with margin).
 /// </summary>
 public static class TerrainShadowBake
@@ -85,6 +85,28 @@ public static class TerrainShadowBake
     {
         float d = Math.Clamp((s - y) / (2 * softness), 0f, 1f);
         return 1f - d * d * (3f - 2f * d);
+    }
+
+    /// <summary>Lit fraction of the ground at every vertex: <see cref="Lit"/>(h, S). The terrain meshes carry it
+    /// in their vertex colours (G), so the ground pays no texture fetch (TerrainRenderer.Shadow.cs).</summary>
+    public static float[] GroundLit(float[] heights, float[] line)
+    {
+        var lit = new float[line.Length];
+        for (int i = 0; i < lit.Length; i++) lit[i] = Lit(heights[i], line[i]);
+        return lit;
+    }
+
+    /// <summary>Mean of a per-vertex grid over the (2r+1)² vertices around (x, z), clamped to the grid. A coarse
+    /// terrain LOD vertex (stride s, r = s/2) takes the mean of the footprint it stands for, like a mip level, so
+    /// far shadows neither alias nor pop when the LOD changes.</summary>
+    public static float BoxMean(float[] v, int vw, int vh, int x, int z, int r)
+    {
+        if (r <= 0) return v[z * vw + x];
+        int x0 = Math.Max(x - r, 0), x1 = Math.Min(x + r, vw - 1), z0 = Math.Max(z - r, 0), z1 = Math.Min(z + r, vh - 1);
+        float sum = 0;
+        for (int zz = z0; zz <= z1; zz++)
+        for (int xx = x0; xx <= x1; xx++) sum += v[zz * vw + xx];
+        return sum / ((x1 - x0 + 1) * (z1 - z0 + 1));
     }
 
     /// <summary>Half width (world height units) of the shadow edge in the shaders. The edge starts at the shadow

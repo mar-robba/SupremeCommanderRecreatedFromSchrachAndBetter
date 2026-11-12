@@ -6,15 +6,16 @@ namespace Rts.Client.Rendering;
 
 /// <summary>
 /// (9b-2) Terrain self-shadows: the shadow line of <see cref="TerrainShadowBake"/> (baked once per game on the CPU,
-/// with <see cref="SunDir"/>, the sun of the unit shadow map) in an R32F texture with one texel per height vertex.
-/// The terrain shader compares it with the heightmap texture (so the result does not depend on the terrain LOD
-/// mesh), the unit shader with the fragment height (units in a valley's shadow darken; aircraft above it stay lit).
+/// with <see cref="SunDir"/>, the sun of the unit shadow map). The ground's lit factor goes into the terrain LOD
+/// meshes (vertex colour G; coarse strides take the footprint mean), the line itself into an R32F texture with one
+/// texel per height vertex that the unit shader compares with the fragment height (units in a valley's shadow
+/// darken; aircraft above it stay lit).
 /// Switch: <see cref="SelfShadows"/> (Graphics setting "Terrain shadows"; <c>--terrain-shadows on|off</c>).
 /// </summary>
 public sealed unsafe partial class TerrainRenderer
 {
-    /// <summary>Texture units of the shadow-line and height textures (4 = unit shadow map, 5/6 = fog of war).</summary>
-    public const int SelfShadowSlot = 7, HeightSlot = 8;
+    /// <summary>Texture unit of the shadow-line texture (4 = unit shadow map, 5/6 = fog of war).</summary>
+    public const int SelfShadowSlot = 7;
 
     /// <summary>Settings switch (applied by GraphicsSettings); off = the shaders skip the lookup.</summary>
     public static bool SelfShadows = true;
@@ -43,51 +44,52 @@ public sealed unsafe partial class TerrainRenderer
     /// <summary>GLSL: terrain shadow lookups. Requires the uniforms set by <see cref="BindSelfShadow"/>.</summary>
     public const string SelfShadowFs = """
         uniform sampler2D terrainShadowTex;
-        uniform sampler2D terrainHeightTex;
         uniform float terrainShadowOn;
         uniform vec2 terrainShadowScale;
-        // Lit fraction of a point at its own height (units, props, aircraft).
+        // Lit fraction of a point at its own height (units, props, aircraft): one fetch of the shadow line.
         float terrainShadowAt(vec3 wpos) {
             if (terrainShadowOn < 0.5) return 1.0;
-            vec2 uv = (wpos.xz + 0.5) * terrainShadowScale;
-            float d = texture(terrainShadowTex, uv).r + texture(terrainHeightTex, uv).r - wpos.y;
+            float d = texture(terrainShadowTex, (wpos.xz + 0.5) * terrainShadowScale).r - wpos.y;
             return 1.0 - smoothstep(0.0, 1.2, d); // TerrainShadowBake.Lit (Softness 0.6)
         }
-        // Lit fraction of the ground (true heightmap height, independent of the terrain LOD mesh). The texture holds
-        // shadow line − height (bilinear is linear, so this equals line − height at any point): one fetch per pixel.
-        float terrainShadowGround(vec2 xz) {
-            if (terrainShadowOn < 0.5) return 1.0;
-            float d = texture(terrainShadowTex, (xz + 0.5) * terrainShadowScale).r;
-            return 1.0 - smoothstep(0.0, 1.2, d);
+        // Lit fraction of the ground: baked per vertex into the terrain meshes (vertex colour G, see
+        // TerrainRenderer.Shadow.cs), so the ground pays no texture fetch (a full-map view fetched ~0.55 ms).
+        float terrainShadowGround(float vertexLit) {
+            return terrainShadowOn < 0.5 ? 1.0 : vertexLit;
         }
         """;
 
-    private void InitSelfShadow()
-    {
-        Current = this;
-        if (SelfShadowsActive) EnsureShadowBaked();
-    }
+    /// <summary>Ground lit factor per height vertex, only while the terrain meshes are built (G of their colours).</summary>
+    private float[]? _groundLit;
 
-    /// <summary>Bakes the shadow line (first use; ~tens of ms on a 1024 map) and uploads it.</summary>
-    private void EnsureShadowBaked()
+    private void InitSelfShadow() => Current = this;
+
+    /// <summary>Bakes the shadow line once per game (45-90 ms on a 1025² grid), uploads it for the units and keeps
+    /// the ground's lit factor for <see cref="BuildLodChunks"/>. Always runs, even with the setting off: the ground
+    /// factor lives in the vertex data, and the setting can be switched on mid-game.</summary>
+    private void BakeSelfShadow()
     {
-        if (_shadowBaked) return;
-        _shadowBaked = true;
         var sw = Stopwatch.StartNew();
-        var line = TerrainShadowBake.Bake(_t.Heights, _t.Width + 1, _t.Height + 1, SunDir);
-        TerrainShadowBake.Blur(line, _t.Width + 1, _t.Height + 1);
-        for (int i = 0; i < line.Length; i++) line[i] -= _t.Heights[i]; // store line − height (see SelfShadowFs)
+        int vw = _t.Width + 1, vh = _t.Height + 1;
+        var line = TerrainShadowBake.Bake(_t.Heights, vw, vh, SunDir);
+        TerrainShadowBake.Blur(line, vw, vh);
+        _groundLit = TerrainShadowBake.GroundLit(_t.Heights, line);
         LastShadowBakeMs = sw.Elapsed.TotalMilliseconds;
         fixed (float* p = line)
         {
-            var img = new Image { Data = p, Width = _t.Width + 1, Height = _t.Height + 1, Mipmaps = 1, Format = PixelFormat.UncompressedR32 };
+            var img = new Image { Data = p, Width = vw, Height = vh, Mipmaps = 1, Format = PixelFormat.UncompressedR32 };
             _shadowTex = Raylib.LoadTextureFromImage(img);
         }
-        Raylib.GenTextureMipmaps(ref _shadowTex); // far views minify the texture a lot: mipmaps keep the fetch cache-friendly
-        Raylib.SetTextureFilter(_shadowTex, TextureFilter.Trilinear);
+        // Bilinear, no mipmaps: unit meshes are only drawn up to camera distance 260, where the texture is magnified.
+        Raylib.SetTextureFilter(_shadowTex, TextureFilter.Bilinear);
         Raylib.SetTextureWrap(_shadowTex, TextureWrap.Clamp);
-        Console.WriteLine($"terrain shadows: baked {_t.Width + 1}x{_t.Height + 1} in {LastShadowBakeMs:F1} ms");
+        _shadowBaked = true;
+        Console.WriteLine($"terrain shadows: baked {vw}x{vh} in {LastShadowBakeMs:F1} ms");
     }
+
+    /// <summary>Vertex colour G of a terrain LOD vertex: the ground lit factor averaged over the stride footprint.</summary>
+    private byte GroundLitByte(int wx, int wz, int stride) => _groundLit == null ? (byte)255
+        : (byte)Math.Clamp(TerrainShadowBake.BoxMean(_groundLit, _t.Width + 1, _t.Height + 1, wx, wz, stride / 2) * 255f + 0.5f, 0f, 255f);
 
     /// <summary>Binds the terrain shadow textures and uniforms to a shader that includes <see cref="SelfShadowFs"/>.</summary>
     public static void BindSelfShadow(ShaderProgram p)
@@ -96,14 +98,10 @@ public sealed unsafe partial class TerrainRenderer
         bool on = SelfShadowsActive && tr != null;
         if (on)
         {
-            tr!.EnsureShadowBaked();
             Rlgl.ActiveTextureSlot(SelfShadowSlot);
-            Rlgl.EnableTexture(tr._shadowTex.Id);
-            Rlgl.ActiveTextureSlot(HeightSlot);
-            Rlgl.EnableTexture(tr._heightTex.Id);
+            Rlgl.EnableTexture(tr!._shadowTex.Id);
             Rlgl.ActiveTextureSlot(0);
             p.Set("terrainShadowTex", SelfShadowSlot);
-            p.Set("terrainHeightTex", HeightSlot);
             p.Set("terrainShadowScale", new Vector2(1f / (tr._t.Width + 1), 1f / (tr._t.Height + 1)));
         }
         p.Set("terrainShadowOn", on ? 1f : 0f);

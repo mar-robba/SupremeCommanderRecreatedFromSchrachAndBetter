@@ -324,7 +324,7 @@ public static unsafe class Shaders
             c *= 0.86 + 0.18 * n3 + 0.08 * n4 + (n5 - 0.5) * 0.16 * detail;
             c *= vColor.r;
             float ndl = max(dot(n, sunDir), 0.0);
-            float sh = min(shadowFactor(vWorld, n), terrainShadowGround(vWorld.xz)); // (9b-2) terrain self-shadows
+            float sh = min(shadowFactor(vWorld, n), terrainShadowGround(vColor.g)); // (9b-2) terrain self-shadows
             vec3 amb = mix(groundAmb, skyAmb, n.y * 0.5 + 0.5);
             vec3 col = c * (amb * 1.05 + sunColor * ndl * mix(0.45, 1.0, sh));
             // Outside the playable area: darken.

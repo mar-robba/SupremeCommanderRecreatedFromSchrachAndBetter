@@ -33,7 +33,9 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         _t = terrain;
         _waterLevel = DebugWaterLevel ?? terrain.WaterLevel;
         var ao = ComputeAo();
+        BakeSelfShadow(); // (9b-2) TerrainRenderer.Shadow.cs: the ground lit factor goes into the chunk vertex colours
         BuildLodChunks(ao); // TerrainRenderer.Lod.cs
+        _groundLit = null;
 
         _material = Raylib.LoadMaterialDefault();
         _material.Shader = Shaders.Terrain.Shader;
