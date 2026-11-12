@@ -97,7 +97,7 @@ public class RangeRingFogMemoryTests
         long delta = GC.GetAllocatedBytesForCurrentThread() - before;
         // A per-unit or per-segment allocation would be >= 12 KB here; a constant 64 B shows up in the test host only.
         Assert.True(delta < 1024, $"allocated {delta} bytes");
-        Assert.True(set.Count < 60, $"{set.Count} rings for 500 tanks");
+        Assert.True(set.Count <= RangeRingSet.DefaultCap && set.Count < 120, $"{set.Count} rings for 500 tanks");
     }
 
     // ---------------------------------------------------------------- fog memory

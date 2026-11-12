@@ -27,7 +27,7 @@ public struct RangeRing
 /// </summary>
 public sealed class RangeRingSet
 {
-    public const int DefaultCap = 96;
+    public const int DefaultCap = 128;
     /// <summary>Rings above this radius (strategic missiles: the whole map) are not drawn.</summary>
     public const float MaxRadius = 512f;
     /// <summary>Segments per full ring.</summary>
@@ -66,9 +66,9 @@ public sealed class RangeRingSet
         return u;
     }
 
-    /// <summary>Merge cell edge for a ring radius: a quarter of the radius (min 2), so a clustered army merges into a
+    /// <summary>Merge cell edge for a ring radius: a third of the radius (min 2), so a clustered army merges into a
     /// few rings while units far apart keep their own.</summary>
-    public static float CellSize(float radius) => MathF.Max(2f, radius * 0.25f);
+    public static float CellSize(float radius) => MathF.Max(2f, radius / 3f);
 
     public void Clear()
     {
