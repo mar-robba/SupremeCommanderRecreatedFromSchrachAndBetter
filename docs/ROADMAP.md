@@ -20,26 +20,27 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 7 | (7a) release package + settings + autosave, (7b) orders & selection UX | ✅ 2026-10-24 (7a), 2026-11-11 (7b) |
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
-| 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅ (all 2026-11-12); (10a-2) observers + vote to drop + lobby pings + chat sounds: in progress; (10a-3) multiplayer save/load: to do | in progress |
+| 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12); (10a-3) multiplayer save/load: to do | in progress |
 | 11+ | Planned, waiting for the owner's answers ("Questions for the owner"): Italian localization, pathing (G12) + save migration (G41), tutorial / scenarios, campaign, mod support, Forged Alliance units, relay server, reconnect | to do |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-12 21:40 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 21:50 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
 2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
 pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
-(10b-1) keybinding editor, (10a-1) deterministic math and (10b-2) selection overlays merged 2026-11-12.
-Tests: 615 sim + 361 client + 33 net.
+(10b-1) keybinding editor, (10a-1) deterministic math, (10b-2) selection overlays and (10a-2) observers + vote to
+drop merged 2026-11-12; left: (10a-3) multiplayer save/load.
+Tests: 615 sim + 361 client + 38 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:00", hash
 **C87C46C4EA726A82** (agents that must not change sim results compare against it; before 10a-1, which made the sim
 math software-deterministic, it was "after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
 Bench `2000 300` hash **2F09CD7D01AF287E** (6A8312040EFA67F2 before 10a-1). Replays made before 10a-1 and saves on
-generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 4.
+generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 5 (10a-2).
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
@@ -59,30 +60,27 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   them. Seven missing entries written (2026-10-16 → 11-12), the Hard-preset entry corrected (it was an exploit), and
   WORKFLOW "Lifecycle of a wave" step 7 now adds a LESSONS entry at every merge that shows a design error.
   `LESSONS.pdf`/`.tex` are the owner's Emacs export of 2026-10-15 (stale).
-- **Weekly limit message 2026-11-12 21:02** ("resets Nov 17, 3pm"): it cut both agents of pair 2, but Opus 5.5
-  calls worked again from 21:08 (why is not known to the orchestrator: ask the owner's `/usage` before sizing
-  more work). The owner cleared the session, set `/model` Fable 5.2 and said "continua" at 21:10, so **pair 2
-  was resumed at 21:12**: one fresh agent per worktree on Opus 5.5 (10a-2 agent 3 = a03d93b61caaae6eb, CTX-TAG
-  `10a2-mod-3`; 10b-2 agent 3 = a3fa823dddd19d052, CTX-TAG `10b2-mod-3`; ids are valid only in session 4ebba5f4),
-  watcher at 165k. If they are cut again: WIP commit in each worktree, then the paragraph below.
-- **Pair 2: 10b-2 merged, 10a-2 in progress.** Started 20:48 (session 8d3780e7); each module's
-  first agent hit 170k context in 11-14 minutes and checkpointed; the two successors were cut by the weekly limit
-  within a minute or two (no work lost: WIP committed). To resume, one fresh agent per worktree (`model: "opus"`,
-  NO isolation, cap 200k, CHECKPOINT 170k), prompt = the worktree's `.claude/resume-prompt.md` (self-contained;
-  the 10b-2 one points to `.claude/prompt-original.md` in the same folder). Watcher:
-  `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (the first number applies to
-  every other agent it finds, old ones included). Merge checks: `bash tools/agents/merge-check.sh <log> <screenshot
-  args>` (build, 3 suites, reference match, bench); for 10a-2 also `Rts.Bench -- mp` with `obs=1`.
-  - **10a-2** `.claude/worktrees/agent-ad7adf39a40e65c62`, branch `worktree-agent-ad7adf39a40e65c62`, last
-    3c67a1f. Done: the whole `src/Rts.Net` part (protocol 5: observers up to 16 never waited for, resign, vote to
-    drop by strict majority, pings), 5 `ObserverTests`. Left: every client screen (loading screen drops an early
-    Go for observers; in-game observer view; drop banner button; lobby observer list + pings + sounds;
-    `--observe`), docs, merge main, all tests, perf. In its `resume-prompt.md` change CTX-TAG to `10a2-mod-3`.
-  - **10b-2 is merged and verified** (57d4e20, 2026-11-12 21:30; HISTORY report; its three design errors are in
-    LESSONS; worktree and branch removed).
-  - Design errors already reported for LESSONS (WORKFLOW step 7): resign waited for the next sim step (fixed
-    e2675f2); loading screen drops an early Go for observers (open); every wreck is sent to the client without
-    intel filtering (client fix a926ff4, open in the snapshot).
+- **Pair 2 is merged and verified** (2026-11-12): (10b-2) selection overlays 57d4e20 and (10a-2) observers + vote
+  to drop + lobby pings + chat sounds e9e8f8d (HISTORY reports, design errors in LESSONS, worktrees and branches
+  removed). Each needed a third agent on Opus 5.5 (14 and 18 minutes, started 21:12).
+- **Usage, not clear:** the weekly-limit message of 21:02 ("resets Nov 17, 3pm") cut both agents, but Opus 5.5
+  calls worked again from 21:08; the owner set `/model` Fable 5.2 and said "continua" at 21:10. The orchestrator
+  asked whether this is paid extra usage (21:15) and got no answer. **Ask the owner's `/usage` before starting
+  10a-3.** The 5-hour window began about 20:45 and has had about 50 agent-minutes: the next fresh window starts
+  about 01:45 on 2026-11-13 (estimate, WORKFLOW "When a window resets").
+- **Next: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10"), paired with a wave 11 module. Wave 11
+  is not cut into modules yet ("Wave 11+" below is a list; it depends on "Questions for the owner", and without
+  answers the recommendations hold). One module agent each: `model: "opus"`, `isolation: "worktree"`, cap 200k,
+  CHECKPOINT 170k, watcher `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000`
+  (stop it by its process id: `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:
+  `bash tools/agents/merge-check.sh <log> <screenshot args>`; for `Rts.Net` work also `Rts.Bench -- mp ... obs=1`.
+- **Owner, 2026-11-12 (session 4ebba5f4):** trivial agent tasks on Sonnet 5.5, effort by the task's complexity
+  (WORKFLOW "Owner decisions"). The owner asked why ROADMAP shows no waves after 4, meaning: where is the plan of
+  the whole project (answer: "Wave 6+ plan" below). The orchestrator added the "Waves at a glance" table above and
+  made the wave lines headings without being asked (5e8a06d, 8013ae2); the owner said nothing had to change. A
+  revert was offered, no answer yet: **don't restructure docs in answer to a question.**
+- **Stale, seen 2026-11-12 and not fixed:** gap table rows without `[x]` although delivered: G1-G3 and G7 (6a),
+  G10, G26, G27 (8b).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).

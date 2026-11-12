@@ -1352,3 +1352,36 @@ The note was accurate and the plan for the swap was right. It lacked a way to fi
 green; reference match "Player (Hard) after 12:00", C87C46C4EA726A82; bench 2F09CD7D01AF287E; screenshot of
 `--sandbox --exec "spawn tank 8 me at 128,128" --select "everything@8"` (one merged red weapon ring around the
 group, the enhancement panel with amber T3E and SGF buttons) looked right.
+
+### (10a-2) Observers, vote to drop, lobby pings, chat sounds — report (merged 2026-11-12, e9e8f8d)
+Three agents: the first stopped at its checkpoint (170k, 11 minutes) with the whole `Rts.Net` part done, the second
+was cut by the weekly-limit message after a minute or two (one test edit, sound), the third built every client
+screen and finished (154k, 18 minutes, 91 calls). 1,035 lines.
+
+**Works.** Protocol 5. Lobby: observers row (up to 16) with pings, Observe/Play buttons, host moves anybody ("Obs" / "Play") and kicks observers; a full game seats joiners as observers; ping next to each slot name. In game an observer gets every turn, sends none, never holds the game, has no fog and clicks a players-panel row to follow an army (top row = all); chat works; leaving drops nobody. A defeated player resigns (the others drop it as defeated) and stays as an observer. "Waiting for X": 5 s countdown, then "Drop X" for the other players; a strict majority of the remaining players drops X (OnDrop action; the host can't be voted out). Sounds: chat = click, join/ready/start = confirm, left = error.
+
+**Try.** `--host 47704 --autostart` + `--join 127.0.0.1:47704 --observe --autostart` + a second `--join`; `--host 47702 --players 2 --autostart --net-vote-demo`; `Rts.Bench -- mp 3 600 256 0 0 obs=2`.
+
+**Tests.** `ObserverTests` (5: codec; lobby moves, full game, kick, pings; late observer in sync; resign; vote rules); `LoopbackMatchTests` full lobby now gives an observer.
+
+**Hotkeys.** None. CLI: `--observe`, `--net-vote-demo`, Bench `obs=N`.
+
+**Shared files.** GameApp.cs (2 options), AppHost.MenuGameOptions (1 line), MultiplayerScreen (observe on join), CLAUDE.md, ROADMAP, DEV_GUIDE, ARCHITECTURE (own section).
+
+**Numbers.** 614 sim + 349 client + 38 net (+5) green after merging main. Bench `2000 300` 2F09CD7D01AF287E, 2.30 ms/tick vs main 2.91. AI `ai 30 256 42 hard,normal` Hard after 12:00, C87C46C4EA726A82. mp `obs=2`, `1 AI obs=1`, `drop`: in sync.
+
+**Follow-ups.** Host migration; joining a running game (G37); late observer catches up only at normal speed; dedicated sounds; vote banner seen only via the demo hook (logic covered by tests).
+
+**Design errors found.**
+- `NetLoadingScreen` dropped an early `Go` (`when _session != null`). That is fine for players but wrong for observers who are still loading. Fixed (`_goSeen`), commit ae142bb.
+- Resign took effect only at the next sim step, so a held game never resigned. Fixed in Hold (e2675f2).
+- A full game refused joiners. Fixed: they become observers (88aa2f0).
+- `GameSession` uses `localArmy` as an index (`StartPositions[localArmy % n]`), so "no army" (-1) can't be expressed. Observers start on army 0. Open.
+
+**Handoff review.** The note was precise. I rediscovered how UI sounds play (`AudioSystem.MenuUpdate` in menus, `GameAudio` in game) and that `MenuGameOptions` copies fields one by one (a new option needs a line there).
+
+**Merge checks on main** (orchestrator, 2026-11-12 21:32-21:36; one conflict, ARCHITECTURE.md: both new sections
+kept): build and tests 615 sim + 361 client + 38 net green; reference match "Player (Hard) after 12:00",
+C87C46C4EA726A82; bench 2F09CD7D01AF287E; `Rts.Bench -- mp 3 600 256 0 0 obs=2` and `mp 2 600 256 1 0 obs=1` in
+sync (60 hash checks each); screenshot of `--host 47702 --players 2 --autostart --net-vote-demo` ("Waiting for
+Bob…", the "Drop Bob" button, "1/2 votes to drop Bob") looked right.

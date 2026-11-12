@@ -187,6 +187,28 @@ e ogni scopo.
 - Soluzione: aperto (accettato per ora). La soluzione giusta è una coda di potenziamenti nella simulazione, come
   la coda di costruzione.
 
+** La schermata di caricamento scartava un "via" arrivato in anticipo
+- Errore: in multiplayer la schermata di caricamento ignorava il messaggio di inizio partita se arrivava prima che
+  la sessione fosse pronta. Per i giocatori non succede mai (l'host aspetta che tutti abbiano caricato), ma un
+  osservatore non viene aspettato e può essere ancora in caricamento: restava fermo sulla schermata.
+- Soluzione: il messaggio viene ricordato e applicato a caricamento finito (~ae142bb~, modulo 10a-2). Regola: un
+  messaggio di rete arrivato prima del previsto si conserva, non si scarta.
+
+** La resa aspettava il passo successivo della simulazione
+- Errore: la resa di un giocatore veniva applicata solo al passo successivo della simulazione. Se la partita era
+  ferma in attesa di un altro giocatore, quel passo non arrivava e la resa non aveva effetto.
+- Soluzione: la resa vale anche mentre la partita è in attesa (~e2675f2~).
+
+** Una partita piena rifiutava chi entrava
+- Errore: la lobby rifiutava i nuovi arrivati quando tutti i posti da giocatore erano occupati; con gli osservatori
+  quel rifiuto non aveva più senso.
+- Soluzione: chi entra in una partita piena diventa osservatore (~88aa2f0~).
+
+** "Nessun esercito" non si può esprimere nel client
+- Errore: ~GameSession~ usa l'esercito locale come indice di array (posizioni di partenza, vista), quindi il valore
+  "nessun esercito" (-1) non è rappresentabile. Un osservatore non ha un esercito.
+- Soluzione: aperto. Per ora un osservatore parte con la vista dell'esercito 0 e poi sceglie chi seguire.
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa
