@@ -2,13 +2,14 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 11:32 — read this first in a new session)
-main has waves 1-7, (8a), (8b-1), (8b-2) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
+## ▶ NEXT STEPS (updated 2026-11-12 12:05 — read this first in a new session)
+main has waves 1-7, (8a), (8b-1), (8b-2), (9b-1) and (9b-2): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
-2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in and (8b-2) map files + map
-pack + map picker (all three merged 2026-11-12).
-Tests: 599 sim + 332 client + 27 net.
+2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
+pack + map picker and (9b-2) terrain self-shadows + unit LOD + minimap options (all four merged 2026-11-12).
+Wave 9 is complete (9a was removed by the owner); wave 8 lacks only (8b-3).
+Tests: 599 sim + 339 client + 27 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
 **FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
 rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
@@ -17,20 +18,15 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 11:32, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
-- **(8b-2) is merged and verified** (9528229; HISTORY "(8b-2)" report); its worktree and branch are removed.
-- **One module agent is running: (9b-2) Terrain self-shadows + unit LOD + minimap options**, agent 3
-  a17d2992679a474f5 (CTX-TAG `9b2-mod-3`, `model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents), since 11:37
-  in worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`), continuing
-  from `.claude/handoff.md`. Agent 1 (a0aac67ba2177f048) CHECKPOINTed at 185k at 11:12 (bake, simplifier, LOD maths
-  written, never built); agent 2 (ac5141e246be5f8c5) at 170k at 11:35 with everything working and 337 client tests
-  green, but the GPU at camera 700 is +15 % over main (the terrain shadow fetch, ~0.4 ms; at cameras 110 / 200 the
-  LOD makes the GPU 30 % faster). Agent 3 has a time-boxed try at that cost; if it stays over +10 % it reports the
-  numbers and the orchestrator asks the owner whether to accept it. The worktree also holds a nested worktree
-  `.claude/mainbench` (a main build for perf runs) that the agent removes at the end. Context watcher at 170k in the
-  background of session e3d118ad. Prompts in that session's transcript.
-- Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
-  ledger purposes already in `tools/token-ledger/purposes.json`.
+**ON RESUME** (2026-11-12 12:05, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
+- **(8b-2) and (9b-2) are merged and verified** (9528229, af7f792; HISTORY reports); their worktrees and branches
+  are removed. No module agent is running.
+- **NEXT: (8b-3) Maps in multiplayer + biomes**, alone, one module agent (`model: "opus"`, `isolation: "worktree"`,
+  cap 200k, sub-agents 0 or 1), at the start of a usage window: the window that began about 10:00 had used 22.4 $
+  by 12:01 (two module chains of 3 and 4 agents), too little left for a module. Brief: HISTORY "(8b) Maps", brief
+  8b-3; it now builds on 8b-2's `MapFile` / `MapLibrary` (ARCHITECTURE "Map files") and 9b-2's terrain shader
+  (ground lit value in the chunk vertex colours: biome palettes must keep the G channel free or move it).
+- **LESSONS "Costi" is due now** (it said "after wave 9").
 - **Usage window:** since 05:00 only 8 calls (1.2 $) before these agents started, so the window was nearly fresh.
   Other `claude` sessions of the owner were open but idle.
 - **Watch the agents' context from the start:** module agents reach 200k in about 19 minutes and do not stop by

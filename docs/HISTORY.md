@@ -961,7 +961,7 @@ net green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A83
 `--setup --mapfile great_lakes --players 4` (thumbnail with the four starts in use numbered, the other four as
 white slots) looked right.
 
-## Wave 9: visual polish (briefs re-cut 2026-11-11, not started)
+## Wave 9: visual polish (briefs re-cut 2026-11-11; 9b-1 and 9b-2 merged 2026-11-12)
 9a (AI) was removed from the plan by the owner on 2026-11-11. 9b is cut into two modules of about 1,500 lines, one
 module agent each as in (8b). Their files are disjoint from 8b-1 and 8b-2, so the pairs 8b-1 + 9b-1 and
 8b-2 + 9b-2 can run together (at most 2 agents at a time).
@@ -1025,3 +1025,57 @@ not ticks. The scene class had to be written from scratch; its warp variant must
 DEV_GUIDE and passed when run again (0 warnings, 0 errors); tests 588 sim + 331 client + 27 net green; reference
 match and bench give the hashes of main; screenshots of `--scene deaths:air` (a Soul Ripper burning on its way
 down), `:naval` and `:warp` (the commander rising as a blue hologram inside a ring) looked right.
+
+### (9b-2) Terrain self-shadows, unit LOD, minimap options — report (merged 2026-11-12, af7f792)
+Three module agents on Opus 5.5, one after the other in the same worktree (a first start at 10:52 died on its
+first call from a network error and wrote nothing). Agent 1 wrote the shadow bake, the mesh simplifier and the LOD
+maths and stopped at 185k (11:12) before the first build; agent 2 built it, wired the LOD, the settings and the
+minimap and stopped at 170k (11:35) with the GPU at the strategic camera 15 % over main; agent 3 removed that cost
+and finished in 23 minutes (145k). 1,082 lines in `src` and `tests`. Client only: no sim change, same bench hash.
+
+**What works.** Terrain self-shadows baked once per map from the heightmap with the sun of the unit shadows (about
+30 ms in Release, 150 ms in Debug on a 1024 map), soft edges; the ground's lit value lives in the terrain chunk
+vertex colours (every terrain LOD level, coarse vertices average the area they cover), so the ground reads no
+texture; units read the shadow line from a texture once and darken in the shadow of a ridge, aircraft above it
+stay lit. Far units switch to low-poly meshes (vertex clustering that keeps the team-colour / metal / glow tags; a
+tank 296 → 82 triangles) by projected size with hysteresis; death fade and team colour are kept, holograms, cloak,
+submerged and cargo use the full meshes. Minimap: size 75-175 % (grows upwards), mouse-wheel zoom 1-8x around the
+camera, layers for resources, units and trees, small buttons while the mouse is over it. Settings: two Graphics
+rows (terrain shadows, unit LOD) and a fourth tab "Minimap", all saved. How it works: ARCHITECTURE, the 9b-2 section.
+
+**How to try it.** `--terrain-shadows on|off`, `--unit-lod on|off|PIXELS` (a number forces the LOD up close),
+`--sun-elevation 20` (low sun for screenshots), `--minimap size=1.5,zoom=3,resources=off,units=on,trees=on,buttons=on`,
+`--settings --settings-tab minimap`. No new hotkeys.
+
+**Tests.** `TerrainShadowLodMinimapTests` (7, client: bake on flat ground and behind a ridge, blur, mesh simplifier,
+LOD hysteresis, minimap maths, settings round trip, ground lit value and footprint mean of the terrain LOD
+vertices); `AppSettingsTests` data extended.
+
+**Shared files** (additive): GameApp.cs (one line in the CLI exclusion list + cases), Hud.cs (one line),
+Shaders.cs (the unit and terrain shaders include the self-shadow code; death-fade lines untouched), PerfLog.cs,
+AppSettings, GraphicsSettings, SettingsScreen, TerrainRenderer.cs (bake call), CLAUDE.md; ROADMAP G22 and G23 done.
+
+**Numbers** (5k-unit scene of DEV_GUIDE "Profiling", Debug, 960x540, interleaved, both copies on the repo volume;
+main → branch).
+- Camera 110: GPU 4.39 → 3.47 ms, CPU 4.77 → 5.08.
+- Camera 200: GPU 6.26 → 4.31 ms, CPU 6.69 → 7.15 (Release CPU 4.37 → 4.22); 4,794 LOD units = 393k triangles
+  instead of about 1.42M.
+- Camera 700: GPU 3.13 → 3.10 ms, CPU 4.35 → 4.23 (unit meshes are hidden beyond distance 260, icons only). Before
+  agent 3's fix the ground's per-pixel shadow read cost 0.55 ms here (+15 %).
+- Bench `2000 300` hash 6A8312040EFA67F2 (main).
+
+**Known issues / later** (ROADMAP): the sun is fixed; trees, rocks and wrecks are not darkened by terrain shadows
+(own shader); LOD meshes are built the first time a model is seen from far, a small hitch; in Debug the unit
+gather stage costs 5-7 % more CPU at cameras 110 and 200 (Release: same as main).
+
+**Handoff review.** Agent 2: the first note was accurate and its hook points matched the code; it lacked three
+facts (the first ray sample darkened flat ground under a low sun, the raw shadow had stair-step edges, a new
+settings field breaks the `AppSettingsTests` data). Agent 3: the note's "shadows off" figure came from another
+batch of runs, not an interleaved comparison; the main copy for perf runs was at a main from before 8b-2; the bake
+time was understated for Debug; docs and comments claimed props get terrain shadows (they don't); a duplicate "2x"
+zoom label no screenshot had caught. Nothing broken at the seams.
+
+**Merge checks on main** (orchestrator, 2026-11-12 11:57-12:01): build and tests 599 sim + 339 client + 27 net
+green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A8312040EFA67F2; screenshot of
+`--demo --preset canyon --sun-elevation 22 --minimap size=1.5,zoom=2` (the canyon walls cast soft shadows on the
+plateau, units in the sun keep their own shadows, the minimap larger and zoomed 2x) looked right.
