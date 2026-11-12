@@ -26,7 +26,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-12 21:50 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 22:00 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -45,7 +45,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 21:15, orchestrator session 4ebba5f4, on Fable 5.2; before it 8d3780e7 on Opus 5.5):
+**ON RESUME** (2026-11-12 22:00, written by orchestrator session 4ebba5f4 on Fable 5.2 before the owner's `/clear`):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -63,24 +63,29 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Pair 2 is merged and verified** (2026-11-12): (10b-2) selection overlays 57d4e20 and (10a-2) observers + vote
   to drop + lobby pings + chat sounds e9e8f8d (HISTORY reports, design errors in LESSONS, worktrees and branches
   removed). Each needed a third agent on Opus 5.5 (14 and 18 minutes, started 21:12).
-- **Usage, not clear:** the weekly-limit message of 21:02 ("resets Nov 17, 3pm") cut both agents, but Opus 5.5
-  calls worked again from 21:08; the owner set `/model` Fable 5.2 and said "continua" at 21:10. The orchestrator
-  asked whether this is paid extra usage (21:15) and got no answer. **Ask the owner's `/usage` before starting
-  10a-3.** The 5-hour window began about 20:45 and has had about 50 agent-minutes: the next fresh window starts
-  about 01:45 on 2026-11-13 (estimate, WORKFLOW "When a window resets").
-- **Next: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10"), paired with a wave 11 module. Wave 11
-  is not cut into modules yet ("Wave 11+" below is a list; it depends on "Questions for the owner", and without
-  answers the recommendations hold). One module agent each: `model: "opus"`, `isolation: "worktree"`, cap 200k,
-  CHECKPOINT 170k, watcher `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000`
-  (stop it by its process id: `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:
+- **Usage: the owner says it is fine** ("con gli usi siamo a posto", 2026-11-12 ~21:55, after the weekly-limit
+  message of 21:02 that cut both agents; Opus 5.5 calls worked again from 21:08). Don't ask again: go on with the
+  next module. The 5-hour window began about 20:45 and has had about 50 agent-minutes (next fresh window about
+  01:45 on 2026-11-13, an estimate); if an agent is cut, the usual resume applies (WIP commit, fresh agent).
+- **Next: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
+  "Salvataggi in multiplayer (10a-3)"; it builds on 10a-2, now on main: protocol 5, observers). Its pair is a
+  wave 11 module, but wave 11 is not cut into modules ("Wave 11+" below is a list that depends on "Questions for
+  the owner"; without answers the recommendations hold): start 10a-3 alone, or cut one wave 11 module with files
+  disjoint from `Rts.Net`, Persistence and the Net menus. One module agent each: `model: "opus"`,
+  `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, rules block from AGENT_RULES, a `CTX-TAG:` line, watcher
+  `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (stop it by its process id:
+  `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:
   `bash tools/agents/merge-check.sh <log> <screenshot args>`; for `Rts.Net` work also `Rts.Bench -- mp ... obs=1`.
+  A successor that only runs the final checks and writes the report is a trivial task: `model: "sonnet"`.
 - **Owner, 2026-11-12 (session 4ebba5f4):** trivial agent tasks on Sonnet 5.5, effort by the task's complexity
   (WORKFLOW "Owner decisions"). The owner asked why ROADMAP shows no waves after 4, meaning: where is the plan of
   the whole project (answer: "Wave 6+ plan" below). The orchestrator added the "Waves at a glance" table above and
-  made the wave lines headings without being asked (5e8a06d, 8013ae2); the owner said nothing had to change. A
-  revert was offered, no answer yet: **don't restructure docs in answer to a question.**
-- **Stale, seen 2026-11-12 and not fixed:** gap table rows without `[x]` although delivered: G1-G3 and G7 (6a),
-  G10, G26, G27 (8b).
+  made the wave lines headings without being asked (5e8a06d, 8013ae2); the owner said nothing had to change, and
+  to the offer of a revert answered **"non toccare il roadmap"**: the file stays as it is now. Keep the table's
+  wave 10 row and these NEXT STEPS lines current, and change nothing else of this file's structure unless the
+  owner asks. **Don't edit docs in answer to a question.**
+- **Stale, seen 2026-11-12 and left as it is** (the owner wants no unasked ROADMAP changes; ask first): gap table
+  rows without `[x]` although delivered: G1-G3 and G7 (6a), G10, G26, G27 (8b).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
