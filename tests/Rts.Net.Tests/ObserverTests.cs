@@ -71,8 +71,9 @@ public class ObserverTests
                 c.Observe(false);
                 WaitFor(() => host.Lobby.SlotOf(c.PlayerId) == 1, "client back in a slot");
                 Assert.False(host.Lobby.Slots[1].Ready);
-                late.Leave();
-                WaitFor(() => host.Lobby.Observers.Count == 0, "observer left");
+                host.KickObserver(late.PlayerId); // the host removes an observer like a slot player
+                WaitFor(() => host.Lobby.Observers.Count == 0, "observer kicked");
+                WaitFor(() => late.Phase == NetPhase.Closed, "kicked observer disconnected");
                 WaitFor(() => c.PingOf(0) == 0 && host.PingOf(c.PlayerId) >= 0, "ping list");
             }
             finally { late.Leave(); }
