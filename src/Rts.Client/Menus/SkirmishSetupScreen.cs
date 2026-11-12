@@ -29,7 +29,7 @@ public sealed class SkirmishSetupScreen : IScreen
         _seedText = _cfg.Seed.ToString();
     }
 
-    public string ScreenshotInfo => _preview.Terrain != null ? $"(preview {_cfg.Preset} {_cfg.MapSize}, {_preview.LastGenMs:F0} ms)" : "(preview pending)";
+    public string ScreenshotInfo => _preview.Terrain != null ? $"(preview {_cfg.MapFile ?? $"{_cfg.Preset} {_cfg.MapSize}"},{_preview.LastGenMs:F0} ms)" : "(preview pending)";
 
     public void Frame(float dt)
     {
@@ -246,7 +246,7 @@ public sealed class SkirmishSetupScreen : IScreen
         var start = Ui.R(right - Ui.P(220), y, Ui.P(220), bh);
         if (problem != null)
             Ui.TextRight(problem, start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.Warn, true);
-        else if (MapPresets.NeedsNaval(_cfg.Preset))
+        else if (MapPresets.NeedsNaval(_cfg.MapFile != null ? MapFileCache.Info(_cfg.MapFile)?.Preset ?? _cfg.Preset : _cfg.Preset))
             Ui.TextRight("Bases are on separate islands", start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.TextDim);
         if (_sandbox)
         {

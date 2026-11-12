@@ -179,6 +179,9 @@ your branch, not one run against an old number:
 2. Alternate 3–4 times, from each tree's root: `dotnet tools/Rts.Bench/bin/Release/net10.0/Rts.Bench.dll 2000 300`
    and compare the `tick ms` lines.
 3. The budget is a regression of at most 10%. Remove the extra worktree afterwards (`git worktree remove`).
+4. Run both builds from the same filesystem: the repo volume is FUSE (`fuseblk`) and the scratchpad is tmpfs, and
+   that alone made an unchanged sim look ~10% slower in (8b-2). Copy your branch's `bin/Release/net10.0` into a
+   folder inside the main copy (it finds `data/` by walking up) and run both from there.
 
 ## Profiling
 
