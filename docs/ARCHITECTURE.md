@@ -1156,3 +1156,30 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   hex `TryParse` → InvariantCulture, `MapSymmetry` double `Math.Cos/Sin` → DMath.
 - Reference numbers changed with the math (2026-11-12): bench `2000 300` hash 6A8312040EFA67F2 → 2F09CD7D01AF287E;
   `ai 30 256 42 hard,normal` "Player (Hard) after 12:18" (FB269C29202773C1) → "after 12:00" (C87C46C4EA726A82).
+
+## Observers, drop votes, lobby pings (10a-2: `Rts.Net/Session/*Observers.cs`, `Menus/LobbyScreen.Observers.cs`, `Menus/NetInGameScreen.Observers.cs`)
+- Protocol 5 (`Wire/Messages.cs`): `MsgType` DropVote=24, LobbyPings=25, Resign=26; `Hello` has a trailing u8 observe
+  flag; `LobbyRequest.Observe` (-1 keep / 0 play / 1 observe, appended).
+- Lobby: `LobbyState.Observers` (NetSlot Kind=Observer, max 16) is written after the slots; `People` = humans in slots +
+  observers, `EntryOf(pid)`. Observers need the map (MapReady) but no Ready. A join to a full game lands among the
+  observers (before: refused). Host: `SetObserver(pid, on, slot)` moves anybody, `KickObserver(pid)`; clients ask with
+  `NetSession.Observe(on, slot)`. An observer is not an army: `GameStart.TurnPlayers` never contains it.
+- In game an observer has `NetGame.LocalTurn = -1`: it receives every turn (early turns are buffered until its hooks
+  exist, it may load after Go), sends none, and the sim never waits for it. Its Loaded hash is checked like a player's,
+  but a mismatch only warns that observer. Leaving drops nobody. Client: read-only session (`Ctx.ReadOnly`), fog off,
+  players panel rows switch the view (`Ctx.LocalArmy` + fog on, like replays); no pause/speed requests;
+  `NetLoadingScreen` hands off on an early Go once the session exists; the session uses army 0 as its camera start.
+- Resign (`NetGame.Resign`, `LockstepHooks.RequestResign`): a defeated player stops sending; its last tick = the last
+  produced turn (applied in Hold or BeforeStep, so a held game resigns too), the host relays a Drop (Defeat) to the
+  others, so nobody waits for it again; it keeps watching as an observer.
+- Drop votes (`HostSession.Observers.cs`): a player may vote against the turn player everybody waits for
+  (`NetGame.CanVoteDrop`: not itself, not the host (no host migration), neither dropped). Votes count only after
+  `VoteMinStallSeconds` (3 s) without a turn from the target, any turn from it clears them; a strict majority of the
+  remaining non-dropped players other than the target (`NetGame.VotesNeeded`) closes its connection and drops it with
+  the lobby's `OnDrop` action. The host broadcasts the tally (`DropVoteTally`); the client banner counts down
+  `DropVoteDelaySeconds` (5 s) before showing "Drop X". The host's silence timeout (`TimeoutSeconds`) still applies.
+- Pings: the host sends `LobbyPings` (player id → ms) every second; `NetSession.PingOf(pid)` (host = 0, shown blank).
+- Sounds reuse the UI cues (`Audio/UiSounds`): chat from others = click; joined / ready / game start = confirm;
+  left / dropped = error. Lobby join/leave/ready come from diffs of `People` per frame.
+- Tests: `tests/Rts.Net.Tests/ObserverTests.cs` (codec, lobby moves, full game, pings, late observer in sync, resign,
+  votes); `Rts.Bench -- mp ... obs=N`.

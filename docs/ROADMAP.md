@@ -150,11 +150,11 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G29 | Map editor (SupCom1 had none in game) | — | L | — | owner Q2 | 3 |
 | G30-G33 | removed from the plan 2026-11-11 (owner: improving the AI is no longer a goal; the AI of wave 5 stays). They were: AI personalities, AI team play, AI use of the new mechanics, AI think cost on 1024 | — | — | — | — | — |
 | G34 | [x] 2026-11-12 (10a-1) Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
-| G35 | Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
+| G35 | [x] 2026-11-12 (10a-2) Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
 | G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
 | G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
 | G38 | NAT traversal / relay server (today: port forwarding) | SC1 | L | `Rts.Net` + a hosted server | owner Q6 | 3 |
-| G39 | Vote to drop, host migration, per-player lobby pings, chat sounds | — | S-M | `Rts.Net`, Net menus | — | 3 |
+| G39 | [x] 2026-11-12 (10a-2) Vote to drop, per-player lobby pings, chat sounds (host migration: later, below) | — | S-M | `Rts.Net`, Net menus | — | 3 |
 | G40 | [x] 2026-10-24 (7a) Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
 | G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
 | G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | Q |
@@ -241,6 +241,15 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   - [ ] later: run the sim tests (golden test) and `Rts.Bench -- replay` of one Linux-made file on Windows and on
     ARM64; `Vector2/3` dot/length intrinsic paths are still unverified across ISAs (could be written out like Lerp);
     old saves on generated maps cannot load (would need the old MathF generator or the terrain embedded in saves).
+  - [x] 10a-2 Observers, vote to drop, lobby pings, chat sounds (2026-11-12; ARCHITECTURE "Observers, drop votes, lobby
+    pings (10a-2)"): observer list in the lobby (any number up to 16, Observe/Play, host moves/kicks, a full game puts
+    joiners there), observers get every turn and send none, no fog + follow any army's view; a defeated player resigns
+    and stays as an observer; "Waiting for X" banner: 5 s countdown then a Drop button, strict majority of the remaining
+    players drops X (host can't be voted out); per-person pings in the lobby; UI cues for chat, join/leave, ready, start;
+    `Msg.ProtocolVersion` 5; `--observe`, `--net-vote-demo`, `Rts.Bench -- mp ... obs=N`.
+  - [ ] later: host migration (the host can't be dropped by vote; its loss still ends the game for everybody);
+    observers joining a game already running (needs G37 catch-up); an observer that loads late only catches up at the
+    normal sim speed (no fast-forward); dedicated sounds for chat/join (today the click/confirm/error UI cues).
 - 10b Keybindings & client leftovers (G19; G21 if the owner wants it, else G11 client items and G20/G22 leftovers).
   Owns Hotkeys.cs, new KeyBindingsScreen, the listed client files. Tests: rebinding + clash tests; screenshots.
   - [x] 2026-11-12 (10b-1) Keybinding editor: Settings → Keys (capture with modifiers, rows rebind whole, clash

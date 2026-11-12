@@ -40,9 +40,9 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   jumps teleporter ACUs (spawn `uef_commander+PersonalTeleporter`); keys: O = Overcharge, J = teleport mode;
   multi-word unit names use `_`, e.g. `spawn strategic_missile_launcher me at 100,128`)
 - Multiplayer (lockstep, ARCHITECTURE "Multiplayer"): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
-  --host [port] | --join ip[:port] [--name N] [--autostart]` (default port 47624; `--autostart`: clients Ready, host
+  --host [port] | --join ip[:port] [--name N] [--autostart] [--observe]` (default port 47624; (10a-2) `--observe` = join as an observer, `--net-vote-demo` = the in-game drop-vote banner for screenshots; `--autostart`: clients Ready, host
   starts with 2+ humans or with `--players N` AI slots). Headless self-test: `dotnet run -c Release --project
-  tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop] [map=ID] [biome=X]` (exit 1 = desync;
+  tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop] [map=ID] [biome=X] [obs=N]` (exit 1 = desync; `obs=N` = N observers;
   `map=` = on a map file). Map transfer by hand (env `RTS_MAP_UPLOAD_KBPS`): DEV_GUIDE "Multiplayer checks".
 - Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
   `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
