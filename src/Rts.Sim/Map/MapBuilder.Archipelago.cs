@@ -1,3 +1,4 @@
+using Rts.Sim.Core;
 using System.Numerics;
 
 namespace Rts.Sim.Map;
@@ -315,7 +316,7 @@ internal sealed partial class MapBuilder
         {
             float len = Vector2.Distance(smooth[i], smooth[i + 1]);
             int steps = Math.Max(1, (int)MathF.Ceiling(len));
-            for (int j = 0; j < steps; j++) s.Add(Vector2.Lerp(smooth[i], smooth[i + 1], j / (float)steps));
+            for (int j = 0; j < steps; j++) s.Add(DMath.Lerp(smooth[i], smooth[i + 1], j / (float)steps));
         }
         s.Add(smooth[^1]);
 

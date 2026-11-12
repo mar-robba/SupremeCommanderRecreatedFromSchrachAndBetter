@@ -151,7 +151,7 @@ internal sealed class CombatState
                 var pv = _prevVel[i];
                 if (pv.LengthSquared() > 0.25f && v.LengthSquared() > 0.25f)
                 {
-                    float raw = MathF.Atan2(pv.X * v.Y - pv.Y * v.X, Vector2.Dot(pv, v)) / SimWorld.Dt;
+                    float raw = DMath.Atan2(pv.X * v.Y - pv.Y * v.X, Vector2.Dot(pv, v)) / SimWorld.Dt;
                     float max = MathF.Max(0.1f, w.Blueprints[u.Bp[i]].Movement.TurnRate * DMath.Deg2Rad * 1.25f);
                     omega = Math.Clamp(0.5f * (raw + Omega[i]), -max, max);
                 }

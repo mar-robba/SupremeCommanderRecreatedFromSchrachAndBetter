@@ -16,7 +16,7 @@ public static class MultiplayerSystem
         {
             // The skirmish AI creates its brain lazily on its next think and continues from the current army.
             SandboxSystem.SetAi(w, c.Army, true, army.AiDifficulty);
-            if (!army.Name.EndsWith(" (AI)")) army.Name += " (AI)";
+            if (!army.Name.EndsWith(" (AI)", StringComparison.Ordinal)) army.Name += " (AI)";
             return;
         }
         // Defeat: the army is defeated now and all its units are destroyed (every victory mode).

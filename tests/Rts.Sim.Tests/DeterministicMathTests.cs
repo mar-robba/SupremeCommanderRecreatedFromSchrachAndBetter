@@ -403,5 +403,37 @@ public class DeterministicMathTests
         Assert.Equal(1024f, DMath.Pow(2f, 10f));
     }
 
+    /// <summary>MathF/Math transcendentals are not bit-identical across OS/CPU/runtime: Rts.Sim must use DMath.</summary>
+    [Fact]
+    public void SimSourceUsesNoMathFTranscendentals()
+    {
+        string dir = AppContext.BaseDirectory;
+        while (dir != null && !Directory.Exists(Path.Combine(dir, "src", "Rts.Sim"))) dir = Path.GetDirectoryName(dir)!;
+        Assert.NotNull(dir);
+        var rx = new Regex(@"\bMath(F)?\.(Sin|Cos|Tan|SinCos|Atan|Atan2|Asin|Acos|Sinh|Cosh|Tanh|Exp|Log|Log2|Log10|Pow|Cbrt|FusedMultiplyAdd)\s*\(|\bVector[234]\.Lerp\(|MultiplyAddEstimate");
+        var hits = new List<string>();
+        foreach (var f in Directory.EnumerateFiles(Path.Combine(dir!, "src", "Rts.Sim"), "*.cs", SearchOption.AllDirectories))
+        {
+            if (Path.GetFileName(f).StartsWith("DMath", StringComparison.Ordinal)) continue;
+            var lines = File.ReadAllLines(f);
+            for (int i = 0; i < lines.Length; i++)
+                if (rx.IsMatch(lines[i]) && !lines[i].TrimStart().StartsWith("//", StringComparison.Ordinal))
+                    hits.Add($"{Path.GetRelativePath(dir!, f)}:{i + 1}: {lines[i].Trim()}");
+        }
+        Assert.True(hits.Count == 0, "Use DMath instead of MathF/Math transcendentals in Rts.Sim:\n" + string.Join("\n", hits));
+    }
+
+    /// <summary>System.Numerics Lerp may use a fused multiply-add on CPUs that have one (and not on others):
+    /// the sim writes the formula out (DMath.Lerp). This documents what the runtime does here.</summary>
+    [Fact]
+    public void NumericsLerpFusionIsKnown()
+    {
+        float a = 1.0000001f, b = 3.3333333f, t = 0.33333334f;
+        float plain = a + (b - a) * t, blended = a * (1f - t) + b * t;
+        float v2 = Vector2.Lerp(new Vector2(a), new Vector2(b), t).X, v3 = Vector3.Lerp(new Vector3(a), new Vector3(b), t).X;
+        _out.WriteLine($"Vector2.Lerp {v2:R} Vector3.Lerp {v3:R} plain {plain:R} blended {blended:R} DMath {DMath.Lerp(a, b, t):R}");
+        Assert.Equal(plain, DMath.Lerp(a, b, t));
+    }
+
     internal static readonly float[] GoldenPairs = [0f, -0f, 1e-40f, 0.5f, -1f, 2f, -3f, 0.6f, 10.5f, -1e30f, float.PositiveInfinity, float.NegativeInfinity, float.NaN];
 }

@@ -34,7 +34,7 @@ internal sealed partial class MapBuilder
 
         // Ring: start -> next start, bowed outwards through M; chokepoint where neighbors meet.
         float R = Vector2.Distance(s0, _center);
-        float rMid = N == 2 ? 0.38f * _n : MathF.Min(0.36f * _n, R * (1f + MathF.Cos(DMath.Pi / N)) * 0.5f);
+        float rMid = N == 2 ? 0.38f * _n : MathF.Min(0.36f * _n, R * (1f + DMath.Cos(DMath.Pi / N)) * 0.5f);
         var M = _center + DMath.Dir(_sym.Phi0 + DMath.Pi / N) * rMid;
         var ctrl = 2f * M - (s0 + s1) * 0.5f;
         var ring = new List<Vector2>();
@@ -72,7 +72,7 @@ internal sealed partial class MapBuilder
         var pts = new List<Vector2>();
         for (int i = 0; i <= segs; i++)
         {
-            var p = Vector2.Lerp(a, b, i / (float)segs);
+            var p = DMath.Lerp(a, b, i / (float)segs);
             if (i > 0 && i < segs) p += perp * rng.Range(-amp, amp) * len;
             pts.Add(p);
         }
@@ -83,7 +83,7 @@ internal sealed partial class MapBuilder
     {
         float f = t * (pts.Count - 1);
         int i = Math.Min((int)f, pts.Count - 2);
-        return Vector2.Lerp(pts[i], pts[i + 1], f - i);
+        return DMath.Lerp(pts[i], pts[i + 1], f - i);
     }
 
     private static void AddPath(List<Capsule> caps, List<Vector2> pts, Func<float, float> width)

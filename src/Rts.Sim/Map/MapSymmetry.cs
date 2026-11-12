@@ -1,3 +1,4 @@
+using Rts.Sim.Core;
 using System.Numerics;
 
 namespace Rts.Sim.Map;
@@ -47,9 +48,7 @@ internal sealed class MapSymmetry
             }
             else
             {
-                double a = k * Math.PI * 2.0 / N;
-                _cos[idx] = (float)Math.Cos(a);
-                _sin[idx] = (float)Math.Sin(a);
+                (_sin[idx], _cos[idx]) = DMath.SinCos(k * DMath.TwoPi / N);
             }
         }
     }
@@ -82,7 +81,7 @@ internal sealed class MapSymmetry
     {
         float dx = p.X - Center.X, dz = p.Y - Center.Y;
         radius = MathF.Sqrt(dx * dx + dz * dz);
-        float ang = MathF.Atan2(dz, dx) - Phi0;
+        float ang = DMath.Atan2(dz, dx) - Phi0;
         float s = ang / _sector;
         float fl = MathF.Floor(s + 0.5f);
         localAngle = (s - fl) * _sector;
@@ -105,7 +104,7 @@ internal sealed class MapSymmetry
         int k = SectorOf(p, out float a, out float r);
         g(Rotate(p, -k), result);
 
-        float distToBorder = r * MathF.Sin(MathF.Max(0f, _sector * 0.5f - MathF.Abs(a)));
+        float distToBorder = r * DMath.Sin(MathF.Max(0f, _sector * 0.5f - MathF.Abs(a)));
         if (distToBorder < Band)
         {
             int k2 = a >= 0 ? k + 1 : k - 1;

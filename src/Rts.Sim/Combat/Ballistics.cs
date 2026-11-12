@@ -1,3 +1,4 @@
+using Rts.Sim.Core;
 using System.Numerics;
 
 namespace Rts.Sim.Combat;
@@ -56,7 +57,7 @@ public static class Ballistics
             rest = t - capped / omega;
             a = capped;
         }
-        float sn = MathF.Sin(a), oc = 1f - MathF.Cos(a);
+        float sn = DMath.Sin(a), oc = 1f - DMath.Cos(a);
         // Integral of R(omega*tau) * vel over [0, a/omega].
         var disp = new Vector2(vel.X * sn - vel.Y * oc, vel.X * oc + vel.Y * sn) / omega;
         if (rest > 0)

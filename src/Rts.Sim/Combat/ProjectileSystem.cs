@@ -34,8 +34,8 @@ public static class ProjectileSystem
     /// <summary>Straight shots only collide with terrain this far below the surface (grazing shots fly on).</summary>
     public const float StraightGroundTolerance = 0.3f;
     private const int Chunk = 256;
-    private static readonly float HomingCos = MathF.Cos(HomingTurnRate * SimWorld.Dt);
-    private static readonly float HomingSin = MathF.Sin(HomingTurnRate * SimWorld.Dt);
+    private static readonly float HomingCos = DMath.Cos(HomingTurnRate * SimWorld.Dt);
+    private static readonly float HomingSin = DMath.Sin(HomingTurnRate * SimWorld.Dt);
 
     public static void Run(SimWorld w)
     {
@@ -140,7 +140,7 @@ public static class ProjectileSystem
             if (air)
             {
                 float t = Ballistics.ClosestParam(pos0, pos1, c);
-                var pt = Vector3.Lerp(pos0, pos1, t);
+                var pt = DMath.Lerp(pos0, pos1, t);
                 float d2 = Vector3.DistanceSquared(pt, c);
                 var ti = s.Catalog.Units[u.Bp[tj]];
                 float lethal = P.DamageRadius[p] + ti.TargetRadius;
@@ -152,7 +152,7 @@ public static class ProjectileSystem
             float ta = Ballistics.ClosestParam(pos0, pos1, P.TargetPos[p]);
             if (ta < 1f && ta <= groundT)
             {
-                var pa = Vector3.Lerp(pos0, pos1, ta);
+                var pa = DMath.Lerp(pos0, pos1, ta);
                 float d2 = Vector3.DistanceSquared(pa, c);
                 if (!burst || d2 < best) { burst = true; at = pa; }
             }
@@ -186,20 +186,20 @@ public static class ProjectileSystem
         }
         if (hit >= 0 && hitT <= groundT && hitT <= shieldT)
         {
-            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Unit, Unit = hit, Pos = Vector3.Lerp(pos0, pos1, hitT) });
+            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Unit, Unit = hit, Pos = DMath.Lerp(pos0, pos1, hitT) });
             return;
         }
         if (shieldEntry >= 0)
         {
             ref var dome = ref strat.Index.Entries[shieldEntry];
-            var at = shieldT < 0 ? ShieldIndex.SurfaceAbove(dome, pos0) : Vector3.Lerp(pos0, pos1, shieldT);
+            var at = shieldT < 0 ? ShieldIndex.SurfaceAbove(dome, pos0) : DMath.Lerp(pos0, pos1, shieldT);
             impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = dome.Unit, Pos = at });
             return;
         }
 
         if (groundT <= 1f)
         {
-            var gp = Vector3.Lerp(pos0, pos1, groundT);
+            var gp = DMath.Lerp(pos0, pos1, groundT);
             int victim = P.DamageRadius[p] > 0 ? -1 : NearestEnemyAt(w, s, P.Army[p], mask, gp);
             impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Ground, Unit = victim, Pos = gp });
             return;
