@@ -13,7 +13,7 @@ public sealed record NatureLook(Color[] Rocks, int RockSidesDelta, float RockHei
     public static readonly NatureLook Temperate = new([S(118, 112, 104), S(104, 100, 96), S(128, 118, 100), S(96, 92, 88)], 0, 1f, new(0.30f, 0.36f, 0.22f), 0.6f, Vector3.Zero);
     public static readonly NatureLook Desert = new([S(176, 128, 90), S(150, 108, 78), S(190, 150, 106), S(132, 96, 70)], -1, 0.85f, new(0.74f, 0.60f, 0.42f), 0.55f, Vector3.Zero);
     public static readonly NatureLook Tundra = new([S(112, 118, 126), S(96, 102, 112), S(126, 130, 136), S(86, 90, 98)], 0, 1f, new(0.88f, 0.91f, 0.95f), 0.95f, Vector3.Zero);
-    public static readonly NatureLook Lava = new([S(46, 42, 42), S(36, 34, 36), S(58, 50, 46), S(30, 28, 30)], -1, 1.1f, new(0.30f, 0.28f, 0.27f), 0.35f, new(1.0f, 0.34f, 0.07f));
+    public static readonly NatureLook Lava = new([S(46, 42, 42), S(36, 34, 36), S(58, 50, 46), S(30, 28, 30)], -1, 1.1f, new(0.30f, 0.28f, 0.27f), 0.35f, new(0.80f, 0.27f, 0.06f));
     public static readonly NatureLook Tropical = new([S(92, 94, 84), S(76, 82, 72), S(104, 100, 86), S(66, 70, 62)], 0, 1f, new(0.17f, 0.33f, 0.11f), 0.85f, Vector3.Zero);
 
     public static NatureLook For(Biome b) => b switch
