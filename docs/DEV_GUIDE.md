@@ -107,6 +107,11 @@ Things learned while building the project that are not about how a system works 
   `QueryRadius`/`FindNearest`. Tests that count wrecks or reclaim call `TestUtil.ClearMapProps(w)` first. Rocks shift
   mirrored AI-vs-AI economies: `AiVersusAiReachesCombat` (seed 42) launched no wave in 8 min with them, so it clears
   the props (knife edge, not an AI bug).
+- (10a-1) **Never `MathF`/`Math` trig, exp/log/pow or `Vector2/3.Lerp` in `src/Rts.Sim`**: use `DMath.Sin/Cos/SinCos/
+  Atan2/Asin/Acos/Exp/Log/Log2/Pow/Lerp` (software, bit-identical on every OS; the C runtime's libm differs between
+  Linux and Windows = multiplayer desync). The grep test `SimSourceUsesNoMathFTranscendentals` fails otherwise.
+  Changing a DMath result = bump `DMath.Version` (old replays then refuse) and update the golden literals in
+  `CrossOsDeterminismTests` (ARCHITECTURE "Deterministic math (cross-OS)").
 - (8b-2) Bit-exact round trips (map files, saves): `MathF.Round(-0.3f) / k` is **-0**, whose bits differ from +0, so
   a value written as an integer and read back as `0f` no longer matches. Normalize rounded floats with `+ 0f`
   (`MapFile.Quantize`); the Archipelago export failed its own read-back check until this fix.

@@ -573,7 +573,8 @@ interpolates prev/cur by time
   uninterrupted game (`PersistenceTests`, 1 and 4 threads).
 - Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
   set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
-  + hash, bounds-checked reads). Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
+  + hash, bounds-checked reads); another math version (`GameInfo.MathVersion`, 10a-1) → replays refused, see
+  "Deterministic math (cross-OS)". Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
   now 2; files ≥ `MinVersion` load) is upgraded on load one step at a time: a header-JSON step (also for file lists)
   and a payload step per version (v1→v2: players without a faction get `FactionDb.DefaultFaction`); `GameInfo.FileVersion`
   = the version read. To change the format: bump the version, add a `Steps` entry + a `case`, extend
@@ -707,12 +708,12 @@ numbers"; how to measure: DEV_GUIDE "Perf check" and "Profiling".
     `MathF.FusedMultiplyAdd`, no explicit SIMD, no `GetHashCode` in Rts.Sim (checked).
   - `System.Numerics.Vector2/3` (≈200 uses): same results on the same .NET + ISA; their intrinsic code paths could in
     principle round differently between x64 and ARM64 (dot products) — unverified.
-  - **Risk**: transcendental functions (`MathF.Sin/Cos/Atan2/Pow/Log2`, ~40 calls in Rts.Sim: weapons, projectiles,
+  - **Risk** (fixed 2026-11-12 by 10a-1, section "Deterministic math (cross-OS)"): transcendental functions (`MathF.Sin/Cos/Atan2/Pow/Log2`, ~40 calls in Rts.Sim: weapons, projectiles,
     missiles, movement, AI memory decay, map generation) call the OS C runtime (glibc libm, Windows UCRT, macOS
     libSystem), which may differ in the last bit → Linux vs Windows games can desync. Same OS + same build: identical.
   - Safety net: `Loaded` hashes at start, `StateHash` every 10 ticks, desync banner + replay dump.
-  - later: route all sim trig through `DMath` with software implementations (polynomials using only + − × ÷), verify
-    Linux↔Windows↔ARM64 with `Rts.Bench -- replay` of the same file on each machine.
+  - Done (10a-1): all sim trig goes through software `DMath`; still to do: verify Linux↔Windows↔ARM64 with the
+    golden test and `Rts.Bench -- replay` of the same file on each machine.
 
 ## Cybran faction & stealth/EMP (wave 5l)
 
@@ -1086,3 +1087,38 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   `Minimap.Options.cs`: hover buttons (− + size, Z− Z+ zoom, R resources, U units, T trees) and the tree layer.
   Settings tab "Minimap" (size, zoom, resources, units, trees) saved in `AppSettings`; `--minimap
   size=1.5,zoom=3,resources=off,units=on,trees=on,buttons=on` overrides for one run.
+
+## Deterministic math (cross-OS) (10a-1: `Rts.Sim/Core/DMath*.cs`)
+- Why: `MathF.Sin/Atan2/Pow/...` call the OS C runtime (glibc, Windows UCRT, macOS libSystem), which may differ in the
+  last bit, so Linux and Windows lockstep peers could desync. Every transcendental the sim uses is now computed in
+  software from IEEE float `+ − × ÷` and bit casts only, bit-identical wherever .NET runs (x64 SSE2, ARM64 NEON; RyuJIT
+  never contracts to FMA). `MathF.Sqrt` stays (IEEE correctly rounded everywhere).
+- Functions: `Sin`, `Cos`, `SinCos` (`DMath.Trig.cs`: Cody-Waite 4-part π/2 reduction for |x| < 6000, Payne-Hanek with
+  `UInt128` above, minimax polynomials); `Atan`, `Atan2`, `Asin`, `Acos` (`DMath.Inverse.cs`); `Exp`, `Log`, `Log2`,
+  `Pow` (`DMath.ExpLog.cs`; pow keeps y·log2 x exact with Fast2Sum/TwoProduct). `Dir`/`HeadingOf` use SinCos/Atan2.
+  `DMath.Lerp` (float, Vector2, Vector3) = `a + (b − a)·t` written out: `Vector2/3.Lerp` may use
+  `MultiplyAddEstimate` (an FMA on some CPUs). NaN in → the constant `float.NaN` out (NaN payloads differ x86/ARM).
+- Accuracy vs double `Math` (sweeps in `DeterministicMathTests`, plus a golden-bits table and IEEE edge cases ±0, ±∞,
+  NaN, subnormals): max ulp Sin 2, Cos 2, Atan 2, Asin 2, Acos 1, Atan2 2, Exp 1, Log 1, Log2 2, Pow 1 (4 when
+  |y·log2 x| > 16). Cost < 1 % of the tick (bench `2000 300` interleaved: 1 thread 4.54 → 4.57 ms, 15 threads
+  1.76 → 1.78 ms).
+- Guard: `DeterministicMathTests.SimSourceUsesNoMathFTranscendentals` greps `src/Rts.Sim` (DMath*.cs excepted) for
+  `Math(F).Sin|Cos|Tan|SinCos|Atan|Atan2|Asin|Acos|Sinh|Cosh|Tanh|Exp|Log|Log2|Log10|Pow|Cbrt|FusedMultiplyAdd(`,
+  `Vector2/3/4.Lerp(` and `MultiplyAddEstimate`. A function DMath lacks: add it there with golden-bit tests.
+- **Cross-OS check**: `CrossOsDeterminismTests.GoldenGameHashIsTheSameOnEveryMachine` (AI Hard UEF vs AI Normal
+  Cybran, generated 256 map seed 20261112, a 60-unit brawl in the middle, 600 ticks, 2 threads): the terrain hash and
+  `StateHash` literals were written on Linux x64. Red on another OS/CPU = a cross-OS desync; when the sim changes on
+  purpose, update the literals (the message prints them) and say why in the commit.
+- Versioning: `DMath.Version` (now 1; bump when any DMath result changes) is written in every save/replay header as
+  `GameInfo.MathVersion` (no field = 0 = the old MathF sim). Replays of another version are refused on open
+  (`SaveGame.CheckReplayMath`, list tag "OLD VERSION", `Rts.Bench -- replay` exit 2). Old saves on generated maps:
+  the generator uses DMath (MapSymmetry, noise), the regenerated terrain differs, the TerrainHash check refuses them
+  with a clear message; old saves on map files or embedded terrain load and play on, but their replay log is dropped
+  (recording restarts at the loaded tick). `Msg.ProtocolVersion` 4 keeps old builds out of multiplayer.
+- Audit (2026-11-12) beyond trig, all OK: no `HashCode`/`GetHashCode` in Sim/Net; sorts use ordinal or numeric keys;
+  `Codecs` sorts `ConcurrentDictionary` keys with `Comparer<K>.Default` (culture for strings) but no such dictionary
+  is sim state; AI `$"..."` floats only in trace strings; JSON parsing is invariant; float→int casts saturate alike
+  on .NET 9+; Rts.Net's port `int.TryParse` is UI only. Fixed: `MultiplayerSystem` `EndsWith` → Ordinal, `FactionDb`
+  hex `TryParse` → InvariantCulture, `MapSymmetry` double `Math.Cos/Sin` → DMath.
+- Reference numbers changed with the math (2026-11-12): bench `2000 300` hash 6A8312040EFA67F2 → 2F09CD7D01AF287E;
+  `ai 30 256 42 hard,normal` "Player (Hard) after 12:18" (FB269C29202773C1) → "after 12:00" (C87C46C4EA726A82).
