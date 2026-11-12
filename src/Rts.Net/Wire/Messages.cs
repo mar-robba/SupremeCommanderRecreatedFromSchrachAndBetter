@@ -57,7 +57,7 @@ public enum MsgType : byte
 /// <summary>Builds message frames.</summary>
 public static class Msg
 {
-    public const uint ProtocolVersion = 3; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer
+    public const uint ProtocolVersion = 4; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer; 4 (10a-1): software DMath (other sim results)
 
     [ThreadStatic] private static ByteWriter? _w;
 
