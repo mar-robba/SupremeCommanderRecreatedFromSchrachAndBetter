@@ -126,7 +126,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G16 | [x] 2026-11-11 (7b) Notifications: minimap flash where attacked, structure lost, construction/upgrade done, unit cap reached, ally under attack | SC1 | S | GameAudio alerts, Minimap, Toasts | — | 2 |
 | G17 | [x] 2026-11-11 (7b) Map pings / markers (alert, move, attack; map + minimap; allies and MP; in replays) | SC1 | M | new `UI/Pings`, sim command (additive) | — | 2 |
 | G18 | [x] 2026-10-24 (7a) Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
-| G19 | Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
+| G19 | [x] 2026-11-12 (10b-1) Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
 | G20 | Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
 | G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
 | G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
@@ -224,6 +224,10 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   call sites, `Rts.Net`, Net menus. Tests: Net tests, `Rts.Bench -- mp`, replays still verify.
 - 10b Keybindings & client leftovers (G19; G21 if the owner wants it, else G11 client items and G20/G22 leftovers).
   Owns Hotkeys.cs, new KeyBindingsScreen, the listed client files. Tests: rebinding + clash tests; screenshots.
+  - [x] 2026-11-12 (10b-1) Keybinding editor: Settings → Keys (capture with modifiers, rows rebind whole, clash
+    refuse/swap, reset one/all), saved in settings.json, camera/audio/dialog/panel keys moved into the table (ARCHITECTURE "Keybindings").
+  - [ ] later: bind a second (alternative) key per entry from the editor; a warning when Shift+K is bound while K is
+    another entry's key (Shift is free for most keys, both would fire); a search field in the Keys tab; ReplayScreen keys ignore modifiers.
 
 **Wave 11+ (depends on the owner's answers)**: Italian localization (G28 + G25: touches every UI file, so pair it
 with a sim-only agent: G12 pathing + G41 save migration); tutorial/scenario system (G42) then campaign (G43); mod
