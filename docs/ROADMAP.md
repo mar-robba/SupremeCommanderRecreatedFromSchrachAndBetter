@@ -207,7 +207,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     vertex colours, units/aircraft by height), low-poly far units by vertex clustering (tank 296 → 82 tris), minimap
     size 75-175 %, wheel zoom 1-8×, resources/units/trees layers and hover buttons; Graphics rows + a "Minimap"
     settings tab; `--terrain-shadows`, `--unit-lod`, `--sun-elevation`, `--minimap`; client only, hashes unchanged.
-  - [ ] later: the sun is fixed (a moving or per-map sun needs a re-bake: 45-150 ms on 1024 maps); trees, rocks and
+  - [ ] later: the sun is fixed (a moving or per-map sun needs a re-bake: ~30 ms on 1024 maps in Release); trees, rocks and
     wrecks are not darkened by terrain shadows (props have their own shader); LOD meshes are built lazily on a
     model's first far frame (a small hitch the first time); a hotkey for minimap zoom.
 

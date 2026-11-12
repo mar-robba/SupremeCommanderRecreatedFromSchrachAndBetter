@@ -64,7 +64,7 @@ public sealed unsafe partial class TerrainRenderer
 
     private void InitSelfShadow() => Current = this;
 
-    /// <summary>Bakes the shadow line once per game (45-90 ms on a 1025² grid), uploads it for the units and keeps
+    /// <summary>Bakes the shadow line once per game (1025² grid: ~30 ms Release, ~150 ms Debug), uploads it for the units and keeps
     /// the ground's lit factor for <see cref="BuildLodChunks"/>. Always runs, even with the setting off: the ground
     /// factor lives in the vertex data, and the setting can be switched on mid-game.</summary>
     private void BakeSelfShadow()

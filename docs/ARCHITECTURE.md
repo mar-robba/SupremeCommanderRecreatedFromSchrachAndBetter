@@ -1019,7 +1019,7 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   − t·tan(elev)), first sample at `FirstStep` 0.75 (closer samples see only the vertex's own slope; flat ground under
   a low sun stays lit), then `Blur` (3×3, 2 passes) softens the stair steps. `Lit(y, S)` = 1 − smoothstep(0, 1.2, S −
   y) (`Softness` 0.6; the edge starts AT the line). Baked once per game in the `TerrainRenderer` constructor (always,
-  even with the setting off; ~15 ms on 257², 45-150 ms on 1025², printed as `terrain shadows: baked`).
+  even with the setting off; 1025²: ~30 ms Release, ~150 ms Debug; printed as `terrain shadows: baked`).
 - Ground: `GroundLit` per vertex goes into the terrain LOD chunk meshes as vertex colour G (R/B = cavity AO); a
   stride-s vertex takes `BoxMean` over its (s+1)² footprint (like a mip level: no aliasing or pop on LOD changes).
   The terrain shader uses `terrainShadowGround(vColor.g)`: no texture fetch (a per-pixel fetch cost +0.55 ms GPU at a
