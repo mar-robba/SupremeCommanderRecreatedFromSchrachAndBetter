@@ -46,7 +46,7 @@ public sealed unsafe partial class TerrainRenderer
         uniform sampler2D terrainShadowTex;
         uniform float terrainShadowOn;
         uniform vec2 terrainShadowScale;
-        // Lit fraction of a point at its own height (units, props, aircraft): one fetch of the shadow line.
+        // Lit fraction of a point at its own height (units, aircraft): one fetch of the shadow line.
         float terrainShadowAt(vec3 wpos) {
             if (terrainShadowOn < 0.5) return 1.0;
             float d = texture(terrainShadowTex, (wpos.xz + 0.5) * terrainShadowScale).r - wpos.y;

@@ -7,7 +7,7 @@ namespace Rts.Client.Rendering;
 /// For every height vertex the bake marches towards the sun and stores the <b>shadow line</b>
 /// S = max over t of (h(p + t·sunXZ) − t·tan(sun elevation)): a point at height y above that vertex is in the
 /// terrain's shadow iff y &lt; S. The ground's lit factor (<see cref="GroundLit"/>, from S − h) goes into the terrain
-/// vertex colours; units, props and aircraft compare their own height with S, so a tank in a canyon's shadow is dark
+/// vertex colours; units and aircraft compare their own height with S, so a tank in a canyon's shadow is dark
 /// and an aircraft above it is lit. Flat or sun-facing ground gets S ≈ h − 1 (lit with margin).
 /// </summary>
 public static class TerrainShadowBake

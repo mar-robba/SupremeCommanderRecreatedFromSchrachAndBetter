@@ -1012,3 +1012,32 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   `GameConfig.MapFile` (Problem(): "X has room for N players", "not found"), `--mapfile NAME` (also with `--setup`).
   Skirmish setup row "Map" (Cycle: Random map | pack maps); a file map hides the generator rows and shows its
   description; `MapPreview.RequestFile(id, players)` draws the starts the game will use, unused ones as empty slots.
+
+## Terrain self-shadows, unit LOD, minimap options (9b-2, client only)
+- Terrain self-shadows: `TerrainShadowBake` (pure, tests in `TerrainShadowLodMinimapTests`) marches each height
+  vertex towards `TerrainRenderer.SunDir` (the unit shadow map's sun) and stores the shadow line S = max(h(p + t·sun)
+  − t·tan(elev)), first sample at `FirstStep` 0.75 (closer samples see only the vertex's own slope; flat ground under
+  a low sun stays lit), then `Blur` (3×3, 2 passes) softens the stair steps. `Lit(y, S)` = 1 − smoothstep(0, 1.2, S −
+  y) (`Softness` 0.6; the edge starts AT the line). Baked once per game in the `TerrainRenderer` constructor (always,
+  even with the setting off; ~15 ms on 257², 45-150 ms on 1025², printed as `terrain shadows: baked`).
+- Ground: `GroundLit` per vertex goes into the terrain LOD chunk meshes as vertex colour G (R/B = cavity AO); a
+  stride-s vertex takes `BoxMean` over its (s+1)² footprint (like a mip level: no aliasing or pop on LOD changes).
+  The terrain shader uses `terrainShadowGround(vColor.g)`: no texture fetch (a per-pixel fetch cost +0.55 ms GPU at a
+  full-map view on 1024 maps). Units and aircraft (not props: own shader): S in an R32F texture (slot 7, bilinear, no mips: unit meshes are
+  drawn only up to camera 260) compared with the fragment height (`terrainShadowAt`), so a tank in a valley's shadow
+  darkens and an aircraft above it stays lit. Toggle: uniform `terrainShadowOn` (`TerrainRenderer.SelfShadows`,
+  setting "Terrain shadows", `--terrain-shadows on|off`), no rebuild. `--sun-elevation DEG` moves the sun (testing).
+- Unit LOD: `MeshLod.Simplify` (vertex clustering: cells of extent/N, vertices split by cell + normal bucket +
+  material tag so flat shading, team colour and glow tags survive) builds `UnitModel.LodBody/LodTurret` on first use;
+  used only if it has at most a set fraction of the full triangles (tank 296 → 82). `UnitLod.UseLod`: projected
+  bounding-sphere radius < `PixelRadius` 7 px, hysteresis ±12 % per unit index (switch distance ∝ screen height:
+  ~106 u for a tank at 540p). Only the opaque shadow + lit passes use LOD meshes (`UnitRenderer.Lod.cs`, same
+  instance data incl. death fade); hologram, cloak, submerged and cargo passes keep full meshes. Setting "Unit detail
+  LOD", `--unit-lod on|off|PIXELS` (a number = threshold radius, shows LOD up close); `--perf-log` prints LOD units
+  and triangles.
+- Minimap: `MinimapView` (pure) = size steps 75-175 %, zoom steps 1-8× (wheel over the minimap), `Virtual` = the
+  whole map's screen rectangle (zoom centred on the camera focus, clamped to cover the panel); every map↔screen
+  conversion (dots, fog, pings, clicks) goes through it, drawn under a scissor; view frozen while dragging.
+  `Minimap.Options.cs`: hover buttons (− + size, Z− Z+ zoom, R resources, U units, T trees) and the tree layer.
+  Settings tab "Minimap" (size, zoom, resources, units, trees) saved in `AppSettings`; `--minimap
+  size=1.5,zoom=3,resources=off,units=on,trees=on,buttons=on` overrides for one run.

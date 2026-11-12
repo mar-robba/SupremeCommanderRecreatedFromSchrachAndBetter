@@ -131,6 +131,15 @@ Things learned while building the project that are not about how a system works 
   the unit would "die" visually. The unit shader's instance w is 0 for living units; a non-zero w darkens / dithers.
 - Screenshots of a moment in a sequence: pause the runner from the scene script on a snapshot tick
   (`DeathScene.Update` sets `Runner.Paused`; game-time effects then freeze), not on a frame count.
+- (9b-2) Unit meshes are not drawn beyond camera distance 260 (`IconRenderer.HideMeshDistance`; icons only), so the
+  unit LOD changes nothing in a full-map view: measure it at cameras 110-200. Its switch is in pixels, so the switch
+  distance grows with the window height (~106 u for a tank at 540p).
+- `--frames N` ends a run only together with `--screenshot` (perf runs: `--perf-log --screenshot x.png --frames 900`).
+- Adding an `AppSettings` property breaks `AppSettingsTests` until its non-default test data gets a value for it.
+- Terrain self-shadow bake: the march's first sample must be about a cell away (`FirstStep` 0.75) and the soft edge
+  must start AT the shadow line, or flat ground under a low sun (line just below the ground) comes out half shaded.
+- A full-screen texture fetch in the terrain shader is not free on the 780M: one R32F fetch per pixel (even with
+  mipmaps) cost +0.55 ms GPU at a full-map view of a 1024 map; per-vertex data (vertex colour channels) is free.
 
 ## Visual checks
 
