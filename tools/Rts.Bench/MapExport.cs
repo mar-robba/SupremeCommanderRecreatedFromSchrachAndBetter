@@ -26,7 +26,7 @@ static class MapExport
         if (args.Length >= 6 && args[0] == "--scan") return Scan(db, args[1..]);
         if (args.Length < 4)
         {
-            Console.WriteLine("usage: mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc TEXT]\n" +
+            Console.WriteLine("usage: mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc TEXT] [--biome B]\n" +
                               "       mapexport --pack <pack.txt> <outDir>\n       mapexport --scan <mapSize> <players> <preset> <firstSeed> <count>");
             return 2;
         }
@@ -34,16 +34,18 @@ static class MapExport
         float water = -1;
         bool exact = false;
         string desc = "";
+        var biome = Biome.Temperate;
         for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "--water") water = float.Parse(args[++i], CultureInfo.InvariantCulture);
             else if (args[i] == "--exact") exact = true;
             else if (args[i] == "--desc") desc = args[++i];
+            else if (args[i] == "--biome" && !Biomes.TryParse(args[++i], out biome)) { Console.WriteLine($"unknown biome '{args[i]}'"); return 2; } // (8b-3)
             else pos.Add(args[i]);
         }
         var preset = MapPreset.Plains;
         if (pos.Count > 4 && !MapPresets.TryParse(pos[4], out preset)) { Console.WriteLine($"unknown preset '{pos[4]}'"); return 2; }
-        var s = new MapGenSettings { Size = int.Parse(pos[1]), Seed = int.Parse(pos[2]), Players = int.Parse(pos[3]), Preset = preset, WaterAmount = water };
+        var s = new MapGenSettings { Size = int.Parse(pos[1]), Seed = int.Parse(pos[2]), Players = int.Parse(pos[3]), Preset = preset, WaterAmount = water, Biome = biome };
         string name = pos.Count > 5 ? pos[5] : $"{MapPresets.Name(preset)} {s.Size} #{s.Seed}";
         return Export(db, pos[0], s, name, desc, exact) ? 0 : 1;
     }
@@ -76,6 +78,7 @@ static class MapExport
         {
             Name = name, Description = desc, HeightBits = exact ? 0 : HeightBits,
             Generated = true, Preset = s.Preset, Seed = s.Seed, WaterAmount = s.WaterAmount,
+            Biome = s.Biome, // (8b-3) header only: the content hash is the same on every biome
         };
         var bytes = MapFile.Encode(t, info);
         var back = MapFile.Decode(bytes).Terrain;
