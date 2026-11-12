@@ -293,6 +293,8 @@ After wave 8a (missing units & walls, 9 new blueprint files) it again plays iden
 BBD1FF3C4E116A4A: the new files shift the blueprint indices that the world hash mixes in (the AI builds none of them).
 After 8b-1 (map props: trees and rocks on every map, AI engineers and ACUs reclaim rocks) the match changes: Hard
 wins after 12:18, hash FB269C29202773C1; bench `2000 300` hash 6A8312040EFA67F2 (was EAED77303695A943).
+After 10a-1 (deterministic software math: every trig/exp result and the generated terrain move in the last bits) Hard
+wins after 12:00, hash C87C46C4EA726A82; bench `2000 300` hash 2F09CD7D01AF287E.
 
 ## Unit balance
 
