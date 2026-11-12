@@ -12,7 +12,7 @@ namespace Rts.Net.Session;
 /// drains <see cref="TryGetEvent"/> every frame and calls the request methods; network threads update the state under
 /// <see cref="Gate"/>. Topology: star (the host relays every turn), so only the host needs a reachable port.
 /// </summary>
-public abstract class NetSession : IDisposable
+public abstract partial class NetSession : IDisposable
 {
     public const int DefaultPort = 47624;
     public const int MaxChat = 200;

@@ -13,7 +13,7 @@ namespace Rts.Net.Session;
 /// The host: owns the lobby (authoritative copy, broadcast after every change), relays every turn, decides drops,
 /// speed/pause and the input delay, and compares the state hashes. Also a player (id 0) with its own lockstep.
 /// </summary>
-public sealed class HostSession : NetSession, ITurnSink
+public sealed partial class HostSession : NetSession, ITurnSink
 {
     private readonly NetListener _listener;
     private readonly LanAnnouncer? _lan;
@@ -52,7 +52,7 @@ public sealed class HostSession : NetSession, ITurnSink
     {
         var l = Lobby;
         return LanDiscovery.Encode(_hostId, Port, GameName, LocalName, l.HumanCount, l.Slots.Count(s => s.Kind != NetSlotKind.Closed),
-            Phase != NetPhase.Lobby, $"{l.Options.MapSize} {l.Options.Preset} · {l.Options.Game.Describe()}");
+            Phase != NetPhase.Lobby, $"{(l.Options.HasMapFile ? l.Options.MapName : $"{l.Options.MapSize} {l.Options.Preset}")} · {l.Options.Game.Describe()}");
     }
 
     // ------------------------------------------------------------------ lobby API (UI thread)
@@ -75,6 +75,8 @@ public sealed class HostSession : NetSession, ITurnSink
             s.PlayerId = -1;
             s.Name = kind == NetSlotKind.AI ? "AI" : "";
             s.Ready = kind == NetSlotKind.AI;
+            s.MapReady = true;
+            s.MapProgress = 0;
             if (kind == NetSlotKind.AI && ColorTaken(s.Color, slot)) s.Color = FreeColor(slot);
             Changed();
         }
@@ -103,11 +105,14 @@ public sealed class HostSession : NetSession, ITurnSink
     /// <summary>Changes the game options (everybody's ready flag is reset).</summary>
     public void SetOptions(LobbyOptions o)
     {
+        var map = ResolveMap(o); // (8b-3) file I/O outside the lock
         lock (Gate)
         {
             if (Phase != NetPhase.Lobby) return;
+            var before = LobbyRef.Options;
             LobbyRef.Options = o.Clone();
             LobbyRef.Options.MapSize = Math.Clamp(o.MapSize, 128, 4096);
+            ApplyMapOptions(before, LobbyRef.Options, map); // (8b-3)
             foreach (var s in LobbyRef.Slots)
                 if (s.Kind == NetSlotKind.Human && s.PlayerId != 0) s.Ready = false;
             Changed();
@@ -205,6 +210,9 @@ public sealed class HostSession : NetSession, ITurnSink
                 case MsgType.Leave:
                     c.Close("left the game");
                     break;
+                case MsgType.MapRequest or MsgType.MapStatus: // (8b-3) HostSession.Maps.cs
+                    OnMapMessage(c, type, r);
+                    break;
                 default:
                     throw new ProtocolException($"unexpected {type}");
             }
@@ -216,7 +224,7 @@ public sealed class HostSession : NetSession, ITurnSink
         uint protocol = (uint)r.VarU();
         string build = r.Str() ?? "";
         string name = CleanText(r.Str(), 24);
-        string? refuse = protocol != Msg.ProtocolVersion ? "Different network protocol version"
+        string? refuse = protocol != Msg.ProtocolVersion ? $"Different network protocol version (host {Msg.ProtocolVersion}, yours {protocol}): both players need the same game version"
             : build != GameInfo.CurrentSimBuild ? "Different game build: both players need the same version"
             : Phase != NetPhase.Lobby ? "The game has already started"
             : LobbyRef.FirstOpenSlot() < 0 ? "The game is full" : null;
@@ -237,6 +245,8 @@ public sealed class HostSession : NetSession, ITurnSink
         sl.PlayerId = c.PlayerId;
         sl.Name = unique;
         sl.Ready = false;
+        sl.MapReady = !LobbyRef.Options.HasMapFile; // (8b-3) the client reports MapStatus
+        sl.MapProgress = 0;
         if (ColorTaken(sl.Color, slot)) sl.Color = FreeColor(slot);
         c.Send(Msg.Build(MsgType.Welcome, w => w.VarU((ulong)c.PlayerId)));
         foreach (var line in ChatLog.TakeLast(30)) c.Send(ChatFrame(line));
@@ -260,6 +270,8 @@ public sealed class HostSession : NetSession, ITurnSink
                 dst.Faction = s.Faction;
                 dst.Team = s.Team;
                 dst.Ready = s.Ready;
+                dst.MapReady = s.MapReady;
+                dst.MapProgress = s.MapProgress;
                 if (ColorTaken(s.Color, q.MoveToSlot, ignoreSlot: i)) dst.Color = FreeColor(q.MoveToSlot);
                 else dst.Color = s.Color;
                 s.Kind = NetSlotKind.Open;
@@ -272,7 +284,7 @@ public sealed class HostSession : NetSession, ITurnSink
             if (q.Faction != null) s.Faction = NetSlot.Clip(q.Faction, 32);
             if (q.Team >= 0) s.Team = Math.Min(q.Team, 4);
             if (q.Color >= 0 && !ColorTaken(q.Color % 8, i)) s.Color = q.Color % 8;
-            if (q.Ready >= 0) s.Ready = q.Ready != 0 || playerId == 0;
+            if (q.Ready >= 0) s.Ready = (q.Ready != 0 && s.MapReady) || playerId == 0; // (8b-3) not without the map
             Changed();
         }
     }
@@ -443,6 +455,7 @@ public sealed class HostSession : NetSession, ITurnSink
         {
             if (Phase == NetPhase.Closed) return;
             conns = _conns.ToList();
+            PumpMapUploads(); // (8b-3) throttled uploads continue here
         }
         bool second = ++_monitorTicks % 4 == 0;
         foreach (var c in conns)

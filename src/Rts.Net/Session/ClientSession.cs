@@ -11,7 +11,7 @@ namespace Rts.Net.Session;
 /// A joined player: mirrors the host's lobby, sends its requests/turns/hashes to the host and applies what the host
 /// relays. If the host disappears during a game, the game continues offline (the other players are dropped locally).
 /// </summary>
-public sealed class ClientSession : NetSession, ITurnSink
+public sealed partial class ClientSession : NetSession, ITurnSink
 {
     private readonly NetConnection _conn;
     private readonly ManualResetEventSlim _welcome = new();
@@ -122,6 +122,10 @@ public sealed class ClientSession : NetSession, ITurnSink
                 case MsgType.Lobby:
                     LobbyRef = LobbyState.Read(r);
                     PublishLobby();
+                    CheckMap(); // (8b-3) ClientSession.Maps.cs
+                    break;
+                case MsgType.MapChunk:
+                    OnMapChunk(r);
                     break;
                 case MsgType.Chat:
                 {

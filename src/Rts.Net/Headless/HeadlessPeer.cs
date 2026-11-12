@@ -38,7 +38,7 @@ public sealed class HeadlessPeer : IDisposable
     {
         Session = session;
         Game = session.Game ?? throw new InvalidOperationException("no game started");
-        Sim = NetGameSetup.CreateSimulation(db, Game.Start);
+        Sim = NetGameSetup.CreateSimulation(db, Game.Start, session.MapDir); // (8b-3) data/maps or the session folder
         ulong hash = Sim.StateHash();
         Runner = new SimRunner(Sim);
         Recorder = new ReplayRecorder();

@@ -24,6 +24,10 @@ public sealed class NetSlot
     public int Color;
     public AiDifficulty Difficulty = AiDifficulty.Normal;
     public bool Ready;
+    /// <summary>(8b-3) The player has the lobby's map file (always true for generated maps, AIs and the host).</summary>
+    public bool MapReady = true;
+    /// <summary>(8b-3) Map download progress 0..100 (display only).</summary>
+    public int MapProgress;
 
     /// <summary>The slot becomes an army (human or AI).</summary>
     public bool IsArmy => Kind is NetSlotKind.Human or NetSlotKind.AI;
@@ -40,6 +44,8 @@ public sealed class NetSlot
         w.VarU((ulong)Math.Max(0, Color));
         w.U8((byte)Difficulty);
         w.U8(Ready ? (byte)1 : (byte)0);
+        w.U8(MapReady ? (byte)1 : (byte)0); // (8b-3)
+        w.U8((byte)Math.Clamp(MapProgress, 0, 100));
     }
 
     public static NetSlot Read(ByteReader r) => new()
@@ -52,6 +58,8 @@ public sealed class NetSlot
         Color = r.Count(64),
         Difficulty = (AiDifficulty)Math.Min(r.U8(), (byte)AiDifficulty.Hard),
         Ready = r.U8() != 0,
+        MapReady = r.U8() != 0,
+        MapProgress = Math.Min(r.U8(), (byte)100),
     };
 
     internal static string Clip(string? s, int max) => s == null ? "" : s.Length <= max ? s : s[..max];
@@ -69,6 +77,25 @@ public sealed class LobbyOptions
     public DropAction OnDrop = DropAction.AiTakeover;
     /// <summary>Game options (victory, unit cap, resources, fog, speed, cheats, prebuilt): lobby defaults = cheats off.</summary>
     public GameOptions Game = GameOptions.SetupDefaults();
+    /// <summary>(8b-3) Map file id ("" = generated map from size/preset/water/seed). The host fills the rest from the
+    /// file (<see cref="Session.HostSession.SetOptions"/>): content hash, name, start positions, file size, its biome.</summary>
+    public string MapFile = "";
+    public ulong MapHash;
+    public string MapName = "";
+    public int MapPlayers;
+    public long MapBytes;
+    /// <summary>(8b-3) The map file's own biome (<see cref="Biome"/> byte).</summary>
+    public byte MapBiome;
+    /// <summary>(8b-3) Chosen biome: 0 = the map's default, 1 + <see cref="Rts.Sim.Map.Biome"/>. Visual only.</summary>
+    public byte Biome;
+
+    public bool HasMapFile => MapFile.Length > 0;
+
+    /// <summary>(8b-3) The chosen biome, or null = the map's (temperate for generated maps).</summary>
+    public Biome? BiomeChoice => Biome == 0 ? null : Biomes.FromByte(Biome - 1);
+
+    /// <summary>(8b-3) The biome the game shows.</summary>
+    public Biome EffectiveBiome => BiomeChoice ?? (HasMapFile ? Biomes.FromByte(MapBiome) : Rts.Sim.Map.Biome.Temperate);
 
     public LobbyOptions Clone()
     {
@@ -90,6 +117,14 @@ public sealed class LobbyOptions
         w.U8((byte)Game.Fog);
         w.U8((byte)Game.Speed);
         w.U8((byte)((Game.Cheats ? 1 : 0) | (Game.Prebuilt ? 2 : 0)));
+        // (8b-3) protocol 3
+        w.Str(MapFile);
+        w.Raw(MapHash);
+        w.Str(MapName);
+        w.VarU((ulong)Math.Max(0, MapPlayers));
+        w.VarU((ulong)Math.Max(0, MapBytes));
+        w.U8(MapBiome);
+        w.U8(Biome);
     }
 
     public static LobbyOptions Read(ByteReader r)
@@ -111,6 +146,13 @@ public sealed class LobbyOptions
         byte flags = r.U8();
         g.Cheats = (flags & 1) != 0;
         g.Prebuilt = (flags & 2) != 0;
+        o.MapFile = NetSlot.Clip(r.Str(), 64);
+        o.MapHash = r.Raw<ulong>();
+        o.MapName = NetSlot.Clip(r.Str(), 64);
+        o.MapPlayers = r.Count(64);
+        o.MapBytes = (long)Math.Min(r.VarU(), 1UL << 30);
+        o.MapBiome = r.U8();
+        o.Biome = r.U8();
         return o;
     }
 }
@@ -154,6 +196,10 @@ public sealed class LobbyState
         var armies = Slots.Where(s => s.IsArmy).ToList();
         if (armies.Count < 2) return "At least two players are needed";
         if (armies.All(s => s.Team > 0 && s.Team == armies[0].Team)) return "Everybody is on the same team";
+        var o = Options;
+        if (o.HasMapFile && armies.Count > o.MapPlayers) return $"{o.MapName} has only {o.MapPlayers} start positions";
+        var loading = Slots.FirstOrDefault(s => s.Kind == NetSlotKind.Human && s.PlayerId != 0 && !s.MapReady);
+        if (loading != null) return $"{loading.Name} is downloading the map ({loading.MapProgress} %)";
         var notReady = Slots.FirstOrDefault(s => s.Kind == NetSlotKind.Human && s.PlayerId != 0 && !s.Ready);
         if (notReady != null) return $"{notReady.Name} is not ready";
         return null;
