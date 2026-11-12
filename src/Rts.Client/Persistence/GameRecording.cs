@@ -142,7 +142,7 @@ public sealed class GameRecording : ITickHooks
         var info = _info.Clone();
         info.WinningTeam = sim.World.WinningTeam;
         info.CreatedUtc = DateTime.UtcNow;
-        var terrain = info.Map == null ? sim.World.Terrain : null; // immutable: serialized on the worker
+        var terrain = info.Map == null && info.MapFile == null ? sim.World.Terrain : null; // immutable: serialized on the worker
         QueueIo(() =>
         {
             try

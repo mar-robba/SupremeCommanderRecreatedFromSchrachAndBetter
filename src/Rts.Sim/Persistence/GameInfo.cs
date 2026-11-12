@@ -36,6 +36,12 @@ public sealed class GameInfo
     public string? ClientData;
     /// <summary>(6b) Game options of the game (null in files from before 6b = defaults, <c>new GameOptions()</c>).</summary>
     public GameOptions? Options;
+    /// <summary>(8b-2) Map file id (<c>data/maps/&lt;id&gt;.rtsmap</c>) the game is played on, null = generated or
+    /// embedded terrain. Loading needs the same file: <see cref="MapFileHash"/> must match its content hash.</summary>
+    public string? MapFile;
+    public ulong MapFileHash;
+    /// <summary>(8b-2) Display name of the map file (informational).</summary>
+    public string? MapName;
 
     /// <summary>Save slot name / replay title.</summary>
     public string Name = "";
@@ -65,7 +71,8 @@ public sealed class GameInfo
     /// <summary>Header for a skirmish created by <see cref="GameSetup.CreateSkirmish"/> with these settings.</summary>
     public static GameInfo ForSkirmish(SkirmishSettings s, Simulation sim, int localArmy, bool sandbox)
     {
-        var info = new GameInfo { Map = GameSetup.MapSettingsFor(s), LocalArmy = localArmy, Sandbox = sandbox };
+        var info = new GameInfo { Map = s.MapFile == null ? GameSetup.MapSettingsFor(s) : null, LocalArmy = localArmy, Sandbox = sandbox };
+        if (s.MapFile != null) { info.MapFile = s.MapFile.Info.Id; info.MapFileHash = s.MapFile.Info.Hash; info.MapName = s.MapFile.Info.Name; }
         info.FillFrom(sim);
         return info;
     }
@@ -86,7 +93,8 @@ public sealed class GameInfo
 
     public GameInfo Clone() => FromJson(ToJson());
 
-    public string MapDescription => Map == null ? "custom map" : $"{MapPresets.Name(Map.Preset)} {Map.Size} (seed {Map.Seed})";
+    public string MapDescription => Map != null ? $"{MapPresets.Name(Map.Preset)} {Map.Size} (seed {Map.Seed})"
+        : MapFile != null ? $"{MapName ?? MapFile} (map file)" : "custom map";
     public string PlayersDescription => string.Join(" vs ", Players.Select(p => p.IsAI ? $"AI {p.Difficulty}" : p.Name));
 
     private static readonly JsonSerializerOptions Json = new()
