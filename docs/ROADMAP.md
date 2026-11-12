@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 16:40 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 18:45 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -16,19 +16,21 @@ rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` has
 (EAED77303695A943 before 8b-1). Replays and saves made before 8b-1 refuse to open (the saved prop layout changed).
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
-Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
+Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 16:40, orchestrator session 46ab30e4, on Opus 5.5):
-- **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report): its worktree and branch are removed.
-  No module agent is running. Waves 8 and 9 are complete.
-- **NEXT: wave 10** ("Proposed waves" below: 10a multiplayer robustness G34-G36 (+G39), 10b keybindings G19 + client
-  leftovers). Its briefs were written for 2 big agents and **must be re-cut into modules of about 1,500 lines**
-  before a start (owner rule 2026-11-10), with the brief text in HISTORY "Wave 10" like "(8b) Maps". Proposed cut
-  (check sizes against the gap table first): 10a-1 `DMath` software trig/exp across the sim (mechanical, one
-  reference-hash change, golden-value tests); 10a-2 observers + vote to drop + lobby pings + chat sounds (`Rts.Net`,
-  Net menus); 10a-3 MP save/load; 10b-1 keybindings screen + rebinding (G19); 10b-2 client leftovers (G11 client
-  items, G20/G22 leftovers). 10a-1 changes sim results, so it runs alone; 10b-1 can pair with a net module (disjoint
-  files). One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k), at most 2 agents at a time.
+**ON RESUME** (2026-11-12 18:45, orchestrator session 3badb572, on Opus 5.5):
+- **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
+- **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
+  `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
+  editor (G19, client only); pair 2 = **10a-2** observers + vote to drop + lobby pings + chat sounds + **10b-2**
+  selection overlays + client leftovers (G20, G11 client items); then **10a-3** MP save/load (G36) with a wave 11
+  module. One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, no sub-agents while two run).
+- **Pair 1 is scheduled** for 20:47 on 2026-11-12 (CronCreate job of session 3badb572; the 15:40 window had ~15 $
+  used at 18:15, first call 15:40:46, so the next window opens at 20:40). The ready prompts are
+  `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a1.md` and
+  `prompt-10b1.md` (same folder; also `merge-check.sh`, the merge checks). If that folder is gone (reboot), rebuild
+  the prompts from the HISTORY briefs with the 8b-3 prompt shape (brief, state, ordered TODO, rules block).
+  If the job did not fire: start the pair by hand in a fresh window.
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
@@ -216,7 +218,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     wrecks are not darkened by terrain shadows (props have their own shader); LOD meshes are built lazily on a
     model's first far frame (a small hitch the first time); a hotkey for minimap zoom.
 
-**Wave 10: multiplayer robustness + keybindings**
+**Wave 10: multiplayer robustness + keybindings** (re-cut 2026-11-12 into 10a-1, 10b-1, 10a-2, 10b-2, 10a-3: HISTORY "Wave 10")
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash
   change, golden-value tests), observers, MP save/load, vote to drop, lobby pings, chat sounds. Owns `Rts.Sim` math
   call sites, `Rts.Net`, Net menus. Tests: Net tests, `Rts.Bench -- mp`, replays still verify.

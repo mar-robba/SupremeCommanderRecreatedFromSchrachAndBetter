@@ -22,6 +22,7 @@ here.
   - [(f) SupCom polish (+ merge with h)](#f-supcom-polish--merge-with-h)
 - [Pre-wave 5: (j) faction infrastructure](#pre-wave-5)
 - [Wave 5 (in progress): the briefs](#wave-5-in-progress)
+- [Wave 10: the briefs (re-cut 2026-11-12)](#wave-10-multiplayer-robustness--keybindings-briefs-re-cut-2026-11-12)
 
 ---
 
@@ -1142,3 +1143,101 @@ zoom label no screenshot had caught. Nothing broken at the seams.
 green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A8312040EFA67F2; screenshot of
 `--demo --preset canyon --sun-elevation 22 --minimap size=1.5,zoom=2` (the canyon walls cast soft shadows on the
 plateau, units in the sun keep their own shadows, the minimap larger and zoomed 2x) looked right.
+
+## Wave 10: multiplayer robustness + keybindings (briefs re-cut 2026-11-12)
+The two wave 10 briefs of 2026-10-23 (ROADMAP "Wave 10": 10a multiplayer, 10b keybindings) are cut into five
+modules of up to about 1,500 lines, one module agent each on Opus 5.5 (cap 200k, no coordinator; WORKFLOW
+"Lifecycle of a wave"). At most 2 run at a time, so they go in pairs with disjoint files:
+1. **10a-1 + 10b-1** (sim math + client input): the first pair.
+2. **10a-2 + 10b-2** (`Rts.Net` + client rendering/UI), after the first pair is merged (10b-2 adds hotkeys to the
+   table that 10b-1 makes rebindable).
+3. **10a-3** after 10a-2 (both own `Rts.Net` and the Net menus), with a wave 11 module as its pair.
+Host migration (G39) and reconnect (G37) are not in wave 10: they need MP save/load (10a-3) first.
+Sizes measured before the cut: `Rts.Sim` has 38 direct `MathF`/`Math` trig/pow calls in 12 files next to the
+existing `Core/DMath.cs` wrappers (which still call `MathF`); `Rts.Net` is about 3,000 lines; the hotkey table
+(`Input/Hotkeys.cs`) is read-only (`readonly KeyboardKey[] Keys`), and about 40 key checks outside it call raylib
+directly (camera, selection, text fields, panels).
+
+*brief (10a-1) Deterministic math across the sim* (G34; ledger purpose "Matematica deterministica (10a-1)"): today
+the sim's trig goes through `MathF`, whose results are not guaranteed to be the same bits on every OS, CPU and
+.NET runtime, so a Linux player and a Windows player can desync. Make every transcendental function the sim uses
+pure IEEE float arithmetic: `DMath.Sin/Cos/SinCos/Atan2/Atan/Asin/Acos/Exp/Log/Pow` (range reduction +
+polynomials, only `+ - * /` and `MathF.Sqrt`, which IEEE rounds exactly; no FMA, no `double` shortcuts, no table
+whose content depends on the runtime), accurate to a few ulp, and route all 38 call sites and `DMath.Dir` /
+`HeadingOf` through them, map generator included. Audit and fix the other cross-machine risks in `Rts.Sim` and
+`Rts.Net`: `System.Numerics` helpers that call `MathF` inside (`Matrix3x2/4x4.CreateRotation*`, `Quaternion`,
+`Vector2.Transform` with a rotation), `double` `Math.*` calls, culture-dependent parsing/formatting or string
+comparison (`float.Parse`, `ToString()` without `InvariantCulture`, `string.Compare`, `OrderBy` on strings without
+`StringComparer.Ordinal`), `HashCode.Combine` / `string.GetHashCode` (randomized per process) in anything that
+feeds the sim. Add an analyzer-style test that fails if `MathF.Sin|Cos|Tan|Atan|Asin|Acos|Exp|Log|Pow` appears in
+`src/Rts.Sim` outside `DMath.cs` (a source grep test is enough). Golden-value tests: a table of inputs →
+expected bit patterns (`BitConverter.SingleToUInt32Bits`) for each function (edge cases: 0, ±π, huge angles, NaN,
+denormals), plus a short fixed-seed headless game (e.g. 2 armies, 600 ticks) whose state hash is written in the
+test: whoever runs the tests on another OS checks cross-OS determinism. Bump `Msg.ProtocolVersion` (peers with old
+math must not join) and make replays recorded before this change refuse with a clear message instead of
+desyncing (check what `GameInfo.CurrentSimBuild` already gives). The reference match and the bench hash WILL change:
+document the new hashes (ROADMAP "NEXT STEPS" is the orchestrator's: put them in your report) and that the game
+still ends with a winner. Perf: interleaved bench `2000 300` before/after (the software trig must not cost more than
+2 % of the sim tick; `DMath.Dir` is hot). Owns `Core/DMath.cs`, the math call sites in `Rts.Sim`, `Msg.ProtocolVersion`,
+new tests. Leaves alone: the client (it may keep `MathF`), `Input/`, menus (10b-1). DEV_GUIDE "Sim pitfalls": a line
+on the new rule. Fragmentation: medium (mechanical, but the golden tests and the hash change belong together).
+
+*brief (10b-1) Keybinding editor* (G19; purpose "Editor dei tasti (10b-1)"; with 10a-1): every entry of the hotkey
+table can be rebound by the player and the choice is saved. `Hotkeys` gets a stable id per entry (its field name)
+and a mutable override layer (keys + modifiers per id; rows of slots such as Z X C V B N and 0-9 rebind as a
+whole row or stay fixed: decide and document), loaded from and saved to the settings file next to the other
+`AppSettings` (an unknown id or key in the file is ignored, never a crash). A new `Menus/KeyBindingsScreen`
+(a "Keys" tab in Settings, also from the pause menu): the table by help group, click an entry → "press a key"
+capture with Shift/Ctrl/Alt (Esc cancels), the existing clash check (`Hotkeys.Overlaps`, `Share` tags; the logic of
+`HotkeyTableTests`) refuses or asks to swap a clashing key, reset one entry / reset all. The help overlay (F1), the
+order buttons' tooltips and the HUD help lines show the bound keys (they use `Hotkey.Label`). The direct
+`IsKeyPressed` checks outside the table (about 40: `RtsCamera`, `SelectionController`, panels, `GameAudio`, …):
+move into the table the ones that are game actions so they rebind too; text fields, menus and debug keys stay
+fixed (list them in your ARCHITECTURE section). A `--settings-tab keys` screenshot hook. Owns `Input/Hotkeys.cs`,
+`Input/SharedHotkeys.cs`, the new screen, the settings tab, the moved key checks (small edits in their files).
+Leaves alone: `Rts.Sim` (10a-1), `Rendering/`, Minimap. Tests: override round trip through the settings file,
+clash refused, reset, a rebound key fires its action and the old key no longer does, every table entry has a
+unique id. Client only, hashes unchanged. Screenshots of the screen and of the help overlay with a rebound key.
+
+*brief (10a-2) Observers, vote to drop, lobby pings, chat sounds* (G35, G39 without host migration; purpose
+"Osservatori e voto di espulsione (10a-2)"; after 10a-1): an observer slot type in the lobby (any number of
+observers next to the player slots, codec + protocol bump): an observer gets every turn, sends none (the game never
+waits for it), sees the whole map without fog, can follow any army's view and use the players panel, chat with
+everyone, and leaves without dropping anyone; a player who is defeated can stay as an observer. Vote to drop: when
+the sim waits for a player longer than a few seconds, the "Waiting for X…" banner shows a countdown and a Drop
+button for every other player; X is dropped (with today's `OnDrop` action) when a majority of the remaining players
+vote, or by the host after the timeout as today. Per-player pings in the lobby slots (the in-game ping list
+exists), and sounds for chat messages, player joined / left, ready and the game start countdown (reuse `Audio/`
+cues; no new assets needed). Owns `Rts.Net` (lobby codec, `HostSession`, `ClientSession`, `NetGame`), the lobby and
+Net in-game screens. Leaves alone: saves (10a-3), `Rendering/`, `UI/` panels (10b-2). Tests: codec round trip
+with observers, a loopback game with an observer (game never waits, observer state hash = players'), vote majority
+and tie, `Rts.Bench -- mp` with an observer (add an option). Screenshots: lobby with an observer and pings, the
+drop vote banner.
+
+*brief (10b-2) Selection overlays and client leftovers* (G20, the client items of G11, leftovers of 7b / 8a / 9b;
+purpose "Overlay di portata e rifiniture client (10b-2)"; after 10b-1): range and intel rings for the selected
+units and structures (weapon ranges, min range, radar / sonar / omni, shield radius, stealth / jammer field; today
+only while placing), a toggle key and a settings entry, readable with 500 units selected (merge equal rings, cap the
+count, no per-frame allocation); for the selection only, plus allied structures on Shift. G11 client items: wrecks
+and mass/hydrocarbon deposits seen once stay drawn under the fog as last seen; an occupied enhancement slot swaps in
+one click (the client queues remove + install; if the sim refuses that order, a small additive command is
+allowed); the sandbox selects enemy units (F9 panel option); crush animation when a big walker steps on small
+units if it fits. Leftovers: a minimap zoom hotkey (9b-2), camera bookmarks saved per map file / seed and listed on
+screen, "add" variants (Shift) of the class filters (7b), joined wall corner / segment meshes (8a), the "structure
+lost" toast skips self-destruct (7b). Owns `Rendering/` overlay files (new), `Minimap`, `UI/` panels, the new
+hotkeys (rebindable through 10b-1's table). Leaves alone: `Rts.Net` and the Net menus (10a-2). Client only unless
+the enhancement swap needs its command (then additive, hash unchanged when unused). Tests: overlay ring merging,
+fog memory of wrecks / deposits, bookmark save round trip. `--perf-log` with 500 units selected; screenshots.
+
+*brief (10a-3) Multiplayer save/load* (G36; purpose "Salvataggi in multiplayer (10a-3)"; after 10a-2): in a
+multiplayer game any player can ask to save, the host decides; every peer writes the same save (state at the same
+tick, the lobby: players, slots, teams, observers, options, map) into its `saves/`, marked as a multiplayer save.
+Loading: the host picks a multiplayer save in a "Load game" lobby; the lobby shows the saved slots and each joining
+player takes a saved slot (by name by default); peers that lack the file (or have a different hash) receive it from
+the host in chunks like the map transfer of 8b-3, check the hash, all load and resume lockstep at the saved tick;
+missing players can become AI (`OnDrop` action) or block the start. Autosave in MP: same tick on every peer, host
+setting. The replay of a loaded game continues (or a new replay starts from the save: decide and document). Owns
+`Rts.Net` save transfer + resume, the Net menus' save/load parts, the multiplayer part of client `Persistence`.
+Tests: save in a loopback game → load → both peers' state hashes equal at the tick and N ticks later; a missing
+file is transferred; a changed file is refused; `Rts.Bench -- mp` gets a save/load step. Screenshots: the load
+lobby with saved slots.
