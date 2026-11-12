@@ -2,12 +2,13 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 10:58 — read this first in a new session)
-main has waves 1-7, (8a), (8b-1) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
+## ▶ NEXT STEPS (updated 2026-11-12 11:32 — read this first in a new session)
+main has waves 1-7, (8a), (8b-1), (8b-2) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
-2026-11-11), (8b-1) map props: trees and rocks and (9b-1) death animations + ACU warp-in (both merged 2026-11-12).
-Tests: 588 sim + 331 client + 27 net.
+2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in and (8b-2) map files + map
+pack + map picker (all three merged 2026-11-12).
+Tests: 599 sim + 332 client + 27 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
 **FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
 rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
@@ -16,19 +17,15 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 10:58, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
-- **Two module agents are running since 10:57** (`model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents):
-  - (8b-2) Map files + map pack + map picker: agent a29af680a0080317a, CTX-TAG `8b2-mod-1b`, worktree
-    `.claude/worktrees/agent-a29af680a0080317a` (branch `worktree-agent-a29af680a0080317a`);
-  - (9b-2) Terrain self-shadows + unit LOD + minimap options: agent a0aac67ba2177f048, CTX-TAG `9b2-mod-1b`,
-    worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`).
-  Their prompts: brief (HISTORY "(8b) Maps", "Wave 9") + state + ordered TODO + rules block, in the transcript of
-  session e3d118ad. **11:12-11:14 both CHECKPOINTed** (8b-2 at 166k: sim, pack of 10 maps, picker done, left
-  tests/checks/docs; 9b-2 at 185k: shadow bake + LOD maths written, never built). **Successors in the same
-  worktrees since 11:15:** 8b-2 agent 2 a81f798f52fa66eab (CTX-TAG `8b2-mod-2`), 9b-2 agent 2 ac5141e246be5f8c5
-  (`9b2-mod-2`); both continue from `.claude/handoff.md`. A first pair (10:52) died on its first call from a network error (ECONNRESET), nothing written;
-  its empty worktrees were removed automatically. The 06:07 job of the night session never ran (that session hit
-  the Fable limit). Context watcher at 170k for both runs in the background of session e3d118ad.
+**ON RESUME** (2026-11-12 11:32, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
+- **(8b-2) is merged and verified** (9528229; HISTORY "(8b-2)" report); its worktree and branch are removed.
+- **One module agent is running: (9b-2) Terrain self-shadows + unit LOD + minimap options**, agent 2
+  ac5141e246be5f8c5 (CTX-TAG `9b2-mod-2`, `model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents), since 11:15
+  in worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`), continuing
+  from `.claude/handoff.md`. Agent 1 (a0aac67ba2177f048) CHECKPOINTed at 185k at 11:12 with the shadow bake, the
+  mesh simplifier and the LOD maths written but never built. The worktree also holds a nested worktree
+  `.claude/mainbench` (a main build for perf runs) that the agent removes at the end. Context watcher at 170k in the
+  background of session e3d118ad. Prompts in that session's transcript.
 - Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
   ledger purposes already in `tools/token-ledger/purposes.json`.
 - **Usage window:** since 05:00 only 8 calls (1.2 $) before these agents started, so the window was nearly fresh.
