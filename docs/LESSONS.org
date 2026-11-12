@@ -35,6 +35,8 @@ e ogni scopo.
 - Errore: troppa poca artiglieria nell'esercito di Hard (~ArtilleryShare 0.15~: 69 vittorie, 105 sconfitte).
 - Soluzione: ~ArtilleryShare 0.55~ (166 vittorie, 8 sconfitte, 18 pareggi su 192). Dipende dal fatto che
   l'artiglieria T1 rende moltissimo rispetto al suo costo, quindi va ritarato dopo un intervento sul bilanciamento.
+- Poi (2026-10-23 → 24): non era una buona composizione ma un exploit. L'artiglieria T1 vinceva ogni scontro; dopo
+  il bilanciamento quel 96 % non si raggiunge più con nessun valore (vedi [[*Unità mai provate una contro l'altra][Unità mai provate una contro l'altra]]).
 
 * 2026-10-13
 
@@ -80,6 +82,86 @@ e ogni scopo.
 - Errore: due funzioni usavano gli stessi tasti (D, E: immersione e cattura contro attracco e trasporto).
 - Soluzione: tasti rapidi dipendenti dal contesto, decisi in base alla selezione (~Input/SharedHotkeys.cs~,
   ~e747ee9~).
+
+* 2026-10-16
+
+** Liste temporanee statiche condivise tra più simulazioni
+- Errore: ConstructionSystem, MissileSystem e DamageSystem tenevano le loro liste di appoggio in campi statici. Con
+  il multigiocatore più simulazioni girano nello stesso processo (i test in locale, ~Rts.Bench -- mp~) e usavano le
+  stesse liste: il test in locale falliva circa una volta su tre ("Collection was modified") e bloccava un
+  giocatore. La voce del 2026-10-13 sullo stato salvabile aveva marcato quelle liste ~[NoSave]~ senza chiedersi chi
+  altro le usasse.
+- Soluzione: una lista per thread, ~[ThreadStatic, NoSave]~, creata al primo uso (~05f1542~). DEV_GUIDE "Sim
+  pitfalls".
+
+** Picchi del tick attribuiti al garbage collector
+- Errore: i tick da 10-30 ms che arrivavano a caso sembravano colpa del garbage collector. Erano invece cicli eseguiti
+  in codice JIT non ancora ottimizzato (tier 0). Sulle mappe 1024 anche il primo tick costava circa 210 ms, perché
+  la navigazione si costruiva lì.
+- Soluzione: ~QuickJitForLoops=false~ nel client e nel benchmark, codice della simulazione compilato in anticipo su
+  un thread a parte, griglie di navigazione costruite al caricamento (~703607f~, modulo (m)). Il tick peggiore è
+  sceso da 217 ms a circa 12 ms. Prima di ottimizzare si misura per fase (~BENCH_ALLOC=1~, DEV_GUIDE "Profiling").
+
+** L'hash di riferimento cambia quando si aggiungono file di blueprint
+- Errore: l'hash dello stato mescola gli indici dei blueprint, e gli indici seguono l'ordine dei nomi dei file.
+  Aggiungere i file ~cybran_*~ (modulo (l)) e le unità dell'8a (2026-11-11) ha cambiato l'hash della partita di
+  riferimento senza cambiare la partita. Così il controllo "stesso hash" a ogni fusione non distingue più un gioco
+  cambiato da dati aggiunti. È il difetto della voce [[*Indici dei blueprint][Indici dei blueprint]] (2026-10-13), rimasto nell'hash.
+- Soluzione provvisoria: si prova che la partita è la stessa rigiocandola con una copia dei dati senza i file nuovi
+  (DEV_GUIDE "Sim pitfalls"). Ancora aperto: un hash che usasse l'id del blueprint al posto dell'indice non
+  cambierebbe.
+
+* 2026-10-16 → 24: bilanciamento e IA
+
+** Unità mai provate una contro l'altra
+- Errore: per quasi due settimane i valori dei blueprint (danno, gittata, punti vita, costo) sono stati scelti a
+  occhio, senza uno strumento che misurasse chi vince a parità di massa. L'artiglieria T1 vinceva ogni scontro, e
+  l'IA Hard era stata tarata proprio su questo: il 96 % di vittorie con ~ArtilleryShare 0.55~ (voce del
+  2026-10-12 → 14) era un exploit.
+- Soluzione: lo strumento dei duelli (~Rts.Bench -- duel~ e ~duelmatrix~, AI_TUNING "Unit balance") e un passaggio
+  di bilanciamento: artiglieria T1 più lenta, più fragile e più cara, unità d'assedio che perdono gli scontri in
+  campo aperto (~7650459~), carro T1 UEF corretto (~26d271f~). Dopo, Hard batte Normal circa 2 a 1 e nessuna
+  composizione vince da sola. Regola: il bilanciamento si misura prima di tarare l'IA.
+
+** Tarare l'IA con i numeri invece che con le decisioni
+- Errore: per far finire le partite tra eserciti alla pari e per far contare la tecnologia, l'agente (k) ha cambiato
+  per otto giorni i valori di configurazione dell'IA (quote dell'esercito, intervalli, limiti), con matrici di
+  96-192 partite per ogni prova. Ogni leva portava allo stesso punto (Hard contro Normal sempre circa 2 a 1): le
+  partite ferme dipendono da come l'IA decide (quando ingaggiare, quando ritirare un gruppo
+  che perde, come concentrare il fuoco), e nessun numero lo cambia. Il risultato: undici coordinatori uno dopo
+  l'altro, 76,6 $ (19,6 $ ogni 1000 righe, il modulo più caro) e obiettivi mancati (partite finite 64 su 96 invece
+  di 80, tecnologia contro solo T1 al 60 % invece del 65 %).
+- Soluzione: nessuna nel codice. Il passo seguente era cambiare le decisioni dell'IA (onda 9a); il proprietario ha
+  tolto il miglioramento dell'IA dagli obiettivi il 2026-11-11 (~a222069~). Regola: quando tre o quattro leve
+  diverse danno lo stesso risultato, il limite è nella struttura, e un'altra matrice di numeri non serve
+  (AI_TUNING "Hard's edge").
+
+* 2026-11-11
+
+** Una cache pigra finita nel salvataggio
+- Errore: la lista delle prop vive di ~PropStore~ era una cache ricostruita quando qualcuno la leggeva (hash dello
+  stato, sandbox, IA) e lasciava valori vecchi oltre la sua lunghezza. Quei valori finivano nel salvataggio, quindi
+  dipendevano da chi aveva letto la lista e quando, non dalla partita: un replay finiva con lo stesso ~StateHash~ ma
+  con byte diversi. È emerso solo quando una modifica estranea (il Salem, la nave che cammina a terra) ha cambiato il
+  corso della partita.
+- Soluzione: la cache è ~[NoSave]~ e si ricostruisce alla lettura (~19dc325~). Regola: tutto ciò che si ricostruisce
+  "alla lettura" è ~[NoSave]~ (DEV_GUIDE "Sim pitfalls").
+
+* 2026-11-12
+
+** Matematica della simulazione diversa da un sistema operativo all'altro
+- Errore: la regola del determinismo (CLAUDE.md, regola rigida 1) copriva solo l'ordine dei thread e delle
+  strutture dati. Seni, coseni, potenze e logaritmi della simulazione (circa 40 chiamate: armi, proiettili, missili,
+  movimento, IA, generazione delle mappe) usavano la libreria matematica del sistema operativo, che può differire
+  nell'ultimo bit tra Linux e Windows: una partita tra un giocatore Linux e uno Windows poteva desincronizzarsi. Il
+  rischio era scritto dalla revisione del 2026-10-16 (ARCHITECTURE "Multiplayer") ed è rimasto aperto fino al
+  2026-11-12, mentre il codice che lo usava cresceva.
+- Soluzione: funzioni matematiche software (~DMath~), identiche bit per bit su ogni sistema; un test che rifiuta
+  ~MathF~ nel codice della simulazione; valori di riferimento fissati in un test; ~GameInfo.MathVersion~, così i
+  replay vecchi si rifiutano con un messaggio chiaro invece di desincronizzarsi (~f3a50a6~, modulo 10a-1). Il prezzo
+  del ritardo: tutti gli hash di riferimento sono cambiati, e i replay e i salvataggi su mappe generate fatti prima
+  non si aprono più. Manca ancora la prova su Windows e su ARM64. Regola: il determinismo tra macchine diverse si
+  decide con la prima riga della simulazione.
 
 * Costi
 

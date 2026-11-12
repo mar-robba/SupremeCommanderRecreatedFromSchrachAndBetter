@@ -87,7 +87,12 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    keep it current): `summary.org` then shows the module's and the wave's cost per 1000 lines. Every 2-3 waves, or
    when the owner asks (owner, 2026-11-10; before: after every wave), bring the whole "Costi" chapter of
    [LESSONS.org](LESSONS.org) up to date with `summary.org` (its tables, not only a new paragraph: from 2026-10-15
-   to 2026-11-10 the main tables stayed at the wave 4 numbers); its first lines say when it is next due. Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
+   to 2026-11-10 the main tables stayed at the wave 4 numbers); its first lines say when it is next due. **At every
+   merge**, turn the report's "Design errors found" section (AGENT_RULES "Final report", mandatory since
+   2026-11-12; every prompt's "Final report" line must name it) and any design error the merge checks show into
+   dated entries of [LESSONS.org](LESSONS.org) (in Italian: Errore, Soluzione, commit); "none" = nothing to add. This step was missing from 2026-10-16 to 2026-11-12: those errors went
+   only into HISTORY "Known issues" and DEV_GUIDE pitfalls, and the owner noticed (entries written 2026-11-12).
+   Then remove the worktree and the branch: `git worktree remove <path>` + `git branch -d <branch>`.
    A locked worktree needs `git worktree unlock <path>` first.
 8. **Cross-module bugs** often appear only after a merge (example: anti-air vs orbiting aircraft). Send them to the
    agent that owns the area. That agent runs `git merge main` first.
