@@ -1241,3 +1241,36 @@ setting. The replay of a loaded game continues (or a new replay starts from the 
 Tests: save in a loopback game → load → both peers' state hashes equal at the tick and N ticks later; a missing
 file is transferred; a changed file is refused; `Rts.Bench -- mp` gets a save/load step. Screenshots: the load
 lobby with saved slots.
+
+### (10b-1) Keybinding editor — report (merged 2026-11-12, 2af6abf)
+Two agents: the module agent stopped at its checkpoint (172k, 15 minutes) with the feature done, a fresh agent
+ran the checks and wrote the report (92k, 6 minutes). 754 lines.
+
+**What works**: every `Hotkeys` entry can be rebound. Each entry's id is its field name; the binding is an
+override layer on the table (the defaults never change), saved in `AppSettings.KeyBindings` as `"v1;Id=Keys;..."`
+(unknown ids, bad keys and clashing entries are skipped, never a crash). The Settings tab "Keys" (also from the
+pause menu's Settings): click an entry, press a key with Shift/Ctrl/Alt (Esc cancels); a row of slots (Z X C V B N,
+0-9) rebinds key by key as a whole row; a clashing key is refused with an offer to swap; right click or "Reset"
+restores one entry, "Reset all" everything. Shared keys (D, E, U, M) act by selection only while both entries keep
+the same key; once split, each key does its own action.
+**How to try it**: `--settings-tab keys`, `--keys-capture Stop` (opens the capture prompt), `--bind
+"Stop=F11,Patrol=Ctrl+G"` (bindings for that run only; screenshot runs never read settings.json), with
+`--help-overlay` to see them in the F1 help.
+**Moved into the table** (so they rebind): camera pan / rotate / reset, mute / music, the self-destruct dialog keys,
+build and factory slot rows, tier, category, repeat, rotate structure, fog, perf overlay, debug F9/F10, sandbox
+panel / console, upgrade, F5 / F6. **Stay fixed**: Esc, modifier reads, text fields, the sandbox console history,
+menu keys; the replay viewer follows rebound keys but ignores modifiers. No new hotkeys.
+**Tests**: 6 in `KeyBindingTests` (round trip, clash, swap, reset, rebound key fires / old key does not, unique
+ids, corrupt entry ignored). **Shared files**: GameApp.cs (2 options), GameSession.cs (1 line), Hud.cs (dialog keys),
+SettingsScreen (Keys tab), AppSettings (1 field), AppSettingsTests, HotkeyTableTests.
+**Measured**: sim 603, client 349, net 33 green; bench `2000 300` hash 6A8312040EFA67F2 unchanged; `--perf-log
+--demo` 1.7-2.1 KB/frame, the same as a main build (no allocations from the binding lookups).
+**Known issues**: held camera keys now need Ctrl released, so Ctrl+arrows no longer pan (noted in ARCHITECTURE
+"Keybindings"); later (ROADMAP G19): a second key per entry, a Shift+K warning, a search field in the Keys tab,
+ReplayScreen keys ignore modifiers. In `--demo` the perf overlay draws over the help overlay (older).
+**Handoff review** (second agent): the note was enough; it lacked the exact `--help-overlay` command and the normal
+allocation numbers, so it built main in a temporary worktree to compare. Nothing was redone.
+**Merge checks on main** (orchestrator, 2026-11-12 18:46-18:50): build and tests 603 sim + 349 client + 33 net
+green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A8312040EFA67F2; screenshot of
+`--settings --settings-tab keys --bind "Stop=F11"` (the Keys tab by group, Stop shown as F11 with its Reset button)
+looked right.

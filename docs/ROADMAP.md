@@ -2,14 +2,14 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 18:55 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 18:55; 10b-1 merged 18:50 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
 2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
 pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner).
-Tests: 603 sim + 343 client + 33 net.
+Tests: 603 sim + 349 client + 33 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
 **FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
 rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
@@ -25,7 +25,8 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   editor (G19, client only); pair 2 = **10a-2** observers + vote to drop + lobby pings + chat sounds + **10b-2**
   selection overlays + client leftovers (G20, G11 client items); then **10a-3** MP save/load (G36) with a wave 11
   module. One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, no sub-agents while two run).
-- **Pair 1 is running** (started 2026-11-12 ~18:55 at the owner's request, "si parti subito", in the half-used
+- **(10b-1) Keybinding editor is merged and verified** (2af6abf, 2026-11-12 18:50; HISTORY report).
+- **Pair 1 is running** (started 2026-11-12 ~18:22 at the owner's request, "si parti subito", in the half-used
   15:40 window, ~15 $ used by then; it may be cut at ~20:40). Worktrees under `.claude/worktrees/`; a CronCreate job
   of session 3badb572 at 20:47 commits WIP and resumes or replaces cut agents. Prompts:
   `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a1.md` and
