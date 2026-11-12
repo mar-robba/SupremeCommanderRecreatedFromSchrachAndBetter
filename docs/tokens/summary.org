@@ -3,20 +3,20 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-11-12 11:12 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-11-12 14:56 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.526,1 milioni di token, 818,3 $, 32 sessioni e 169 agenti.
-Output: 103 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,16).
+1.548,3 milioni di token, 830,0 $, 33 sessioni e 173 agenti.
+Output: 108 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,17).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 87     | 612,7     | 4.084      | 325,3 | 39,7    | 2026-11-12      |
-| Coordinamento          | 1      | 191,3     | 1.234      | 135,6 | 16,6    | 2026-11-12      |
-| Esperienza client      | 37     | 279,1     | 1.908      | 134,2 | 16,4    | 2026-11-12      |
-| Avversario IA          | 25     | 260,8     | 1.380      | 117,8 | 14,4    | 2026-10-24      |
-| Infrastruttura tecnica | 18     | 137,5     | 1.057      | 70,8  | 8,7     | 2026-10-24      |
+| Gameplay SupCom        | 87     | 612,7     | 4.086      | 325,3 | 39,2    | 2026-11-12      |
+| Esperienza client      | 41     | 297,5     | 2.062      | 143,5 | 17,3    | 2026-11-12      |
+| Coordinamento          | 1      | 195,1     | 1.271      | 137,9 | 16,6    | 2026-11-12      |
+| Avversario IA          | 25     | 260,8     | 1.380      | 117,9 | 14,2    | 2026-10-24      |
+| Infrastruttura tecnica | 18     | 137,5     | 1.057      | 70,8  | 8,5     | 2026-10-24      |
 | Documentazione         | 1      | 44,7      | 462        | 34,6  | 4,2     | 2026-11-12      |
 
 * Per onda
@@ -27,49 +27,50 @@ Righe = righe aggiunte in ~src/~, ~tests/~, ~tools/~, ~data/~ dal merge del modu
 ~purposes.json~); "in corso" = almeno un modulo dell'onda non è ancora fuso in ~main~. Lettura dei numeri:
 capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 
-| Onda       | Moduli | Agenti | Chiamate | Token (M) | k token / chiamata | $ / chiamata | $     | % costo | Righe  | $ / 1000 righe | Chiamate / 1000 righe | Ultima attività |
-|------------+--------+--------+----------+-----------+--------------------+--------------+-------+---------+--------+----------------+-----------------------+-----------------|
-| Fondazione | 1      | 0      | 38       | 3,9       | 102                | 0,134        | 5,1   | 0,6     | 5.113  | 1,0            | 7                     | 2026-10-10      |
-| Onda 1     | 5      | 5      | 332      | 69,5      | 209                | 0,117        | 38,7  | 4,7     | 11.735 | 3,3            | 28                    | 2026-10-10      |
-| Onda 2     | 4      | 9      | 644      | 142,2     | 221                | 0,093        | 59,6  | 7,3     | 10.407 | 5,7            | 62                    | 2026-10-11      |
-| Onda 3     | 4      | 17     | 1.158    | 157,2     | 136                | 0,070        | 81,3  | 9,9     | 14.636 | 5,6            | 79                    | 2026-10-12      |
-| Onda 4     | 6      | 28     | 2.248    | 262,6     | 117                | 0,062        | 139,0 | 17,0    | 17.518 | 7,9            | 128                   | 2026-10-14      |
-| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,3 | 22,2    | 21.889 | 8,3            | 158                   | 2026-10-24      |
-| Onda 6     | 2      | 18     | 1.070    | 99,6      | 93                 | 0,049        | 52,1  | 6,4     | 6.041  | 8,6            | 177                   | 2026-10-24      |
-| Onda 7     | 2      | 13     | 554      | 49,4      | 89                 | 0,058        | 32,3  | 3,9     | 4.163  | 7,8            | 133                   | 2026-11-11      |
-| Onda 8     | 3      | 15     | 760      | 74,2      | 98                 | 0,051        | 39,0  | 4,8     | 4.680  | 8,3            | 162                   | 2026-11-12      |
-| Onda 9     | 2      | 6      | 397      | 44,7      | 113                | 0,049        | 19,6  | 2,4     | 2.639  | 7,4            | 150                   | 2026-11-12      |
-| Fuori onda | —      | 2      | 1.626    | 236,0     | 145                | 0,105        | 170,2 | 20,8    | —      | —              | —                     | 2026-11-12      |
+| Onda       | Moduli | Agenti | Chiamate | Token (M) | k token / chiamata | $ / chiamata | $     | % costo | Righe    | $ / 1000 righe | Chiamate / 1000 righe | Ultima attività |
+|------------+--------+--------+----------+-----------+--------------------+--------------+-------+---------+----------+----------------+-----------------------+-----------------|
+| Fondazione | 1      | 0      | 38       | 3,9       | 102                | 0,134        | 5,1   | 0,6     | 5.113    | 1,0            | 7                     | 2026-10-10      |
+| Onda 1     | 5      | 5      | 332      | 69,5      | 209                | 0,117        | 38,7  | 4,7     | 11.735   | 3,3            | 28                    | 2026-10-10      |
+| Onda 2     | 4      | 9      | 644      | 142,2     | 221                | 0,093        | 59,6  | 7,2     | 10.407   | 5,7            | 62                    | 2026-10-11      |
+| Onda 3     | 4      | 17     | 1.158    | 157,2     | 136                | 0,070        | 81,4  | 9,8     | 14.636   | 5,6            | 79                    | 2026-10-12      |
+| Onda 4     | 6      | 28     | 2.248    | 262,6     | 117                | 0,062        | 139,1 | 16,8    | 17.518   | 7,9            | 128                   | 2026-10-14      |
+| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,3 | 21,8    | 21.889   | 8,3            | 158                   | 2026-10-24      |
+| Onda 6     | 2      | 18     | 1.070    | 99,6      | 93                 | 0,049        | 52,1  | 6,3     | 6.041    | 8,6            | 177                   | 2026-10-24      |
+| Onda 7     | 2      | 13     | 554      | 49,4      | 89                 | 0,058        | 32,3  | 3,9     | 4.163    | 7,8            | 133                   | 2026-11-11      |
+| Onda 8     | 4      | 19     | 965      | 94,9      | 98                 | 0,052        | 49,9  | 6,0     | in corso | —              | —                     | 2026-11-12      |
+| Onda 9     | 2      | 6      | 397      | 44,7      | 113                | 0,049        | 19,6  | 2,4     | 2.639    | 7,4            | 150                   | 2026-11-12      |
+| Fuori onda | —      | 2      | 1.633    | 237,5     | 145                | 0,105        | 170,9 | 20,6    | —        | —              | —                     | 2026-11-12      |
 
 * Per scopo
 | Scopo                                               | Agenti | Token (M) | Output (k) | $    | % costo | Onda | Righe | $ / 1000 righe | Ultima attività |
 |-----------------------------------------------------+--------+-----------+------------+------+---------+------+-------+----------------+-----------------|
-| IA usa tutto (5k)                                   | 18     | 170,2     | 926        | 76,8 | 9,4     | 5    | 3.905 | 19,7           | 2026-10-24      |
-| Fazione Cybran (5l)                                 | 20     | 88,7      | 631        | 46,9 | 5,7     | 5    | 9.466 | 5,0            | 2026-10-23      |
-| Orchestrazione (sessioni principali)                | 0      | 69,5      | 396        | 46,0 | 5,6     | —    | —     | —              | 2026-10-16      |
-| Rifinitura SupCom (4f)                              | 9      | 79,6      | 490        | 43,0 | 5,3     | 4    | 3.793 | 11,3           | 2026-10-14      |
-| Comandante e ingegneri (6a)                         | 13     | 65,9      | 470        | 34,3 | 4,2     | 6    | 3.576 | 9,6            | 2026-10-24      |
+| IA usa tutto (5k)                                   | 18     | 170,2     | 927        | 76,8 | 9,3     | 5    | 3.905 | 19,7           | 2026-10-24      |
+| Fazione Cybran (5l)                                 | 20     | 88,7      | 632        | 46,9 | 5,7     | 5    | 9.466 | 5,0            | 2026-10-23      |
+| Orchestrazione (sessioni principali)                | 0      | 69,5      | 396        | 46,0 | 5,5     | —    | —     | —              | 2026-10-16      |
+| Rifinitura SupCom (4f)                              | 9      | 79,6      | 491        | 43,0 | 5,2     | 4    | 3.793 | 11,3           | 2026-10-14      |
+| Comandante e ingegneri (6a)                         | 13     | 65,9      | 470        | 34,3 | 4,1     | 6    | 3.576 | 9,6            | 2026-10-24      |
 | Navale (3c)                                         | 4      | 61,1      | 267        | 32,2 | 3,9     | 3    | 3.143 | 10,3           | 2026-10-12      |
-| IA schermaglie (3d-4d)                              | 5      | 64,7      | 306        | 29,4 | 3,6     | 4    | 1.975 | 14,9           | 2026-10-14      |
-| Mappe, menu, flusso (onda 2)                        | 3      | 64,8      | 258        | 25,1 | 3,1     | 2    | 3.807 | 6,6            | 2026-10-11      |
+| IA schermaglie (3d-4d)                              | 5      | 64,7      | 306        | 29,4 | 3,5     | 4    | 1.975 | 14,9           | 2026-10-14      |
+| Mappe, menu, flusso (onda 2)                        | 3      | 64,8      | 258        | 25,1 | 3,0     | 2    | 3.807 | 6,6            | 2026-10-11      |
 | Unità mancanti e mura (8a)                          | 10     | 41,1      | 334        | 24,6 | 3,0     | 8    | 2.250 | 10,9           | 2026-11-11      |
-| Armi strategiche (3b)                               | 6      | 45,7      | 297        | 23,1 | 2,8     | 3    | 4.343 | 5,3            | 2026-10-12      |
+| Armi strategiche (3b)                               | 6      | 45,7      | 298        | 23,1 | 2,8     | 3    | 4.343 | 5,3            | 2026-10-12      |
 | Sperimentali e comandanti (4g)                      | 5      | 38,4      | 275        | 22,9 | 2,8     | 4    | 3.006 | 7,6            | 2026-10-13      |
-| Ordini e selezione (7b)                             | 9      | 31,9      | 311        | 21,9 | 2,7     | 7    | 2.648 | 8,3            | 2026-11-11      |
-| Scala e prestazioni (5m)                            | 6      | 50,0      | 261        | 21,7 | 2,7     | 5    | 1.657 | 13,1           | 2026-10-16      |
-| Documentazione e analisi costi                      | 1      | 28,0      | 289        | 21,7 | 2,7     | —    | —     | —              | 2026-11-12      |
-| Trasporti (4h)                                      | 4      | 37,9      | 263        | 20,9 | 2,6     | 4    | 3.350 | 6,2            | 2026-10-14      |
+| Ordini e selezione (7b)                             | 9      | 31,9      | 311        | 21,9 | 2,6     | 7    | 2.648 | 8,3            | 2026-11-11      |
+| Scala e prestazioni (5m)                            | 6      | 50,0      | 261        | 21,7 | 2,6     | 5    | 1.657 | 13,1           | 2026-10-16      |
+| Documentazione e analisi costi                      | 1      | 28,0      | 289        | 21,7 | 2,6     | —    | —     | —              | 2026-11-12      |
+| Trasporti (4h)                                      | 4      | 37,9      | 263        | 20,9 | 2,5     | 4    | 3.350 | 6,2            | 2026-10-14      |
 | UX (5n)                                             | 7      | 42,8      | 272        | 19,6 | 2,4     | 5    | 2.339 | 8,4            | 2026-10-16      |
-| Opzioni partita e squadra (6b)                      | 5      | 33,7      | 249        | 17,8 | 2,2     | 6    | 2.465 | 7,2            | 2026-10-24      |
+| Opzioni partita e squadra (6b)                      | 5      | 33,7      | 249        | 17,8 | 2,1     | 6    | 2.465 | 7,2            | 2026-10-24      |
 | Salvataggi e replay (4i)                            | 3      | 31,0      | 239        | 17,4 | 2,1     | 4    | 4.473 | 3,9            | 2026-10-14      |
 | Multigiocatore lockstep (5o)                        | 5      | 35,2      | 232        | 16,2 | 2,0     | 5    | 4.522 | 3,6            | 2026-10-16      |
-| Sandbox (3e)                                        | 5      | 28,2      | 249        | 15,2 | 1,9     | 3    | 4.025 | 3,8            | 2026-10-12      |
+| Sandbox (3e)                                        | 5      | 28,2      | 250        | 15,2 | 1,8     | 3    | 4.025 | 3,8            | 2026-10-12      |
 | Nebbia di guerra e intel (onda 2)                   | 2      | 30,9      | 147        | 12,9 | 1,6     | 2    | 1.332 | 9,7            | 2026-10-11      |
 | Orchestrazione: avvio 8b-1 e 9b-1                   | 0      | 8,5       | 101        | 12,4 | 1,5     | —    | —     | —              | 2026-11-12      |
 | IA schermaglie (onda 2)                             | 2      | 25,9      | 147        | 11,6 | 1,4     | 2    | 2.646 | 4,4            | 2026-10-11      |
 | Documentazione                                      | 0      | 15,2      | 156        | 11,4 | 1,4     | —    | —     | —              | 2026-10-15      |
-| Ombre terreno, LOD, minimappa (9b-2)                | 4      | 26,0      | 179        | 11,2 | 1,4     | 9    | 1.082 | 10,3           | 2026-11-12      |
-| Tecnologia T2/T3 (3a)                               | 2      | 22,2      | 137        | 10,8 | 1,3     | 3    | 3.125 | 3,4            | 2026-10-12      |
+| Ombre terreno, LOD, minimappa (9b-2)                | 4      | 26,0      | 179        | 11,2 | 1,3     | 9    | 1.082 | 10,3           | 2026-11-12      |
+| Mappe in rete e biomi (8b-3)                        | 4      | 20,7      | 178        | 10,9 | 1,3     | 8    | —     | —              | 2026-11-12      |
+| Tecnologia T2/T3 (3a)                               | 2      | 22,2      | 137        | 10,8 | 1,3     | 3    | 3.125 | 3,5            | 2026-10-12      |
 | Rilascio e impostazioni (7a)                        | 4      | 17,5      | 169        | 10,4 | 1,3     | 7    | 1.515 | 6,9            | 2026-10-24      |
 | Orchestrazione: ripresa di 7b e 8a                  | 0      | 7,9       | 77         | 10,2 | 1,2     | —    | —     | —              | 2026-11-11      |
 | Grafica client (onda 1)                             | 1      | 20,7      | 170        | 10,1 | 1,2     | 1    | 3.361 | 3,0            | 2026-10-10      |
@@ -83,8 +84,8 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Alberi e rocce (8b-1)                               | 2      | 19,7      | 140        | 8,3  | 1,0     | 8    | 1.393 | 6,0            | 2026-11-12      |
 | Giudizio sulle regole di orchestrazione e uso token | 0      | 2,3       | 61         | 8,0  | 1,0     | —    | —     | —              | 2026-11-11      |
 | Combattimento (onda 1)                              | 1      | 12,0      | 72         | 7,4  | 0,9     | 1    | 1.628 | 4,5            | 2026-10-10      |
+| Orchestrazione onde 8b-9b                           | 0      | 14,2      | 90         | 6,8  | 0,8     | —    | —     | —              | 2026-11-12      |
 | UI e HUD (onda 1)                                   | 1      | 12,0      | 103        | 6,7  | 0,8     | 1    | 2.674 | 2,5            | 2026-10-10      |
-| Orchestrazione onde 8b-9b                           | 0      | 12,7      | 77         | 6,1  | 0,7     | —    | —     | —              | 2026-11-12      |
 | File mappa e scelta mappa (8b-2)                    | 3      | 13,4      | 98         | 6,1  | 0,7     | 8    | 1.037 | 5,8            | 2026-11-12      |
 | Economia e costruzione (onda 1)                     | 1      | 6,7       | 82         | 5,6  | 0,7     | 1    | 1.644 | 3,4            | 2026-10-10      |
 | Infrastruttura fazioni (j)                          | 2      | 11,0      | 95         | 5,4  | 0,7     | 4    | 921   | 5,9            | 2026-10-14      |
@@ -105,7 +106,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | 2026-10-10 | 89,9      | 52,8  | 9      |
 | 2026-10-11 | 192,1     | 85,2  | 9      |
 | 2026-10-12 | 204,5     | 108,7 | 29     |
-| 2026-10-13 | 142,6     | 85,2  | 20     |
+| 2026-10-13 | 142,6     | 85,3  | 20     |
 | 2026-10-14 | 91,8      | 47,2  | 14     |
 | 2026-10-15 | 115,5     | 62,8  | 18     |
 | 2026-10-16 | 138,6     | 58,9  | 14     |
@@ -114,28 +115,28 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | 2026-10-24 | 174,9     | 91,7  | 27     |
 | 2026-11-10 | 33,2      | 44,4  | 8      |
 | 2026-11-11 | 53,3      | 41,3  | 5      |
-| 2026-11-12 | 100,3     | 51,8  | 12     |
+| 2026-11-12 | 122,5     | 63,4  | 16     |
 
 * Ultime attività
-| Fine (UTC)       | Tipo     | Scopo                                          | Descrizione                                        | Token (M) | $     | Output |
-|------------------+----------+------------------------------------------------+----------------------------------------------------+-----------+-------+--------|
-| 2026-11-12 11:12 | agente   | Documentazione e analisi costi                 | [Documentazione e analisi costi] LESSONS Costi aft | 2,3       | 2.14  | esatto |
-| 2026-11-12 11:04 | sessione | Orchestrazione onde 8b-9b                      | continua                                           | 12,7      | 6.08  | esatto |
-| 2026-11-12 10:57 | ripresa  | Ombre terreno, LOD, minimappa (9b-2)           | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 9,3       | 3.42  | esatto |
-| 2026-11-12 10:33 | ripresa  | Ombre terreno, LOD, minimappa (9b-2)           | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 10,0      | 4.21  | esatto |
-| 2026-11-12 10:22 | ripresa  | File mappa e scelta mappa (8b-2)               | [File mappa e scelta mappa (8b-2)] module agent 2: | 5,6       | 2.17  | esatto |
-| 2026-11-12 10:12 | agente   | Ombre terreno, LOD, minimappa (9b-2)           | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 6,6       | 3.33  | esatto |
-| 2026-11-12 10:11 | agente   | File mappa e scelta mappa (8b-2)               | [File mappa e scelta mappa (8b-2)] module agent: m | 7,8       | 3.69  | esatto |
-| 2026-11-12 09:45 | agente   | File mappa e scelta mappa (8b-2)               | [File mappa e scelta mappa (8b-2)] module agent: m | 0,0       | 0.20  | esatto |
-| 2026-11-12 09:45 | agente   | Ombre terreno, LOD, minimappa (9b-2)           | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 0,0       | 0.20  | esatto |
-| 2026-11-12 02:07 | sessione | Orchestrazione: avvio 8b-1 e 9b-1              | continua                                           | 7,5       | 9.53  | esatto |
-| 2026-11-11 23:48 | ripresa  | Animazioni di morte e warp-in (9b-1)           | [Animazioni di morte e warp-in (9b-1)] module agen | 10,5      | 3.98  | esatto |
-| 2026-11-11 23:41 | ripresa  | Alberi e rocce (8b-1)                          | [Alberi e rocce (8b-1)] module agent 2: client, pe | 10,6      | 4.15  | esatto |
-| 2026-11-11 23:24 | agente   | Animazioni di morte e warp-in (9b-1)           | [Animazioni di morte e warp-in (9b-1)] module agen | 8,2       | 4.50  | esatto |
-| 2026-11-11 23:23 | agente   | Alberi e rocce (8b-1)                          | [Alberi e rocce (8b-1)] module agent: map props    | 9,0       | 4.18  | esatto |
-| 2026-11-11 22:02 | sessione | Orchestrazione: avvio 8b-1 e 9b-1              | continua                                           | 1,0       | 2.88  | esatto |
-| 2026-11-11 18:52 | sessione | Orchestrazione onde 8b e 9b                    | continua                                           | 1,3       | 2.13  | esatto |
-| 2026-11-11 18:48 | sessione | Orchestratore: verifica merge 8a e contabilità | continua                                           | 4,8       | 4.91  | esatto |
-| 2026-11-11 18:36 | sessione | Orchestrazione: ripresa di 7b e 8a             | continua                                           | 7,9       | 10.18 | esatto |
-| 2026-11-11 18:33 | agente   | Unità mancanti e mura (8a)                     | [Unità mancanti e mura (8a)] agente modulo 2: bug  | 7,6       | 3.80  | esatto |
-| 2026-11-11 18:29 | agente   | Unità mancanti e mura (8a)                     | [Unità mancanti e mura (8a)] Salem a terra, scena  | 5,0       | 2.38  | esatto |
+| Fine (UTC)       | Tipo     | Scopo                                | Descrizione                                        | Token (M) | $    | Output |
+|------------------+----------+--------------------------------------+----------------------------------------------------+-----------+------+--------|
+| 2026-11-12 14:56 | agente   | Mappe in rete e biomi (8b-3)         | [Mappe in rete e biomi (8b-3)] biome visuals check | 0,9       | 0.58 | esatto |
+| 2026-11-12 14:55 | ripresa  | Mappe in rete e biomi (8b-3)         | [Mappe in rete e biomi (8b-3)] module agent 2      | 8,0       | 3.56 | esatto |
+| 2026-11-12 14:52 | sessione | Mappe in rete e biomi (8b-3)         |                                                    | 2,3       | 1.56 | esatto |
+| 2026-11-12 14:50 | agente   | Mappe in rete e biomi (8b-3)         | [Mappe in rete e biomi (8b-3)] biome visuals       | 4,3       | 2.67 | esatto |
+| 2026-11-12 14:15 | agente   | Mappe in rete e biomi (8b-3)         | [Mappe in rete e biomi (8b-3)] module agent        | 5,2       | 2.54 | esatto |
+| 2026-11-12 11:16 | sessione | Orchestrazione onde 8b-9b            | continua                                           | 14,2      | 6.78 | esatto |
+| 2026-11-12 11:12 | agente   | Documentazione e analisi costi       | [Documentazione e analisi costi] LESSONS Costi aft | 2,3       | 2.14 | esatto |
+| 2026-11-12 10:57 | ripresa  | Ombre terreno, LOD, minimappa (9b-2) | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 9,3       | 3.42 | esatto |
+| 2026-11-12 10:33 | ripresa  | Ombre terreno, LOD, minimappa (9b-2) | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 10,0      | 4.21 | esatto |
+| 2026-11-12 10:22 | ripresa  | File mappa e scelta mappa (8b-2)     | [File mappa e scelta mappa (8b-2)] module agent 2: | 5,6       | 2.17 | esatto |
+| 2026-11-12 10:12 | agente   | Ombre terreno, LOD, minimappa (9b-2) | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 6,6       | 3.33 | esatto |
+| 2026-11-12 10:11 | agente   | File mappa e scelta mappa (8b-2)     | [File mappa e scelta mappa (8b-2)] module agent: m | 7,8       | 3.69 | esatto |
+| 2026-11-12 09:45 | agente   | File mappa e scelta mappa (8b-2)     | [File mappa e scelta mappa (8b-2)] module agent: m | 0,0       | 0.20 | esatto |
+| 2026-11-12 09:45 | agente   | Ombre terreno, LOD, minimappa (9b-2) | [Ombre terreno, LOD, minimappa (9b-2)] module agen | 0,0       | 0.20 | esatto |
+| 2026-11-12 02:07 | sessione | Orchestrazione: avvio 8b-1 e 9b-1    | continua                                           | 7,5       | 9.53 | esatto |
+| 2026-11-11 23:48 | ripresa  | Animazioni di morte e warp-in (9b-1) | [Animazioni di morte e warp-in (9b-1)] module agen | 10,5      | 3.98 | esatto |
+| 2026-11-11 23:41 | ripresa  | Alberi e rocce (8b-1)                | [Alberi e rocce (8b-1)] module agent 2: client, pe | 10,6      | 4.15 | esatto |
+| 2026-11-11 23:24 | agente   | Animazioni di morte e warp-in (9b-1) | [Animazioni di morte e warp-in (9b-1)] module agen | 8,2       | 4.50 | esatto |
+| 2026-11-11 23:23 | agente   | Alberi e rocce (8b-1)                | [Alberi e rocce (8b-1)] module agent: map props    | 9,0       | 4.18 | esatto |
+| 2026-11-11 22:02 | sessione | Orchestrazione: avvio 8b-1 e 9b-1    | continua                                           | 1,0       | 2.88 | esatto |
