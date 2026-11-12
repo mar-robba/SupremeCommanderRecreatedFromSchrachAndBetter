@@ -13,7 +13,7 @@ namespace Rts.Client.UI;
 /// <item>own units losing health (prev → cur): "Units under attack" (toast + alarm only off screen, 25 s cooldown),
 /// commander under attack (20 s); every attacked area flashes on the minimap (<see cref="AlertLog.Add"/> merges);</item>
 /// <item>allied units losing health: "Ally under attack" (30 s);</item>
-/// <item>own complete structure destroyed (UnitDeath effect): "Structure lost";</item>
+/// <item>own complete structure destroyed (UnitDeath effect): "Structure lost" (not when the player self-destructed it);</item>
 /// <item>own structure finished (BuildComplete): "Construction complete", or "Upgrade complete" when the same unit
 /// had another blueprint in the previous snapshot (upgrades keep the unit handle);</item>
 /// <item>unit cap reached (<see cref="UnitCapCounter.ShouldAlert"/>).</item>
@@ -90,7 +90,9 @@ public sealed class AlertMonitor
         if (e.Kind == EffectKind.UnitDeath)
         {
             // Skip cancelled / destroyed construction sites (still under construction in the previous snapshot).
-            if (prev != null && FindAt(prev, e.Pos, e.BlueprintIndex, me, out var pv) && (pv.Flags & UnitFlags.UnderConstruction) != 0) return;
+            if (prev != null && FindAt(prev, e.Pos, e.BlueprintIndex, me, out var pv)
+                && ((pv.Flags & UnitFlags.UnderConstruction) != 0 || _log.TakeSelfDestructed(new Rts.Sim.Core.UnitHandle(pv.Index, pv.Gen))))
+                return; // (10b-2) self-destructed by the player: no toast
             _log.Add(AlertKind.StructureLost, e.Pos, now, "Structure lost: " + bp.Name);
             raise(AlertKind.StructureLost, Counted("Structure lost: " + bp.Name, now), LostColor);
         }

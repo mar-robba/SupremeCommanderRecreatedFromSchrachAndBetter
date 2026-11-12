@@ -107,6 +107,8 @@ public sealed class UiStartup
             // "any:<what>": units of every army the player controls (sandbox), e.g. --select any:uef_t1_tank.
             bool anyArmy = _select!.StartsWith("any:");
             string what = anyArmy ? _select[4..] : _select;
+            int minCount = 1; // (10b-2) "<what>@N": wait until at least N units match (sandbox --exec spawns come later)
+            if (what.LastIndexOf('@') is int at && at > 0 && int.TryParse(what[(at + 1)..], out int mc)) { minCount = Math.Max(1, mc); what = what[..at]; }
             for (int k = 0; k < snap.UnitCount; k++)
             {
                 ref var v = ref snap.Units[k];
@@ -120,13 +122,14 @@ public sealed class UiStartup
                     "airfactory" or "air_factory" => bp.Has(UnitCategory.Factory) && bp.Has(UnitCategory.Air),
                     "factories" => bp.Has(UnitCategory.Factory),
                     "army" or "all" => bp.IsMobile,
+                    "everything" => true, // (10b-2) units and structures (mixed selections for screenshots)
                     _ => _ctx.Db[v.Bp].Id == what,
                 };
                 if (ok) picked.Add(new UnitHandle(v.Index, v.Gen));
                 if (ok && !anyArmy && what is "commander" or "acu" or "factory" or "airfactory" or "air_factory") break;
             }
             // Wait for the demo factory to exist before giving up on it.
-            if (picked.Count > 0 && (!_demo || _queued || _select != "factory"))
+            if (picked.Count >= minCount && (!_demo || _queued || _select != "factory"))
             {
                 _sel.SelectOnly(picked);
                 _selectDone = true;

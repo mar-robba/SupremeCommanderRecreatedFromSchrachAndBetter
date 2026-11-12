@@ -58,6 +58,8 @@ public sealed class AppSettings
     public bool MinimapResources { get; set; } = true;
     public bool MinimapUnits { get; set; } = true;
     public bool MinimapTrees { get; set; }
+    /// <summary>(10b-2) Range / intel rings of the selection (Rendering/SelectionRangeOverlay.cs; key I flips it per session).</summary>
+    public bool RangeRings { get; set; } = true;
     /// <summary>(10b-1) Rebound keys, "v1;Id=Spec;..." (only non-default entries; Input/Hotkeys.Bindings.cs).</summary>
     public string KeyBindings { get; set; } = "";
 

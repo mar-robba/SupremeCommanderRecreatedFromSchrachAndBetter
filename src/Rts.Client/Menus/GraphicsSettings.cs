@@ -56,6 +56,7 @@ public static class GraphicsSettings
         CameraSettings.ZoomSpeed = Math.Clamp(s.ZoomSpeed, 0.5f, 2f);
         TerrainRenderer.SelfShadows = s.TerrainShadows; // (9b-2) CLI --terrain-shadows / --unit-lod win (…Cli fields)
         UnitRenderer.LodEnabled = s.UnitLod;
+        SelectionRangeOverlay.Enabled = s.RangeRings; // (10b-2)
         if (!_captured || !Raylib.IsWindowReady()) return;
 
         bool vsync = s.VSync && !_cliNoVsync;

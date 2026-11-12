@@ -218,7 +218,8 @@ your branch, not one run against an old number:
   allocations, not for timings); `BENCH_WARMUP=1` runs `SimWarmup` first (as the client does); 5th argument =
   armies (`... 700 400 0 1024 8`: 8 blobs on a 1024 map). `ai` matches print the same stage lines.
 - Client: `--screenshot` runs print `perf:` (frame/CPU ms), `stages ms:` (CPU per frame stage, avg/max) and `gpu ms:`
-  (GPU timer queries); `--perf-log` prints the same once per second while playing. Frames are vsync-capped at 60:
+  (GPU timer queries); `--perf-log` prints the same once per second while playing, plus (10b-2) the stages that
+  allocate >= 1 KB/frame on the main thread (e.g. `hud:unitpanel=181.2KB`: find per-frame garbage by stage). Frames are vsync-capped at 60:
   compare CPU and GPU ms, not FPS (or add `--novsync`).
 - Big client scene (5k units, 8 players, 1024): `--map 1024 --players 8 --nosound --nofog --exec "spawn tank 1200 me
   at 460,470; spawn tank 1200 enemy at 540,550; spawn tank 1200 enemy at 460,550; spawn tank 1200 me at 540,470"

@@ -1156,3 +1156,28 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   hex `TryParse` → InvariantCulture, `MapSymmetry` double `Math.Cos/Sin` → DMath.
 - Reference numbers changed with the math (2026-11-12): bench `2000 300` hash 6A8312040EFA67F2 → 2F09CD7D01AF287E;
   `ai 30 256 42 hard,normal` "Player (Hard) after 12:18" (FB269C29202773C1) → "after 12:00" (C87C46C4EA726A82).
+
+## Selection overlays (10b-2, client only: `Rendering/RangeRingSet.cs`, `SelectionRangeOverlay.cs`, `WreckFogMemory.cs`, `UI/EnhancementChain.cs`)
+- **Range / intel rings** (G20): for the selected own units and structures, `RangeRingSet` (pure) collects weapon
+  max / min range, radar / sonar / omni, shield radius, stealth / jammer field. Equal rings merge by kind + radius
+  (0.5 steps) + a cell of radius/3, so 500 tanks give a few outlines, not 500 circles; at most 128 rings
+  (`DefaultCap`), kept by priority (source, then kind rank, then count). Rings of one (kind, radius) group are drawn
+  as their union outline (arcs inside another ring of the group are skipped). `SelectionRangeOverlay` draws them with
+  Rlgl lines following the terrain; hold Shift = also own + allied structures in view (dimmer). Toggle: key I
+  (`Hotkeys.RangeRings`), setting `AppSettings.RangeRings` (Gameplay tab). No per-frame allocation (lists reused; a
+  test asserts < 1 KB). Profiler lap "rings".
+- **Fog memory of wrecks and deposits** (G11): the sim sends every prop (no intel filter). `WreckFogMemory` (pure)
+  keeps, per wreck, the state last seen in a visible cell; `PropRenderer` draws remembered wrecks dim under the fog
+  (wreck shader binds `FogRenderer`), hides never-seen ones, and updates them when seen again. Deposits in
+  never-explored cells are hidden on the terrain and the minimap. The memory is client state, not saved.
+- **Enhancement swap / chain** (G11): the sim installs an enhancement only into an empty slot or onto its exact
+  prerequisite, and `RemoveEnhancementCommand` clears a slot's whole chain at once in the command phase. So a click on
+  a not-installed enhancement (amber "swap" button when the slot is taken or a prerequisite is missing) sends, per
+  unit, Remove (if the slot holds something outside the target's chain) + the chain's first step in the same tick;
+  `EnhancementChain` keeps the later steps client side and sends each when the previous one is installed. A step
+  cancelled (Stop, Cancel), refused, or not started within 20 ticks drops the rest. No sim change; not saved.
+- Leftovers: minimap zoom keys `Hotkeys.MinimapZoomIn/Out` (Ctrl+= / Ctrl+-, one wheel step, saved); the "Structure
+  lost" toast skips units the player self-destructed (`AlertLog.NoteSelfDestruct`, matched by handle in the previous
+  snapshot); `UnitPanel` groups the selection without LINQ (was ~180 KB/frame with 500 selected).
+- CLI for screenshots: `--select "<what>@N"` waits until N units match (sandbox `--exec` spawns arrive later),
+  `--select everything` = units + structures.

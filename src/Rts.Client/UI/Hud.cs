@@ -164,10 +164,13 @@ public sealed class Hud : IDisposable
         _minimap.Draw(_mini);
         FrameProfiler.Sub("hud:minimap");
         _idle.Draw(snap);
+        FrameProfiler.Sub("hud:idle");
         if (_showSelectionPanels)
         {
             _info.Draw(_infoR, snap);
+            FrameProfiler.Sub("hud:unitpanel");
             if (!_ctx.ReadOnly) _orders.Draw(_ordersR, snap);
+            FrameProfiler.Sub("hud:orders");
         }
         if (_buildKind == BuildKind.Engineer) _build.Draw(_buildR, snap);
         else if (_buildKind == BuildKind.Factory) _factory.Draw(_buildR, snap);

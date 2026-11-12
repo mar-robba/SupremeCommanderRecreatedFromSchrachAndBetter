@@ -126,6 +126,7 @@ public sealed partial class Minimap : IDisposable
         if (opt.MinimapResources)
             foreach (var d in _ctx.Terrain.Deposits)
             {
+                if (Rendering.WreckFogMemory.FogAt(_ctx.Snapshots.Current, d.Pos) == 0) continue; // (10b-2) never seen
                 var p = ToScreen(m, d.Pos.X, d.Pos.Y);
                 var c = d.Type == DepositType.Mass ? new Color(120, 255, 120, 255) : new Color(255, 200, 70, 255);
                 float ds = MathF.Max(4f, MathF.Min(10f, 2.5f * k));
