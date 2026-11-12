@@ -317,23 +317,34 @@ public sealed class MapFile
         { Props = Terrain.Props };
     }
 
-    /// <summary>Indices of <paramref name="count"/> well-spread starts (deterministic; first = 0).</summary>
+    /// <summary>Indices (ascending, always including 0) of <paramref name="count"/> well-spread starts: the subset with
+    /// the largest minimum pairwise distance, then the largest distance sum, then the first in index order. Exhaustive
+    /// (at most C(7,3) = 35 subsets for 8 starts); deterministic.</summary>
     public static int[] SpreadStarts(Vector2[] starts, int count)
     {
-        var pick = new List<int> { 0 };
-        while (pick.Count < count)
+        count = Math.Clamp(count, 1, starts.Length);
+        int[] best = [], cur = new int[count];
+        float bestMin = -1, bestSum = -1;
+        void Walk(int depth, int from)
         {
-            int best = -1;
-            float bestD = -1;
-            for (int i = 0; i < starts.Length; i++)
+            if (depth == count)
             {
-                if (pick.Contains(i)) continue;
-                float d = float.MaxValue;
-                foreach (int j in pick) d = MathF.Min(d, Vector2.DistanceSquared(starts[i], starts[j]));
-                if (d > bestD) { bestD = d; best = i; }
+                float mn = float.MaxValue, sum = 0;
+                for (int i = 0; i < count; i++)
+                for (int j = i + 1; j < count; j++)
+                {
+                    float d = Vector2.Distance(starts[cur[i]], starts[cur[j]]);
+                    mn = MathF.Min(mn, d);
+                    sum += d;
+                }
+                const float eps = 1e-3f;
+                if (mn > bestMin + eps || (mn > bestMin - eps && sum > bestSum + eps)) { bestMin = mn; bestSum = sum; best = (int[])cur.Clone(); }
+                return;
             }
-            pick.Add(best);
+            for (int i = from; i < starts.Length; i++) { cur[depth] = i; Walk(depth + 1, i + 1); }
         }
-        return pick.ToArray();
+        cur[0] = 0;
+        Walk(1, 1);
+        return best;
     }
 }
