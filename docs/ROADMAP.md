@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 19:20 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 21:15 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -20,7 +20,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 19:20, orchestrator session 3badb572, on Opus 5.5):
+**ON RESUME** (2026-11-12 21:15, orchestrator session 4ebba5f4, on Fable 5.2; before it 8d3780e7 on Opus 5.5):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -30,18 +30,37 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Pair 1 is merged and verified**: (10b-1) keybinding editor (2af6abf) and (10a-1) deterministic math (f3a50a6),
   2026-11-12 (HISTORY reports). Both modules took two agents each (checkpoint at 170-175k after 15-21 minutes, then a
   fresh agent). Pair 1 ran in the half-used 15:40 window at the owner's request; that window was at ~30 $ at 18:50.
-- **FIRST, answer the owner's questions (asked 2026-11-12 19:20, "rispondi alle domande nella prossima sessione"):**
-  is LESSONS.org kept up regularly? The owner thinks that after 2026-10-14 only the "Costi" chapter was updated and
-  the design/architecture errors stopped being recorded. Check the dates of its entries against the waves since
-  then (HISTORY known issues, WORKFLOW "Incidents", the fix commits). If it is true, write the serious errors that
-  were never recorded (the owner asks for it); the owner also wonders whether they had stopped that analysis because
-  it cost too much: check WORKFLOW "Owner decisions" and the 2026-11-10 review before answering. Answer in Italian.
-- **Pair 2 is scheduled** for 20:47 on 2026-11-12 (CronCreate job of session 3badb572; it survives `/clear`, not a
-  restart of Claude Code): (10a-2) observers + vote to drop + lobby pings + chat sounds and (10b-2) selection
-  overlays + client leftovers (HISTORY "Wave 10" briefs). Ready prompts:
-  `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a2-full.md` and
-  `prompt-10b2-full.md` (same folder: `merge-check.sh`). If the job did not fire, start them by hand in a fresh
-  window (the 15:40 window ends at 20:40; it was at ~33 $ at 19:10).
+- **Answered 2026-11-12 20:53** (owner's question on LESSONS.org): yes, its error entries stopped at 2026-10-14;
+  no decision stopped them (the 2026-11-10 cadence change was only for "Costi"), the lifecycle simply had no step for
+  them. Seven missing entries written (2026-10-16 → 11-12), the Hard-preset entry corrected (it was an exploit), and
+  WORKFLOW "Lifecycle of a wave" step 7 now adds a LESSONS entry at every merge that shows a design error.
+  `LESSONS.pdf`/`.tex` are the owner's Emacs export of 2026-10-15 (stale).
+- **Weekly limit message 2026-11-12 21:02** ("resets Nov 17, 3pm"): it cut both agents of pair 2, but Opus 5.5
+  calls worked again from 21:08 (why is not known to the orchestrator: ask the owner's `/usage` before sizing
+  more work). The owner cleared the session, set `/model` Fable 5.2 and said "continua" at 21:10, so **pair 2
+  was resumed at 21:12**: one fresh agent per worktree on Opus 5.5 (10a-2 agent 3 = a03d93b61caaae6eb, CTX-TAG
+  `10a2-mod-3`; 10b-2 agent 3 = a3fa823dddd19d052, CTX-TAG `10b2-mod-3`; ids are valid only in session 4ebba5f4),
+  watcher at 165k. If they are cut again: WIP commit in each worktree, then the paragraph below.
+- **Pair 2 is in progress, both modules half done, nothing merged.** Started 20:48 (session 8d3780e7); each module's
+  first agent hit 170k context in 11-14 minutes and checkpointed; the two successors were cut by the weekly limit
+  within a minute or two (no work lost: WIP committed). To resume, one fresh agent per worktree (`model: "opus"`,
+  NO isolation, cap 200k, CHECKPOINT 170k), prompt = the worktree's `.claude/resume-prompt.md` (self-contained;
+  the 10b-2 one points to `.claude/prompt-original.md` in the same folder). Watcher:
+  `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (the first number applies to
+  every other agent it finds, old ones included). Merge checks: `bash tools/agents/merge-check.sh <log> <screenshot
+  args>` (build, 3 suites, reference match, bench); for 10a-2 also `Rts.Bench -- mp` with `obs=1`.
+  - **10a-2** `.claude/worktrees/agent-ad7adf39a40e65c62`, branch `worktree-agent-ad7adf39a40e65c62`, last
+    3c67a1f. Done: the whole `src/Rts.Net` part (protocol 5: observers up to 16 never waited for, resign, vote to
+    drop by strict majority, pings), 5 `ObserverTests`. Left: every client screen (loading screen drops an early
+    Go for observers; in-game observer view; drop banner button; lobby observer list + pings + sounds;
+    `--observe`), docs, merge main, all tests, perf. In its `resume-prompt.md` change CTX-TAG to `10a2-mod-3`.
+  - **10b-2** `.claude/worktrees/agent-ad3fa042eecd3d963`, branch `worktree-agent-ad3fa042eecd3d963`, last
+    cfebd26. Done: G20 range rings (key I, setting) and fog memory of wrecks/deposits, 7 client tests. Left:
+    enhancement swap, minimap zoom keys, toast filter, the other leftovers, an allocation check (239 KB/frame with
+    500 selected: branch or main?), docs, merge main, all tests, bench.
+  - Design errors already reported for LESSONS (WORKFLOW step 7): resign waited for the next sim step (fixed
+    e2675f2); loading screen drops an early Go for observers (open); every wreck is sent to the client without
+    intel filtering (client fix a926ff4, open in the snapshot).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
@@ -76,7 +95,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   mechanics stay things the AI ignores. Still required: the AI must not break (AI tests green, the reference match
   `Rts.Bench -- ai 30 256 42 hard,normal` as the regression check of every merge).
 - Worktrees: git trusts every folder under `.claude/worktrees/` since 2026-11-12 (one `safe.directory` entry with `/*`, WORKFLOW "Incidents"); a worktree elsewhere still needs its own entry.
-  History of usage limits: weekly 2026-10-14 08:14; sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
+  History of usage limits: weekly 2026-10-14 08:14 and 2026-11-12 ~21:05 (reset 2026-11-17 15:00, after ~17 min of pair 2); sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
   2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
   2026-11-10 14:08 (reset 18:00): both coordinators and their two sub-agents cut after 10 minutes of work; other
