@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 19:55 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 10:58 — read this first in a new session)
 main has waves 1-7, (8a), (8b-1) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -16,22 +16,20 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 00:15, orchestrator session 9cdd3b47, the one that began as 26701b91):
-- **No agent is running, no agent worktree is open, nothing waits for a merge.** (8b-1) Map props (dd28b4a) and
-  (9b-1) Death animations + ACU warp-in (3a000b0) are merged and verified on main (build, the three suites,
-  reference match, bench hash, screenshots: HISTORY "(8b-1)" and "(9b-1)" reports). What they left: their "later:"
-  lines in the wave lists below.
-- **FIRST THING TO DO: start (8b-2) Map files + map pack + map picker and (9b-2) Terrain self-shadows + unit LOD +
-  minimap options**, together, one module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, 0
-  sub-agents), at the start of a usage window. Then (8b-3) Maps in multiplayer + biomes alone. Briefs: HISTORY
-  "(8b) Maps" and "Wave 9"; ledger purposes already in `tools/token-ledger/purposes.json`. The orchestrator session
-  of 2026-11-12 (26701b91 / 9cdd3b47) holds a one-shot job for **06:07** (CronCreate 92ba51cb) that starts them: it
-  carries the facts for the two prompts (also in that session's transcript) and does nothing if agents are already
-  started. It lives only while that session stays open and idle; otherwise a new session starts them by hand.
-- **Usage window:** the one that began 2026-11-12 00:00 held 22.4 $ at 00:52 (two generations of two Opus agents,
-  43 minutes, plus the orchestrator on Fable 5.2) without a limit message; it should reset at 05:00, and the job is
-  set one hour later because the evening window of 11-11 reset an hour later than worked out (WORKFLOW "Usage
-  limits", "When a window resets"). Other `claude` sessions of the owner were open.
+**ON RESUME** (2026-11-12 10:58, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
+- **Two module agents are running since 10:57** (`model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents):
+  - (8b-2) Map files + map pack + map picker: agent a29af680a0080317a, CTX-TAG `8b2-mod-1b`, worktree
+    `.claude/worktrees/agent-a29af680a0080317a` (branch `worktree-agent-a29af680a0080317a`);
+  - (9b-2) Terrain self-shadows + unit LOD + minimap options: agent a0aac67ba2177f048, CTX-TAG `9b2-mod-1b`,
+    worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`).
+  Their prompts: brief (HISTORY "(8b) Maps", "Wave 9") + state + ordered TODO + rules block, in the transcript of
+  session e3d118ad. A first pair (10:52) died on its first call from a network error (ECONNRESET), nothing written;
+  its empty worktrees were removed automatically. The 06:07 job of the night session never ran (that session hit
+  the Fable limit). Context watcher at 170k for both runs in the background of session e3d118ad.
+- Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
+  ledger purposes already in `tools/token-ledger/purposes.json`.
+- **Usage window:** since 05:00 only 8 calls (1.2 $) before these agents started, so the window was nearly fresh.
+  Other `claude` sessions of the owner were open but idle.
 - **Watch the agents' context from the start:** module agents reach 200k in about 19 minutes and do not stop by
   themselves (WORKFLOW "Context limits and handoffs"): watcher at 170k, CHECKPOINT message at once, then a fresh
   agent in the same worktree.
