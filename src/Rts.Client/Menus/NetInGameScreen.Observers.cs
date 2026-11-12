@@ -81,7 +81,7 @@ public sealed partial class NetInGameScreen
         {
             canVote = true;
             waited = NetGame.DropVoteDelaySeconds + 1;
-            votes = new DropVoteTally(turn, 1, NetGame.VotesNeeded(2), new[] { _game.HostTurn });
+            votes = new DropVoteTally(turn, 1, NetGame.VotesNeeded(2), new[] { -2 }); // another player's vote
         }
         else if (turn != _waitTurn)
         {
