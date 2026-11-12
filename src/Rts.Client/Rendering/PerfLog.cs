@@ -18,7 +18,7 @@ public static class PerfLog
         if (_last == 0) { _last = now; _frames = 0; return; }
         double s = (now - _last) / (double)Stopwatch.Frequency;
         if (s < 1.0) return;
-        Console.WriteLine($"perf-log: {_frames / s:F0} fps, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms, gc0 {GC.CollectionCount(0)} gc2 {GC.CollectionCount(2)} | {prof.TakeWindow()}");
+        Console.WriteLine($"perf-log: {_frames / s:F0} fps, units {cur.UnitCount}, sim {cur.TickDurationMs:F2} ms, gc0 {GC.CollectionCount(0)} gc2 {GC.CollectionCount(2)} | unit tris {UnitRenderer.FullTriangles / 1000}k + lod {UnitRenderer.LodTriangles / 1000}k ({UnitRenderer.LodUnits} lod units) | {prof.TakeWindow()}");
         _last = now;
         _frames = 0;
     }

@@ -10,7 +10,7 @@ namespace Rts.Client.Menus;
 /// returns to it.</summary>
 public sealed class SettingsScreen : IScreen
 {
-    public static readonly string[] TabNames = ["Audio & Display", "Graphics", "Gameplay"];
+    public static readonly string[] TabNames = ["Audio & Display", "Graphics", "Gameplay", "Minimap"];
     /// <summary>Selected tab (kept for the session; <c>--settings-tab</c> sets it for screenshots).</summary>
     public static int Tab;
 
@@ -31,24 +31,25 @@ public sealed class SettingsScreen : IScreen
         "audio" or "display" => 0,
         "graphics" => 1,
         "gameplay" => 2,
-        _ => throw new ArgumentException("unknown settings tab " + s + " (audio, graphics, gameplay)"),
+        "minimap" => 3,
+        _ => throw new ArgumentException("unknown settings tab " + s + " (audio, graphics, gameplay, minimap)"),
     };
 
     // Layout of the current frame.
-    private float _lx, _cx, _cw, _rowH, _ry, _rowW;
+    private float _lx, _cx, _cw, _rowH, _ry, _rowW, _gap;
 
     public void Frame(float dt)
     {
         _app.Backdrop.Draw(dt, 0.75f);
         MenuUi.BeginFrame();
-        float panelW = Ui.P(620), panelH = Ui.P(300), tabsH = Ui.P(30);
+        float panelW = Ui.P(620), panelH = Ui.P(340), tabsH = Ui.P(30);
         float x = Ui.P(80);
         // Title, tabs, panel, Back button; moved up when a large UI scale would push the button off a small window.
         float total = Ui.P(72) + tabsH + Ui.P(10) + panelH + Ui.P(20) + Ui.P(40);
         float y = MathF.Max(Ui.P(8), MathF.Min(Ui.Sh * 0.12f, Ui.Sh - total - Ui.P(8)));
         MenuUi.ScreenTitle("Settings", "Changes apply immediately and are saved", x, y);
 
-        int tab = MenuUi.Segmented(Ui.R(x, y + Ui.P(72), Ui.P(440), tabsH), TabNames, Math.Clamp(Tab, 0, TabNames.Length - 1), true, 12.5f);
+        int tab = MenuUi.Segmented(Ui.R(x, y + Ui.P(72), Ui.P(560), tabsH), TabNames, Math.Clamp(Tab, 0, TabNames.Length - 1), true, 12.5f);
         Tab = tab;
 
         var panel = Ui.R(x, y + Ui.P(72) + tabsH + Ui.P(10), panelW, panelH);
@@ -59,11 +60,13 @@ public sealed class SettingsScreen : IScreen
         _rowW = panel.Width - Ui.P(40);
         _rowH = Ui.P(30);
         _ry = panel.Y + Ui.P(20);
+        _gap = Ui.P(tab == 1 ? 9 : 14); // Graphics has 8 rows
 
         switch (tab)
         {
             case 0: AudioDisplayTab(); break;
             case 1: GraphicsTab(); break;
+            case 3: MinimapTab(); break;
             default: GameplayTab(); break;
         }
 
@@ -155,6 +158,51 @@ public sealed class SettingsScreen : IScreen
         int si = MenuUi.Segmented(Ui.R(_cx, _ry, _cw, _rowH), ScaleLabels, AppSettings.NearestIndex(scales, _s.UiScale), true, 11.5f);
         if (scales[si] != _s.UiScale) { _s.UiScale = scales[si]; Changed(); }
         NextRow();
+
+        // (9b-2)
+        Row("Terrain shadows", "Hills cast shadows on the valleys and on the units in them\n(baked once per map from the sun direction).");
+        bool ts = ToggleControl(_s.TerrainShadows);
+        if (ts != _s.TerrainShadows) { _s.TerrainShadows = ts; Changed(); }
+        if (Rendering.TerrainRenderer.SelfShadowsCli != null) Note("--terrain-shadows given: kept for this run.", Ui.P(110));
+        NextRow();
+
+        Row("Unit detail LOD", "Far units use simplified low-poly models (faster with\nthousands of units on screen; same look at a distance).");
+        bool lod = ToggleControl(_s.UnitLod);
+        if (lod != _s.UnitLod) { _s.UnitLod = lod; Changed(); }
+        if (Rendering.UnitRenderer.LodCli != null) Note("--unit-lod given: kept for this run.", Ui.P(110));
+        NextRow();
+    }
+
+    private static readonly string[] MinimapSizeLabels = MinimapView.Sizes.Select(v => $"{v * 100:0}%").ToArray();
+    private static readonly string[] MinimapZoomLabels = MinimapView.Zooms.Select(v => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "×").ToArray();
+
+    /// <summary>(9b-2) Minimap size, zoom and layers; also changed in game with the buttons on the minimap.</summary>
+    private void MinimapTab()
+    {
+        Row("Size", "Minimap size (100% = default).");
+        int si = MenuUi.Segmented(Ui.R(_cx, _ry, _cw, _rowH), MinimapSizeLabels, AppSettings.NearestIndex(MinimapView.Sizes, _s.MinimapSize), true, 11.5f);
+        if (MinimapView.Sizes[si] != _s.MinimapSize) { _s.MinimapSize = MinimapView.Sizes[si]; Changed(); }
+        NextRow();
+
+        Row("Zoom", "1× shows the whole map; higher zooms follow the camera.\nIn game: mouse wheel over the minimap.");
+        int zi = MenuUi.Segmented(Ui.R(_cx, _ry, _cw, _rowH), MinimapZoomLabels, AppSettings.NearestIndex(MinimapView.Zooms, _s.MinimapZoom), true, 11.5f);
+        if (MinimapView.Zooms[zi] != _s.MinimapZoom) { _s.MinimapZoom = MinimapView.Zooms[zi]; Changed(); }
+        NextRow();
+
+        Row("Resources", "Mass and hydrocarbon deposits.");
+        bool res = ToggleControl(_s.MinimapResources);
+        if (res != _s.MinimapResources) { _s.MinimapResources = res; Changed(); }
+        NextRow();
+
+        Row("Units", "Unit and structure dots (radar contacts and pings stay).");
+        bool units = ToggleControl(_s.MinimapUnits);
+        if (units != _s.MinimapUnits) { _s.MinimapUnits = units; Changed(); }
+        NextRow();
+
+        Row("Trees", "Forests as dark green dots.");
+        bool trees = ToggleControl(_s.MinimapTrees);
+        if (trees != _s.MinimapTrees) { _s.MinimapTrees = trees; Changed(); }
+        NextRow();
     }
 
     private static readonly string[] FpsLabels = GraphicsSettings.FpsCaps.Select(c => c == 0 ? "Off" : c.ToString()).ToArray();
@@ -193,7 +241,7 @@ public sealed class SettingsScreen : IScreen
         if (Ui.Hover(r)) Ui.Tooltip(r, label, tip);
     }
 
-    private void NextRow() => _ry += _rowH + Ui.P(14);
+    private void NextRow() => _ry += _rowH + _gap;
 
     private void Note(string text, float dx = 0) =>
         Ui.Text(text, _cx + dx, dx > 0 ? _ry + (_rowH - Ui.F(10.5f)) * 0.5f : _ry + _rowH + Ui.P(3), Ui.F(10.5f), Ui.TextFaint);

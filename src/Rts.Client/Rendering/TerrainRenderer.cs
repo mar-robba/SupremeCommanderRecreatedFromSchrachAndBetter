@@ -12,7 +12,8 @@ namespace Rts.Client.Rendering;
 public sealed unsafe partial class TerrainRenderer : IDisposable
 {
     public const int ChunkSize = 64;
-    public static readonly Vector3 SunDir = Vector3.Normalize(new Vector3(-0.45f, 0.8f, -0.35f));
+    /// <summary>Direction towards the sun (every light, the unit shadow map, the terrain shadows; <see cref="SetSunElevation"/>).</summary>
+    public static Vector3 SunDir { get; private set; } = Vector3.Normalize(new Vector3(-0.45f, 0.8f, -0.35f));
 
     private readonly Terrain _t;
     private Material _material;
@@ -32,7 +33,9 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         _t = terrain;
         _waterLevel = DebugWaterLevel ?? terrain.WaterLevel;
         var ao = ComputeAo();
+        BakeSelfShadow(); // (9b-2) TerrainRenderer.Shadow.cs: the ground lit factor goes into the chunk vertex colours
         BuildLodChunks(ao); // TerrainRenderer.Lod.cs
+        _groundLit = null;
 
         _material = Raylib.LoadMaterialDefault();
         _material.Shader = Shaders.Terrain.Shader;
@@ -59,6 +62,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         Raylib.UploadMesh(ref _sky, false);
         _skyMat = Raylib.LoadMaterialDefault();
         _skyMat.Shader = Shaders.Sky.Shader;
+        InitSelfShadow(); // (9b-2) TerrainRenderer.Shadow.cs
     }
 
     private static Mesh Quad(Vector3 a, Vector3 b)
@@ -126,6 +130,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         sp.Set("mapSize", new Vector2(_t.Width, _t.Height));
         ShadowMap.Bind(sp);
         FogRenderer.Bind(sp);
+        BindSelfShadow(sp); // (9b-2) terrain self-shadows
         DrawLodChunks(fv);
         FrameProfiler.Sub("terrain:chunks");
     }
@@ -225,6 +230,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
     public void Dispose()
     {
         DisposeLodChunks();
+        DisposeSelfShadow();
         Raylib.UnloadMesh(_water);
         Raylib.UnloadMesh(_sky);
         Raylib.UnloadTexture(_heightTex);

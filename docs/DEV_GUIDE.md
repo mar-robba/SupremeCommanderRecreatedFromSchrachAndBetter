@@ -131,6 +131,15 @@ Things learned while building the project that are not about how a system works 
   the unit would "die" visually. The unit shader's instance w is 0 for living units; a non-zero w darkens / dithers.
 - Screenshots of a moment in a sequence: pause the runner from the scene script on a snapshot tick
   (`DeathScene.Update` sets `Runner.Paused`; game-time effects then freeze), not on a frame count.
+- (9b-2) Unit meshes are not drawn beyond camera distance 260 (`IconRenderer.HideMeshDistance`; icons only), so the
+  unit LOD changes nothing in a full-map view: measure it at cameras 110-200. Its switch is in pixels, so the switch
+  distance grows with the window height (~106 u for a tank at 540p).
+- `--frames N` ends a run only together with `--screenshot` (perf runs: `--perf-log --screenshot x.png --frames 900`).
+- Adding an `AppSettings` property breaks `AppSettingsTests` until its non-default test data gets a value for it.
+- Terrain self-shadow bake: the march's first sample must be about a cell away (`FirstStep` 0.75) and the soft edge
+  must start AT the shadow line, or flat ground under a low sun (line just below the ground) comes out half shaded.
+- A full-screen texture fetch in the terrain shader is not free on the 780M: one R32F fetch per pixel (even with
+  mipmaps) cost +0.55 ms GPU at a full-map view of a 1024 map; per-vertex data (vertex colour channels) is free.
 
 ## Visual checks
 
@@ -224,6 +233,7 @@ integrated GPU.
 | `Rts.Bench 700 400 0 1024 8` (8 armies, 4.6k units) | avg 2.4, p95 4.5–4.9, intel 0.33 (before: 3.9–4.6 / 10.6–12.3 / 1.1–1.35); with warm-up avg 2.0, p95 3.8, max 8.5, first tick 15 ms (before ≈ 210) | wave 5m |
 | `ai 40 1024 42 hard 0 8 plains` (8 AIs, 40 min) | avg 0.96, p95 2.21, max 12.1 (one AI think), 10 KB/tick (before: 1.64 / 3.68 / 217 / ≈ 125 KB) | wave 5m |
 | Client, 4.8k units in battle, 1024, 960×540 | close: CPU 1.6 ms, GPU 4.2 ms (before CPU 3.2); whole map: CPU 2.2 ms, GPU 2.8 ms (before 2.8 / 8.2: terrain 7.4 → 2.0 with chunk LOD) | wave 5m |
+| Client, 4.8k tanks (scratch `perf.sh` scene: `--map 1024 --players 8 --nofog`, 4×`spawn tank 1200`, `--camera 500,510,D`), 960×540, Debug, main → 9b-2 | GPU / CPU ms: cam 110 4.39 → 3.47 / 4.77 → 5.08 (units GPU 1.74 → 1.11); cam 200 6.26 → 4.31 / 6.69 → 7.15 (Release CPU 4.37 → 4.22; units 2.13 → 0.85, 4794 LOD units = 393k tris instead of ~1.42M); cam 700 3.13 → 3.10 / 4.35 → 4.23 (terrain 2.13 → 2.10). Terrain shadow bake 1025²: ~30 ms Release | 9b-2 |
 
 ## Tools
 

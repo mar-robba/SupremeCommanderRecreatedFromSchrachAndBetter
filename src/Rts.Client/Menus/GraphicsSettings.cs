@@ -33,8 +33,12 @@ public static class GraphicsSettings
     public static bool VsyncFromCli => _cliNoVsync;
 
     /// <summary>Startup: remembers the command-line overrides, then applies everything.</summary>
+    /// <summary>(9b-2) CLI <c>--minimap SPEC</c> (<see cref="MinimapView.ApplySpec"/>), applied to the settings at startup.</summary>
+    public static string? MinimapCli;
+
     public static void Init(AppSettings s, ClientOptions opt)
     {
+        if (MinimapCli != null) MinimapView.ApplySpec(s, MinimapCli);
         _cliLod = TerrainRenderer.ForceLod;
         _cliNoVsync = opt.NoVsync;
         _captured = true;
@@ -50,6 +54,8 @@ public static class GraphicsSettings
         CameraSettings.EdgeScroll = s.EdgeScroll;
         CameraSettings.PanSpeed = Math.Clamp(s.PanSpeed, 0.5f, 2f);
         CameraSettings.ZoomSpeed = Math.Clamp(s.ZoomSpeed, 0.5f, 2f);
+        TerrainRenderer.SelfShadows = s.TerrainShadows; // (9b-2) CLI --terrain-shadows / --unit-lod win (…Cli fields)
+        UnitRenderer.LodEnabled = s.UnitLod;
         if (!_captured || !Raylib.IsWindowReady()) return;
 
         bool vsync = s.VSync && !_cliNoVsync;

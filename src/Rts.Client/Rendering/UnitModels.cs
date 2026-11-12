@@ -18,6 +18,10 @@ public sealed class UnitModel
     /// <summary>Bounding sphere radius around (0, (MinY+MaxY)/2, 0).</summary>
     public float Radius;
     public bool Air, Naval, Structure, Hover;
+    /// <summary>(9b-2) Low-poly meshes for far units (UnitRenderer.Lod.cs, built on first use; null = none).</summary>
+    public InstancedMesh? LodBody, LodTurret;
+    /// <summary>(9b-2) 0 = LOD not built yet, 1 = built, 2 = not worth it (the model is already simple).</summary>
+    public byte LodState;
 }
 
 /// <summary>

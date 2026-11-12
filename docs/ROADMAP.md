@@ -125,8 +125,8 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G19 | Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
 | G20 | Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
 | G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
-| G22 | Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
-| G23 | Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
+| G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
+| G23 | [x] 2026-11-12 (9b-1, 9b-2) Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
 | G24 | Voice announcer ("Commander under attack", "Nuclear launch detected") | SC1 | M | Audio + voice assets | owner Q7 | 3 |
 | G25 | TTF font (raylib's default font has no è/à) | — | S | Ui text | G28 | 2 if G28 |
 | G26 | Map files + curated map pack: save/load maps (heightmap, water, deposits, starts, props), 8-12 named maps with thumbnails, map picker in setup/lobby (host sends the map) | SC1 | M-L | `Rts.Sim/Map`, Menus setup/lobby, `Rts.Net` transfer | G10 | 2 |
@@ -205,6 +205,14 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     (flash, rings, hologram rise, sound); client only, hashes unchanged; `--scene deaths`, `DeathAnimTests`.
   - [ ] later: a sound/particle for wrecks settling after a ship sinks in shallow water; death sequences for
     units dying inside transports; per-model break-apart (parts flying off).
+  - [x] 9b-2 Terrain self-shadows, unit LOD, minimap options (2026-11-12; ARCHITECTURE "Terrain self-shadows, unit
+    LOD, minimap options"): shadows baked from the heightmap with the unit shadow map's sun (ground in the terrain
+    vertex colours, units/aircraft by height), low-poly far units by vertex clustering (tank 296 → 82 tris), minimap
+    size 75-175 %, wheel zoom 1-8×, resources/units/trees layers and hover buttons; Graphics rows + a "Minimap"
+    settings tab; `--terrain-shadows`, `--unit-lod`, `--sun-elevation`, `--minimap`; client only, hashes unchanged.
+  - [ ] later: the sun is fixed (a moving or per-map sun needs a re-bake: ~30 ms on 1024 maps in Release); trees, rocks and
+    wrecks are not darkened by terrain shadows (props have their own shader); LOD meshes are built lazily on a
+    model's first far frame (a small hitch the first time); a hotkey for minimap zoom.
 
 **Wave 10: multiplayer robustness + keybindings**
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash

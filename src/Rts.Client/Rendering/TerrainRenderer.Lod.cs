@@ -106,7 +106,7 @@ public sealed unsafe partial class TerrainRenderer
         for (int x = 0; x < vw; x++)
         {
             int wx = x0 + xs[x], wz = z0 + zs[z];
-            SetVertex(verts, norms, cols, ao, z * vw + x, wx, wz, 0);
+            SetVertex(verts, norms, cols, ao, z * vw + x, wx, wz, 0, s);
             float y = verts[z * vw + x].Y;
             minY = MathF.Min(minY, y);
             maxY = MathF.Max(maxY, y);
@@ -131,8 +131,8 @@ public sealed unsafe partial class TerrainRenderer
             {
                 int gx = e == 0 ? 0 : e == 1 ? vw - 1 : i;
                 int gz = e < 2 ? i : e == 2 ? 0 : vh - 1;
-                SetVertex(verts, norms, cols, ao, baseTop + i, x0 + xs[gx], z0 + zs[gz], 0);
-                SetVertex(verts, norms, cols, ao, baseBot + i, x0 + xs[gx], z0 + zs[gz], skirt[e]);
+                SetVertex(verts, norms, cols, ao, baseTop + i, x0 + xs[gx], z0 + zs[gz], 0, s);
+                SetVertex(verts, norms, cols, ao, baseBot + i, x0 + xs[gx], z0 + zs[gz], skirt[e], s);
             }
             minY = MathF.Min(minY, verts[baseBot].Y);
             for (int i = 0; i < len - 1; i++)
@@ -150,13 +150,14 @@ public sealed unsafe partial class TerrainRenderer
         return mesh;
     }
 
-    private void SetVertex(Span<Vector3> verts, Span<Vector3> norms, Span<Color> cols, float[] ao, int v, int wx, int wz, float drop)
+    /// <summary>Vertex colour: R = cavity AO, G = (9b-2) ground lit factor of the terrain self-shadows, B = AO.</summary>
+    private void SetVertex(Span<Vector3> verts, Span<Vector3> norms, Span<Color> cols, float[] ao, int v, int wx, int wz, float drop, int stride)
     {
         float y = _t.VertexHeight(wx, wz);
         verts[v] = new Vector3(wx, y - drop, wz);
         norms[v] = _t.GetNormal(wx, wz);
         byte a = (byte)Math.Clamp(ao[wz * (_t.Width + 1) + wx] / 1.06f * 255f, 0, 255);
-        cols[v] = new Color(a, a, a, (byte)255);
+        cols[v] = new Color(a, GroundLitByte(wx, wz, stride), a, (byte)255);
     }
 
     /// <summary>LOD level for a chunk: the coarsest stride whose cell projects to ≤ <see cref="LodCellPixels"/>.</summary>
