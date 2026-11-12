@@ -304,7 +304,7 @@ public sealed class MapFile
 
     /// <summary>
     /// The terrain for a game of <paramref name="players"/> armies: the file's terrain when every start is used,
-    /// else a copy with a spread subset of the starts (farthest-point order from start 0, ties to the lower index),
+    /// else a copy with a spread subset of the starts (<see cref="SpreadStarts"/>, kept in file order),
     /// so <c>StartPositions[army]</c> stays the army's start everywhere (AI scouting, camera, fog).
     /// </summary>
     public Terrain TerrainFor(int players)
