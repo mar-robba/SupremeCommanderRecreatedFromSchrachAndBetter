@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 19:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 19:20 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -20,7 +20,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 19:10, orchestrator session 3badb572, on Opus 5.5):
+**ON RESUME** (2026-11-12 19:20, orchestrator session 3badb572, on Opus 5.5):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -30,8 +30,18 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Pair 1 is merged and verified**: (10b-1) keybinding editor (2af6abf) and (10a-1) deterministic math (f3a50a6),
   2026-11-12 (HISTORY reports). Both modules took two agents each (checkpoint at 170-175k after 15-21 minutes, then a
   fresh agent). Pair 1 ran in the half-used 15:40 window at the owner's request; that window was at ~30 $ at 18:50.
-- **NEXT: pair 2** = (10a-2) observers + vote to drop + lobby pings + chat sounds and (10b-2) selection overlays +
-  client leftovers (HISTORY "Wave 10" briefs), in a fresh window (the 15:40 window ends at 20:40).
+- **FIRST, answer the owner's questions (asked 2026-11-12 19:20, "rispondi alle domande nella prossima sessione"):**
+  is LESSONS.org kept up regularly? The owner thinks that after 2026-10-14 only the "Costi" chapter was updated and
+  the design/architecture errors stopped being recorded. Check the dates of its entries against the waves since
+  then (HISTORY known issues, WORKFLOW "Incidents", the fix commits). If it is true, write the serious errors that
+  were never recorded (the owner asks for it); the owner also wonders whether they had stopped that analysis because
+  it cost too much: check WORKFLOW "Owner decisions" and the 2026-11-10 review before answering. Answer in Italian.
+- **Pair 2 is scheduled** for 20:47 on 2026-11-12 (CronCreate job of session 3badb572; it survives `/clear`, not a
+  restart of Claude Code): (10a-2) observers + vote to drop + lobby pings + chat sounds and (10b-2) selection
+  overlays + client leftovers (HISTORY "Wave 10" briefs). Ready prompts:
+  `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a2-full.md` and
+  `prompt-10b2-full.md` (same folder: `merge-check.sh`). If the job did not fire, start them by hand in a fresh
+  window (the 15:40 window ends at 20:40; it was at ~33 $ at 19:10).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
