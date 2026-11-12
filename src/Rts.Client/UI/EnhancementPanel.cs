@@ -15,7 +15,8 @@ namespace Rts.Client.UI;
 /// Commander / SCU enhancement strip, drawn just above the build panel when the selection has own enhanceable units
 /// (all of the same base blueprint as the first one). One column per slot (left arm, right arm, back) with a button
 /// per enhancement: installed (highlighted), available (click: the selected units that can install it start building
-/// it on themselves), locked (greyed, the tooltip says why). Right-click an installed one: remove that slot
+/// it on themselves), swap (amber: the slot holds another enhancement or a prerequisite is missing; click: remove the
+/// slot and install the whole chain, see <see cref="EnhancementChain"/>), locked (greyed: busy). Right-click an installed one: remove that slot
 /// (instant, no refund); right-click the one being built: cancel (refund). The right part shows the progress and a
 /// Cancel button while enhancing. Reads snapshots, writes commands only.
 /// </summary>
@@ -33,11 +34,18 @@ public sealed class EnhancementPanel
     private readonly List<UnitHandle> _tmp = new();
     private readonly List<int>[] _slots = [new(), new(), new()];
     private UnitBlueprint? _base;
+    private readonly EnhancementChain _chain = new(); // (10b-2) queued steps of one-click swaps / chains
+    private SimSnapshot? _lookupSnap;
+    private readonly EnhancementChain.UnitLookup _lookup;
+    private readonly Action<Command> _send;
+    private static readonly Color SwapText = new(240, 200, 120, 255);
     private Rectangle _r;
     private bool _visible;
 
     public EnhancementPanel(GameContext ctx, SelectionController sel)
     {
+        _lookup = LookupUnit;
+        _send = c => _ctx.Runner.Enqueue(c);
         _ctx = ctx;
         _sel = sel;
     }
@@ -62,6 +70,7 @@ public sealed class EnhancementPanel
     /// </summary>
     public void Layout(SimSnapshot snap, bool show, float x, float bottom, float right)
     {
+        if (!_ctx.ReadOnly && _chain.Count > 0) { _lookupSnap = snap; _chain.Update(_lookup, _ctx.LocalArmy, snap.Tick, _send); }
         _visible = show && Refresh(snap);
         if (!_visible) return;
         float w = DesiredWidth();
@@ -158,13 +167,23 @@ public sealed class EnhancementPanel
         DrawStatus(new Rectangle(x, y, r.X + r.Width - Pad - x, r.Y + r.Height - Ui.P(8) - y), snap);
     }
 
-    private enum State { Locked, Available, Installed, Building }
+    private bool LookupUnit(UnitHandle h, out UnitBlueprint bp, out bool busy)
+    {
+        bp = null!;
+        busy = false;
+        if (_lookupSnap == null || !_lookupSnap.TryGetUnit(h.Index, h.Generation, out var v) || v.Army != _ctx.LocalArmy) return false;
+        bp = _ctx.Db[v.Bp];
+        busy = v.UpgradeBp >= 0;
+        return true;
+    }
+
+    private enum State { Locked, Available, Installed, Building, Swap }
 
     private void DrawButton(Rectangle br, int e, SimSnapshot snap)
     {
         var db = _ctx.Db;
         var x = _base!.Enhancements[e];
-        int nInst = 0, nCan = 0, nBuild = 0;
+        int nInst = 0, nCan = 0, nBuild = 0, nPlan = 0;
         float frac = 0;
         foreach (var h in _units)
         {
@@ -173,9 +192,9 @@ public sealed class EnhancementPanel
             int building = EnhancingIndex(v);
             if (building == e) { nBuild++; frac += v.UpgradeFrac; }
             if (EnhancementCatalog.HasInstalled(cur, e)) nInst++;
-            else if (building < 0 && v.UpgradeBp < 0 && EnhancementCatalog.CanInstall(cur, e)) nCan++;
+            else if (building < 0 && v.UpgradeBp < 0) { if (EnhancementCatalog.CanInstall(cur, e)) nCan++; else nPlan++; }
         }
-        var state = nBuild > 0 ? State.Building : nCan > 0 ? State.Available : nInst > 0 ? State.Installed : State.Locked;
+        var state = nBuild > 0 ? State.Building : nCan > 0 ? State.Available : nPlan > 0 ? State.Swap : nInst > 0 ? State.Installed : State.Locked;
         if (nBuild > 0) frac /= nBuild;
 
         bool locked = state == State.Locked;
@@ -186,6 +205,7 @@ public sealed class EnhancementPanel
             State.Installed => new Color(150, 245, 225, 255),
             State.Building => EnhanceColor,
             State.Available => Ui.TextColor,
+            State.Swap => SwapText,
             _ => Ui.TextFaint,
         };
         string icon = x.Icon.Length > 0 ? x.Icon : x.Name[..Math.Min(3, x.Name.Length)];
@@ -213,7 +233,7 @@ public sealed class EnhancementPanel
         // Input.
         if (st.Left)
         {
-            if (state == State.Available) Enhance(snap, e);
+            if (state is State.Available or State.Swap) Enhance(snap, e);
             else UiSounds.Error();
         }
         else if (locked && Ui.LeftClickIn(br)) UiSounds.Error();
@@ -222,18 +242,24 @@ public sealed class EnhancementPanel
             if (state == State.Building) CancelBuilding(snap, e);
             else if (nInst > 0) Remove(snap, e);
         }
-        if (st.Hover || (locked && Ui.Hover(br))) Ui.Tooltip(br, TooltipLines(snap, e, state, nInst, nCan, frac));
+        if (st.Hover || (locked && Ui.Hover(br))) Ui.Tooltip(br, TooltipLines(snap, e, state, nInst, nCan + nPlan, frac));
     }
 
     private void Enhance(SimSnapshot snap, int e)
     {
+        // Units that can install it now get one shared command; the others (slot taken, prerequisite missing) get a
+        // per-unit plan: remove + the chain's first step now, the rest later (EnhancementChain).
         _tmp.Clear();
+        bool any = false;
         foreach (var h in _units)
-            if (snap.TryGetUnit(h.Index, h.Generation, out var v) && v.UpgradeBp < 0 && EnhancementCatalog.CanInstall(_ctx.Db[v.Bp], e))
-                _tmp.Add(h);
-        if (_tmp.Count == 0) return;
-        _ctx.Runner.Enqueue(new EnhanceCommand(_ctx.LocalArmy, _tmp.ToArray(), _base!.Enhancements[e].Id));
-        UiSounds.Confirm();
+        {
+            if (!snap.TryGetUnit(h.Index, h.Generation, out var v) || v.UpgradeBp >= 0) continue;
+            var cur = _ctx.Db[v.Bp];
+            if (EnhancementCatalog.CanInstall(cur, e)) { _chain.Drop(h); _tmp.Add(h); }
+            else any |= _chain.Begin(h, cur, e, _ctx.LocalArmy, snap.Tick, _send);
+        }
+        if (_tmp.Count > 0) _ctx.Runner.Enqueue(new EnhanceCommand(_ctx.LocalArmy, _tmp.ToArray(), _base!.Enhancements[e].Id));
+        if (_tmp.Count > 0 || any) UiSounds.Confirm();
     }
 
     private void Remove(SimSnapshot snap, int e)
@@ -251,7 +277,7 @@ public sealed class EnhancementPanel
     {
         _tmp.Clear();
         foreach (var h in _enhancing)
-            if (snap.TryGetUnit(h.Index, h.Generation, out var v) && EnhancingIndex(v) == e) _tmp.Add(h);
+            if (snap.TryGetUnit(h.Index, h.Generation, out var v) && EnhancingIndex(v) == e) { _tmp.Add(h); _chain.Drop(h); }
         if (_tmp.Count == 0) return;
         _ctx.Runner.Enqueue(new CancelUpgradeCommand(_ctx.LocalArmy, _tmp.ToArray()));
         UiSounds.Confirm();
@@ -307,6 +333,15 @@ public sealed class EnhancementPanel
                 lines.Add(new TipLine(_units.Count > 1 ? $"Click: install on {nCan} of {_units.Count} units" : "Click: install (the unit stops and builds it on itself)", Ui.Good, 12, true));
                 if (nInst > 0) lines.Add(new TipLine($"Installed on {nInst} · right-click: remove", Ui.TextFaint, 11));
                 break;
+            case State.Swap:
+            {
+                var plan = EnhancementChain.Plan(rep, e, out bool remove);
+                if (plan.Length > 0)
+                    lines.Add(new TipLine("Click: " + EnhancementChain.Describe(rep, plan, remove), SwapText, 12, true));
+                if (_units.Count > 1) lines.Add(new TipLine($"On {nCan} of {_units.Count} units", Ui.TextFaint, 11));
+                if (nInst > 0) lines.Add(new TipLine($"Installed on {nInst} · right-click: remove", Ui.TextFaint, 11));
+                break;
+            }
             case State.Installed:
                 lines.Add(new TipLine(_units.Count > 1 && nInst < _units.Count ? $"Installed on {nInst} of {_units.Count} units" : "Installed", new Color(150, 245, 225, 255), 12, true));
                 lines.Add(new TipLine($"Right-click: remove everything in the {EnhancementSlots.Name(x.Slot).ToLowerInvariant()} slot (instant, no refund)", Ui.TextFaint, 11));
@@ -362,13 +397,14 @@ public sealed class EnhancementPanel
             Ui.TextCentered("Cancel", cr, Ui.F(11), Ui.TextColor, true);
             if (st.Left)
             {
+                foreach (var h in _enhancing) _chain.Drop(h);
                 _ctx.Runner.Enqueue(new CancelUpgradeCommand(_ctx.LocalArmy, _enhancing.ToArray()));
                 UiSounds.Confirm();
             }
             if (st.Hover) Ui.Tooltip(cr, $"Cancel enhancement  [{Hotkeys.Stop.Label}]", "Stops building the enhancement and refunds what was spent on it.\nStop (or any new order) cancels it too.");
             return;
         }
-        Ui.Text("Click: install", r.X, r.Y, sfs, Ui.TextDim);
+        Ui.Text("Click: install (swaps the slot)", r.X, r.Y, sfs, Ui.TextDim);
         Ui.Text("Right-click installed: remove", r.X, r.Y + sfs + Ui.P(3), sfs, Ui.TextDim);
         Ui.Text(Ui.Fit("Engineers can assist (G)", r.Width, sfs), r.X, r.Y + 2 * (sfs + Ui.P(3)), sfs, Ui.TextFaint);
     }
