@@ -246,7 +246,7 @@ public sealed class FactionDb
     {
         if (string.IsNullOrEmpty(f.Color)) return 0;
         string s = f.Color.TrimStart('#');
-        if (s.Length != 6 || !uint.TryParse(s, System.Globalization.NumberStyles.HexNumber, null, out uint rgb))
+        if (s.Length != 6 || !uint.TryParse(s, System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture, out uint rgb))
             throw new InvalidDataException($"Faction '{f.Id}': Color must be \"#RRGGBB\", got '{f.Color}'");
         return (rgb << 8) | 0xFF;
     }

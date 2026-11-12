@@ -229,7 +229,7 @@ public static partial class MovementSystem
         // Turn; vehicles must roughly face the direction before driving at full speed.
         float maxTurn = mb.TurnRate * DMath.Deg2Rad * dt;
         heading = DMath.RotateTowards(heading, desiredHeading, maxTurn);
-        float facing = MathF.Cos(DMath.AngleDiff(heading, desiredHeading));
+        float facing = DMath.Cos(DMath.AngleDiff(heading, desiredHeading));
         desiredSpeed *= DMath.Clamp01((facing - 0.2f) / 0.8f);
 
         // Accelerate / brake.

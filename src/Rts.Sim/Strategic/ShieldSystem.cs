@@ -164,7 +164,7 @@ public static class ShieldSystem
         int e = FirstEntry(s, army, muzzle, target, out float t);
         if (e < 0) return false;
         int unit = s.Index.Entries[e].Unit;
-        return Damage(w, unit, damage, Vector3.Lerp(muzzle, target, t), shooterBp, weapon);
+        return Damage(w, unit, damage, DMath.Lerp(muzzle, target, t), shooterBp, weapon);
     }
 
     /// <summary>

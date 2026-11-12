@@ -1,3 +1,4 @@
+using Rts.Sim.Core;
 using System.Numerics;
 
 namespace Rts.Sim.Map;
@@ -245,8 +246,8 @@ internal static class MapConnectivity
             var q = new List<Vector2>(p.Count * 2) { p[0] };
             for (int i = 0; i < p.Count - 1; i++)
             {
-                q.Add(Vector2.Lerp(p[i], p[i + 1], 0.25f));
-                q.Add(Vector2.Lerp(p[i], p[i + 1], 0.75f));
+                q.Add(DMath.Lerp(p[i], p[i + 1], 0.25f));
+                q.Add(DMath.Lerp(p[i], p[i + 1], 0.75f));
             }
             q.Add(p[^1]);
             p = q;
@@ -283,7 +284,7 @@ internal static class MapConnectivity
         {
             float len = Vector2.Distance(pts[i], pts[i + 1]);
             int steps = Math.Max(1, (int)MathF.Ceiling(len));
-            for (int k = 0; k < steps; k++) s.Add(Vector2.Lerp(pts[i], pts[i + 1], k / (float)steps));
+            for (int k = 0; k < steps; k++) s.Add(DMath.Lerp(pts[i], pts[i + 1], k / (float)steps));
         }
         s.Add(pts[^1]);
         return s;

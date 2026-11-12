@@ -16,8 +16,8 @@ internal readonly struct MapNoise
         for (int i = 0; i < 16; i++)
         {
             float a = i * MathF.PI * 2f / 16f + 0.19f;
-            GradX[i] = MathF.Cos(a);
-            GradY[i] = MathF.Sin(a);
+            GradX[i] = DMath.Cos(a);
+            GradY[i] = DMath.Sin(a);
         }
     }
 

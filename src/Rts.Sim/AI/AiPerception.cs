@@ -419,7 +419,7 @@ public sealed class AiPerception
         // Threat memory: cells in vision show the truth, cells in the fog keep a decaying memory of what was there.
         int dt = _lastScanTick < 0 ? 0 : _w.Tick - _lastScanTick;
         _lastScanTick = _w.Tick;
-        float decay = dt <= 0 ? 1f : MathF.Pow(0.5f, dt / (float)Math.Max(1, MemoryHalfLife));
+        float decay = dt <= 0 ? 1f : DMath.Pow(0.5f, dt / (float)Math.Max(1, MemoryHalfLife));
         float landEst = 0;
         for (int c = 0; c < cells; c++)
         {

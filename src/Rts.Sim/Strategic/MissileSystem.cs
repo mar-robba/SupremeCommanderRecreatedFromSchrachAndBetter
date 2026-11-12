@@ -30,8 +30,8 @@ public static class MissileSystem
     public const float InterceptorTurnRate = 6f;
     /// <summary>Default cruise height of tactical missiles above the highest terrain on their way.</summary>
     public const float DefaultCruise = 16f;
-    private static readonly float TurnCos = MathF.Cos(InterceptorTurnRate * SimWorld.Dt);
-    private static readonly float TurnSin = MathF.Sin(InterceptorTurnRate * SimWorld.Dt);
+    private static readonly float TurnCos = DMath.Cos(InterceptorTurnRate * SimWorld.Dt);
+    private static readonly float TurnSin = DMath.Sin(InterceptorTurnRate * SimWorld.Dt);
     // Scratch, cleared before use. Per thread: several SimWorlds may step at once in one process (multiplayer loopback tests).
     [ThreadStatic, Persistence.NoSave] private static List<int>? t_tmp;
     private static List<int> _tmp => t_tmp ??= new();
@@ -54,7 +54,7 @@ public static class MissileSystem
             var rng = w.RandomFor(unit, 0x5170);
             float r = wb.Spread * MathF.Sqrt(rng.NextFloat());
             float a = rng.NextFloat() * DMath.TwoPi;
-            target = w.Terrain.Clamp(target + new Vector2(MathF.Cos(a), MathF.Sin(a)) * r);
+            target = w.Terrain.Clamp(target + new Vector2(DMath.Cos(a), DMath.Sin(a)) * r);
         }
         return Spawn(s, w, u.Army[unit], u.HandleOf(unit), bp, from, u.Elevation[unit] + bp.Visual.Size.Y * 0.9f + 0.5f, target);
     }
@@ -75,7 +75,7 @@ public static class MissileSystem
         // Highest terrain along the way, so cruise missiles clear hills.
         float top = MathF.Max(start.Y, end.Y);
         for (int k = 1; k < 24; k++)
-            top = MathF.Max(top, terrain.GetSurfaceHeight(Vector2.Lerp(from, target, k / 24f)));
+            top = MathF.Max(top, terrain.GetSurfaceHeight(DMath.Lerp(from, target, k / 24f)));
         bool strategic = sb.Kind == SiloKind.Strategic;
         float cruise = sb.CruiseAltitude > 0 ? sb.CruiseAltitude : strategic ? Math.Clamp(dist * 0.3f, 60f, 220f) : DefaultCruise;
         float apex = top + cruise;
@@ -118,14 +118,14 @@ public static class MissileSystem
         if (role == MissileRole.Strategic)
         {
             h = Smooth(Smooth(u));
-            bump = MathF.Pow(MathF.Sin(MathF.PI * u), 0.6f);
+            bump = DMath.Pow(DMath.Sin(MathF.PI * u), 0.6f);
         }
         else
         {
             h = 0.35f * u + 0.65f * Smooth(u);
             bump = Smooth(u / 0.2f) * (1f - Smooth((u - 0.72f) / 0.28f));
         }
-        var flat = Vector3.Lerp(start, end, h);
+        var flat = DMath.Lerp(start, end, h);
         flat.Y += (apex - flat.Y) * bump;
         return flat;
     }
@@ -278,13 +278,13 @@ public static class MissileSystem
             int e = ShieldSystem.FirstEntry(s, P.Army[p], pos0, pos1, out float st);
             if (e >= 0 && st <= groundT)
             {
-                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = s.Index.Entries[e].Unit, Pos = Vector3.Lerp(pos0, pos1, st) });
+                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Shield, Unit = s.Index.Entries[e].Unit, Pos = DMath.Lerp(pos0, pos1, st) });
                 return;
             }
         }
         if (groundT <= 1f)
         {
-            var gp = Vector3.Lerp(pos0, pos1, groundT);
+            var gp = DMath.Lerp(pos0, pos1, groundT);
             impacts.Add(new ProjectileImpact { Projectile = p, Kind = nuke ? ImpactKind.Detonation : ImpactKind.Ground, Unit = -1, Pos = gp });
             return;
         }
@@ -316,9 +316,9 @@ public static class MissileSystem
         var r0 = pos0 - tp0;
         var r1 = pos1 - tp1;
         float t = Ballistics.ClosestParam(r0, r1, Vector3.Zero);
-        if (Vector3.Lerp(r0, r1, t).LengthSquared() <= InterceptRadius * InterceptRadius)
+        if (DMath.Lerp(r0, r1, t).LengthSquared() <= InterceptRadius * InterceptRadius)
         {
-            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Intercept, Unit = -1, Pos = Vector3.Lerp(pos0, pos1, t) });
+            impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Intercept, Unit = -1, Pos = DMath.Lerp(pos0, pos1, t) });
             return;
         }
         if (life <= 0) impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Expire, Unit = -1, Pos = pos1 });

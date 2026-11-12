@@ -3,23 +3,35 @@ using System.Numerics;
 namespace Rts.Sim.Core;
 
 /// <summary>
-/// Math helpers used by the simulation. All trig goes through here so it can later be replaced by a
-/// cross-platform deterministic implementation (needed for lockstep multiplayer).
+/// Math helpers used by the simulation. Every transcendental function of the sim goes through here and is computed
+/// in software (DMath.Trig/Inverse/ExpLog.cs: float + - * / and Sqrt only), so it gives the same bits on every OS,
+/// CPU and .NET runtime (lockstep multiplayer, replays). Never call MathF/Math Sin/Cos/Atan2/Pow/... in Rts.Sim
+/// (DeterministicMathTests greps for it). Docs: ARCHITECTURE "Deterministic math (cross-OS)".
 /// Convention: angles in radians; heading h points along (cos h, sin h) in the (x, z) plane.
 /// </summary>
-public static class DMath
+public static partial class DMath
 {
     public const float Pi = MathF.PI;
     public const float TwoPi = MathF.PI * 2f;
     public const float Deg2Rad = MathF.PI / 180f;
 
-    public static float Sin(float a) => MathF.Sin(a);
-    public static float Cos(float a) => MathF.Cos(a);
-    public static float Atan2(float y, float x) => MathF.Atan2(y, x);
+    /// <summary>Version of the sim's math (bump when any DMath result changes): stored in replays, which only replay
+    /// with the same version (1 = software math of 10a-1; 0 = files from before, which used MathF).</summary>
+    public const int Version = 1;
+
     public static float Sqrt(float v) => MathF.Sqrt(v);
 
-    public static Vector2 Dir(float heading) => new(MathF.Cos(heading), MathF.Sin(heading));
-    public static float HeadingOf(Vector2 v) => MathF.Atan2(v.Y, v.X);
+    public static Vector2 Dir(float heading)
+    {
+        var (s, c) = SinCos(heading);
+        return new Vector2(c, s);
+    }
+    public static float HeadingOf(Vector2 v) => Atan2(v.Y, v.X);
+
+    /// <summary>a + (b - a)·t, written out (no Vector Lerp: those may use a fused multiply-add on some CPUs).</summary>
+    public static float Lerp(float a, float b, float t) => a + (b - a) * t;
+    public static Vector2 Lerp(Vector2 a, Vector2 b, float t) => new(Lerp(a.X, b.X, t), Lerp(a.Y, b.Y, t));
+    public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => new(Lerp(a.X, b.X, t), Lerp(a.Y, b.Y, t), Lerp(a.Z, b.Z, t));
 
     /// <summary>Wraps an angle into (-PI, PI].</summary>
     public static float WrapAngle(float a)

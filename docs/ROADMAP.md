@@ -139,7 +139,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G28 | Italian localization (string table, language setting, UI/tooltips/help/unit names) | — | M-L | whole client + blueprint names | owner Q4, G25 | Q |
 | G29 | Map editor (SupCom1 had none in game) | — | L | — | owner Q2 | 3 |
 | G30-G33 | removed from the plan 2026-11-11 (owner: improving the AI is no longer a goal; the AI of wave 5 stays). They were: AI personalities, AI team play, AI use of the new mechanics, AI think cost on 1024 | — | — | — | — | — |
-| G34 | Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
+| G34 | [x] 2026-11-12 (10a-1) Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
 | G35 | Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
 | G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
 | G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
@@ -223,6 +223,14 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash
   change, golden-value tests), observers, MP save/load, vote to drop, lobby pings, chat sounds. Owns `Rts.Sim` math
   call sites, `Rts.Net`, Net menus. Tests: Net tests, `Rts.Bench -- mp`, replays still verify.
+  - [x] 10a-1 Deterministic math (2026-11-12; ARCHITECTURE "Deterministic math (cross-OS)"): software
+    Sin/Cos/SinCos/Atan/Atan2/Asin/Acos/Exp/Log/Log2/Pow in `DMath` (max 2 ulp, Pow 4 beyond |y·log2 x| > 16), every
+    sim call site and `Vector*.Lerp` routed through it (grep test), golden 600-tick game hash test, `GameInfo.MathVersion`
+    (old replays and old generated-map saves refused with a clear message), `Msg.ProtocolVersion` 4; cost < 1 % of the
+    tick. Reference hashes changed (bench 2F09CD7D01AF287E; `ai 30 256 42` Player (Hard) after 12:00, C87C46C4EA726A82).
+  - [ ] later: run the sim tests (golden test) and `Rts.Bench -- replay` of one Linux-made file on Windows and on
+    ARM64; `Vector2/3` dot/length intrinsic paths are still unverified across ISAs (could be written out like Lerp);
+    old saves on generated maps cannot load (would need the old MathF generator or the terrain embedded in saves).
 - 10b Keybindings & client leftovers (G19; G21 if the owner wants it, else G11 client items and G20/G22 leftovers).
   Owns Hotkeys.cs, new KeyBindingsScreen, the listed client files. Tests: rebinding + clash tests; screenshots.
   - [x] 2026-11-12 (10b-1) Keybinding editor: Settings → Keys (capture with modifiers, rows rebind whole, clash

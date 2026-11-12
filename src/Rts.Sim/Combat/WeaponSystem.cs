@@ -191,7 +191,7 @@ public static class WeaponSystem
             bool oc = wbp.Overcharge != null && (u.Flags[i] & UnitFlags.Overcharge) != 0 && OverchargeSystem.TryShot(w, i, wbp.Overcharge, out ocDamage);
 
             ws.Cooldown += winfo.Period;
-            var flashPos = muzzle + new Vector3(MathF.Cos(ws.TurretHeading), 0, MathF.Sin(ws.TurretHeading)) * (bp.Radius * 0.6f);
+            var flashPos = muzzle + new Vector3(DMath.Cos(ws.TurretHeading), 0, DMath.Sin(ws.TurretHeading)) * (bp.Radius * 0.6f);
             int count = oc ? 1 : Math.Max(1, wbp.ProjectilesPerShot);
             for (int p = 0; p < count; p++)
             {
@@ -202,8 +202,8 @@ public static class WeaponSystem
                     var rng = w.RandomFor(i, 1 + wi * 64 + p);
                     float r = wbp.Spread * MathF.Sqrt(rng.NextFloat());
                     float ang = rng.NextFloat() * DMath.TwoPi;
-                    a.X += MathF.Cos(ang) * r;
-                    a.Z += MathF.Sin(ang) * r;
+                    a.X += DMath.Cos(ang) * r;
+                    a.Z += DMath.Sin(ang) * r;
                     if (winfo.Kind == WeaponKind.Ballistic)
                     {
                         if (!Ballistics.SolveArc(muzzle, a, wbp.MuzzleVelocity, Ballistics.Gravity, high, out vel, out _)) vel = launch;
@@ -311,8 +311,8 @@ public static class WeaponSystem
                 float r = wbp.Spread * MathF.Sqrt(rng.NextFloat());
                 float ang = rng.NextFloat() * DMath.TwoPi;
                 float inv = 1f / MathF.Max(0.5f, tFall);
-                vel.X += MathF.Cos(ang) * r * inv;
-                vel.Z += MathF.Sin(ang) * r * inv;
+                vel.X += DMath.Cos(ang) * r * inv;
+                vel.Z += DMath.Sin(ang) * r * inv;
             }
             shots.Add(new ShotRequest
             {
@@ -339,7 +339,7 @@ public static class WeaponSystem
     private static Vector3 SafeDir(Vector3 v, float fallbackYaw)
     {
         float l = v.Length();
-        return l > 1e-4f ? v / l : new Vector3(MathF.Cos(fallbackYaw), 0, MathF.Sin(fallbackYaw));
+        return l > 1e-4f ? v / l : new Vector3(DMath.Cos(fallbackYaw), 0, DMath.Sin(fallbackYaw));
     }
 
     /// <summary>Sequential: turns a shot request into a projectile (or instant beam damage) plus effects.</summary>
@@ -364,7 +364,7 @@ public static class WeaponSystem
             if (wall >= 0 && wall != target.Index)
             {
                 target = u.HandleOf(wall);
-                hitPos = Vector3.Lerp(shot.Pos, hitPos, wallT);
+                hitPos = DMath.Lerp(shot.Pos, hitPos, wallT);
             }
             EmpStun.OnImpact(w, shot.Bp, shot.Weapon, shot.Army, new Vector2(hitPos.X, hitPos.Z), u.IsActive(target) ? target.Index : -1);
             if (shot.DamageRadius > 0)

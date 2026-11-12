@@ -94,7 +94,7 @@ public static class Torpedoes
             if (pos1.Y <= water)
             {
                 float t = (pos0.Y - water) / MathF.Max(1e-4f, pos0.Y - pos1.Y);
-                var at = Vector3.Lerp(pos0, pos1, t);
+                var at = DMath.Lerp(pos0, pos1, t);
                 at.Y = water;
                 if (Aground(terrain, at.X, at.Z, water))
                 {
@@ -145,7 +145,7 @@ public static class Torpedoes
             s.ForEachInRadius(w, mid, Vector2.Distance(v.A, v.B) * 0.5f + s.Catalog.MaxRadius + CombatState.GridSlack, s.EnemyArmies[P.Army[p]], ref v);
             if (v.Best >= 0)
             {
-                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Unit, Unit = v.Best, Pos = Vector3.Lerp(pos0, pos1, v.BestT) });
+                impacts.Add(new ProjectileImpact { Projectile = p, Kind = ImpactKind.Unit, Unit = v.Best, Pos = DMath.Lerp(pos0, pos1, v.BestT) });
                 return;
             }
             if (Aground(terrain, pos1.X, pos1.Z, pos1.Y))

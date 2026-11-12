@@ -67,7 +67,7 @@ internal sealed partial class MapBuilder
         _relief = s.MaxHeight / 28f;
         _scale = s.NoiseScale * MathF.Sqrt(_sc);
         _sym = new MapSymmetry(_starts.Length, _center, phi0, band: 14f * MathF.Sqrt(_sc), centerRadius: _n * 0.07f);
-        _flatR = 24f + 3f * MathF.Log2(MathF.Max(1f, _sc));
+        _flatR = 24f + 3f * DMath.Log2(MathF.Max(1f, _sc));
         _blendR = _flatR + 20f;
         _nHill = new MapNoise(_seed ^ 0x1111);
         _nDetail = new MapNoise(_seed ^ 0x2222);
@@ -465,7 +465,7 @@ internal sealed partial class MapBuilder
             if (round == maxRounds || main < 0)
             {
                 // Fallback: straight wide corridors from every start to the center.
-                var spoke = new List<Vector2> { _starts[0], Vector2.Lerp(_starts[0], _center, 0.5f), _center };
+                var spoke = new List<Vector2> { _starts[0], DMath.Lerp(_starts[0], _center, 0.5f), _center };
                 CarveSymmetric(spoke, 5.5f, 11f);
                 if (round == maxRounds) return;
                 continue;

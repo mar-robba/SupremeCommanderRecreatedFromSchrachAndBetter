@@ -90,7 +90,7 @@ internal sealed partial class MapBuilder
 
     private static Vector2 Rot(Vector2 v, float ang)
     {
-        float c = MathF.Cos(ang), s = MathF.Sin(ang);
+        float c = DMath.Cos(ang), s = DMath.Sin(ang);
         return new Vector2(v.X * c - v.Y * s, v.X * s + v.Y * c);
     }
 

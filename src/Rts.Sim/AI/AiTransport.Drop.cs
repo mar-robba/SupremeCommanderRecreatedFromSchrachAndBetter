@@ -161,7 +161,7 @@ public sealed partial class AiTransport
         float len = Vector2.Distance(a, b);
         int n = Math.Clamp((int)(len / 24f), 1, 16);
         float t = 0;
-        for (int k = 1; k < n; k++) t += V.AirThreatAt(Vector2.Lerp(a, b, k / (float)n), 12f);
+        for (int k = 1; k < n; k++) t += V.AirThreatAt(DMath.Lerp(a, b, k / (float)n), 12f);
         return t;
     }
 
