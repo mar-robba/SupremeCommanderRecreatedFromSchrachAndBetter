@@ -153,6 +153,8 @@ public sealed class MapFile
             float k = h[i] * scale; // exact (power-of-two scale)
             if (k != MathF.Round(k) || MathF.Abs(k) > 1 << 23) return false;
             vals[i] = (int)k;
+            // Bit-exact only (e.g. -0 would come back as +0).
+            if (BitConverter.SingleToInt32Bits(vals[i] / scale) != BitConverter.SingleToInt32Bits(h[i])) return false;
         }
         return true;
     }
@@ -175,7 +177,7 @@ public sealed class MapFile
     {
         float scale = MathF.ScaleB(1f, bits);
         var h = new float[t.Heights.Length];
-        for (int i = 0; i < h.Length; i++) h[i] = MathF.Round(t.Heights[i] * scale) / scale;
+        for (int i = 0; i < h.Length; i++) h[i] = MathF.Round(t.Heights[i] * scale) / scale + 0f; // + 0f: no -0
         return new Terrain(t.Width, t.Height, h, t.WaterLevel, t.Deposits, t.StartPositions, t.Seed) { Props = t.Props };
     }
 
