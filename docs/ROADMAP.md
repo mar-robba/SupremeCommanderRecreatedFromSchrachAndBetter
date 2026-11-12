@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 21:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 21:15 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -20,7 +20,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 21:10, orchestrator session 8d3780e7, on Opus 5.5):
+**ON RESUME** (2026-11-12 21:15, orchestrator session 4ebba5f4, on Fable 5.2; before it 8d3780e7 on Opus 5.5):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -35,7 +35,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   them. Seven missing entries written (2026-10-16 → 11-12), the Hard-preset entry corrected (it was an exploit), and
   WORKFLOW "Lifecycle of a wave" step 7 now adds a LESSONS entry at every merge that shows a design error.
   `LESSONS.pdf`/`.tex` are the owner's Emacs export of 2026-10-15 (stale).
-- **WEEKLY LIMIT hit 2026-11-12 ~21:05; it resets 2026-11-17 15:00 (Europe/Rome).** Start nothing before then.
+- **Weekly limit message 2026-11-12 21:02** ("resets Nov 17, 3pm"): it cut both agents of pair 2, but Opus 5.5
+  calls worked again from 21:08 (why is not known to the orchestrator: ask the owner's `/usage` before sizing
+  more work). The owner cleared the session, set `/model` Fable 5.2 and said "continua" at 21:10, so **pair 2
+  was resumed at 21:12**: one fresh agent per worktree on Opus 5.5 (10a-2 agent 3 = a03d93b61caaae6eb, CTX-TAG
+  `10a2-mod-3`; 10b-2 agent 3 = a3fa823dddd19d052, CTX-TAG `10b2-mod-3`; ids are valid only in session 4ebba5f4),
+  watcher at 165k. If they are cut again: WIP commit in each worktree, then the paragraph below.
 - **Pair 2 is in progress, both modules half done, nothing merged.** Started 20:48 (session 8d3780e7); each module's
   first agent hit 170k context in 11-14 minutes and checkpointed; the two successors were cut by the weekly limit
   within a minute or two (no work lost: WIP committed). To resume, one fresh agent per worktree (`model: "opus"`,
