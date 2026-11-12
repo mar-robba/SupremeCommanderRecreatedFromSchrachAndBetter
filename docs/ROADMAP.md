@@ -23,7 +23,10 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   - (9b-2) Terrain self-shadows + unit LOD + minimap options: agent a0aac67ba2177f048, CTX-TAG `9b2-mod-1b`,
     worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`).
   Their prompts: brief (HISTORY "(8b) Maps", "Wave 9") + state + ordered TODO + rules block, in the transcript of
-  session e3d118ad. A first pair (10:52) died on its first call from a network error (ECONNRESET), nothing written;
+  session e3d118ad. **11:12-11:14 both CHECKPOINTed** (8b-2 at 166k: sim, pack of 10 maps, picker done, left
+  tests/checks/docs; 9b-2 at 185k: shadow bake + LOD maths written, never built). **Successors in the same
+  worktrees since 11:15:** 8b-2 agent 2 a81f798f52fa66eab (CTX-TAG `8b2-mod-2`), 9b-2 agent 2 ac5141e246be5f8c5
+  (`9b2-mod-2`); both continue from `.claude/handoff.md`. A first pair (10:52) died on its first call from a network error (ECONNRESET), nothing written;
   its empty worktrees were removed automatically. The 06:07 job of the night session never ran (that session hit
   the Fable limit). Context watcher at 170k for both runs in the background of session e3d118ad.
 - Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
