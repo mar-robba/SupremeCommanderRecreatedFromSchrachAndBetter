@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 18:45 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 18:55 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -25,12 +25,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   editor (G19, client only); pair 2 = **10a-2** observers + vote to drop + lobby pings + chat sounds + **10b-2**
   selection overlays + client leftovers (G20, G11 client items); then **10a-3** MP save/load (G36) with a wave 11
   module. One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, no sub-agents while two run).
-- **Pair 1 is scheduled** for 20:47 on 2026-11-12 (CronCreate job of session 3badb572; the 15:40 window had ~15 $
-  used at 18:15, first call 15:40:46, so the next window opens at 20:40). The ready prompts are
+- **Pair 1 is running** (started 2026-11-12 ~18:55 at the owner's request, "si parti subito", in the half-used
+  15:40 window, ~15 $ used by then; it may be cut at ~20:40). Worktrees under `.claude/worktrees/`; a CronCreate job
+  of session 3badb572 at 20:47 commits WIP and resumes or replaces cut agents. Prompts:
   `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a1.md` and
-  `prompt-10b1.md` (same folder; also `merge-check.sh`, the merge checks). If that folder is gone (reboot), rebuild
+  `prompt-10b1.md` (same folder: `merge-check.sh`, the merge checks). If that folder is gone (reboot), rebuild
   the prompts from the HISTORY briefs with the 8b-3 prompt shape (brief, state, ordered TODO, rules block).
-  If the job did not fire: start the pair by hand in a fresh window.
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
