@@ -157,13 +157,20 @@ public static class SaveGame
         return SaveContainer.Encode(SaveFileKind.Save, c.Info, o.Span);
     }
 
-    public static LoadedGame Decode(byte[] file, BlueprintDb db)
+    public static LoadedGame Decode(byte[] file, BlueprintDb db) => Decode(file, db, null);
+
+    /// <summary>(10a-3) Same; <paramref name="map"/> = the game's map file already found and checked by the caller (a
+    /// multiplayer peer: data/maps or its download folder), null = look it up as usual.</summary>
+    public static LoadedGame Decode(byte[] file, BlueprintDb db, MapFile? map)
     {
         var (info, payload) = SaveContainer.Decode(file, SaveFileKind.Save);
         var r = new ByteReader(payload);
         var state = r.Block();
         ReplayLog? replay = r.U8() != 0 ? ReplayLog.Read(r) : null;
-        var terrain = TerrainFor(info, db, r.Block());
+        var embedded = r.Block();
+        var terrain = map != null && info.MapFile != null && info.Map == null
+            ? CheckedTerrain(info, db, map.TerrainFor(Math.Max(1, info.Players.Count)))
+            : TerrainFor(info, db, embedded);
         if (info.MathVersion != Core.DMath.Version)
         {
             // (10a-1) A save made with other math (e.g. the old MathF sim, on a map file) loads and plays on, but the
@@ -262,6 +269,16 @@ public static class SaveGame
                     ? "This file was made on a generated map by an older game version (before the cross-platform math): " +
                       "the map generator now makes a different terrain, so it cannot be loaded (games on map files still load)"
                     : "The map generator changed since this file was made (different game version)");
+        return terrain;
+    }
+
+    /// <summary>(10a-3) Blueprint + terrain hash checks for a terrain supplied by the caller.</summary>
+    private static Terrain CheckedTerrain(GameInfo info, BlueprintDb db, Terrain terrain)
+    {
+        if (info.BlueprintHash != GameInfo.BlueprintHashOf(db))
+            throw new IncompatibleSaveException("The unit blueprints changed since this file was made (different game version)");
+        if (GameInfo.TerrainHashOf(terrain) != info.TerrainHash)
+            throw new IncompatibleSaveException($"The map '{info.MapFile}' does not give the terrain this file was made on");
         return terrain;
     }
 

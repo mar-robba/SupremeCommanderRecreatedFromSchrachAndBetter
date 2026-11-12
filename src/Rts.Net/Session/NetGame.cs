@@ -13,7 +13,7 @@ namespace Rts.Net.Session;
 /// peer reported the same hash → the lockstep runs. Speed/pause: <see cref="RequestSpeed"/> (the host decides and
 /// broadcasts; <see cref="AttachRunner"/> applies it to the local runner).
 /// </summary>
-public sealed class NetGame
+public sealed partial class NetGame
 {
     private readonly NetSession _session;
     private readonly object _lock = new();
@@ -65,7 +65,9 @@ public sealed class NetGame
         lock (_lock)
         {
             if (Hooks != null) throw new InvalidOperationException("hooks already created");
+            if (startTick == 0) startTick = Start.StartTick; // (10a-3) a loaded game resumes at the saved tick
             var h = new LockstepHooks(Start.TurnArmies, LocalTurn, Start.Delay, _session.Sink, inner, startTick);
+            SetupSaves(h, startTick); // (10a-3) NetGame.Saves.cs
             foreach (var (t, last, action) in _pendingDrops) h.Drop(t, last, action);
             _pendingDrops.Clear();
             foreach (var (t, tick, payload) in _earlyTurns) h.AddTurn(t, tick, payload); // (10a-2) observer
@@ -87,7 +89,7 @@ public sealed class NetGame
     {
         _runner = runner;
         runner.Speed = Speed;
-        runner.Paused = Paused;
+        runner.Paused = HoldForPause; // (10a-3) a pending save runs a paused game up to its tick
     }
 
     /// <summary>Last ping of each turn player in ms (the host's view; -1 unknown).</summary>
@@ -203,7 +205,7 @@ public sealed class NetGame
         if (_runner is { } r)
         {
             r.Speed = speed;
-            r.Paused = paused;
+            r.Paused = HoldForPause;
         }
     }
 
