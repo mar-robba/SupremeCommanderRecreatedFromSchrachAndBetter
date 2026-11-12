@@ -25,7 +25,7 @@ public sealed partial class ClientSession : NetSession, ITurnSink
     public float PingMs => _conn.RttMs;
     public string HostEndpoint { get; }
 
-    private ClientSession(System.Net.Sockets.Socket socket, string name, string endpoint, string? mapDir = null)
+    private ClientSession(System.Net.Sockets.Socket socket, string name, string endpoint, string? mapDir = null, bool observe = false)
     {
         if (mapDir != null) MapDir = mapDir; // (8b-3) before the first lobby arrives
         LocalName = CleanText(name, 24) is { Length: > 0 } n ? n : "Player";
@@ -36,18 +36,20 @@ public sealed partial class ClientSession : NetSession, ITurnSink
             w.VarU(Msg.ProtocolVersion);
             w.Str(GameInfo.CurrentSimBuild);
             w.Str(LocalName);
+            w.U8(observe ? (byte)1 : (byte)0); // (10a-2) join as an observer
         }));
         _monitor = new Timer(_ => Monitor(), null, 250, 250);
     }
 
     /// <summary>Connects and joins (blocks until the host answers). Throws <see cref="NetJoinException"/> with the reason.</summary>
     /// <param name="mapDir">(8b-3) Folder for received maps (null = <see cref="Rts.Sim.Map.MapLibrary.DownloadDir"/>).</param>
-    public static ClientSession Join(string host, int port, string name, int timeoutMs = 5000, string? mapDir = null)
+    /// <param name="observe">(10a-2) Join as an observer (also when the game has no open slot left).</param>
+    public static ClientSession Join(string host, int port, string name, int timeoutMs = 5000, string? mapDir = null, bool observe = false)
     {
         System.Net.Sockets.Socket s;
         try { s = NetConnection.Connect(host, port, timeoutMs); }
         catch (Exception e) { throw new NetJoinException($"Can't reach {host}:{port}: {e.Message}", e); }
-        var c = new ClientSession(s, name, $"{host}:{port}", mapDir);
+        var c = new ClientSession(s, name, $"{host}:{port}", mapDir, observe);
         if (!c._welcome.Wait(timeoutMs))
         {
             c.Leave("no answer");
@@ -71,6 +73,15 @@ public sealed partial class ClientSession : NetSession, ITurnSink
     }
 
     public void SetReady(bool ready) => Request(new LobbyRequest { Ready = ready ? 1 : 0 });
+
+    public override void Observe(bool on, int slot = -1) => Request(new LobbyRequest { Observe = on ? 1 : 0, MoveToSlot = slot });
+
+    internal override void VoteDrop(NetGame game, int turn, bool yes)
+    {
+        if (game == Game && !game.Offline) _conn.Send(Msg.Build(MsgType.DropVote, w => { w.VarU((ulong)turn); w.U8(yes ? (byte)1 : (byte)0); }));
+    }
+
+    void ITurnSink.SendResign(int lastTick) => _conn.Send(Msg.Build(MsgType.Resign, w => w.VarU((ulong)lastTick)));
 
     public override (long sent, long received) Traffic => (_conn.BytesSent, _conn.BytesReceived);
 
@@ -172,7 +183,7 @@ public sealed partial class ClientSession : NetSession, ITurnSink
                     int turn = r.Count(64), last = r.Count(int.MaxValue);
                     var action = (DropAction)Math.Min(r.U8(), (byte)DropAction.Defeat);
                     string reason = r.Str() ?? "";
-                    if (Game == null || (uint)turn >= (uint)Game.TurnPlayers) break;
+                    if (Game == null || (uint)turn >= (uint)Game.TurnPlayers || turn == Game.LocalTurn) break; // (10a-2) own resign: applied locally
                     Game.ApplyDrop(turn, last, action);
                     Raise(new PlayerDroppedEvent(Game.NameOfTurn(turn), Game.Start.TurnArmies[turn], action, reason));
                     break;
@@ -207,6 +218,12 @@ public sealed partial class ClientSession : NetSession, ITurnSink
                 }
                 case MsgType.Leave:
                     c.Close(r.Str() ?? "The host closed the game");
+                    break;
+                case MsgType.DropVote: // (10a-2)
+                    Game?.SetVotes(ReadTally(r));
+                    break;
+                case MsgType.LobbyPings:
+                    SetPersonPings(ReadPings(r));
                     break;
                 default:
                     throw new ProtocolException($"unexpected {type}");

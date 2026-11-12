@@ -21,6 +21,9 @@ public sealed class NetGame
     private bool _goReceived;
     private SimRunner? _runner;
     private volatile int[] _pings;
+    /// <summary>(10a-2) Turns that reached an observer before its simulation was built.</summary>
+    private readonly List<(int turn, int tick, byte[] payload)> _earlyTurns = new();
+    private volatile DropVoteTally? _votes;
 
     public readonly GameStart Start;
     /// <summary>Local turn player index and army (-1 = not playing).</summary>
@@ -65,6 +68,8 @@ public sealed class NetGame
             var h = new LockstepHooks(Start.TurnArmies, LocalTurn, Start.Delay, _session.Sink, inner, startTick);
             foreach (var (t, last, action) in _pendingDrops) h.Drop(t, last, action);
             _pendingDrops.Clear();
+            foreach (var (t, tick, payload) in _earlyTurns) h.AddTurn(t, tick, payload); // (10a-2) observer
+            _earlyTurns.Clear();
             Hooks = h;
             if (_goReceived) h.Start();
             return h;
@@ -143,9 +148,53 @@ public sealed class NetGame
 
     internal void AddTurn(int turn, int tick, byte[] payload)
     {
+        if (LocalTurn < 0)
+            lock (_lock)
+                if (Hooks == null) { _earlyTurns.Add((turn, tick, payload)); return; } // (10a-2) observer still loading
         var h = Hooks ?? throw new Wire.ProtocolException("turn before the game was loaded");
         h.AddTurn(turn, tick, payload);
     }
+
+    // ------------------------------------------------------------------ (10a-2) observers, resign, drop votes
+
+    /// <summary>Seconds a peer waits for a player before it may vote to drop it (the banner counts down).</summary>
+    public const double DropVoteDelaySeconds = 5;
+
+    /// <summary>This peer only watches: an observer of the lobby (no army, sends no turns).</summary>
+    public bool IsObserver => LocalTurn < 0;
+
+    /// <summary>The local (defeated) player stopped sending turns and stays as an observer (see <see cref="Resign"/>).</summary>
+    public bool Resigned => Hooks?.ResignedAt >= 0;
+
+    /// <summary>The local player stays as an observer: its turns end, every peer drops its army (defeat), so the game
+    /// no longer waits for it. Meant for a defeated player; the others see "left".</summary>
+    public void Resign() => Hooks?.RequestResign();
+
+    /// <summary>Turn player the local sim waits for (-1 = none).</summary>
+    public int WaitingForTurn => Hooks is { Started: true } h ? h.WaitingFor : -1;
+
+    /// <summary>Turn index of the host (-1 = the host observes).</summary>
+    public int HostTurn => Start.TurnIndexOf(0);
+
+    /// <summary>True if the local player may vote to drop <paramref name="turn"/>: a playing peer (not dropped), another
+    /// player than itself and not the host (no host migration).</summary>
+    public bool CanVoteDrop(int turn) => LocalTurn >= 0 && turn != LocalTurn && turn != HostTurn && (uint)turn < (uint)TurnPlayers
+        && !IsDropped(LocalTurn) && !IsDropped(turn);
+
+    /// <summary>Votes (or withdraws the vote) to drop the player everybody waits for; the host drops it when a majority
+    /// of the remaining players agree (<see cref="DropVoteTally.Needed"/>).</summary>
+    public void VoteDrop(int turn, bool yes = true)
+    {
+        if (CanVoteDrop(turn)) _session.VoteDrop(this, turn, yes);
+    }
+
+    /// <summary>The host's last tally (null = no votes).</summary>
+    public DropVoteTally? Votes => _votes;
+
+    internal void SetVotes(DropVoteTally? t) => _votes = t is { Votes: > 0 } ? t : null;
+
+    /// <summary>Votes needed to drop a player: a strict majority of the remaining (not dropped) players other than it.</summary>
+    public static int VotesNeeded(int remainingVoters) => remainingVoters / 2 + 1;
 
     internal void SetSpeed(float speed, bool paused)
     {
@@ -165,6 +214,8 @@ public sealed class NetGame
 
     internal void SetPings(int[] pings) => _pings = pings;
 
+    internal bool HasHooks => Hooks != null;
+
     internal bool MarkDesync(int tick, string detail)
     {
         if (DesyncTick >= 0) return false;
@@ -172,4 +223,10 @@ public sealed class NetGame
         DesyncTick = tick;
         return true;
     }
+}
+
+/// <summary>(10a-2) Drop vote tally against turn player <paramref name="Target"/>: <paramref name="Voters"/> = turn indices.</summary>
+public sealed record DropVoteTally(int Target, int Votes, int Needed, int[] Voters)
+{
+    public bool HasVoted(int turn) => Array.IndexOf(Voters, turn) >= 0;
 }

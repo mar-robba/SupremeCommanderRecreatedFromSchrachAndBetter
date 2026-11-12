@@ -135,7 +135,9 @@ public sealed partial class HostSession : NetSession, ITurnSink
                     if (s.IsArmy && !string.IsNullOrWhiteSpace(s.Faction) && !string.Equals(s.Faction, Rts.Sim.Data.FactionDb.Random, StringComparison.OrdinalIgnoreCase)
                         && !FactionKnown(s.Faction))
                         return $"Unknown faction '{s.Faction}' ({(s.Kind == NetSlotKind.AI ? "AI" : s.Name)})";
-            int delay = DelayFor(_conns.Where(c => c.PlayerId > 0).Select(c => c.RttMs).DefaultIfEmpty(0).Max(), 1f);
+            int delay = DelayFor(_conns.Where(c => c.PlayerId > 0 && LobbyRef.SlotOf(c.PlayerId) >= 0).Select(c => c.RttMs).DefaultIfEmpty(0).Max(), 1f); // (10a-2) not the observers
+            _dropVotes.Clear();
+            _observerDesync.Clear();
             var start = GameStart.From(LobbyRef, delay);
             Game = new NetGame(this, start, start.TurnIndexOf(0));
             _loaded.Clear();
@@ -196,13 +198,24 @@ public sealed partial class HostSession : NetSession, ITurnSink
                     break;
                 }
                 case MsgType.Loaded:
-                    if (Phase == NetPhase.Loading) OnLoaded(c.PlayerId, r.Raw<ulong>());
+                    if (Game != null && Game.Start.TurnIndexOf(c.PlayerId) < 0) ObserverLoaded(c, r.Raw<ulong>()); // (10a-2)
+                    else if (Phase == NetPhase.Loading) OnLoaded(c.PlayerId, r.Raw<ulong>());
                     break;
                 case MsgType.Turn:
                     HandleTurn(c, r);
                     break;
                 case MsgType.Hash:
-                    if (Game != null) OnPeerHash(Game.Start.TurnIndexOf(c.PlayerId), r.Count(int.MaxValue), r.Raw<ulong>());
+                    if (Game != null && Game.Start.TurnIndexOf(c.PlayerId) is int ht)
+                    {
+                        if (ht >= 0) OnPeerHash(ht, r.Count(int.MaxValue), r.Raw<ulong>());
+                        else CheckObserverHash(c, r.Count(int.MaxValue), r.Raw<ulong>()); // (10a-2)
+                    }
+                    break;
+                case MsgType.DropVote: // (10a-2) HostSession.Observers.cs
+                    OnDropVote(c, r.Count(64), r.U8() != 0);
+                    break;
+                case MsgType.Resign:
+                    OnResign(c, r.Count(int.MaxValue));
                     break;
                 case MsgType.Speed:
                     if (Game != null) ApplySpeed(ReadSpeed(r), r.U8() != 0, c.Name);
@@ -224,10 +237,12 @@ public sealed partial class HostSession : NetSession, ITurnSink
         uint protocol = (uint)r.VarU();
         string build = r.Str() ?? "";
         string name = CleanText(r.Str(), 24);
+        bool observe = !r.AtEnd && r.U8() != 0; // (10a-2) join as an observer
+        bool asObserver = observe || LobbyRef.FirstOpenSlot() < 0;
         string? refuse = protocol != Msg.ProtocolVersion ? $"Different network protocol version (host {Msg.ProtocolVersion}, yours {protocol}): both players need the same game version"
             : build != GameInfo.CurrentSimBuild ? "Different game build: both players need the same version"
             : Phase != NetPhase.Lobby ? "The game has already started"
-            : LobbyRef.FirstOpenSlot() < 0 ? "The game is full" : null;
+            : asObserver && LobbyRef.Observers.Count >= LobbyState.MaxObservers ? "The game is full" : null;
         if (refuse != null)
         {
             c.PlayerId = int.MaxValue; // not a player: ignore anything else it sends
@@ -236,10 +251,19 @@ public sealed partial class HostSession : NetSession, ITurnSink
         }
         if (name.Length == 0) name = "Player";
         string unique = name;
-        for (int k = 2; LobbyRef.Slots.Any(s => s.Kind == NetSlotKind.Human && s.Name == unique); k++) unique = $"{name} {k}";
+        for (int k = 2; LobbyRef.People.Any(s => s.Name == unique); k++) unique = $"{name} {k}";
         c.Name = unique;
         c.PlayerId = _nextPlayerId++;
         int slot = LobbyRef.FirstOpenSlot();
+        if (asObserver)
+        {
+            LobbyRef.Observers.Add(NewObserver(c.PlayerId, unique, !LobbyRef.Options.HasMapFile, 0));
+            c.Send(Msg.Build(MsgType.Welcome, w => w.VarU((ulong)c.PlayerId)));
+            foreach (var line in ChatLog.TakeLast(30)) c.Send(ChatFrame(line));
+            Changed();
+            SystemChatAll($"{unique} joined as an observer");
+            return;
+        }
         var sl = LobbyRef.Slots[slot];
         sl.Kind = NetSlotKind.Human;
         sl.PlayerId = c.PlayerId;
@@ -258,8 +282,14 @@ public sealed partial class HostSession : NetSession, ITurnSink
     {
         lock (Gate)
         {
+            if (Phase != NetPhase.Lobby) return;
+            if (q.Observe >= 0) // (10a-2) to / from the observers
+            {
+                if (MoveObserver(playerId, q.Observe == 1, q.MoveToSlot)) Changed();
+                return;
+            }
             int i = LobbyRef.SlotOf(playerId);
-            if (i < 0 || Phase != NetPhase.Lobby) return;
+            if (i < 0) return;
             var s = LobbyRef.Slots[i];
             if (q.MoveToSlot >= 0 && q.MoveToSlot < LobbyRef.Slots.Count && LobbyRef.Slots[q.MoveToSlot].Kind == NetSlotKind.Open)
             {
@@ -297,19 +327,12 @@ public sealed partial class HostSession : NetSession, ITurnSink
             if (c.PlayerId <= 0 || c.PlayerId == int.MaxValue || Phase == NetPhase.Closed) return;
             if (Phase == NetPhase.Lobby)
             {
-                int i = LobbyRef.SlotOf(c.PlayerId);
-                if (i >= 0)
-                {
-                    var s = LobbyRef.Slots[i];
-                    s.Kind = NetSlotKind.Open;
-                    s.PlayerId = -1;
-                    s.Name = "";
-                    s.Ready = false;
-                    Changed();
-                }
+                if (RemovePerson(c.PlayerId)) Changed(); // (10a-2) slot or observer entry
                 SystemChatAll($"{c.Name} left ({reason})");
                 return;
             }
+            if (Game != null && Game.Start.TurnIndexOf(c.PlayerId) < 0) SystemChatAll($"{c.Name} (observer) left"); // (10a-2) nobody waits for it
+            else if (Game != null && Game.IsDropped(Game.Start.TurnIndexOf(c.PlayerId))) SystemChatAll($"{c.Name} left");
             DropPlayer(c.PlayerId, c.Name, reason);
         }
     }
@@ -328,6 +351,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         Raise(new PlayerDroppedEvent(name, g.Start.TurnArmies[turn], action, reason));
         SystemChatAll($"{name} left the game ({reason}): {(action == DropAction.AiTakeover ? "the AI takes over" : "army defeated")}");
         if (Phase == NetPhase.Loading) CheckAllLoaded();
+        else RecountVotes(g); // (10a-2)
     }
 
     // ------------------------------------------------------------------ loading / lockstep
@@ -352,7 +376,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         ulong mine = _loaded[0];
         foreach (var (pid, h) in _loaded)
         {
-            if (h == mine) continue;
+            if (h == mine || g.Start.TurnIndexOf(pid) < 0) continue; // (10a-2) observers never hold the start
             string who = g.NameOfTurn(g.Start.TurnIndexOf(pid));
             string reason = $"{who} built a different starting state (different game data or floating-point behaviour)";
             Broadcast(Msg.Text(MsgType.Abort, reason));
@@ -366,6 +390,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         }
         Phase = NetPhase.Playing;
         Broadcast(Msg.Build(MsgType.Go));
+        CheckObserversLoaded(g, mine); // (10a-2)
         g.OnGo();
         Raise(new GameGoEvent());
     }
@@ -379,6 +404,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         if (turn != g.Start.TurnIndexOf(c.PlayerId)) throw new ProtocolException("turn for another player");
         if (g.IsDropped(turn)) return;
         g.AddTurn(turn, tick, payload);
+        TurnArrived(g, turn); // (10a-2) votes against it lapse
         var frame = TurnFrame(turn, tick, payload);
         foreach (var o in _conns)
             if (o != c && o.PlayerId > 0) o.Send(frame);
@@ -467,6 +493,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         if (!second) return;
         lock (Gate)
         {
+            if (Phase != NetPhase.Closed) BroadcastPersonPings(); // (10a-2) lobby slots + players panel
             var g = Game;
             if (g == null || Phase != NetPhase.Playing) return;
             var pings = new int[g.TurnPlayers];
