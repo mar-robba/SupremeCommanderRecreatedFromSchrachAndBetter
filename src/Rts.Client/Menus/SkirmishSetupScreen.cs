@@ -36,8 +36,8 @@ public sealed class SkirmishSetupScreen : IScreen
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
         MenuUi.BeginFrame();
-        if (_cfg.MapFile != null) _preview.RequestFile(_cfg.MapFile, _cfg.Players); // (8b-2) map picker
-        else _preview.Request(_cfg.MapSettings());
+        if (_cfg.MapFile != null) _preview.RequestFile(_cfg.MapFile, _cfg.Players, _cfg.EffectiveBiome); // (8b-2) map picker
+        else _preview.Request(_cfg.MapSettings(), _cfg.EffectiveBiome); // (8b-3) biome colours
         _preview.Update();
 
         float x0 = Ui.P(48), y0 = Ui.P(30);

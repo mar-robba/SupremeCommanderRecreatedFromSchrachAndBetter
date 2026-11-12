@@ -21,8 +21,8 @@ public sealed partial class LobbyScreen
             _lastMapState = t?.State;
         }
         var o = lobby.Options;
-        if (!o.HasMapFile) _preview.Request(NetGameConfig.From(lobby, _s.PlayerId).MapSettings());
-        else if (_s.MapPath is string path) _preview.RequestFile(path, Math.Clamp(lobby.ArmyCount, 2, Math.Max(2, o.MapPlayers)));
+        if (!o.HasMapFile) _preview.Request(NetGameConfig.From(lobby, _s.PlayerId).MapSettings(), o.EffectiveBiome);
+        else if (_s.MapPath is string path) _preview.RequestFile(path, Math.Clamp(lobby.ArmyCount, 2, Math.Max(2, o.MapPlayers)), o.EffectiveBiome);
     }
 
     private bool MapPresent(LobbyState l) => !l.Options.HasMapFile || _s.MapTransfer?.Ready == true;
