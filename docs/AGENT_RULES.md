@@ -88,7 +88,7 @@ agents run.
      date, plus "- [ ] later:" items for what you leave out). Don't rewrite the ROADMAP "NEXT STEPS" section: the
      orchestrator owns it.
   6. Commit. The tree must be clean.
-- Final report: write `<your worktree>/.claude/agent-report.md`, under 300 words:
+- Final report: write `<your worktree>/.claude/agent-report.md`, under 350 words:
   - what works;
   - how to try it (CLI / sandbox commands);
   - tests added;
@@ -96,6 +96,10 @@ agents run.
   - shared-file edits;
   - measured numbers (bench, sizes, win rates…);
   - known issues and follow-ups;
+  - **"Design errors found"** (always present; write "none" if there were none): every bug or limit whose cause is
+    a design or architecture choice, in your code or in older code: a regression found on the way, an exploit, a
+    wrong assumption, a risk you left open. One or two lines each: the error, why it happened, the fix (or "open"),
+    the commit. The orchestrator turns them into LESSONS.org entries at merge (WORKFLOW "Lifecycle of a wave" 7);
   - if you continued from a handoff note: "Handoff review", 2-4 lines: what the note lacked, what you had to
     rediscover, what you redid or re-tried that was already done or ruled out, what was broken at the seam.
   Return the same short text as your final message. The orchestrator copies it into docs/HISTORY.md at merge.
