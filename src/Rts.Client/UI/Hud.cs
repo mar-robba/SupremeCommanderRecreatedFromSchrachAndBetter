@@ -113,7 +113,7 @@ public sealed class Hud : IDisposable
         float H = Ui.P(172), m = Ui.P(4), gap = Ui.P(5);
         _top = new Rectangle(0, 0, Ui.Sw, Ui.P(30));
         float y = Ui.Sh - H - m;
-        _mini = new Rectangle(m, y, H, H);
+        _mini = MinimapView.Panel(m, Ui.Sh - m, H, Menus.AppSettings.Current.MinimapSize); // (9b-2) resizable, grows upwards
 
         _showSelectionPanels = false;
         foreach (var h in _sel.Selected)

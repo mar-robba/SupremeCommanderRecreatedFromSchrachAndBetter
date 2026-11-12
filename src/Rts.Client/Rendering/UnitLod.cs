@@ -22,6 +22,26 @@ public static class UnitLod
     public static bool UseLod(bool wasLod, float projectedRadius, float threshold, float band = Band) =>
         projectedRadius < threshold * (wasLod ? 1f + band : 1f - band);
 
+    /// <summary>"on" / "off" (also true/false/1/0) of a CLI switch.</summary>
+    public static bool ParseOnOff(string v, string option) => v.ToLowerInvariant() switch
+    {
+        "on" or "true" or "1" => true,
+        "off" or "false" or "0" => false,
+        _ => throw new ArgumentException($"{option}: on or off, got {v}"),
+    };
+
+    /// <summary>CLI <c>--unit-lod on|off|PIXELS</c>: a number sets <see cref="PixelRadius"/> (visual testing: a large
+    /// value shows the LOD meshes up close) and turns the LOD on.</summary>
+    public static bool ParseCli(string v)
+    {
+        if (float.TryParse(v, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float px) && px > 0)
+        {
+            PixelRadius = px;
+            return true;
+        }
+        return ParseOnOff(v, "--unit-lod");
+    }
+
     /// <summary>Camera distance beyond which a model of <paramref name="radius"/> starts using its LOD mesh.</summary>
     public static float SwitchDistance(float radius, float pxAtUnitDistance, float threshold, float band = Band) =>
         radius * pxAtUnitDistance / (threshold * (1f - band));

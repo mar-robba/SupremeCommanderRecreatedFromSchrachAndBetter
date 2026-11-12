@@ -14,7 +14,7 @@ namespace Rts.Client.UI;
 /// camera, right click orders the selection to move there (rally point for factories), and in attack-move /
 /// patrol / move mode a left click issues that order.
 /// </summary>
-public sealed class Minimap : IDisposable
+public sealed partial class Minimap : IDisposable
 {
     private readonly GameContext _ctx;
     private readonly SelectionController _sel;
@@ -80,11 +80,23 @@ public sealed class Minimap : IDisposable
         return new Rectangle(MathF.Round(inner.X + (inner.Width - w) * 0.5f), MathF.Round(inner.Y + (inner.Height - h) * 0.5f), MathF.Round(w), MathF.Round(h));
     }
 
-    private Vector2 ToScreen(Rectangle m, float x, float z) =>
-        new(m.X + x / _ctx.Terrain.Width * m.Width, m.Y + z / _ctx.Terrain.Height * m.Height);
+    // m here is the virtual whole-map rectangle (MinimapView.Virtual; = the visible map rectangle at zoom 1).
+    private Vector2 ToScreen(Rectangle m, float x, float z) => MinimapView.ToScreen(m, _ctx.Terrain.Width, _ctx.Terrain.Height, x, z);
 
-    private Vector2 ToWorld(Rectangle m, Vector2 p) =>
-        new(Math.Clamp((p.X - m.X) / m.Width, 0, 1) * _ctx.Terrain.Width, Math.Clamp((p.Y - m.Y) / m.Height, 0, 1) * _ctx.Terrain.Height);
+    private Vector2 ToWorld(Rectangle m, Vector2 p) => MinimapView.ToWorld(m, _ctx.Terrain.Width, _ctx.Terrain.Height, p);
+
+    private static Menus.AppSettings Settings => Menus.AppSettings.Current;
+
+    /// <summary>(9b-2) Whole-map rectangle for this frame: zoomed around the camera focus; frozen while the camera
+    /// is dragged on the minimap (else the map would slide under the cursor).</summary>
+    private Rectangle _view;
+    private Rectangle ViewRect(Rectangle m)
+    {
+        if (_dragging && _view.Width > 0) return _view;
+        var f = _ctx.Camera.Focus;
+        _view = MinimapView.Virtual(m, Settings.MinimapZoom, new Vector2(f.X / _ctx.Terrain.Width, f.Z / _ctx.Terrain.Height));
+        return _view;
+    }
 
     /// <summary>Input + drawing. Call from Hud.Draw.</summary>
     private readonly HashSet<long> _selected = new();
@@ -95,24 +107,33 @@ public sealed class Minimap : IDisposable
     public void Draw(Rectangle panel)
     {
         if (!_baked) Bake();
-        var m = MapRect(panel);
+        var vis = MapRect(panel);
+        bool buttonHover = HandleButtons(panel, vis); // (9b-2) size / zoom / layer buttons: Minimap.Options.cs
+        var m = ViewRect(vis);
         HandleInput(panel, m);
+        m = ViewRect(vis); // the wheel may have changed the zoom
 
         Ui.Panel(panel);
-        Raylib.DrawRectangleRec(Ui.Inset(m, -1), Color.Black);
+        Raylib.DrawRectangleRec(Ui.Inset(vis, -1), Color.Black);
+        Raylib.BeginScissorMode((int)vis.X, (int)vis.Y, (int)vis.Width, (int)vis.Height);
         Raylib.DrawTexturePro(_tex, new Rectangle(0, 0, _tex.Width, _tex.Height), m, Vector2.Zero, 0, Color.White);
         _ctx.Fog?.DrawMinimapFog(m);
-
-        Raylib.BeginScissorMode((int)m.X, (int)m.Y, (int)m.Width, (int)m.Height);
         float k = m.Width / _ctx.Terrain.Width;
+        var opt = Settings;
+        var cull = Ui.Inset(vis, -4);
 
         // Deposits.
-        foreach (var d in _ctx.Terrain.Deposits)
-        {
-            var p = ToScreen(m, d.Pos.X, d.Pos.Y);
-            var c = d.Type == DepositType.Mass ? new Color(120, 255, 120, 255) : new Color(255, 200, 70, 255);
-            Raylib.DrawRectangleLinesEx(new Rectangle(p.X - 2, p.Y - 2, 4, 4), 1, c);
-        }
+        if (opt.MinimapResources)
+            foreach (var d in _ctx.Terrain.Deposits)
+            {
+                var p = ToScreen(m, d.Pos.X, d.Pos.Y);
+                var c = d.Type == DepositType.Mass ? new Color(120, 255, 120, 255) : new Color(255, 200, 70, 255);
+                float ds = MathF.Max(4f, MathF.Min(10f, 2.5f * k));
+                Raylib.DrawRectangleLinesEx(new Rectangle(p.X - ds * 0.5f, p.Y - ds * 0.5f, ds, ds), 1, c);
+            }
+        int gw = (int)vis.Width + 2, gh = (int)vis.Height + 2;
+        if (_dotStamp.Length < gw * gh) { _dotStamp = new int[gw * gh]; _dotKey = new int[gw * gh]; }
+        if (opt.MinimapTrees) DrawTrees(m, vis, gw, gh);
 
         // Units: structures as squares, mobile units as dots; selected units white.
         var snap = _ctx.Snapshots.Current;
@@ -122,17 +143,14 @@ public sealed class Minimap : IDisposable
         float dot = MathF.Max(2f, Ui.P(2.5f));
         // Mobile units overlap a lot at minimap scale (thousands of units in a few pixels): one dot per pixel and
         // color is enough. Structures first, mobile units on top (second loop over the remembered indices).
-        int gw = (int)m.Width + 2, gh = (int)m.Height + 2;
-        if (_dotStamp.Length < gw * gh) { _dotStamp = new int[gw * gh]; _dotKey = new int[gw * gh]; }
         int stamp = ++_dotFrame;
         _mobile.Clear();
-        for (int i = 0; i < snap.UnitCount; i++)
+        for (int i = 0; i < (opt.MinimapUnits ? snap.UnitCount : 0); i++)
         {
             ref var v = ref snap.Units[i];
             var bp = _ctx.Db[v.Bp];
             if (!bp.IsStructure) { _mobile.Add(i); continue; }
-            var p = ToScreen(m, v.Pos.X, v.Pos.Z);
-            bool sel = selected.Contains(((long)v.Index << 32) | (uint)v.Gen);
+            var p = ToScreen(m, v.Pos.X, v.Pos.Z);            bool sel = selected.Contains(((long)v.Index << 32) | (uint)v.Gen);
             var col = sel ? Color.White : _ctx.ArmyColors[v.Army];
             float s = MathF.Max(dot + 1, MathF.Max(bp.FootprintX, bp.FootprintZ) * k);
             Raylib.DrawRectangleV(p - new Vector2(s * 0.5f + 1, s * 0.5f + 1), new Vector2(s + 2, s + 2), Color.Black);
@@ -143,6 +161,7 @@ public sealed class Minimap : IDisposable
             ref var v = ref snap.Units[i];
             var bp = _ctx.Db[v.Bp];
             var p = ToScreen(m, v.Pos.X, v.Pos.Z);
+            if (!Raylib.CheckCollisionPointRec(p, cull)) continue;
             bool sel = selected.Contains(((long)v.Index << 32) | (uint)v.Gen);
             var col = sel ? Color.White : _ctx.ArmyColors[v.Army];
             if (bp.Has(UnitCategory.Commander))
@@ -151,7 +170,7 @@ public sealed class Minimap : IDisposable
                 Raylib.DrawPoly(p, 4, dot * 1.6f, 0, col);
                 continue;
             }
-            int gx = Math.Clamp((int)(p.X - m.X) + 1, 0, gw - 1), gz = Math.Clamp((int)(p.Y - m.Y) + 1, 0, gh - 1);
+            int gx = Math.Clamp((int)(p.X - vis.X) + 1, 0, gw - 1), gz = Math.Clamp((int)(p.Y - vis.Y) + 1, 0, gh - 1);
             int cell = gz * gw + gx, key = sel ? -1 : v.Army;
             if (_dotStamp[cell] == stamp && _dotKey[cell] == key) continue;
             _dotStamp[cell] = stamp;
@@ -163,16 +182,18 @@ public sealed class Minimap : IDisposable
         PingMarkers.DrawMinimap(snap, _sel.Alerts, (x, z) => ToScreen(m, x, z)); // (7b) alert flashes + map pings
         DrawCameraView(m);
         Raylib.EndScissorMode();
-        Raylib.DrawRectangleLinesEx(Ui.Inset(m, -1), 1, Ui.PanelBorder);
+        Raylib.DrawRectangleLinesEx(Ui.Inset(vis, -1), 1, Ui.PanelBorder);
+        DrawButtons(panel, vis);
 
-        if (Ui.Hover(m) && !_dragging)
-            Ui.Tooltip(m, new List<TipLine>
+        if (Ui.Hover(vis) && !_dragging && !buttonHover)
+            Ui.Tooltip(vis, new List<TipLine>
             {
                 new("Minimap", Ui.TextColor, 13, true),
                 new("Left click / drag: move camera", Ui.TextDim, 11.5f),
                 new("Right click: move selection (factory: rally point)", Ui.TextDim, 11.5f),
                 new("Alt+left: alert ping · Alt+Shift+left: attack ping · Alt+right: move ping · Y: alert ping", Ui.TextDim, 11.5f),
                 new("In an order mode (attack, patrol, unload, launch, guard, capture…): left click gives it there", Ui.TextDim, 11.5f),
+                new("Mouse wheel: zoom · buttons (hover): size, zoom, resources, units, trees", Ui.TextDim, 11.5f),
             }, above: true);
     }
 

@@ -115,7 +115,8 @@ public sealed class ClientOptions
             // Window/audio/fog flags don't force a direct game (they also apply to games started from the menus).
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
                 or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
-                or "--perf-log" or "--terrain-lod" or "--settings-tab")) gameArg = true;
+                or "--perf-log" or "--terrain-lod" or "--settings-tab"
+                or "--terrain-shadows" or "--unit-lod" or "--sun-elevation" or "--minimap")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -172,6 +173,10 @@ public sealed class ClientOptions
                 case "--novsync": o.NoVsync = true; break;
                 case "--perf-log": Rendering.PerfLog.Enabled = true; break;
                 case "--terrain-lod": Rendering.TerrainRenderer.ForceLod = int.Parse(Next()); break;
+                case "--terrain-shadows": Rendering.TerrainRenderer.SelfShadowsCli = Rendering.UnitLod.ParseOnOff(Next(), a); break; // (9b-2)
+                case "--unit-lod": Rendering.UnitRenderer.LodCli = Rendering.UnitLod.ParseCli(Next()); break; // on|off|PIXELS
+                case "--sun-elevation": Rendering.TerrainRenderer.SetSunElevation(float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture)); break;
+                case "--minimap": UI.MinimapView.ApplySpec(new AppSettings(), Menus.GraphicsSettings.MinimapCli = Next()); break; // validated here, applied at startup
                 case "--nofog": o.NoFog = true; break;
                 case "--sandbox": o.Sandbox = true; break;
                 case "--exec": o.Exec = Next(); o.Sandbox = true; break;

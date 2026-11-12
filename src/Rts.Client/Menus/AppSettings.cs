@@ -46,6 +46,18 @@ public sealed class AppSettings
     public float ZoomSpeed { get; set; } = 1f;
     /// <summary>Autosave every 5 minutes of game time into 3 rolling slots (the autosave itself: Persistence).</summary>
     public bool Autosave { get; set; } = true;
+    /// <summary>(9b-2) Terrain self-shadows (hills shade the valleys and the units in them), TerrainRenderer.Shadow.cs.</summary>
+    public bool TerrainShadows { get; set; } = true;
+    /// <summary>(9b-2) Low-poly meshes for far units (UnitRenderer.Lod.cs).</summary>
+    public bool UnitLod { get; set; } = true;
+    /// <summary>(9b-2) Minimap size multiplier, one of <see cref="UI.MinimapView.Sizes"/>.</summary>
+    public float MinimapSize { get; set; } = 1f;
+    /// <summary>(9b-2) Minimap zoom (1 = whole map .. <see cref="UI.MinimapView.MaxZoom"/>), centred on the camera.</summary>
+    public float MinimapZoom { get; set; } = 1f;
+    /// <summary>(9b-2) Minimap layers: mass/hydrocarbon deposits, unit dots, trees.</summary>
+    public bool MinimapResources { get; set; } = true;
+    public bool MinimapUnits { get; set; } = true;
+    public bool MinimapTrees { get; set; }
 
     /// <summary>The settings in use (loaded at startup).</summary>
     public static AppSettings Current { get; private set; } = new();
@@ -108,6 +120,8 @@ public sealed class AppSettings
         UiScale = GraphicsSettings.UiScales[NearestIndex(GraphicsSettings.UiScales, Clamp(UiScale, 0f, 10f, d.UiScale))];
         PanSpeed = MathF.Round(Clamp(PanSpeed, 0.5f, 2f, d.PanSpeed) * 10f) / 10f;
         ZoomSpeed = MathF.Round(Clamp(ZoomSpeed, 0.5f, 2f, d.ZoomSpeed) * 10f) / 10f;
+        MinimapSize = UI.MinimapView.Sizes[NearestIndex(UI.MinimapView.Sizes, Clamp(MinimapSize, 0f, 10f, d.MinimapSize))];
+        MinimapZoom = UI.MinimapView.ClampZoom(Clamp(MinimapZoom, 1f, UI.MinimapView.MaxZoom, d.MinimapZoom));
         return this;
     }
 
