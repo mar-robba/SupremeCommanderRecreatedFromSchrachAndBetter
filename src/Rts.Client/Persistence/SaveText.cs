@@ -61,7 +61,8 @@ public static class SaveText
             var winners = i.Players.Where(p => p.Team == i.WinningTeam).Select(p => p.IsAI ? $"AI {p.Difficulty}" : p.Name).ToList();
             tags.Add(winners.Count > 0 ? "WINNER: " + string.Join(", ", winners).ToUpperInvariant() : "FINISHED");
         }
-        if (replay && i.SimBuild != GameInfo.CurrentSimBuild) tags.Add("OTHER BUILD");
+        if (replay && !SaveGame.ReplayMathMatches(i)) tags.Add("OLD VERSION"); // (10a-1) refused on open
+        else if (replay && i.SimBuild != GameInfo.CurrentSimBuild) tags.Add("OTHER BUILD");
         return tags;
     }
 

@@ -59,6 +59,11 @@ public sealed class GameInfo
     public string SimBuild = "";
     public ulong BlueprintHash;
     public ulong TerrainHash;
+    /// <summary>(10a-1) <see cref="Core.DMath.Version"/> of the build that wrote the file. Files from before the
+    /// deterministic math have no field = 0 (the old <c>MathF</c> sim): their replays are refused
+    /// (<see cref="SaveGame.CheckReplayMath"/>) and saves on generated maps fail with a clear message (the generator
+    /// uses the math too). No initializer on purpose: a missing JSON field must stay 0.</summary>
+    public int MathVersion;
     /// <summary>Container version of the file this header was read from (set by the reader; older = migrated on
     /// load, see <see cref="SaveMigrations"/>). Not written.</summary>
     [JsonIgnore] public int FileVersion = SaveContainer.Version;
@@ -92,6 +97,7 @@ public sealed class GameInfo
         SimBuild = CurrentSimBuild;
         BlueprintHash = BlueprintHashOf(w.Blueprints);
         TerrainHash = TerrainHashOf(w.Terrain);
+        MathVersion = Core.DMath.Version; // (10a-1)
     }
 
     public GameInfo Clone() => FromJson(ToJson());

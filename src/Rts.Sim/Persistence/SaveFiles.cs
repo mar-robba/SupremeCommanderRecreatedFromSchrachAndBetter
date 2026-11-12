@@ -164,6 +164,13 @@ public static class SaveGame
         var state = r.Block();
         ReplayLog? replay = r.U8() != 0 ? ReplayLog.Read(r) : null;
         var terrain = TerrainFor(info, db, r.Block());
+        if (info.MathVersion != Core.DMath.Version)
+        {
+            // (10a-1) A save made with other math (e.g. the old MathF sim, on a map file) loads and plays on, but the
+            // replay recorded so far cannot be re-simulated by this build: the recording restarts at the loaded tick.
+            replay = null;
+            info.MathVersion = Core.DMath.Version;
+        }
         var sim = WorldState.Restore(state, db, terrain);
         return new LoadedGame { Info = info, Sim = sim, Replay = replay };
     }
@@ -186,6 +193,7 @@ public static class SaveGame
     public static (GameInfo info, ReplayLog log, Terrain terrain) DecodeReplay(byte[] file, BlueprintDb db)
     {
         var (info, payload) = SaveContainer.Decode(file, SaveFileKind.Replay);
+        CheckReplayMath(info);
         var r = new ByteReader(payload);
         var log = ReplayLog.Read(r);
         var terrain = TerrainFor(info, db, r.Block());
@@ -199,6 +207,20 @@ public static class SaveGame
     }
 
     public static ReplayPlayer OpenReplay(string path, BlueprintDb db) => OpenReplay(ReadFile(path), db);
+
+    /// <summary>(10a-1) A replay re-simulates only with the math it was recorded with (<see cref="Core.DMath.Version"/>;
+    /// 0 = recorded before the deterministic math, with the old MathF sim): any other version is refused up front
+    /// instead of desyncing a few seconds in.</summary>
+    public static void CheckReplayMath(GameInfo info)
+    {
+        if (info.MathVersion != Core.DMath.Version)
+            throw new IncompatibleSaveException(info.MathVersion == 0
+                ? "This replay was recorded by an older game version (before the cross-platform math): it cannot be played back by this version"
+                : $"This replay was recorded with math version {info.MathVersion}, this game version uses {Core.DMath.Version}: it cannot be played back");
+    }
+
+    /// <summary>True if <paramref name="info"/>'s replay can be played back by this build (<see cref="CheckReplayMath"/>).</summary>
+    public static bool ReplayMathMatches(GameInfo info) => info.MathVersion == Core.DMath.Version;
 
     // ------------------------------------------------------------------ helpers
 
@@ -236,7 +258,10 @@ public static class SaveGame
         if (GameInfo.TerrainHashOf(terrain) != info.TerrainHash)
             throw new IncompatibleSaveException(info.MapFile != null
                 ? $"The map '{info.MapFile}' does not give the terrain this file was made on"
-                : "The map generator changed since this file was made (different game version)");
+                : info.Map != null && info.MathVersion != Core.DMath.Version // (10a-1) the generator uses DMath
+                    ? "This file was made on a generated map by an older game version (before the cross-platform math): " +
+                      "the map generator now makes a different terrain, so it cannot be loaded (games on map files still load)"
+                    : "The map generator changed since this file was made (different game version)");
         return terrain;
     }
 
