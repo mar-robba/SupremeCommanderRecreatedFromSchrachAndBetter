@@ -1098,7 +1098,8 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   rebind to ONE key + mods; a row of slots (arrows, PgUp/PgDn, 0-9, 1-5, Z X C V B N, Ctrl+Shift+L A N E) rebinds as a
   whole row (same number of distinct keys, one modifier set; the capture asks key 1 of N…); entries on Esc (`Menu`,
   `DialogCancel`) are fixed (Esc cancels the capture). Modifier semantics unchanged: Ctrl must match, Shift/Alt free
-  unless bound.
+  unless bound. Held keys (`Down(i)`) follow the same rule, so the camera arrows / PgUp / PgDn now stop while Ctrl is
+  held (before 10b-1 they ignored modifiers); exact Ctrl keeps a WASD pan from firing on Ctrl+A (select all combat units).
 - **Shared keys** (D, E, U, M) resolve by selection only while both entries still have the same binding
   (`Hotkeys.SameBinding`): split, each key does its own action (UnitToggles capture, TransportInput unload vs upgrade,
   GameAudio mute vs move, OrdersPanel capture label).
