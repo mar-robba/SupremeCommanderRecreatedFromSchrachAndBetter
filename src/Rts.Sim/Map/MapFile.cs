@@ -30,6 +30,9 @@ public sealed class MapFileInfo
     public float WaterAmount = -1;
     /// <summary>Content hash (<see cref="Hash64"/> of the uncompressed payload): identifies the map in saves/replays.</summary>
     public ulong Hash;
+    /// <summary>(8b-3) Visual biome: an optional trailing byte of the header block (v1 files without it = Temperate; the
+    /// content hash covers only the payload, so setting it never changes the map's hash).</summary>
+    public Biome Biome;
 
     public string HashHex => Hash.ToString("X16");
     public string SizeLabel => Width == Height ? $"{Width}" : $"{Width}x{Height}";
@@ -100,6 +103,27 @@ public sealed class MapFile
         o.U8((byte)i.Preset);
         o.VarI(i.Seed);
         o.Raw(i.WaterAmount);
+        o.U8((byte)i.Biome); // (8b-3) optional trailing field: readers stop at the block's end
+        return o.ToArray();
+    }
+
+    /// <summary>(8b-3) The same file with a new header (name, description, biome...); the payload bytes and the content
+    /// hash are kept as they are. Throws <see cref="MapFileException"/> for a damaged file.</summary>
+    public static byte[] WithHeader(byte[] file, MapFileInfo info)
+    {
+        var old = ReadHeader(new ByteReader(file), out _); // validates magic/version/header
+        var r = new ByteReader(file);
+        r.Take(Magic.Length);
+        r.Raw<ushort>();
+        r.Block(); // skip the old header block: what follows (u64 hash, raw length, payload block) is kept
+        var tail = file.AsSpan(file.Length - r.Remaining);
+        info.Width = old.Width; info.Height = old.Height; info.Players = old.Players; info.HeightBits = old.HeightBits;
+        info.Hash = old.Hash; info.Version = old.Version;
+        var o = new ByteWriter(file.Length + 256);
+        o.Bytes(Magic);
+        o.Raw((ushort)old.Version);
+        o.Block(HeaderBytes(info));
+        o.Bytes(tail);
         return o.ToArray();
     }
 
@@ -247,6 +271,7 @@ public sealed class MapFile
                 Seed = (int)h.VarI(),
                 WaterAmount = h.Raw<float>(),
             };
+            if (!h.AtEnd) info.Biome = Biomes.FromByte(h.U8()); // (8b-3) absent in older v1 files = Temperate
             info.Hash = r.Raw<ulong>();
             rawLen = r.VarU();
             return info;

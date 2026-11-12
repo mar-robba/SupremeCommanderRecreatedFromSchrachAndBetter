@@ -38,6 +38,8 @@ public sealed class SkirmishSettings
     /// <summary>(8b-2) Play on this map file instead of a generated map (null = generator with MapSize/Seed/MapPreset/
     /// WaterAmount). Players must not exceed its start positions; <see cref="MapFile.TerrainFor"/> picks spread starts.</summary>
     public MapFile? MapFile;
+    /// <summary>(8b-3) Visual biome (client only, never read by the sim); null = the map file's biome, else Temperate.</summary>
+    public Biome? Biome;
 }
 
 public static class GameSetup
@@ -52,7 +54,11 @@ public static class GameSetup
     public static MapGenSettings MapSettingsFor(SkirmishSettings s) => new()
     {
         Size = s.MapSize, Players = s.Players, Seed = s.Seed, Preset = s.MapPreset, WaterAmount = s.WaterAmount,
+        Biome = BiomeFor(s),
     };
+
+    /// <summary>(8b-3) The biome a skirmish is shown with: the explicit choice, else the map file's, else Temperate.</summary>
+    public static Biome BiomeFor(SkirmishSettings s) => s.Biome ?? s.MapFile?.Info.Biome ?? Biome.Temperate;
 
     /// <summary>
     /// The concrete faction of every army of a skirmish ("random" resolved deterministically from the seed). Throws
