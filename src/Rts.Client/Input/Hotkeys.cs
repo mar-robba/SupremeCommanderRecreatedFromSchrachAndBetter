@@ -225,6 +225,9 @@ public static partial class Hotkeys
     public static readonly Hotkey Chat = new([KeyboardKey.Enter, KeyboardKey.KpEnter], N, Pl, "Game", "Multiplayer: chat (Shift+Enter: to allies; Enter sends, Esc cancels)", label: "Enter", alt: true);
     public static readonly Hotkey Fog = new(KeyboardKey.F7, N, G, "Game", "Fog of war on / off (reveal all)");
     public static readonly Hotkey Perf = new(KeyboardKey.F8, N, G, "Game", "Performance overlay");
+    public static readonly Hotkey RangeRings = new(KeyboardKey.I, N, Pl, "Game", "Range / intel rings of the selection on / off (hold Shift: also allied structures)"); // (10b-2)
+    public static readonly Hotkey MinimapZoomIn = new([KeyboardKey.Equal, KeyboardKey.KpAdd], C, Pl, "Game", "Minimap zoom in", label: "Ctrl++", alt: true); // (10b-2)
+    public static readonly Hotkey MinimapZoomOut = new([KeyboardKey.Minus, KeyboardKey.KpSubtract], C, Pl, "Game", "Minimap zoom out", label: "Ctrl+-", alt: true); // (10b-2)
     public static readonly Hotkey Mute = new(KeyboardKey.M, N, G, "Game", "Mute (nothing selected; Ctrl+M always)", share: "M");
     public static readonly Hotkey MuteCtrl = new(KeyboardKey.M, C, G, "Game", "Mute / unmute the sound");
     public static readonly Hotkey Music = new(KeyboardKey.M, C | S, G, "Game", "Music on / off");
@@ -253,7 +256,7 @@ public static partial class Hotkeys
         Unload, TransportTo, Ferry, Dock,
         BuildSlots, BuildCategory, BuildTier, Rotate90, Upgrade,
         FactorySlots, FactoryRepeat, FactoryTier,
-        Help, PauseGame, SpeedUp, SpeedDown, Menu, QuickSave, QuickLoad, Diplomacy, Chat, Fog, Perf, Mute, MuteCtrl, Music,
+        Help, PauseGame, SpeedUp, SpeedDown, Menu, QuickSave, QuickLoad, Diplomacy, Chat, Fog, Perf, RangeRings, MinimapZoomIn, MinimapZoomOut, Mute, MuteCtrl, Music,
         DialogConfirm, DialogCancel, ReplayPause, ReplaySpeedUp, ReplaySpeedDown,
         SandboxPanel, SandboxConsole, DebugSpawnOwn, DebugSpawnEnemy, DebugFakeBattle, DebugExplosion,
     ];

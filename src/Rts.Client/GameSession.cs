@@ -53,6 +53,7 @@ public sealed class GameSession : IDisposable
     private readonly StrategicHud _stratHud;
     private readonly ExperimentalAlert _expAlert;
     private readonly AlertMonitor _alerts; // (7b) notifications: toasts, alert sounds, minimap flashes
+    private readonly SelectionRangeOverlay _rangeRings = new(); // (10b-2) G20 range / intel rings
     private readonly GameAudio _audio;
     private readonly PerfOverlay _perf;
     private readonly FrameProfiler _prof = new(); // per-stage CPU ms (screenshot perf line, --perf-log)
@@ -240,6 +241,7 @@ public sealed class GameSession : IDisposable
         {
             if (NetKeys != null) NetKeys();
             else GameApp.DebugKeys(ctx);
+            if (Hotkeys.RangeRings.Pressed()) SelectionRangeOverlay.Enabled = !SelectionRangeOverlay.Enabled; // (10b-2)
         }
         _prof.Lap("input+audio");
 
@@ -252,12 +254,15 @@ public sealed class GameSession : IDisposable
         Raylib.ClearBackground(new Color(118, 150, 185, 255));
         Raylib.BeginMode3D(_camera.Camera);
         _terrainR.Draw(_camera.Camera);
-        _terrainR.DrawDeposits();
+        _terrainR.DrawDeposits(_fog.Active ? _interp.Current : null); // (10b-2) unexplored deposits hidden
         _prof.Lap("terrain");
         if (_camera.Distance < IconRenderer.HideMeshDistance) _unitR.Draw(cur, prev, alpha, ctx.ArmyColors);
         _prof.Lap("units");
         _props.Draw(cur, dt);
         GameApp.DrawSelection3D(ctx, _selection, cur, prev, alpha);
+        _prof.Lap("props+sel3d");
+        _rangeRings.Draw(ctx, _selection, cur, prev, alpha, interactive && (Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))); // (10b-2)
+        _prof.Lap("rings");
         OrderMarkers.Draw3D(ctx, _selection); // (7b) waypoint markers, formation drag preview
         TransportOverlay.Draw3D(ctx, _selectedSet, cur, prev, alpha); // ferry routes, cargo/dock lines
         ctx.Feedback.Draw();

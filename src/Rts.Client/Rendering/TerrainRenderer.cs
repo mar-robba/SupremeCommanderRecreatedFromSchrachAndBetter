@@ -147,7 +147,9 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
     /// detailed marker (cubes/cylinders with wires, ~500 immediate-mode vertices per hydrocarbon).</summary>
     private const float DepositDetailDistance = 260f;
 
-    public void DrawDeposits()
+    /// <summary>Mass / hydrocarbon deposits. (10b-2) With a fog snapshot, deposits in never-explored cells are hidden
+    /// (seen once = drawn for good: they never change).</summary>
+    public void DrawDeposits(Rts.Sim.Snapshot.SimSnapshot? fog = null)
     {
         float t = (float)Raylib.GetTime();
         var fv = FrameView.Current;
@@ -166,6 +168,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
             var d = _t.Deposits[i];
             var p = _depositPos[i];
             if (!fv.SphereVisible(p, 2.5f)) continue;
+            if (fog != null && WreckFogMemory.FogAt(fog, d.Pos) == 0) continue; // (10b-2)
             bool far = Vector3.DistanceSquared(p, fv.CamPos) > detail2;
             if (d.Type == DepositType.Mass)
             {

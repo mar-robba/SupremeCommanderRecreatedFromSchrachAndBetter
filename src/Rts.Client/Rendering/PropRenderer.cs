@@ -30,6 +30,8 @@ public sealed partial class PropRenderer : IDisposable
     public const float EmberSeconds = 22f;
 
     public int DrawnProps { get; private set; }
+    /// <summary>(10b-2) Wrecks the player knows: live in vision, last seen under the fog (WreckFogMemory.cs).</summary>
+    public readonly WreckFogMemory FogMemory = new();
 
     public PropRenderer(GameContext ctx, ParticleSystem? particles = null)
     {
@@ -60,6 +62,7 @@ public sealed partial class PropRenderer : IDisposable
         float gameDt = EffectsRenderer.GameDt(_ctx, dt);
         _gameTime += gameDt;
         TrackAges(cur);
+        FogMemory.Update(cur); // (10b-2) wrecks under the fog as last seen
         DrawnProps = 0;
         float fade = UnitRenderer.MeshFade(Atmosphere.CameraDistance);
         if (fade <= 0.001f || cur.PropCount == 0) return;
@@ -72,10 +75,10 @@ public sealed partial class PropRenderer : IDisposable
         bool smoke = _ps != null && _smokeAcc >= 0.12f;
         if (smoke) _smokeAcc = 0;
 
-        for (int k = 0; k < cur.PropCount; k++)
+        var wrecks = FogMemory.Wrecks; // (10b-2) only wrecks (8b: nature props in DrawNature), fog-filtered
+        for (int k = 0; k < wrecks.Length; k++)
         {
-            ref var p = ref cur.Props[k];
-            if (p.Kind != Rts.Sim.World.PropKind.Wreck) continue; // (8b) nature props: DrawNature
+            ref readonly var p = ref wrecks[k];
             var model = Model(p.Bp);
             bool rubble = (uint)p.Bp >= (uint)_ctx.Db.Count;
             var bp = rubble ? null : _ctx.Db[p.Bp];
@@ -141,6 +144,7 @@ public sealed partial class PropRenderer : IDisposable
         Atmosphere.Apply(sp, fv);
         sp.Set("fade", fade);
         ShadowMap.Bind(sp);
+        FogRenderer.Bind(sp); // (10b-2) remembered wrecks dim under the fog like the terrain
         sp.Use();
         foreach (var im in _used) im.Draw();
         Rlgl.DisableShader();
@@ -177,10 +181,11 @@ public sealed partial class PropRenderer : IDisposable
         byte a = (byte)(200 * fade);
         var col = new Color((byte)150, (byte)146, (byte)136, a);
         var edge = new Color((byte)20, (byte)20, (byte)20, (byte)(160 * fade));
-        for (int k = 0; k < cur.PropCount; k++)
+        FogMemory.Update(cur); // (10b-2) fog memory (no-op when Draw already updated this snapshot)
+        var wrecks = FogMemory.Wrecks; // only wrecks (8b: no dots for trees/rocks)
+        for (int k = 0; k < wrecks.Length; k++)
         {
-            ref var p = ref cur.Props[k];
-            if (p.Kind != Rts.Sim.World.PropKind.Wreck) continue; // (8b) no dots for trees/rocks
+            ref readonly var p = ref wrecks[k];
             if (!fv.WorldToScreen(p.Pos, out var s)) continue;
             if (s.X < -4 || s.Y < -4 || s.X > fv.ScreenW + 4 || s.Y > fv.ScreenH + 4) continue;
             int size = p.Radius >= 2f ? 4 : 3;
@@ -248,7 +253,7 @@ public sealed partial class PropRenderer : IDisposable
         """;
 
     // vInst: x = per-wreck random, y = ember glow 0..1, z = mass left 0..1, w = visibility (sinking wrecks dither out).
-    private static readonly string FragmentShader = "#version 330\n" + Shaders.CommonFs + Shaders.ShadowFs + """
+    private static readonly string FragmentShader = "#version 330\n" + Shaders.CommonFs + Shaders.ShadowFs + Shaders.FogOfWarFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -289,6 +294,7 @@ public sealed partial class PropRenderer : IDisposable
                 float flicker = 0.7 + 0.3 * sin(time * 8.0 + vWorld.x * 3.1 + vWorld.z * 2.3);
                 c += vec3(1.0, 0.36, 0.07) * cracks * ember * flicker * 2.2;
             }
+            c = applyFogOfWar(c, vWorld.xz); // (10b-2)
             c = applyFog(c, vWorld);
             finalColor = vec4(c, 1.0);
         }

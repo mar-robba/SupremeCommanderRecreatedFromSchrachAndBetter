@@ -234,6 +234,12 @@ public sealed class SettingsScreen : IScreen
         bool autosave = ToggleControl(_s.Autosave);
         if (autosave != _s.Autosave) { _s.Autosave = autosave; _dirty = true; }
         NextRow();
+
+        // (10b-2)
+        Row("Range rings", "Weapon, radar, sonar, omni, shield and stealth rings around the\nselected units (hold Shift: also allied structures). Key I toggles.");
+        bool rr = ToggleControl(_s.RangeRings);
+        if (rr != _s.RangeRings) { _s.RangeRings = rr; Changed(); }
+        NextRow();
     }
 
     // ------------------------------------------------------------------ rows
