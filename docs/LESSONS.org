@@ -163,6 +163,30 @@ e ogni scopo.
   non si aprono più. Manca ancora la prova su Windows e su ARM64. Regola: il determinismo tra macchine diverse si
   decide con la prima riga della simulazione.
 
+** Relitti e giacimenti visibili nella nebbia mai esplorata
+- Errore: la simulazione manda al client tutti gli oggetti della mappa (relitti, giacimenti di massa) senza passare
+  dal filtro della visibilità, che vale solo per le unità. Il client li disegnava anche dove il giocatore non era
+  mai stato: si vedeva dove il nemico aveva perso unità. È emerso solo lavorando agli overlay di selezione (10b-2).
+- Soluzione: il client ricorda relitti e giacimenti come li ha visti l'ultima volta e nasconde quelli mai esplorati
+  (~a926ff4~, ~Rendering/WreckFogMemory.cs~). Resta aperto: lo snapshot li contiene ancora tutti, quindi un client
+  modificato li vedrebbe. Regola: ogni dato nuovo dello snapshot passa dal filtro della visibilità nella
+  simulazione, non nel disegno.
+
+** Il pannello delle unità allocava memoria a ogni frame
+- Errore: il pannello della selezione raggruppava le unità selezionate con LINQ a ogni frame: con 500 unità
+  selezionate circa 180 KB per frame (208 KB in tutto contro 5 KB senza selezione), lavoro continuo per il garbage
+  collector. Era su ~main~ da tempo: i controlli delle allocazioni si facevano senza unità selezionate.
+- Soluzione: gruppi ricostruiti solo quando la selezione cambia (~e85c944~): 28 KB per frame; ~--perf-log~ ora
+  elenca quali fasi del frame allocano. Regola: le allocazioni si misurano anche con una selezione grande
+  (~--select "everything@500"~).
+
+** Un potenziamento per comando: la catena vive solo nel client
+- Errore: la simulazione installa un passo di potenziamento per comando. Sostituire un potenziamento con un altro
+  in un clic (10b-2) richiede "rimuovi + installa" e poi i passi successivi, quindi la coda dei passi sta nel
+  client (~UI/EnhancementChain.cs~): non viene salvata, e dopo un caricamento l'unità si ferma al passo in corso.
+- Soluzione: aperto (accettato per ora). La soluzione giusta è una coda di potenziamenti nella simulazione, come
+  la coda di costruzione.
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa

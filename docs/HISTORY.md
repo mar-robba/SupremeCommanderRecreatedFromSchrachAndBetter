@@ -1312,3 +1312,43 @@ and that `--screenshot` needs the `screenshots/` folder (raylib says "saved" but
 kept): build and tests 614 sim + 349 client + 33 net green; reference match "Hard wins after 12:00",
 C87C46C4EA726A82; bench 2F09CD7D01AF287E (both as the report says); `Rts.Bench -- mp` 1200 ticks, 120 hash checks,
 no desync; `--demo` screenshot unchanged.
+
+### (10b-2) Selection overlays and client leftovers — report (merged 2026-11-12, 57d4e20)
+Three agents: the first stopped at its checkpoint (170k, 14 minutes) with the rings and the fog memory done, the
+second was cut by the weekly-limit message before it changed anything, the third finished (147k, 14 minutes,
+81 calls). 1,019 lines.
+
+Branch `worktree-agent-ad3fa042eecd3d963`, head after merge of main 6df4f11 (main moved with docs only).
+
+**Works**
+- G20 range/intel rings of the selection (key I, setting "Range rings", Shift = allied structures; merged, capped at 128, no per-frame allocation).
+- Wrecks and deposits remembered under the fog; never-explored ones are hidden.
+- Enhancement swap/chain in one click: an amber "swap" button sends remove + the first step, and `UI/EnhancementChain.cs` sends the later steps. No sim change.
+- Minimap zoom keys Ctrl+= / Ctrl+-.
+- No "Structure lost" toast for self-destructed structures.
+- Unit panel with 500 selected: 208 → 28 KB/frame. The cause was the LINQ grouping in `UnitPanel`, already on main. `--perf-log` now lists the stages that allocate.
+
+**Try:** `--exec "spawn tank 500 me at 128,128" --select "everything@500" --perf-log`, then press I. For the swap: select an ACU and click T3E.
+
+**Tests:** 7 ring/fog + 4 chain + 1 alert (client), 1 swap (sim). Client 361, sim 615, net 33: all green. `Rts.slnx` builds.
+
+**Bench `2000 300`:** hash 2F09CD7D01AF287E (unchanged), tick 2.1–2.4 ms vs main 2.0–2.1 ms (noise). AI match not rerun (no sim code changed).
+
+**New hotkeys:** I, Ctrl+= / Ctrl+KpAdd, Ctrl+- / Ctrl+KpSub.
+
+**Shared-file edits:** GameSession (2 lines), Hud (profiler laps), SelectionController (note self-destruct), Hotkeys (3 entries), AppSettings/SettingsScreen/GraphicsSettings, CLAUDE.md, docs.
+
+**Left (ROADMAP later lines):** saved bookmarks + list, Shift "add" class filters (Shift is already used), sandbox own-only option, joined walls, crush animation, ~22 KB/frame from input + placement with 500 selected.
+
+**Design errors found**
+- Props (wrecks, deposits) reach the client without intel filtering, so they were drawn in fog never explored. The client now hides them (a926ff4), but the snapshot still carries them: open.
+- `UnitPanel` regrouped the selection with LINQ every frame (~180 KB/frame at 500 units): a per-frame UI path built on allocating helpers. Fixed in e85c944.
+- The sim installs one enhancement step per command, so multi-step swaps need a client-side queue. That queue is not saved and not visible to other players: open (fine for now).
+
+**Handoff review**
+The note was accurate and the plan for the swap was right. It lacked a way to find which stage allocates, so I added per-stage allocations to `--perf-log`. The swap screenshot spawned a plain ACU: the `+ResourceAllocation` spawn suffix did not apply, so the occupied-slot path is covered only by tests.
+
+**Merge checks on main** (orchestrator, 2026-11-12 21:26-21:30): build and tests 615 sim + 361 client + 33 net
+green; reference match "Player (Hard) after 12:00", C87C46C4EA726A82; bench 2F09CD7D01AF287E; screenshot of
+`--sandbox --exec "spawn tank 8 me at 128,128" --select "everything@8"` (one merged red weapon ring around the
+group, the enhancement panel with amber T3E and SGF buttons) looked right.

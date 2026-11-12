@@ -26,15 +26,15 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-12 21:15 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 21:40 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
 2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
 pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
-(10b-1) keybinding editor and (10a-1) deterministic math merged 2026-11-12.
-Tests: 614 sim + 349 client + 33 net.
+(10b-1) keybinding editor, (10a-1) deterministic math and (10b-2) selection overlays merged 2026-11-12.
+Tests: 615 sim + 361 client + 33 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:00", hash
 **C87C46C4EA726A82** (agents that must not change sim results compare against it; before 10a-1, which made the sim
 math software-deterministic, it was "after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
@@ -65,7 +65,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   was resumed at 21:12**: one fresh agent per worktree on Opus 5.5 (10a-2 agent 3 = a03d93b61caaae6eb, CTX-TAG
   `10a2-mod-3`; 10b-2 agent 3 = a3fa823dddd19d052, CTX-TAG `10b2-mod-3`; ids are valid only in session 4ebba5f4),
   watcher at 165k. If they are cut again: WIP commit in each worktree, then the paragraph below.
-- **Pair 2 is in progress, both modules half done, nothing merged.** Started 20:48 (session 8d3780e7); each module's
+- **Pair 2: 10b-2 merged, 10a-2 in progress.** Started 20:48 (session 8d3780e7); each module's
   first agent hit 170k context in 11-14 minutes and checkpointed; the two successors were cut by the weekly limit
   within a minute or two (no work lost: WIP committed). To resume, one fresh agent per worktree (`model: "opus"`,
   NO isolation, cap 200k, CHECKPOINT 170k), prompt = the worktree's `.claude/resume-prompt.md` (self-contained;
@@ -78,10 +78,8 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
     drop by strict majority, pings), 5 `ObserverTests`. Left: every client screen (loading screen drops an early
     Go for observers; in-game observer view; drop banner button; lobby observer list + pings + sounds;
     `--observe`), docs, merge main, all tests, perf. In its `resume-prompt.md` change CTX-TAG to `10a2-mod-3`.
-  - **10b-2** `.claude/worktrees/agent-ad3fa042eecd3d963`, branch `worktree-agent-ad3fa042eecd3d963`, last
-    cfebd26. Done: G20 range rings (key I, setting) and fog memory of wrecks/deposits, 7 client tests. Left:
-    enhancement swap, minimap zoom keys, toast filter, the other leftovers, an allocation check (239 KB/frame with
-    500 selected: branch or main?), docs, merge main, all tests, bench.
+  - **10b-2 is merged and verified** (57d4e20, 2026-11-12 21:30; HISTORY report; its three design errors are in
+    LESSONS; worktree and branch removed).
   - Design errors already reported for LESSONS (WORKFLOW step 7): resign waited for the next sim step (fixed
     e2675f2); loading screen drops an early Go for observers (open); every wreck is sent to the client without
     intel filtering (client fix a926ff4, open in the snapshot).
