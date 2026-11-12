@@ -33,7 +33,8 @@ public sealed class UnitPanel
     public void Draw(Rectangle r, SimSnapshot snap)
     {
         Ui.Panel(r);
-        var views = new List<UnitView>(_sel.Selected.Count);
+        var views = _views; // (10b-2) reused: with 500 selected the old per-frame list + LINQ grouping cost ~180 KB/frame
+        views.Clear();
         foreach (var h in _sel.Selected)
             if (snap.TryGetUnit(h.Index, h.Generation, out var v)) views.Add(v);
         if (views.Count == 0) return;
@@ -340,13 +341,12 @@ public sealed class UnitPanel
     private void DrawMulti(Rectangle r, SimSnapshot snap, List<UnitView> views)
     {
         // Group by blueprint: commander first, then engineers, then mobile, then structures; stable by bp index.
-        var groups = views.GroupBy(v => v.Bp)
-            .Select(g => (bp: g.Key, army: g.First().Army, count: g.Count(), hp: g.Sum(v => v.HealthFrac * MaxHealthOf(v, _ctx.Db[v.Bp])), max: g.Sum(v => MaxHealthOf(v, _ctx.Db[v.Bp]))))
-            .OrderBy(g => SortKey(_ctx.Db[g.bp])).ThenBy(g => g.bp).ToList();
+        var groups = BuildGroups(views);
 
         float pad = Ui.P(8);
         float y = Ui.PanelTitle(r, $"{views.Count} units selected  ·  {groups.Count} types");
-        float totalHp = groups.Sum(g => g.hp), totalMax = groups.Sum(g => g.max);
+        float totalHp = 0, totalMax = 0;
+        foreach (var g in groups) { totalHp += g.Hp; totalMax += g.Max; }
         float barH = Ui.P(12);
         Ui.Bar(new Rectangle(r.X + pad, y, r.Width - 2 * pad, barH), totalMax > 0 ? totalHp / totalMax : 0, new Color(70, 200, 70, 255), $"Health {totalHp / MathF.Max(1, totalMax) * 100:0}%");
         y += barH + Ui.P(5);
@@ -368,7 +368,7 @@ public sealed class UnitPanel
         for (int i = 0; i < groups.Count && i < maxShown; i++)
         {
             var g = groups[i];
-            var bp = _ctx.Db[g.bp];
+            var bp = _ctx.Db[g.Bp];
             var br = new Rectangle(r.X + pad + (i % cols) * (btn + gap), y + (i / cols) * (btn + gap), btn, btn);
             if (i == maxShown - 1 && groups.Count > maxShown)
             {
@@ -379,33 +379,64 @@ public sealed class UnitPanel
             var st = Ui.Button(br);
             UnitIcons.Draw(br, bp, compact: small);
             // Count badge.
-            string cnt = g.count.ToString();
+            string cnt = g.Count.ToString();
             int fs = Ui.F(small ? 9.5f : 11);
             float cw = Ui.Measure(cnt, fs, true) + Ui.P(6);
             var badge = new Rectangle(br.X + br.Width - cw - 2, br.Y + 2, cw, fs + Ui.P(2));
             Raylib.DrawRectangleRec(badge, new Color(0, 0, 0, 190));
             Ui.Text(cnt, badge.X + Ui.P(3), badge.Y + Ui.P(1) - 1, fs, Color.White, true);
             // Health sliver.
-            float hf = g.max > 0 ? g.hp / g.max : 0;
+            float hf = g.Max > 0 ? g.Hp / g.Max : 0;
             Raylib.DrawRectangle((int)br.X + 2, (int)(br.Y + br.Height - 4), (int)((br.Width - 4) * hf), 2, hf > 0.5f ? Ui.Good : hf > 0.25f ? Ui.Warn : Ui.Bad);
 
             if (st.Left)
             {
-                if (Ui.Ctrl) _sel.SelectTypeOnScreen(g.bp, g.army);
-                else if (Ui.Shift) _sel.RemoveType(g.bp);
-                else _sel.NarrowToType(g.bp);
+                if (Ui.Ctrl) _sel.SelectTypeOnScreen(g.Bp, g.Army);
+                else if (Ui.Shift) _sel.RemoveType(g.Bp);
+                else _sel.NarrowToType(g.Bp);
             }
-            else if (st.Right) _sel.RemoveType(g.bp);
+            else if (st.Right) _sel.RemoveType(g.Bp);
             if (st.Hover)
                 Ui.Tooltip(br, new List<TipLine>
                 {
-                    new($"{bp.Name}  ×{g.count}", Ui.TextColor, 13, true),
-                    new($"Health {g.hp:0} / {g.max:0}", Ui.TextDim, 11.5f),
+                    new($"{bp.Name}  ×{g.Count}", Ui.TextColor, 13, true),
+                    new($"Health {g.Hp:0} / {g.Max:0}", Ui.TextDim, 11.5f),
                     new("Click: select only these", Ui.TextFaint, 11),
                     new("Shift+click / right-click: deselect them", Ui.TextFaint, 11),
                     new("Ctrl+click: add every one on screen", Ui.TextFaint, 11),
                 });
         }
+    }
+
+    private readonly List<UnitView> _views = new();
+    private readonly List<TypeGroup> _groups = new();
+    private int[] _groupOf = Array.Empty<int>();
+    private Comparison<TypeGroup>? _groupOrder;
+
+    private struct TypeGroup { public int Bp, Army, Count, Key; public float Hp, Max; }
+
+    /// <summary>The selection grouped by blueprint: commander first, then engineers, mobile, factories, structures;
+    /// stable by blueprint index. No allocation once the lists have grown (reused per frame).</summary>
+    private List<TypeGroup> BuildGroups(List<UnitView> views)
+    {
+        var db = _ctx.Db;
+        if (_groupOf.Length < db.Count) { _groupOf = new int[db.Count]; Array.Fill(_groupOf, -1); }
+        _groups.Clear();
+        foreach (var v in views)
+        {
+            if ((uint)v.Bp >= (uint)_groupOf.Length) continue;
+            var bp = db[v.Bp];
+            int gi = _groupOf[v.Bp];
+            if (gi < 0) { gi = _groupOf[v.Bp] = _groups.Count; _groups.Add(new TypeGroup { Bp = v.Bp, Army = v.Army, Key = SortKey(bp) }); }
+            var g = _groups[gi];
+            float mh = MaxHealthOf(v, bp);
+            g.Count++; g.Hp += v.HealthFrac * mh; g.Max += mh;
+            _groups[gi] = g;
+        }
+        foreach (var g in _groups) _groupOf[g.Bp] = -1;
+        _groupOrder ??= static (a, b) => a.Key != b.Key ? a.Key.CompareTo(b.Key) : a.Bp.CompareTo(b.Bp);
+        _groups.Sort(_groupOrder);
+        return _groups;
     }
 
     /// <summary>One line under the group health bar: idle mobile units and the fire states of the armed ones

@@ -24,7 +24,8 @@ public sealed class FrameProfiler
     private readonly List<double> _sum = new();
     private readonly List<double> _max = new();
     private readonly List<double> _window = new();
-    private long _t, _alloc0;
+    private readonly List<double> _allocStage = new(); // (10b-2) bytes per stage in the current window
+    private long _t, _alloc0, _allocLap;
     private int _frames, _windowFrames;
     private double _allocSum, _allocWindow;
 
@@ -61,6 +62,7 @@ public sealed class FrameProfiler
         }
         _t = Stopwatch.GetTimestamp();
         _alloc0 = GC.GetAllocatedBytesForCurrentThread();
+        _allocLap = _alloc0;
     }
 
     /// <summary>Ends the current stage (time since Begin or the previous Lap) under <paramref name="name"/>.</summary>
@@ -70,7 +72,10 @@ public sealed class FrameProfiler
         double ms = (now - _t) * 1000.0 / Stopwatch.Frequency;
         _t = now;
         int i = _names.IndexOf(name);
-        if (i < 0) { _names.Add(name); _sum.Add(0); _max.Add(0); _window.Add(0); i = _names.Count - 1; }
+        if (i < 0) { _names.Add(name); _sum.Add(0); _max.Add(0); _window.Add(0); _allocStage.Add(0); i = _names.Count - 1; }
+        long al = GC.GetAllocatedBytesForCurrentThread();
+        if (_frames >= Warmup) _allocStage[i] += al - _allocLap;
+        _allocLap = al;
         if (_gpu != null && _gpuMark < GpuTimer.MaxMarks)
         {
             _gpuNames[_gpuSlot][_gpuMark++] = i;
@@ -107,7 +112,7 @@ public sealed class FrameProfiler
     public string TakeWindow()
     {
         var s = Format(_window, Math.Max(1, _windowFrames), _allocWindow, withMax: false) + FormatGpu(_gpuWindow, _gpuWindowFrames);
-        for (int i = 0; i < _window.Count; i++) _window[i] = 0;
+        for (int i = 0; i < _window.Count; i++) { _window[i] = 0; _allocStage[i] = 0; }
         for (int i = 0; i < _gpuWindow.Count; i++) _gpuWindow[i] = 0;
         _gpuWindowFrames = 0;
         _windowFrames = 0;
@@ -136,6 +141,9 @@ public sealed class FrameProfiler
             if (withMax) sb.Append('/').Append(_max[i].ToString("F1"));
         }
         sb.Append($" | alloc {alloc / frames / 1024.0:F1} KB/frame (main thread)");
+        if (!withMax) // (10b-2) --perf-log: the stages that allocate >= 1 KB/frame, largest first
+            foreach (int i in Enumerable.Range(0, _allocStage.Count).OrderByDescending(i => _allocStage[i]).Take(4))
+                if (_allocStage[i] / frames >= 1024) sb.Append(' ').Append(_names[i]).Append('=').Append((_allocStage[i] / frames / 1024.0).ToString("F1")).Append("KB");
         return sb.ToString();
     }
 }
