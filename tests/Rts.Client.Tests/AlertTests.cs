@@ -125,6 +125,18 @@ public class AlertTests
     }
 
     [Fact]
+    public void StructureLostSkipsSelfDestruct() // (10b-2)
+    {
+        var log = new AlertLog();
+        var m = new AlertMonitor(Db, log);
+        int a = Structures[0];
+        var fx = new EffectEvent { Kind = EffectKind.UnitDeath, Army = 0, BlueprintIndex = a, Pos = new Vector3(100, 0, 100) };
+        log.NoteSelfDestruct(new Rts.Sim.Core.UnitHandle(1, 1));
+        Assert.Empty(Run(m, Snap(1, U(1, 0, a, 1f)), Snap(2), [fx]));
+        Assert.Single(Run(m, Snap(2, U(1, 0, a, 1f)), Snap(3), [fx])); // forgotten once used: a later death of that slot alerts
+    }
+
+    [Fact]
     public void NewPingsAlertOnceAndOwnPingsOnlySound()
     {
         var log = new AlertLog();

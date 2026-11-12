@@ -211,7 +211,10 @@ public sealed class SelectionController
     public void ConfirmSelfDestruct()
     {
         if (PendingSelfDestruct is { Length: > 0 } units)
+        {
+            foreach (var h in units) Alerts.NoteSelfDestruct(h); // (10b-2) no "Structure lost" toast for these
             ArmyCommands.Send(_ctx, units, (army, group) => new SelfDestructCommand(army, group));
+        }
         PendingSelfDestruct = null;
     }
 

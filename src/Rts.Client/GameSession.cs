@@ -242,6 +242,7 @@ public sealed class GameSession : IDisposable
             if (NetKeys != null) NetKeys();
             else GameApp.DebugKeys(ctx);
             if (Hotkeys.RangeRings.Pressed()) SelectionRangeOverlay.Enabled = !SelectionRangeOverlay.Enabled; // (10b-2)
+            Minimap.HandleZoomKeys(); // (10b-2) Ctrl+= / Ctrl+-
         }
         _prof.Lap("input+audio");
 

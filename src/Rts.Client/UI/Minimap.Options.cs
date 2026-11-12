@@ -35,6 +35,17 @@ public sealed partial class Minimap
         return i switch { 4 => s.MinimapResources, 5 => s.MinimapUnits, 6 => s.MinimapTrees, _ => false };
     }
 
+    /// <summary>(10b-2) Minimap zoom hotkeys (<see cref="Input.Hotkeys.MinimapZoomIn"/> / Out, default Ctrl+= / Ctrl+-):
+    /// one zoom step like the wheel, saved. Called by the session when keys are not captured (chat, console).</summary>
+    public static void HandleZoomKeys()
+    {
+        int dir = Input.Hotkeys.MinimapZoomIn.Pressed() ? 1 : Input.Hotkeys.MinimapZoomOut.Pressed() ? -1 : 0;
+        if (dir == 0) return;
+        var s = Menus.AppSettings.Current;
+        float z = MinimapView.StepZoom(s.MinimapZoom, dir);
+        if (z != s.MinimapZoom) { s.MinimapZoom = z; s.Save(); }
+    }
+
     /// <summary>Wheel zoom and button clicks (before the map input, so a button click never moves the camera).
     /// Returns true when the mouse is over a button.</summary>
     private bool HandleButtons(Rectangle panel, Rectangle vis)

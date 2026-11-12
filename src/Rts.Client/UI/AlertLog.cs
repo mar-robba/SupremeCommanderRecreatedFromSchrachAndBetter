@@ -28,6 +28,23 @@ public sealed class AlertLog
     public const double CycleWindow = 4.0;
 
     private readonly List<AlertEntry> _entries = new();
+    private readonly List<Rts.Sim.Core.UnitHandle> _selfDestructed = new(); // (10b-2) newest last, at most 256
+
+    /// <summary>(10b-2) Remembers a unit the player self-destructed, so its death raises no "Structure lost" toast.</summary>
+    public void NoteSelfDestruct(Rts.Sim.Core.UnitHandle h)
+    {
+        if (_selfDestructed.Count >= 256) _selfDestructed.RemoveAt(0);
+        _selfDestructed.Add(h);
+    }
+
+    /// <summary>True (and forgotten) if <paramref name="h"/> was self-destructed by the player.</summary>
+    public bool TakeSelfDestructed(Rts.Sim.Core.UnitHandle h)
+    {
+        int i = _selfDestructed.IndexOf(h);
+        if (i < 0) return false;
+        _selfDestructed.RemoveAt(i);
+        return true;
+    }
     private readonly double[] _lastNotified = Enumerable.Repeat(-1e9, 16).ToArray();
     private int _cycle = -1;
     private double _lastJump = -1e9;
