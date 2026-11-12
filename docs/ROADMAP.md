@@ -2,36 +2,36 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 18:55; 10b-1 merged 18:50 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 19:10 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
 2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
 pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
-biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner).
-Tests: 603 sim + 349 client + 33 net.
-Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
-**FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
-rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
-(EAED77303695A943 before 8b-1). Replays and saves made before 8b-1 refuse to open (the saved prop layout changed).
+biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
+(10b-1) keybinding editor and (10a-1) deterministic math merged 2026-11-12.
+Tests: 614 sim + 349 client + 33 net.
+Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:00", hash
+**C87C46C4EA726A82** (agents that must not change sim results compare against it; before 10a-1, which made the sim
+math software-deterministic, it was "after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
+Bench `2000 300` hash **2F09CD7D01AF287E** (6A8312040EFA67F2 before 10a-1). Replays made before 10a-1 and saves on
+generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 4.
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 18:45, orchestrator session 3badb572, on Opus 5.5):
+**ON RESUME** (2026-11-12 19:10, orchestrator session 3badb572, on Opus 5.5):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
   editor (G19, client only); pair 2 = **10a-2** observers + vote to drop + lobby pings + chat sounds + **10b-2**
   selection overlays + client leftovers (G20, G11 client items); then **10a-3** MP save/load (G36) with a wave 11
   module. One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, no sub-agents while two run).
-- **(10b-1) Keybinding editor is merged and verified** (2af6abf, 2026-11-12 18:50; HISTORY report).
-- **Pair 1 is running** (started 2026-11-12 ~18:22 at the owner's request, "si parti subito", in the half-used
-  15:40 window, ~15 $ used by then; it may be cut at ~20:40). Worktrees under `.claude/worktrees/`; a CronCreate job
-  of session 3badb572 at 20:47 commits WIP and resumes or replaces cut agents. Prompts:
-  `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a1.md` and
-  `prompt-10b1.md` (same folder: `merge-check.sh`, the merge checks). If that folder is gone (reboot), rebuild
-  the prompts from the HISTORY briefs with the 8b-3 prompt shape (brief, state, ordered TODO, rules block).
+- **Pair 1 is merged and verified**: (10b-1) keybinding editor (2af6abf) and (10a-1) deterministic math (f3a50a6),
+  2026-11-12 (HISTORY reports). Both modules took two agents each (checkpoint at 170-175k after 15-21 minutes, then a
+  fresh agent). Pair 1 ran in the half-used 15:40 window at the owner's request; that window was at ~30 $ at 18:50.
+- **NEXT: pair 2** = (10a-2) observers + vote to drop + lobby pings + chat sounds and (10b-2) selection overlays +
+  client leftovers (HISTORY "Wave 10" briefs), in a fresh window (the 15:40 window ends at 20:40).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).

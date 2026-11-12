@@ -1274,3 +1274,41 @@ allocation numbers, so it built main in a temporary worktree to compare. Nothing
 green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A8312040EFA67F2; screenshot of
 `--settings --settings-tab keys --bind "Stop=F11"` (the Keys tab by group, Stop shown as F11 with its Reset button)
 looked right.
+
+### (10a-1) Deterministic math across the sim — report (merged 2026-11-12, f3a50a6)
+Two agents: the module agent stopped at its checkpoint (175k, 21 minutes) with the software math, the call sites
+and the protocol bump done and the full suites unrun; a fresh agent finished it (137k, 17 minutes). 1,104 lines.
+
+**What works**: every trig / exp / log / pow call of the sim goes through software `DMath` (`Core/DMath.Trig.cs`,
+`DMath.Inverse.cs`, `DMath.ExpLog.cs`: float `+ - * /`, `Sqrt`, bit casts and integer math only; no FMA, no
+`double`), so Linux and Windows peers compute the same bits. All 12 sim files are covered, map generator included
+(`MapSymmetry` used `double Math.Cos/Sin`), and `Vector2/3.Lerp` became `DMath.Lerp` (it may use FMA on some CPUs).
+A source grep test bans `MathF`/`Math` transcendentals, `Vector*.Lerp` and `MultiplyAddEstimate` in `src/Rts.Sim`
+outside `DMath*.cs`. Save and replay headers record `GameInfo.MathVersion` (missing = 0 = old math): old replays
+are refused ("recorded by an older game version…"; the replay list tags them "OLD VERSION"; `Rts.Bench -- replay`
+exits with 2); old saves on generated maps show "Cannot load this game" (the regenerated terrain differs); other
+old saves (map files, embedded terrain) load and play on, with the replay log restarted at the loaded tick.
+`Msg.ProtocolVersion` 3 → 4. Audit: nothing in the sim state depends on hash order or culture; fixed
+`MultiplayerSystem` `EndsWith` (Ordinal), `FactionDb` hex `TryParse` (InvariantCulture), `MapSymmetry` double math.
+**How to check**: `dotnet test tests/Rts.Sim.Tests --filter "CrossOs|DeterministicMath"`; on another OS or CPU a
+failing golden test = a cross-OS desync.
+**Tests**: `DeterministicMathTests` (accuracy sweeps against double `Math`, golden bit patterns, IEEE edge cases,
+the grep ban); `CrossOsDeterminismTests` (golden game: AI vs AI plus a brawl, 600 ticks, 2 threads, terrain hash
+C870F62B6FC7C28D, state hash D273E007297C55F1; header field, replay refusal, old-save cases). No existing expected
+value changed. **Shared files**: `GameInfo.cs` (field + one line), `SaveFiles.cs` (version checks), `SaveText.cs`
+(tag), `Messages.cs`.
+**Measured**: max error 2 ulp (Sin, Cos, Atan, Asin, Atan2, Log2), 1 ulp (Acos, Exp, Log), Pow 1 ulp (4 when
+|y·log2 x| > 16). Bench `2000 300` interleaved: 1 thread 4.54 → 4.57 ms (+0.7 %), 15 threads 1.755 → 1.78 ms
+(+1.6 %, noise level). Bench hash 6A8312040EFA67F2 → **2F09CD7D01AF287E**; reference match "Hard wins after 12:18"
+FB269C29202773C1 → **"after 12:00", C87C46C4EA726A82**. `Rts.Bench -- mp` in sync; a replay recorded on the build
+verifies 180/180.
+**Known issues / follow-ups**: not run on Windows or ARM64 yet (run the golden test and `Rts.Bench -- replay` of a
+Linux replay there); `Vector2/3` dot and length not checked across CPU types; old saves on generated maps cannot be
+loaded.
+**Handoff review** (second agent): the note was enough; it missed that replay writes copy the stored header without
+refreshing it (a loaded old save would have marked its new replays as old math: loading now resets the version),
+and that `--screenshot` needs the `screenshots/` folder (raylib says "saved" but writes nothing without it).
+**Merge checks on main** (orchestrator, 2026-11-12 19:02-19:06; one doc conflict in ARCHITECTURE, both sections
+kept): build and tests 614 sim + 349 client + 33 net green; reference match "Hard wins after 12:00",
+C87C46C4EA726A82; bench 2F09CD7D01AF287E (both as the report says); `Rts.Bench -- mp` 1200 ticks, 120 hash checks,
+no desync; `--demo` screenshot unchanged.
