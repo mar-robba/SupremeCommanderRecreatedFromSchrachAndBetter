@@ -55,7 +55,8 @@ agents run.
   - pass `model: "opus"` in every Agent call (a sub-agent otherwise inherits the session's model, and on Fable 5.2
     a usage window holds a fifth of the work); for a trivial piece (the prompt says exactly what to do, no design
     choice is left, a command tells whether it is right: data files from a table, running checks) pass
-    `model: "sonnet"` instead (owner, 2026-11-12: no Opus 5.5 for very simple tasks);
+    `model: "sonnet"` instead, with `effort: "medium"` or `"high"` by the piece's complexity (owner, 2026-11-12:
+    no Opus 5.5 at xhigh for very simple tasks);
   - they work in YOUR worktree (give them the absolute path; no isolation flag) on disjoint files;
   - only ONE `dotnet build`/`dotnet test` may run at a time per worktree: everyone runs dotnet through
     `bash tools/agents/dn.sh <dotnet args>` (call it through `bash`: the volume is mounted without exec bits and git has `core.fileMode=false`);

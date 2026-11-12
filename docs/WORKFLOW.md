@@ -28,7 +28,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-23 | **Two factions are enough** (UEF + Cybran): don't create further factions (no Aeon/Seraphim). "Everything must be done" means the full feature set for these two. |
 | 2026-11-10 | The owner asked for a judgment of these rules and approved its four changes ("effettua le modifiche consigliate"; "Review of the process rules (2026-11-10)"): (1) agents and sub-agents run on **Opus 5.5** (`model: "opus"` in every Agent call); Fable 5.2 only for the orchestrator and for pieces of class high or critical. (2) **One agent per module, no coordinator**: modules of about 1,500 lines, cap 200k; sub-agents only for separable content with a written contract (blueprints, models, tests). (3) **At most 2 agents at a time, sub-agents counted**, and no start when other sessions of the owner have already used part of the usage window. (4) LESSONS "Costi" is brought up to date **every 2-3 waves** or when the owner asks, not after every wave. |
 | 2026-11-11 | **Improving the AI is no longer a goal of the project** ("l'ai non deve essere più un obbiettivo del progetto, terremo quella già fatta"; then "mantieni la doc sulla ai soltanto togli dal programma l'obbiettivo di migliorarla"). The skirmish AI stays as merged in wave 5. Removed from ROADMAP: wave 9a, gap rows G30-G33, the "later: AI ..." lines. The AI docs (ARCHITECTURE "Skirmish AI", AI_TUNING) stay unchanged. Agents plan no AI work and write no "later: AI uses X" lines; the AI only has to keep working (AI tests, the reference match at every merge). |
-| 2026-11-12 | **Cheaper models for trivial tasks** ("i sotto se il compito è molto banale non c'è bisogno di usare opus 5.5 xhigh quando potresti usare modelli meno costosi come sonnet 5.5 etc"): an agent or sub-agent whose task is very simple runs on Sonnet 5.5 (`model: "sonnet"`) or another cheaper model, not on Opus 5.5 at xhigh effort. What counts as trivial is the orchestrator's reading: "Lifecycle of a wave" step 3. |
+| 2026-11-12 | **Cheaper models for trivial tasks** ("i sotto se il compito è molto banale non c'è bisogno di usare opus 5.5 xhigh quando potresti usare modelli meno costosi come sonnet 5.5 etc"): an agent or sub-agent whose task is very simple runs on Sonnet 5.5 (`model: "sonnet"`) or another cheaper model, not on Opus 5.5 at xhigh effort. What counts as trivial is the orchestrator's reading: "Lifecycle of a wave" step 3. **Effort follows the task too** ("sforzo medio o alto è sempre a discrezione della complessità del compito"): the orchestrator (or the parent agent) picks the effort of each agent from the complexity of its task and passes it in the Agent call. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -67,8 +67,11 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    `model: "opus"` (owner, 2026-11-10: agents otherwise inherit the session's model, and a Fable 5.2 window holds a
    fifth of the work); `model: "fable"` only for a piece of class high or critical, planned for a window of its own.
    `model: "sonnet"` for a **trivial** task (owner, 2026-11-12): Sonnet 5.5 costs half of Opus 5.5 per token
-   (`ledger.py` `PRICES`), and by the owner's settings (`~/.claude/settings.json`: default effort medium, xhigh
-   only for Opus 5.5 and Fable 5.2) it runs at medium effort (not checked with a real agent). Trivial, as the
+   (`ledger.py` `PRICES`). Its effort is chosen with the task (owner, 2026-11-12): pass `effort: "medium"` for
+   a task that only executes written steps, `effort: "high"` when it has to understand code or judge a result;
+   don't rely on the defaults in `~/.claude/settings.json` (medium; xhigh for Opus 5.5 and Fable 5.2). Module
+   agents on Opus 5.5 stay at that xhigh (the orchestrator's reading: the owner spoke of medium or high for the
+   simple tasks and did not ask to lower module work). Trivial, as the
    orchestrator reads the owner's words: the prompt says exactly what to do, no design choice is left, and a
    command tells whether the result is right. Examples: run the final checks of a finished module and write its
    report (the job of 10b-1 agent 2), data files from a written table, map pack exports, copying reports into
