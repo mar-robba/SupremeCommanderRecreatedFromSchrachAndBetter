@@ -2,7 +2,7 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 12:05 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-12 12:25 — read this first in a new session)
 main has waves 1-7, (8a), (8b-1), (8b-2), (9b-1) and (9b-2): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -27,10 +27,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   8b-3; it now builds on 8b-2's `MapFile` / `MapLibrary` (ARCHITECTURE "Map files") and 9b-2's terrain shader
   (ground lit value in the chunk vertex colours: biome palettes must keep the G channel free or move it).
 - **LESSONS "Costi" re-aligned after wave 9** (merged e43f997, 2026-11-12 12:20); next after wave 11.
-- **(8b-3) is scheduled for 15:07** by a one-shot job (CronCreate d3a5e76d) of session e3d118ad: the window began at
-  10:00 (first calls 10:34) and should reset at 15:00. The job carries the facts for the prompt and a guard against a
-  double start. It lives only while that session stays open and idle; otherwise a new session starts 8b-3 by hand
-  from this list and HISTORY "(8b) Maps".
+- **(8b-3) is scheduled for 15:07** by a one-shot job of session e3d118ad (re-created at 12:25 before a `/clear`):
+  the window began at 10:00 (first calls 10:34) and should reset at 15:00. The ready agent prompt is in
+  `/tmp/claude-1000/-run-media-marco-RTS/e3d118ad-a778-43e1-9527-d5456edbcaae/scratchpad/prompt-8b3.md` (brief,
+  state, TODO, rules); the job also has a guard against a double start and the merge steps. It lives only while
+  that session stays open and idle; otherwise a new session starts 8b-3 by hand with that file (or, if it is gone,
+  from HISTORY "(8b) Maps" + AGENT_RULES). Merge checks: `bash tools/agents/merge-check.sh <log> [screenshot args]`.
 - **Watch the agents' context from the start:** module agents reach 200k in about 19 minutes and do not stop by
   themselves (WORKFLOW "Context limits and handoffs"): watcher at 170k, CHECKPOINT message at once, then a fresh
   agent in the same worktree.

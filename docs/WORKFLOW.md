@@ -246,7 +246,10 @@ knows the resets of the windows that were hit, not of the current one. On 2026-1
 CronCreate; the window in fact reset at 00:00, and at 23:02 it had 1 $ left. So schedule a start for the reset time
 of a limit message, or one hour later than the estimate, and let the job first make one small call: if the limit
 message comes, its time is the real reset. A CronCreate job survives `/clear` (same process) but not a restart of
-Claude Code, and fires only while the session is idle.
+Claude Code, and fires only while the session is idle. Its prompt must be self-contained: a `/clear` keeps the job but drops the
+transcript, so a ready agent prompt goes in a file the job names (2026-11-12: the 8b-3 prompt in the scratchpad of
+session e3d118ad). A job runs on the session's model: on 2026-11-12 the 06:07 job fired in a session on Fable 5.2
+whose usage had run out and did nothing, unseen until the owner came back at 10:40.
 
 ## Resuming (new orchestrator session)
 

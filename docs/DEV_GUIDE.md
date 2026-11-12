@@ -243,6 +243,7 @@ integrated GPU.
 | `Rts.Bench -- duel` / `duelmatrix` | Unit balance: equal-mass duels of two unit types on flat ground (real sim), and role x role grids of the surviving-mass share per faction pair, ~5 s per matrix on 16 threads (`Duel.cs`; method and BEFORE grids in [AI_TUNING.md](AI_TUNING.md) "Unit balance"). |
 | `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |
 | `tools/agents/dn.sh` | dotnet with the per-worktree build lock (above). |
+| `tools/agents/merge-check.sh` | Merge checks on main in one run: `bash tools/agents/merge-check.sh <log> [client screenshot args...]` = build, the three test suites, the reference AI match, the bench `2000 300` hash, one screenshot; read the short log after (WORKFLOW "Lifecycle of a wave" step 6). |
 | `tools/agents/agent_ctx.py` | Exact context size of sub-agents, and a background alert with per-agent thresholds (WORKFLOW "Context limits and handoffs"). |
 | `tools/agents/handoffs.py` | Per purpose: attempts, CHECKPOINT hand-overs and "dead" attempts (read until the cap, no work) of agents and sub-agents (WORKFLOW "Fragmentation: does a small cap hurt the result?"). |
 | `tools/ai-lab/` | Hundreds of headless AI games in parallel, config sweeps, head-to-head stats ([AI_TUNING.md](AI_TUNING.md)). |
