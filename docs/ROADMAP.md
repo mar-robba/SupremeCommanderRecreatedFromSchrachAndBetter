@@ -30,7 +30,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
 - **(8b-3) STARTED 2026-11-12 15:07** by the scheduled job (orchestrator session 46ab30e4, the same process as
   e3d118ad after a `/clear`): module agent a5a28d62964ea7188 (CTX-TAG `8b3-mod-1`, cap 200k), worktree
   `.claude/worktrees/agent-a5a28d62964ea7188` (locked), branch `worktree-agent-a5a28d62964ea7188`, from 63a9028.
-  Context watcher: `agent_ctx.py --watch 135000 a5a28d62964ea7188=170000`. Prompt:
+  **Usage limit at ~15:35** (the window really reset at 15:40, not 15:00: `windows.py` placed it at 10:00, the
+  first calls were 10:34-10:41): mod-1 stopped at 162k (its TODO 1 committed by the orchestrator as WIP 3f2880a,
+  unbuilt), its sub-agent a882f8ecab5f18722 (`8b3-sub-1`, biome visuals, 67k) resumed by SendMessage at 15:43;
+  **15:44 fresh module agent a34d9f569f785d81e (`8b3-mod-2`)** in the same worktree, from `.claude/handoff.md`
+  (TODO 2-7: net transfer, lobby, bench, tests, docs). Watcher: `--watch 135000 a34d9f569f785d81e=170000
+  a882f8ecab5f18722=140000`. Prompt of mod-1:
   `/tmp/claude-1000/-run-media-marco-RTS/e3d118ad-a778-43e1-9527-d5456edbcaae/scratchpad/prompt-8b3.md` (with
   "main = 63a9028"). If the orchestrator is gone: a fresh agent in that worktree (no isolation) with that prompt +
   "read `.claude/handoff.md` first" and a new CTX-TAG. Merge checks: `bash tools/agents/merge-check.sh <log> [screenshot args]`.
