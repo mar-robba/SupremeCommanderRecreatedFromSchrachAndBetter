@@ -30,7 +30,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Pair 1 is merged and verified**: (10b-1) keybinding editor (2af6abf) and (10a-1) deterministic math (f3a50a6),
   2026-11-12 (HISTORY reports). Both modules took two agents each (checkpoint at 170-175k after 15-21 minutes, then a
   fresh agent). Pair 1 ran in the half-used 15:40 window at the owner's request; that window was at ~30 $ at 18:50.
-- **Answered 2026-11-12 ~21:10** (owner's question on LESSONS.org): yes, its error entries stopped at 2026-10-14;
+- **Answered 2026-11-12 20:53** (owner's question on LESSONS.org): yes, its error entries stopped at 2026-10-14;
   no decision stopped them (the 2026-11-10 cadence change was only for "Costi"), the lifecycle simply had no step for
   them. Seven missing entries written (2026-10-16 → 11-12), the Hard-preset entry corrected (it was an exploit), and
   WORKFLOW "Lifecycle of a wave" step 7 now adds a LESSONS entry at every merge that shows a design error.
