@@ -38,6 +38,9 @@ public sealed class GameConfig
     public int Seed = 42;
     /// <summary>(8b-2) Map file id (data/maps) to play on; null = "Random map" (generator settings above).</summary>
     public string? MapFile;
+    /// <summary>(8b-3) Visual biome; null = the map file's biome (or Temperate for generated maps). Never affects the sim.</summary>
+    public Biome? Biome;
+    public Biome EffectiveBiome => Biome ?? (MapFile != null ? MapFileCache.Info(MapFile)?.Biome : null) ?? Rts.Sim.Map.Biome.Temperate;
     public readonly List<PlayerSlot> Slots = new();
 
     // Debug / CLI options carried over restarts.
@@ -63,7 +66,7 @@ public sealed class GameConfig
 
     public GameConfig Clone()
     {
-        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene, Options = Options.Clone(), MapFile = MapFile };
+        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene, Options = Options.Clone(), MapFile = MapFile, Biome = Biome };
         for (int i = 0; i < MaxSlots; i++) copy.Slots[i] = Slots[i].Clone();
         return copy;
     }
@@ -137,14 +140,15 @@ public sealed class GameConfig
             Names = names,
             Options = Options.Clone(),
             MapFile = MapFile != null ? MapFileCache.Get(MapFile) : null,
+            Biome = Biome, // (8b-3)
         };
     }
 
     /// <summary>Config of a game started directly from the command line (army 0 human, the others AI, FFA).</summary>
     public static GameConfig FromOptions(ClientOptions o)
     {
-        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene, MapFile = o.MapFile };
-        c.Options = o.GameOptions != null ? GameOptions.Parse(o.GameOptions) : new GameOptions();
+        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene, MapFile = o.MapFile, Biome = o.Biome };
+        c.Options =o.GameOptions != null ? GameOptions.Parse(o.GameOptions) : new GameOptions();
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
             c.Slots[i].Kind = i == 0 ? SlotKind.Human : i < players ? SlotKind.AI : SlotKind.Closed;

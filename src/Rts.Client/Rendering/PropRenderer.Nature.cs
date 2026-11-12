@@ -176,6 +176,8 @@ public sealed partial class PropRenderer
         sp.SetMatrix("viewProj", fv.ViewProjGl);
         Atmosphere.Apply(sp, fv);
         sp.Set("fade", fade);
+        var look = NatureLook.For(_natBiome); // (8b-3)
+        sp.Set("mossCol", look.Moss); sp.Set("mossAmt", look.MossAmount); sp.Set("rockGlow", look.RockGlow);
         ShadowMap.Bind(sp);
         FogRenderer.Bind(sp);
         sp.Use();
@@ -205,15 +207,18 @@ public sealed partial class PropRenderer
 
     private void EnsureNatureMeshes()
     {
-        if (_natNear != null) return;
+        if (_natNear != null && _natBiome == NatureBiome) return;
+        DisposeNature();
+        _natBiome = NatureBiome; // (8b-3) PropRenderer.Biome.cs
+        var look = NatureLook.For(_natBiome);
         _natNear = new InstancedMesh[8];
         _natFar = new InstancedMesh[8];
         for (int v = 0; v < 4; v++)
         {
-            (_natNear[v], _natHeight[v]) = BuildTree(v, false);
-            (_natFar[v], _) = BuildTree(v, true);
-            (_natNear[4 + v], _natHeight[4 + v]) = BuildRock(v, false);
-            (_natFar[4 + v], _) = BuildRock(v, true);
+            (_natNear[v], _natHeight[v]) = BuildBiomeTree(_natBiome, v, false);
+            (_natFar[v], _) = BuildBiomeTree(_natBiome, v, true);
+            (_natNear[4 + v], _natHeight[4 + v]) = BuildRock(v, false, look);
+            (_natFar[4 + v], _) = BuildRock(v, true, look);
         }
     }
 
@@ -249,10 +254,11 @@ public sealed partial class PropRenderer
         return (new InstancedMesh(b.Upload()), maxY);
     }
 
-    private static (InstancedMesh, float) BuildRock(int v, bool far)
+    private static (InstancedMesh, float) BuildRock(int v, bool far, NatureLook look)
     {
         var b = new MeshBuilder();
-        var col = v switch { 0 => Stone(118, 112, 104), 1 => Stone(104, 100, 96), 2 => Stone(128, 118, 100), _ => Stone(96, 92, 88) };
+        var col = look.Rocks[v & 3]; // (8b-3) Temperate = Stone(118,112,104), (104,100,96), (128,118,100), (96,92,88)
+        int sd = look.RockSidesDelta;
         uint seed = 977u + (uint)v * 131u;
         float R() { seed ^= seed << 13; seed ^= seed >> 17; seed ^= seed << 5; return (seed & 0xFFFF) / 65536f; }
         int chunks = far ? 1 : 2 + v % 2;
@@ -262,9 +268,9 @@ public sealed partial class PropRenderer
             float ang = R() * MathF.Tau, d = i == 0 ? 0 : 0.6f + R() * 0.3f;
             var xf = Matrix4x4.CreateRotationX((R() - 0.5f) * 0.6f) * Matrix4x4.CreateRotationY(R() * MathF.Tau)
                      * Matrix4x4.CreateTranslation(MathF.Cos(ang) * d, 0, MathF.Sin(ang) * d);
-            var radii = new Vector3(0.95f * sz, (0.5f + 0.25f * (v & 1)) * sz, (0.7f + 0.2f * R()) * sz);
+            var radii = new Vector3(0.95f * sz, (0.5f + 0.25f * (v & 1)) * sz * look.RockHeight, (0.7f + 0.2f * R()) * sz);
             if (far) b.Sphere(new Vector3(0, 0.1f, 0), radii, 2, 5, col, xf);
-            else b.Sphere(new Vector3(0, 0.1f * sz, 0), radii, 3, 6 + (i & 1), col, xf);
+            else b.Sphere(new Vector3(0, 0.1f * sz, 0), radii, 3 + Math.Min(sd, 0), 6 + (i & 1) + sd, col, xf);
         }
         var (_, maxY, _) = b.Bounds();
         return (new InstancedMesh(b.Upload()), maxY);
@@ -316,6 +322,9 @@ public sealed partial class PropRenderer
         in vec4 vInst;
         in float vLocalY;
         uniform float fade;
+        uniform vec3 mossCol;  // (8b-3) biome top tint of rocks (moss, sand dust, snow, ash)
+        uniform float mossAmt;
+        uniform vec3 rockGlow; // (8b-3) emissive rock cracks (lava)
         out vec4 finalColor;
         void main() {
             if (fade < 0.999 && bayer4(gl_FragCoord.xy) >= fade) discard;
@@ -331,7 +340,7 @@ public sealed partial class PropRenderer
             if (leaf) base *= 0.82 + 0.36 * vInst.x + (nz - 0.5) * 0.35;
             else if (rock) {
                 base *= 0.85 + 0.3 * nz;
-                base = mix(base, vec3(0.30, 0.36, 0.22), smoothstep(0.55, 0.9, n.y) * smoothstep(0.45, 0.7, fbm(q * 1.7 + 3.0)) * 0.6);
+                base = mix(base, mossCol, smoothstep(0.55, 0.9, n.y) * smoothstep(0.45, 0.7, fbm(q * 1.7 + 3.0)) * mossAmt);
             }
             base = mix(base, vec3(0.045, 0.04, 0.035), charred * (leaf ? 0.92 : 0.8));
             vec3 V = normalize(camPos - vWorld);
@@ -344,6 +353,7 @@ public sealed partial class PropRenderer
             if (rock) {
                 vec3 H = normalize(sunDir + V);
                 c += sunColor * pow(max(dot(n, H), 0.0), 18.0) * 0.06 * sh;
+                c += rockGlow * smoothstep(0.86, 0.97, 1.0 - abs(fbm(q * 0.9 + 11.0) * 2.0 - 1.0)) * (1.0 - charred) * 1.4; // (8b-3)
             }
             float glow = vInst.y;
             if (glow > 0.001) {

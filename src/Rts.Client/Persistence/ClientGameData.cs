@@ -98,6 +98,8 @@ public sealed class ClientGameData
         cfg.Sandbox = info.Sandbox;
         // Game options live in the sim (saved); the header copy keeps them for restarts. Null = pre-6b file = defaults.
         cfg.Options = info.Options?.Clone() ?? new GameOptions();
+        // (8b-3) The header records the biome the game was played with (null = pre-8b-3 file = Temperate).
+        cfg.Biome = Rts.Sim.Map.Biomes.TryParse(info.Biome, out var biome) ? biome : Rts.Sim.Map.Biome.Temperate;
         return cfg;
     }
 

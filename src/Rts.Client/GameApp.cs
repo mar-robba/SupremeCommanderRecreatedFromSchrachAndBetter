@@ -27,6 +27,8 @@ public sealed class ClientOptions
     public string? MapFile;
     /// <summary>0..1, negative = preset default.</summary>
     public float WaterAmount = -1;
+    /// <summary>(8b-3) --biome NAME: visual biome (null = the map file's biome or Temperate). Also presets --setup.</summary>
+    public Rts.Sim.Map.Biome? Biome;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
     /// <summary>--faction ID: the local player's faction; --factions a,b,...: every slot in order ("random" allowed).</summary>
     public string? Faction;
@@ -137,6 +139,11 @@ public sealed class ClientOptions
                     o.PresetGiven = true;
                     break;
                 case "--mapfile": o.MapFile = Next(); break;
+                case "--biome": // (8b-3)
+                    string bn = Next();
+                    if (!Rts.Sim.Map.Biomes.TryParse(bn, out var biome)) throw new ArgumentException("unknown biome " + bn + " (temperate, desert, tundra, lava, tropical)");
+                    o.Biome = biome;
+                    break;
                 case "--water": o.WaterAmount = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--menu": screen = StartScreen.MainMenu; break;
                 case "--setup": screen = StartScreen.Setup; break;

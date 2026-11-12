@@ -19,6 +19,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--mapfile NAME` = play on the map file `data/maps/NAME.rtsmap` (or a path) instead of a generated map; also presets `--setup`)
+  (`--biome temperate|desert|tundra|lava|tropical` = visual biome (terrain/water/sky/trees, no sim effect; default = the map file's or temperate); also presets `--setup`)
   (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
   both also preset `--setup`)
   (`--options SPEC` = game options, keys `victory=assassination|supremacy|annihilation|sandbox`, `cap=1..16384`,
