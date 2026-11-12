@@ -202,7 +202,8 @@ public sealed class MultiplayerScreen : IScreen
         _error = null;
         string name = PlayerName;
         _joiningWhat = $"{host}:{port}";
-        _joining = Task.Run(() => ClientSession.Join(host, port, name));
+        bool observe = _app.Options.Observe; // (10a-2) --observe
+        _joining = Task.Run(() => ClientSession.Join(host, port, name, observe: observe));
     }
 
     private void PollJoin()

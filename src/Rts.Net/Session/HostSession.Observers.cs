@@ -33,6 +33,20 @@ public sealed partial class HostSession
 
     public override void Observe(bool on, int slot = -1) => SetObserver(0, on, slot);
 
+    /// <summary>Removes an observer from the game (lobby only), like <see cref="Kick"/> for a slot.</summary>
+    public void KickObserver(int playerId)
+    {
+        NetConnection? kick = null;
+        lock (Gate)
+        {
+            if (Phase != NetPhase.Lobby || playerId == 0 || LobbyRef.ObserverOf(playerId) < 0) return;
+            kick = _conns.FirstOrDefault(c => c.PlayerId == playerId);
+            RemovePerson(playerId);
+            Changed();
+        }
+        kick?.Close("kicked", Msg.Text(MsgType.Reject, "You were removed from the game by the host"));
+    }
+
     private bool MoveObserver(int playerId, bool observe, int slot)
     {
         if (observe)

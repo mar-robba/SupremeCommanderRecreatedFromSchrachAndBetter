@@ -22,7 +22,7 @@ public sealed class NetLoadingScreen : IScreen
     private readonly ClientOptions _opt;
     private readonly Task<(Simulation sim, ulong hash, Rts.Sim.Map.MapFile? map)> _task;
     private GameSession? _session;
-    private bool _handedOff, _shownFinal;
+    private bool _handedOff, _shownFinal, _goSeen; // _goSeen: (10a-2) an observer may get Go before its session exists
     private float _time;
 
     public NetLoadingScreen(AppHost app, NetSession session, NetGame game)
@@ -98,11 +98,17 @@ public sealed class NetLoadingScreen : IScreen
             var (sim, hash, map) = _task.Result;
             var start = _game.Start;
             var cfg = NetGameConfig.From(start, _s.PlayerId);
-            var rec = NetGameConfig.Recording(start, cfg, sim, _game.LocalArmy, map);
-            _session = new GameSession(_app.Db, sim, cfg, _game.LocalArmy, _opt, _app.Audio, rec,
+            int army = Math.Max(0, _game.LocalArmy); // (10a-2) an observer (-1) views army 0's start, then the whole map
+            var rec = NetGameConfig.Recording(start, cfg, sim, army, map);
+            _session = new GameSession(_app.Db, sim, cfg, army, _opt, _app.Audio, rec,
                 wrapHooks: inner => _game.CreateHooks(inner));
             _game.AttachRunner(_session.Runner);
             _game.ReportLoaded(hash);
+        }
+        if (_session != null && _goSeen)
+        {
+            _handedOff = true;
+            _app.Go(new NetInGameScreen(_app, _s, _game, _session, _opt));
         }
     }
 
@@ -117,6 +123,9 @@ public sealed class NetLoadingScreen : IScreen
                     _handedOff = true;
                     _app.Go(new NetInGameScreen(_app, _s, _game, _session, _opt));
                     return true;
+                case GameGoEvent:
+                    _goSeen = true; // observer still building: go in-game once the session exists
+                    break;
                 case StartAbortedEvent a:
                     _session?.Dispose();
                     _session = null;

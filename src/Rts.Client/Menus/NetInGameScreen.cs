@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Client.Input;
 using Rts.Client.Persistence;
 using Rts.Client.UI;
@@ -16,12 +17,13 @@ namespace Rts.Client.Menus;
 /// <item>Esc opens the game menu: the game keeps running (Resume, Pause, Leave Game, Quit to Desktop); no saving.</item>
 /// <item>"Waiting for X…" when the sim holds for a missing turn; the players panel shows pings and who left.</item>
 /// <item>Drops, desyncs (the replay so far is written at once) and a lost host connection are toasts/banners.</item>
-/// <item>Local defeat: banner, then observer mode (fog off; the sim keeps running so the others never wait).
+/// <item>Local defeat: banner, then observer mode (resign: the others stop waiting for this peer; fog off).
+/// (10a-2) Observers and the vote-to-drop countdown: NetInGameScreen.Observers.cs.
 ///   Game over: banner, then the end screen (the runner stops; Restart is disabled).</item>
 /// </list>
 /// Leaving (menu, window closed) leaves the session: the others drop this player (AI takeover or defeat).
 /// </summary>
-public sealed class NetInGameScreen : IScreen
+public sealed partial class NetInGameScreen : IScreen
 {
     private enum State { Playing, Menu, Ending, Stats }
 
@@ -55,6 +57,7 @@ public sealed class NetInGameScreen : IScreen
         _lastPaused = game.Paused;
         _s.NetKeys = SpeedKeys;
         foreach (var l in net.ChatLog.TakeLast(3)) _feed.Add((l, Raylib.GetTime()));
+        InitObserver();
     }
 
     public string ScreenshotInfo => $"{_s.ScreenshotInfo()}\n(net: {(_net.IsHost ? "host" : "client")}, waiting for {_game.WaitingFor ?? "nobody"}, desync tick {_game.DesyncTick})";
@@ -98,8 +101,8 @@ public sealed class NetInGameScreen : IScreen
                     if (_endGameOver) OpenStats();
                     else
                     {
-                        // Defeated while the game goes on: keep watching (the sim must keep running for the others).
-                        _s.Fog.SetEnabled(false);
+                        // Defeated while the game goes on: stay as an observer (10a-2: resign, so nobody waits for us).
+                        BecomeObserver();
                         Toasts.Show("You were defeated: observing the rest of the game");
                         _state = State.Playing;
                     }
@@ -115,6 +118,7 @@ public sealed class NetInGameScreen : IScreen
             DrawWaiting(now);
             DrawPlayers();
             DrawChat(now);
+            if (_state == State.Playing) Ui.DrawTooltip(); // (10a-2) players panel / Drop button tooltips
         }
         switch (_state)
         {
@@ -136,8 +140,10 @@ public sealed class NetInGameScreen : IScreen
                 case ChatEvent c:
                     _feed.Add((c.Line, Raylib.GetTime()));
                     if (_feed.Count > 50) _feed.RemoveAt(0);
+                    if (c.Line.PlayerId != _net.PlayerId) UiSounds.Click(); // (10a-2) chat sound
                     break;
                 case PlayerDroppedEvent:
+                    UiSounds.Error(); // (10a-2) player left sound
                     break; // the host (or this peer, offline) posts a system chat line
                 case DesyncEvent d:
                     // The game goes on, but the peers no longer agree: dump the replay so far for the bug report.
@@ -161,6 +167,7 @@ public sealed class NetInGameScreen : IScreen
     /// <summary>Space / + / − (instead of the single-player debug keys): requests to the host.</summary>
     private void SpeedKeys()
     {
+        if (_game.IsObserver) return; // (10a-2) observers neither pause nor change the speed
         if (Hotkeys.PauseGame.Pressed()) _game.RequestSpeed(_game.Speed, !_game.Paused);
         // (6b) Locked game speed (lobby option): the host keeps it anyway; say why nothing happens.
         if ((Hotkeys.SpeedUp.Pressed() || Hotkeys.SpeedDown.Pressed()) && _game.LockedSpeed is float locked)
@@ -177,6 +184,7 @@ public sealed class NetInGameScreen : IScreen
         var (over, won) = _s.Outcome();
         if (!over) return;
         bool gameOver = _s.Snapshots.Current.WinningTeam >= 0;
+        if (_game.IsObserver && !gameOver) return; // (10a-2) an observer's view army is not its own
         if (gameOver ? _shownOver : _shownDefeat) return;
         if (gameOver) _shownOver = true;
         _shownDefeat = true;
@@ -190,7 +198,7 @@ public sealed class NetInGameScreen : IScreen
 
     private void DrawWaiting(double now)
     {
-        string? waiting = _game.WaitingFor;
+        string? waiting = _opt.NetVoteDemo ? DemoName : _game.WaitingFor;
         if (waiting == null || _game.Paused) { _waitSince = -1; }
         else if (_waitSince < 0) _waitSince = now;
         float y = Ui.P(64);
@@ -213,7 +221,9 @@ public sealed class NetInGameScreen : IScreen
             Ui.Panel(r);
             MenuUi.Spinner(new Vector2(r.X + Ui.P(20), r.Y + r.Height * 0.5f), Ui.P(8), Ui.Accent);
             Ui.Text(t, r.X + Ui.P(38), r.Y + (r.Height - fs) * 0.5f - 1, fs, Ui.TextColor, true);
+            DrawDropVote(r, now - _waitSince); // (10a-2) countdown, Drop button, votes
         }
+        else _waitRect = default;
     }
 
     /// <summary>Compact list of the players (army color, name, ping) at the right edge, below the top bar.</summary>
@@ -222,12 +232,17 @@ public sealed class NetInGameScreen : IScreen
         var list = _game.PlayerStatus();
         int fs = Ui.F(11);
         float lineH = fs + Ui.P(5), w = Ui.P(190);
-        var r = Ui.R(Ui.Sw - w - Ui.P(10), Ui.P(80), w, Ui.P(10) + lineH * list.Count);
+        bool viewing = Observing; // (10a-2) observers click a row to see that army's view (top row = all, no fog)
+        int rows = list.Count + (viewing ? 1 : 0);
+        var r = Ui.R(Ui.Sw - w - Ui.P(10), Ui.P(80), w, Ui.P(10) + lineH * rows);
+        _playersRect = r;
         Raylib.DrawRectangleRec(r, new Color(10, 14, 20, 170));
         float y = r.Y + Ui.P(5);
+        if (viewing) { ViewRow(r, y, lineH, -1, fs); y += lineH; }
         var colors = _s.Ctx.ArmyColors;
         foreach (var p in list)
         {
+            if (viewing) ViewRow(r, y, lineH, p.Army, fs);
             var c = (uint)p.Army < (uint)colors.Length ? colors[p.Army] : Ui.TextDim;
             Raylib.DrawRectangle((int)(r.X + Ui.P(8)), (int)(y + Ui.P(2)), (int)Ui.P(8), (int)Ui.P(8), c);
             string name = Ui.Fit(p.Local ? p.Name + " (you)" : p.Name, w - Ui.P(80), fs);
@@ -294,7 +309,7 @@ public sealed class NetInGameScreen : IScreen
         var r = Ui.R(p.X + Ui.P(20), y, w - Ui.P(40), bh);
         if (MenuUi.BigButton(r, "Resume", true, true)) _state = State.Playing;
         r.Y += bh + gap;
-        if (MenuUi.BigButton(r, _game.Paused ? "Unpause Game" : "Pause Game")) _game.RequestSpeed(_game.Speed, !_game.Paused);
+        if (MenuUi.BigButton(r, _game.Paused ? "Unpause Game" : "Pause Game", !_game.IsObserver)) _game.RequestSpeed(_game.Speed, !_game.Paused);
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Leave Game")) _app.ToMainMenu();
         r.Y += bh + gap;
@@ -310,7 +325,7 @@ public sealed class NetInGameScreen : IScreen
         MenuUi.BeginFrame();
         float k = Math.Clamp(_endTimer / 0.8f, 0f, 1f);
         MenuUi.Dim((byte)(90 * k));
-        string t = _endWon ? "VICTORY" : "DEFEAT";
+        string t = _game.IsObserver ? "GAME OVER" : _endWon ? "VICTORY" : "DEFEAT";
         int fs = Ui.F(64);
         float w = Ui.Measure(t, fs, true);
         Ui.TextShadow(t, (Ui.Sw - w) * 0.5f, Ui.Sh / 3f, fs, ColorUtil.WithAlpha(_endWon ? Color.Gold : new Color(235, 70, 60, 255), (byte)(255 * k)), true);
@@ -321,7 +336,7 @@ public sealed class NetInGameScreen : IScreen
         // Game over for everybody: stop the sim so the statistics can be read from the world.
         _s.Runner.Stop();
         var (over, won) = _s.Outcome();
-        _end = new EndScreen(_s, over ? (won ? EndScreen.Result.Victory : EndScreen.Result.Defeat) : EndScreen.Result.Summary) { CanRestart = false };
+        _end = new EndScreen(_s, _game.IsObserver ? EndScreen.Result.Summary : over ? (won ? EndScreen.Result.Victory : EndScreen.Result.Defeat) : EndScreen.Result.Summary) { CanRestart = false };
         _state = State.Stats;
     }
 
@@ -332,7 +347,7 @@ public sealed class NetInGameScreen : IScreen
         {
             case EndScreen.Action.Continue:
                 _end = null;
-                if (_s.Outcome() is (true, false)) _s.Fog.SetEnabled(false);
+                if (_s.Outcome() is (true, false) || Observing) _s.Fog.SetEnabled(false);
                 _s.Runner.Start();
                 _state = State.Playing;
                 break;

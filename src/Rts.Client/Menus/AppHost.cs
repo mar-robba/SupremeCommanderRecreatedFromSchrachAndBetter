@@ -90,6 +90,7 @@ public sealed class AppHost : IDisposable
         Frames = Options.Frames, PauseMenu = Options.PauseMenu, EndScreen = Options.EndScreen,
         FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,
         Audio = Options.Audio, VolumeGiven = Options.VolumeGiven, NoFog = Options.NoFog, Exec = Options.Exec,
+        NetVoteDemo = Options.NetVoteDemo, // (10a-2)
     };
 
     public void StartGame(GameConfig cfg, ClientOptions opt) => Go(new LoadingScreen(this, cfg.Clone(), opt));

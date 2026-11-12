@@ -1,4 +1,5 @@
 using Raylib_cs;
+using Rts.Client.Audio;
 using Rts.Client.UI;
 using Rts.Net.Lobby;
 using Rts.Net.Session;
@@ -71,6 +72,7 @@ public sealed partial class LobbyScreen : IScreen
         if (HandleEvents()) return;
         _escBlocked = _chat.Focused || MenuUi.FieldFocused; // Esc in a field only unfocuses it
         var lobby = _s.Lobby;
+        LobbySounds(lobby); // (10a-2) LobbyScreen.Observers.cs
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
         MenuUi.BeginFrame();
@@ -86,7 +88,7 @@ public sealed partial class LobbyScreen : IScreen
         float mapW = Ui.P(430);
         var mapPanel = Ui.R(Ui.Sw - Ui.P(48) - mapW, top, mapW, bottomBar - top - Ui.P(14));
         float leftW = MathF.Min(Ui.P(700), mapPanel.X - x0 - Ui.P(20));
-        var playersPanel = Ui.R(x0, top, leftW, Ui.P(8 * 36 + 52));
+        var playersPanel = Ui.R(x0, top, leftW, Ui.P(8 * 36 + 52) + ObserversRowH);
         float lowY = playersPanel.Y + playersPanel.Height + Ui.P(14), lowH = bottomBar - Ui.P(14) - lowY;
         // Game options (left) and chat (right) under the players.
         float optW = MathF.Min(Ui.P(400), leftW * 0.58f);
@@ -109,6 +111,7 @@ public sealed partial class LobbyScreen : IScreen
             switch (e)
             {
                 case GameStartingEvent gs:
+                    UiSounds.Confirm(); // (10a-2) game start sound
                     _handedOff = true;
                     _app.Go(new NetLoadingScreen(_app, _s, gs.Game));
                     return true;
@@ -118,6 +121,9 @@ public sealed partial class LobbyScreen : IScreen
                     return true;
                 case StartAbortedEvent a:
                     _status = "Start aborted: " + a.Reason;
+                    break;
+                case ChatEvent c when c.Line.PlayerId != _s.PlayerId:
+                    UiSounds.Click(); // (10a-2) chat sound
                     break;
             }
         }
@@ -178,7 +184,10 @@ public sealed partial class LobbyScreen : IScreen
             if (s.Kind == NetSlotKind.Human)
             {
                 string name = s.PlayerId == 0 ? s.Name + "  (host)" : s.Name;
-                Ui.Text(Ui.Fit(name, wKind - Ui.P(8), Ui.F(13), true), cx1 + Ui.P(8), y + (rowH - Ui.F(13)) * 0.5f - 1, Ui.F(13), mine ? Ui.Accent : Ui.TextColor, true);
+                string ping = PingText(s.PlayerId, out var pingColor); // (10a-2)
+                float pingW = ping.Length > 0 ? Ui.Measure(ping, Ui.F(10.5f)) + Ui.P(8) : 0;
+                if (ping.Length > 0) Ui.TextRight(ping, cx1 + wKind - Ui.P(4), y + (rowH - Ui.F(10.5f)) * 0.5f, Ui.F(10.5f), pingColor);
+                Ui.Text(Ui.Fit(name, wKind - Ui.P(8) - pingW, Ui.F(13), true), cx1 + Ui.P(8), y + (rowH - Ui.F(13)) * 0.5f - 1, Ui.F(13), mine ? Ui.Accent : Ui.TextColor, true);
             }
             else if (_host != null)
             {
@@ -237,11 +246,13 @@ public sealed partial class LobbyScreen : IScreen
                         var kb = Ui.R(cx5 + wStat - Ui.P(26), y + Ui.P(3), Ui.P(24), rowH - Ui.P(6));
                         if (MenuUi.BigButton(kb, "×", true, false, 12)) _host.Kick(i);
                         if (Ui.Hover(kb)) Ui.Tooltip(kb, "Kick", $"Remove {s.Name} from the game");
+                        SlotToObserverButton(Ui.R(kb.X - Ui.P(38), kb.Y, Ui.P(34), kb.Height), s); // (10a-2)
                     }
                 }
             }
             y += rowH + Ui.P(8);
         }
+        DrawObservers(Ui.R(p.X + Ui.P(6), p.Y + p.Height - ObserversRowH - Ui.P(4), p.Width - Ui.P(12), ObserversRowH - Ui.P(2)), l); // (10a-2)
     }
 
     private static string FactionOrDefault(string id) => string.IsNullOrWhiteSpace(id) ? FactionDb.DefaultFaction : id;
@@ -439,7 +450,8 @@ public sealed partial class LobbyScreen : IScreen
         {
             var me = l.SlotOfPlayer(_s.PlayerId);
             bool ready = me?.Ready == true;
-            string text = _status ?? (ready ? "Waiting for the host to start" : "Press Ready when you are set");
+            string text = _status ?? (l.IsObserver(_s.PlayerId) ? "Observing: waiting for the host to start" // (10a-2)
+                : ready ? "Waiting for the host to start" : "Press Ready when you are set");
             Ui.TextRight(text, start.X - Ui.P(14), ty, Ui.F(12), _status != null ? Ui.Warn : Ui.TextDim, true);
             bool mapOk = MapPresent(l); // (8b-3) Ready only with the map file
             if (!mapOk && _status == null && MapStatusLine(l) is string ml) Ui.TextRight(ml, start.X - Ui.P(14), ty + Ui.P(16), Ui.F(10.5f), Ui.TextDim);
