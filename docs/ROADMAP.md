@@ -36,12 +36,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   then (HISTORY known issues, WORKFLOW "Incidents", the fix commits). If it is true, write the serious errors that
   were never recorded (the owner asks for it); the owner also wonders whether they had stopped that analysis because
   it cost too much: check WORKFLOW "Owner decisions" and the 2026-11-10 review before answering. Answer in Italian.
-- **Pair 2 is scheduled** for 20:47 on 2026-11-12 (CronCreate job of session 3badb572; it survives `/clear`, not a
-  restart of Claude Code): (10a-2) observers + vote to drop + lobby pings + chat sounds and (10b-2) selection
-  overlays + client leftovers (HISTORY "Wave 10" briefs). Ready prompts:
+- **Pair 2 started at 20:48 on 2026-11-12** (orchestrator session 8d3780e7, fresh 20:40 window, both agents in
+  their own worktrees under `.claude/worktrees/`, context watcher 170k): (10a-2) observers + vote to drop + lobby
+  pings + chat sounds and (10b-2) selection overlays + client leftovers (HISTORY "Wave 10" briefs). Prompts:
   `/tmp/claude-1000/-run-media-marco-RTS/3badb572-74b0-4585-b050-c3def05dd392/scratchpad/prompt-10a2-full.md` and
-  `prompt-10b2-full.md` (same folder: `merge-check.sh`). If the job did not fire, start them by hand in a fresh
-  window (the 15:40 window ends at 20:40; it was at ~33 $ at 19:10).
+  `prompt-10b2-full.md` (same folder: `merge-check.sh`, the merge checks). If the orchestrator session is lost,
+  resume each agent from its worktree's `.claude/handoff.md` (see "If an agent is cut off" below).
 - **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
   not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
   8 $ of the 15:40 window by 16:20 (5 agents).
