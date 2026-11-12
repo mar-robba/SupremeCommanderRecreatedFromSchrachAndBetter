@@ -36,7 +36,7 @@ public sealed class SkirmishSetupScreen : IScreen
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
         MenuUi.BeginFrame();
-        if (_cfg.MapFile != null) _preview.RequestFile(_cfg.MapFile); // (8b-2) map picker
+        if (_cfg.MapFile != null) _preview.RequestFile(_cfg.MapFile, _cfg.Players); // (8b-2) map picker
         else _preview.Request(_cfg.MapSettings());
         _preview.Update();
 
