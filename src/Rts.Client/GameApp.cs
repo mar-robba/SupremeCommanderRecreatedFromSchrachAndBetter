@@ -23,6 +23,8 @@ public sealed class ClientOptions
     public int MapSize = 256;
     public int Players = 2;
     public MapPreset Preset = MapPreset.Plains;
+    /// <summary>(8b-2) --mapfile NAME: play on data/maps/NAME.rtsmap (or a path) instead of a generated map.</summary>
+    public string? MapFile;
     /// <summary>0..1, negative = preset default.</summary>
     public float WaterAmount = -1;
     public bool MapSizeGiven, PresetGiven, PlayersGiven, SizeGiven;
@@ -133,6 +135,7 @@ public sealed class ClientOptions
                     if (!MapPresets.TryParse(pn, out o.Preset)) throw new ArgumentException("unknown preset " + pn + " (plains, lakes, highlands, canyon, archipelago)");
                     o.PresetGiven = true;
                     break;
+                case "--mapfile": o.MapFile = Next(); break;
                 case "--water": o.WaterAmount = float.Parse(Next(), System.Globalization.CultureInfo.InvariantCulture); break;
                 case "--menu": screen = StartScreen.MainMenu; break;
                 case "--setup": screen = StartScreen.Setup; break;

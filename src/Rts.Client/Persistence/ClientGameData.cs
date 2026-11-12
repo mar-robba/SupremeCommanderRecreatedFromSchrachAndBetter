@@ -103,7 +103,7 @@ public sealed class ClientGameData
 
     private static GameConfig FromHeader(GameInfo info)
     {
-        var cfg = new GameConfig { Scene = info.Scene, Sandbox = info.Sandbox };
+        var cfg = new GameConfig { Scene = info.Scene, Sandbox = info.Sandbox, MapFile = info.MapFile };
         if (info.Map != null)
         {
             cfg.MapSize = info.Map.Size;

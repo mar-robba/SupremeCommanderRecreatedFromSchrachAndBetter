@@ -36,6 +36,8 @@ public sealed class GameConfig
     /// <summary>0..1, negative = preset default.</summary>
     public float WaterAmount = -1;
     public int Seed = 42;
+    /// <summary>(8b-2) Map file id (data/maps) to play on; null = "Random map" (generator settings above).</summary>
+    public string? MapFile;
     public readonly List<PlayerSlot> Slots = new();
 
     // Debug / CLI options carried over restarts.
@@ -61,7 +63,7 @@ public sealed class GameConfig
 
     public GameConfig Clone()
     {
-        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene, Options = Options.Clone() };
+        var copy = new GameConfig { MapSize = MapSize, Preset = Preset, WaterAmount = WaterAmount, Seed = Seed, Demo = Demo, Stress = Stress, Sandbox = Sandbox, SandboxAi = SandboxAi, Scene = Scene, Options = Options.Clone(), MapFile = MapFile };
         for (int i = 0; i < MaxSlots; i++) copy.Slots[i] = Slots[i].Clone();
         return copy;
     }
@@ -78,6 +80,8 @@ public sealed class GameConfig
         var open = OpenSlots.ToList();
         bool allSameTeam = open.All(s => s.Team > 0 && s.Team == open[0].Team);
         if (allSameTeam) return "Everybody is on the same team";
+        if (MapFile != null && MapFileCache.Info(MapFile) is { } map && Players > map.Players) return $"{map.Name} has room for {map.Players} players";
+        if (MapFile != null && MapFileCache.Info(MapFile) == null) return $"Map file '{MapFile}' not found";
         return factions == null ? null : FactionProblem(factions);
     }
 
@@ -132,13 +136,14 @@ public sealed class GameConfig
             Colors = open.Select(s => GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length]).ToArray(),
             Names = names,
             Options = Options.Clone(),
+            MapFile = MapFile != null ? MapFileCache.Get(MapFile) : null,
         };
     }
 
     /// <summary>Config of a game started directly from the command line (army 0 human, the others AI, FFA).</summary>
     public static GameConfig FromOptions(ClientOptions o)
     {
-        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene };
+        var c = new GameConfig { MapSize = o.MapSize, Seed = o.Seed, Preset = o.Preset, WaterAmount = o.WaterAmount, Demo = o.Demo, Stress = o.Stress, Sandbox = o.Sandbox, Scene = o.Scene, MapFile = o.MapFile };
         c.Options = o.GameOptions != null ? GameOptions.Parse(o.GameOptions) : new GameOptions();
         int players = Math.Clamp(o.Players, 2, MaxSlots);
         for (int i = 0; i < MaxSlots; i++)
