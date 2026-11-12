@@ -152,7 +152,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G17 | [x] 2026-11-11 (7b) Map pings / markers (alert, move, attack; map + minimap; allies and MP; in replays) | SC1 | M | new `UI/Pings`, sim command (additive) | — | 2 |
 | G18 | [x] 2026-10-24 (7a) Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
 | G19 | [x] 2026-11-12 (10b-1) Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
-| G20 | Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
+| G20 | [x] 2026-11-12 (10b-2) Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
 | G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
 | G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
 | G23 | [x] 2026-11-12 (9b-1, 9b-2) Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
@@ -175,10 +175,10 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G43 | Campaign (UEF + Cybran operations: scripted missions, dialogue, handmade maps) | SC1 | XL | scenario system, maps, AI scripts | G42, G26 | Q |
 | G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | Q |
 | G45 | [x] 2026-10-24 (7a) **Release packaging**: self-contained Release build (linux-x64; win-x64 zip optional), data next to the exe, saves/replays/settings/screenshots in the user folder (today `saves/` = current dir), icon, `.desktop` launcher + desktop shortcut, version in the main menu, crash log | — | S-M | new `tools/package/`, csproj, SaveStore dirs, Program.cs | — | 1 |
-- [ ] later (7b): G20 range/intel overlays for the selection (not started); bookmarks are per session (not saved) with
+- [ ] later (7b): G20 range/intel overlays for the selection (done in 10b-2); bookmarks are per session (not saved) with
   no on-screen list; class filters (Ctrl+Shift+L/A/N/E) have no "add" variant; Ctrl+A/Z/C, Alt+1-5, Backspace, Y and
   Alt+click pings were tested by unit tests and screenshot hooks only, not by hand in a game window (a desktop may grab
-  Alt+digit / Alt+click); "structure lost" also fires on self-destruct; wall-sized structures toast "×N".
+  Alt+digit / Alt+click); "structure lost" also fires on self-destruct (fixed in 10b-2); wall-sized structures toast "×N".
 - [ ] later (8a): wall sections are separate 1×1 blocks (no joined corner/segment meshes); walls stop only direct
   shots of ENEMY armies and only up to their box height (arcing shells and tall far shots pass); the Salem's legs are
   client-only (no gait sound, far lower legs look like masts in steep top views); Shift-drag wall lines were checked
@@ -261,6 +261,17 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     refuse/swap, reset one/all), saved in settings.json, camera/audio/dialog/panel keys moved into the table (ARCHITECTURE "Keybindings").
   - [ ] later: bind a second (alternative) key per entry from the editor; a warning when Shift+K is bound while K is
     another entry's key (Shift is free for most keys, both would fire); a search field in the Keys tab; ReplayScreen keys ignore modifiers.
+  - [x] 2026-11-12 (10b-2) Selection overlays and client leftovers (ARCHITECTURE "Selection overlays"): range / intel
+    rings of the selection (key I, setting "Range rings", Shift = allied structures, merged + capped at 128), wrecks
+    and deposits remembered under the fog (never-explored ones hidden), enhancement swap / chain in one click, minimap
+    zoom keys Ctrl+= / Ctrl+-, no "Structure lost" toast on self-destruct, unit panel no longer allocates with big
+    selections (500 selected: 208 → 28 KB/frame), `--perf-log` lists the stages that allocate.
+  - [ ] later (10b-2): camera bookmarks saved per map/seed + on-screen list; "add" variants of the class filters
+    (Shift is taken by Ctrl+Shift+L/A/N/E: needs another modifier); sandbox F9 "select own only" option (enemies are
+    already selectable there); joined wall corner/segment meshes; crush animation; the snapshot still carries every
+    wreck / deposit (fog memory is client-side only, a modified client sees them); fog memory is not saved (after a
+    load, fogged wrecks reappear when seen); the enhancement chain queue is client-side and not saved (a load stops
+    after the current step); ~22 KB/frame left with 500 selected (input + placement ghosts walk the selection).
 
 **Wave 11+ (depends on the owner's answers)**: Italian localization (G28 + G25: touches every UI file, so pair it
 with a sim-only agent: G12 pathing + G41 save migration); tutorial/scenario system (G42) then campaign (G43); mod
