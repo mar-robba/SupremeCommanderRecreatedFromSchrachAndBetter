@@ -30,6 +30,7 @@ public class AppSettingsTests
         Shadows = false, ParticleQuality = 0, TerrainDetail = 2, VSync = false, FpsCap = 144, UiScale = 1.25f,
         EdgeScroll = false, PanSpeed = 1.7f, ZoomSpeed = 0.6f, Autosave = false,
         TerrainShadows = false, UnitLod = false, MinimapSize = 1.5f, MinimapZoom = 3f, MinimapResources = false, MinimapUnits = false, MinimapTrees = true, // (9b-2)
+        KeyBindings = "v1;Stop=X", // (10b-1)
     };
 
     [Fact]

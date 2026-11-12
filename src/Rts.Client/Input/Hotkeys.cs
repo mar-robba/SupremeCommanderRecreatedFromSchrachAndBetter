@@ -35,35 +35,67 @@ public enum KeyMods : byte { None = 0, Shift = 1, Ctrl = 2, Alt = 4 }
 /// keypad +), modifiers, scope, help group and text. <see cref="Share"/>: keys deliberately bound to several actions
 /// in overlapping scopes (what they do depends on the selection, e.g. D = dive AND dock, see SharedHotkeys) carry the
 /// same Share tag; anything else with the same key + modifiers in overlapping scopes is a clash (HotkeyTableTests).
+/// (10b-1) <see cref="Keys"/> / <see cref="Mods"/> are the EFFECTIVE binding (the player's override, see
+/// Hotkeys.Bindings.cs); <see cref="DefaultKeys"/> / <see cref="DefaultMods"/> are the table's values, never changed.
+/// <see cref="Id"/> = the field name in <see cref="Hotkeys"/> (stable: the settings file stores bindings by it).
 /// </summary>
 public sealed class Hotkey
 {
-    public readonly KeyboardKey[] Keys;
-    public readonly KeyMods Mods;
+    public readonly KeyboardKey[] DefaultKeys;
+    public readonly KeyMods DefaultMods;
     public readonly HotkeyScope Scope;
     public readonly string Group;
     public readonly string Action;
     public readonly string? Share;
-    private readonly string? _label;
+    /// <summary>Several keys are alternatives (= and keypad +, T / Tab): a rebind sets one key. Otherwise several keys
+    /// are a row of slots (index = slot: arrows, digits, Z X C V B N) that rebinds as a whole row.</summary>
+    public readonly bool Alternatives;
+    private readonly string? _defaultLabel;
+    private string _label;
 
-    public Hotkey(KeyboardKey[] keys, KeyMods mods, HotkeyScope scope, string group, string action, string? share = null, string? label = null)
+    public Hotkey(KeyboardKey[] keys, KeyMods mods, HotkeyScope scope, string group, string action, string? share = null, string? label = null, bool alt = false)
     {
-        Keys = keys;
-        Mods = mods;
+        DefaultKeys = Keys = keys;
+        DefaultMods = Mods = mods;
         Scope = scope;
         Group = group;
         Action = action;
         Share = share;
-        _label = label;
+        Alternatives = alt;
+        _defaultLabel = label;
+        _label = MakeLabel();
     }
 
     public Hotkey(KeyboardKey key, KeyMods mods, HotkeyScope scope, string group, string action, string? share = null, string? label = null)
         : this([key], mods, scope, group, action, share, label) { }
 
-    public KeyboardKey Key => Keys[0];
+    /// <summary>Effective keys (the player's binding or the default).</summary>
+    public KeyboardKey[] Keys { get; private set; }
+    /// <summary>Effective modifiers.</summary>
+    public KeyMods Mods { get; private set; }
+    /// <summary>Stable id (the field name in <see cref="Hotkeys"/>; "" for entries made outside the table).</summary>
+    public string Id { get; internal set; } = "";
 
-    /// <summary>Text for badges, tooltips and the help overlay, e.g. "S", "Ctrl+K", "Z X C V B N".</summary>
-    public string Label => _label ?? Hotkeys.ModsPrefix(Mods) + string.Join(" ", Keys.Select(Hotkeys.KeyName));
+    public KeyboardKey Key => Keys[0];
+    /// <summary>A row of slots (several keys, not alternatives).</summary>
+    public bool IsRow => DefaultKeys.Length > 1 && !Alternatives;
+    /// <summary>Entries on Esc stay fixed (Esc is the universal back key and cancels the key capture).</summary>
+    public bool Rebindable => !DefaultKeys.Contains(KeyboardKey.Escape);
+    public bool IsDefault => Mods == DefaultMods && Keys.AsSpan().SequenceEqual(DefaultKeys);
+
+    /// <summary>Text for badges, tooltips and the help overlay, e.g. "S", "Ctrl+K", "Z X C V B N" (follows the
+    /// binding; cached, no per-frame allocation).</summary>
+    public string Label => _label;
+
+    /// <summary>Sets the effective binding (no checks: <see cref="Hotkeys.TryBind"/> does them).</summary>
+    internal void SetBinding(KeyboardKey[] keys, KeyMods mods)
+    {
+        Keys = keys;
+        Mods = mods;
+        _label = MakeLabel();
+    }
+
+    private string MakeLabel() => IsDefault && _defaultLabel != null ? _defaultLabel : Hotkeys.ModsPrefix(Mods) + string.Join(" ", Keys.Select(Hotkeys.KeyName));
 
     /// <summary>
     /// Pressed this frame with the right modifiers: Ctrl must match exactly; Shift / Alt must be held when
@@ -74,14 +106,39 @@ public sealed class Hotkey
     /// <summary>Index in <see cref="Keys"/> of the key pressed this frame (with the right modifiers), or -1.</summary>
     public int PressedIndex()
     {
-        bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
-        if (ctrl != ((Mods & KeyMods.Ctrl) != 0)) return -1;
-        if ((Mods & KeyMods.Shift) != 0 && !(Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift))) return -1;
-        if ((Mods & KeyMods.Alt) != 0 && !(Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt))) return -1;
+        if (!ModsHeld()) return -1;
+        var input = Hotkeys.Input;
         for (int i = 0; i < Keys.Length; i++)
-            if (Raylib.IsKeyPressed(Keys[i])) return i;
+            if (input.Pressed(Keys[i])) return i;
         return -1;
     }
+
+    /// <summary>Key <paramref name="index"/> of the row held down with the right modifiers (camera pan / rotation).</summary>
+    public bool Down(int index) => index < Keys.Length && ModsHeld() && Hotkeys.Input.Down(Keys[index]);
+
+    private bool ModsHeld()
+    {
+        var k = Hotkeys.Input;
+        bool ctrl = k.Down(KeyboardKey.LeftControl) || k.Down(KeyboardKey.RightControl);
+        if (ctrl != ((Mods & KeyMods.Ctrl) != 0)) return false;
+        if ((Mods & KeyMods.Shift) != 0 && !(k.Down(KeyboardKey.LeftShift) || k.Down(KeyboardKey.RightShift))) return false;
+        if ((Mods & KeyMods.Alt) != 0 && !(k.Down(KeyboardKey.LeftAlt) || k.Down(KeyboardKey.RightAlt))) return false;
+        return true;
+    }
+}
+
+/// <summary>Where <see cref="Hotkey"/> reads the keyboard (raylib; tests inject a fake).</summary>
+public interface IKeyState
+{
+    bool Down(KeyboardKey k);
+    bool Pressed(KeyboardKey k);
+}
+
+public sealed class RaylibKeyState : IKeyState
+{
+    public static readonly RaylibKeyState Instance = new();
+    public bool Down(KeyboardKey k) => Raylib.IsKeyDown(k);
+    public bool Pressed(KeyboardKey k) => Raylib.IsKeyPressed(k);
 }
 
 /// <summary>A mouse action listed in the help overlay (not a key; never part of the clash check).</summary>
@@ -95,7 +152,7 @@ public readonly record struct MouseHelp(string Group, string Input, string Actio
 /// and on any <c>KeyboardKey</c> polled in the client sources that is missing from this table).
 /// Menus and text fields (Enter, Backspace, arrows in lists, Ctrl+V…) are not listed.
 /// </summary>
-public static class Hotkeys
+public static partial class Hotkeys
 {
     private const KeyMods N = KeyMods.None, C = KeyMods.Ctrl, S = KeyMods.Shift, Al = KeyMods.Alt;
     private const HotkeyScope G = HotkeyScope.Game, Pl = HotkeyScope.Play, U = HotkeyScope.Units;
@@ -154,18 +211,18 @@ public static class Hotkeys
     // ---------------------------------------------------------------- factory
     public static readonly Hotkey FactorySlots = new([KeyboardKey.Z, KeyboardKey.X, KeyboardKey.C, KeyboardKey.V, KeyboardKey.B, KeyboardKey.N], N, HotkeyScope.Factory, "Factory", "Queue a unit (Shift: 5)");
     public static readonly Hotkey FactoryRepeat = new(KeyboardKey.R, N, HotkeyScope.Factory, "Factory", "Repeat build on / off");
-    public static readonly Hotkey FactoryTier = new([KeyboardKey.T, KeyboardKey.Tab], N, HotkeyScope.Factory, "Factory", "Next tech tier (Shift: previous)", label: "T / Tab");
+    public static readonly Hotkey FactoryTier = new([KeyboardKey.T, KeyboardKey.Tab], N, HotkeyScope.Factory, "Factory", "Next tech tier (Shift: previous)", label: "T / Tab", alt: true);
 
     // ---------------------------------------------------------------- game
     public static readonly Hotkey Help = new(KeyboardKey.F1, N, G, "Game", "This help (F1 or Esc closes it)");
     public static readonly Hotkey PauseGame = new(KeyboardKey.Space, N, Pl, "Game", "Pause / resume the game");
-    public static readonly Hotkey SpeedUp = new([KeyboardKey.Equal, KeyboardKey.KpAdd], N, Pl, "Game", "Game speed up", label: "+");
-    public static readonly Hotkey SpeedDown = new([KeyboardKey.Minus, KeyboardKey.KpSubtract], N, Pl, "Game", "Game speed down", label: "-");
+    public static readonly Hotkey SpeedUp = new([KeyboardKey.Equal, KeyboardKey.KpAdd], N, Pl, "Game", "Game speed up", label: "+", alt: true);
+    public static readonly Hotkey SpeedDown = new([KeyboardKey.Minus, KeyboardKey.KpSubtract], N, Pl, "Game", "Game speed down", label: "-", alt: true);
     public static readonly Hotkey Menu = new(KeyboardKey.Escape, N, G, "Game", "Cancel the order mode / placement / help; nothing selected: menu");
     public static readonly Hotkey QuickSave = new(KeyboardKey.F5, N, Pl, "Game", "Quicksave");
     public static readonly Hotkey QuickLoad = new(KeyboardKey.F6, N, Pl, "Game", "Quickload");
     public static readonly Hotkey Diplomacy = new(KeyboardKey.F4, N, Pl, "Game", "Diplomacy: players, teams; give units / resources to allies");
-    public static readonly Hotkey Chat = new([KeyboardKey.Enter, KeyboardKey.KpEnter], N, Pl, "Game", "Multiplayer: chat (Shift+Enter: to allies; Enter sends, Esc cancels)", label: "Enter");
+    public static readonly Hotkey Chat = new([KeyboardKey.Enter, KeyboardKey.KpEnter], N, Pl, "Game", "Multiplayer: chat (Shift+Enter: to allies; Enter sends, Esc cancels)", label: "Enter", alt: true);
     public static readonly Hotkey Fog = new(KeyboardKey.F7, N, G, "Game", "Fog of war on / off (reveal all)");
     public static readonly Hotkey Perf = new(KeyboardKey.F8, N, G, "Game", "Performance overlay");
     public static readonly Hotkey Mute = new(KeyboardKey.M, N, G, "Game", "Mute (nothing selected; Ctrl+M always)", share: "M");
@@ -173,13 +230,13 @@ public static class Hotkeys
     public static readonly Hotkey Music = new(KeyboardKey.M, C | S, G, "Game", "Music on / off");
 
     // ---------------------------------------------------------------- dialog / replay / sandbox / debug
-    public static readonly Hotkey DialogConfirm = new([KeyboardKey.Enter, KeyboardKey.KpEnter, KeyboardKey.Y], N, HotkeyScope.Dialog, "Dialogs", "Confirm (self-destruct: Ctrl+K again too)", label: "Enter / Y");
-    public static readonly Hotkey DialogCancel = new([KeyboardKey.Escape, KeyboardKey.N], N, HotkeyScope.Dialog, "Dialogs", "Cancel", label: "Esc / N");
+    public static readonly Hotkey DialogConfirm = new([KeyboardKey.Enter, KeyboardKey.KpEnter, KeyboardKey.Y], N, HotkeyScope.Dialog, "Dialogs", "Confirm (self-destruct: Ctrl+K again too)", label: "Enter / Y", alt: true);
+    public static readonly Hotkey DialogCancel = new([KeyboardKey.Escape, KeyboardKey.N], N, HotkeyScope.Dialog, "Dialogs", "Cancel", label: "Esc / N", alt: true);
     public static readonly Hotkey ReplayPause = new(KeyboardKey.Space, N, HotkeyScope.Replay, "Replay", "Play / pause");
-    public static readonly Hotkey ReplaySpeedUp = new([KeyboardKey.Equal, KeyboardKey.KpAdd], N, HotkeyScope.Replay, "Replay", "Faster (up to 16x)", label: "+");
-    public static readonly Hotkey ReplaySpeedDown = new([KeyboardKey.Minus, KeyboardKey.KpSubtract], N, HotkeyScope.Replay, "Replay", "Slower (down to 0.5x)", label: "-");
+    public static readonly Hotkey ReplaySpeedUp = new([KeyboardKey.Equal, KeyboardKey.KpAdd], N, HotkeyScope.Replay, "Replay", "Faster (up to 16x)", label: "+", alt: true);
+    public static readonly Hotkey ReplaySpeedDown = new([KeyboardKey.Minus, KeyboardKey.KpSubtract], N, HotkeyScope.Replay, "Replay", "Slower (down to 0.5x)", label: "-", alt: true);
     public static readonly Hotkey SandboxPanel = new(KeyboardKey.F9, N, HotkeyScope.Sandbox, "Sandbox", "Sandbox panel (sandbox, or a game with cheats on)");
-    public static readonly Hotkey SandboxConsole = new([KeyboardKey.F10, KeyboardKey.Grave], N, HotkeyScope.Sandbox, "Sandbox", "Sandbox console (sandbox, or a game with cheats on)", label: "F10 / `");
+    public static readonly Hotkey SandboxConsole = new([KeyboardKey.F10, KeyboardKey.Grave], N, HotkeyScope.Sandbox, "Sandbox", "Sandbox console (sandbox, or a game with cheats on)", label: "F10 / `", alt: true);
     public static readonly Hotkey DebugSpawnOwn = new(KeyboardKey.F1, C, Pl, "Debug", "Spawn 10 own tanks at the cursor (cheats on)");
     public static readonly Hotkey DebugSpawnEnemy = new(KeyboardKey.F2, C, Pl, "Debug", "Spawn 10 enemy tanks at the cursor (cheats on)");
     public static readonly Hotkey DebugFakeBattle = new(KeyboardKey.F9, N, HotkeyScope.Debug, "Debug", "Fake battle effects (only with --fxtest)");
@@ -220,6 +277,9 @@ public static class Hotkeys
 
     /// <summary>Help group order.</summary>
     public static readonly string[] Groups = ["Camera", "Selection", "Orders", "Toggles", "Transports", "Building", "Factory", "Game", "Dialogs", "Replay", "Sandbox", "Debug"];
+
+    /// <summary>(10b-1) Gives every entry its field name as <see cref="Hotkey.Id"/> (runs after the fields above).</summary>
+    private static readonly int IdCount = AssignIds();
 
     /// <summary>
     /// Can two scopes be active in the same frame? Dialogs are modal; replays have no orders, building or sandbox;
