@@ -52,12 +52,19 @@ public enum MsgType : byte
     MapChunk = 22,
     /// <summary>(8b-3) C→H: u64 hash, u8 state (0 missing/receiving, 1 have it, 2 failed), varu bytes received.</summary>
     MapStatus = 23,
+    /// <summary>(10a-2) C→H: varu turn player (the one everybody waits for), u8 yes. H→C: varu turn player, varu votes,
+    /// varu needed, varu count + the voters' turn indices (the tally; votes 0 = cleared).</summary>
+    DropVote = 24,
+    /// <summary>(10a-2) H→C: varu count, then per person vari player id, vari ping ms (lobby and game; display only).</summary>
+    LobbyPings = 25,
+    /// <summary>(10a-2) C→H: varu last tick: a defeated player stops sending turns after it and stays as an observer.</summary>
+    Resign = 26,
 }
 
 /// <summary>Builds message frames.</summary>
 public static class Msg
 {
-    public const uint ProtocolVersion = 4; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer; 4 (10a-1): software DMath (other sim results)
+    public const uint ProtocolVersion = 5; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer; 4 (10a-1): software DMath (other sim results); 5 (10a-2): observers, drop votes, lobby pings, resign
 
     [ThreadStatic] private static ByteWriter? _w;
 

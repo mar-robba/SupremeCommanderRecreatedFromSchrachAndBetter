@@ -141,9 +141,15 @@ public class LoopbackMatchTests
             host.SendChat("welcome");
             WaitFor(() => c.ChatLog.Any(l => l.Text == "welcome" && l.Name == "Host"), "chat on client");
             Assert.Equal("Alice is not ready", host.StartGame());
-            // Only one open slot: the next join is refused.
-            var ex = Assert.Throws<NetJoinException>(() => ClientSession.Join("127.0.0.1", host.Port, "Bob"));
-            Assert.Contains("full", ex.Message);
+            // Only one open slot: the next joiner becomes an observer (10a-2; before, the join was refused).
+            var bob = ClientSession.Join("127.0.0.1", host.Port, "Bob");
+            try
+            {
+                WaitFor(() => bob.IsLocalObserver && host.Lobby.Observers.Count == 1, "bob observes");
+                Assert.Equal("Bob", host.Lobby.Observers[0].Name);
+            }
+            finally { bob.Leave(); }
+            WaitFor(() => host.Lobby.Observers.Count == 0, "observer left");
             // The host closes the slot: Alice is kicked.
             host.SetSlotKind(1, NetSlotKind.Closed);
             WaitFor(() => c.Phase == NetPhase.Closed, "kick");

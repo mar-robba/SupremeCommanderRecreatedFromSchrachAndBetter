@@ -8,7 +8,7 @@ using Rts.Sim.World;
 namespace Rts.Net.Lobby;
 
 /// <summary>Lobby slot state. Append-only (on the wire).</summary>
-public enum NetSlotKind : byte { Open, Human, AI, Closed }
+public enum NetSlotKind : byte { Open, Human, AI, Closed, /** (10a-2) an entry of <see cref="LobbyState.Observers"/> */ Observer }
 
 /// <summary>One lobby slot. Humans are bound to a player id (0 = host).</summary>
 public sealed class NetSlot
@@ -50,7 +50,7 @@ public sealed class NetSlot
 
     public static NetSlot Read(ByteReader r) => new()
     {
-        Kind = (NetSlotKind)Math.Min(r.U8(), (byte)NetSlotKind.Closed),
+        Kind = (NetSlotKind)Math.Min(r.U8(), (byte)NetSlotKind.Observer),
         PlayerId = (int)r.VarI(),
         Name = Clip(r.Str(), 24),
         Faction = Clip(r.Str(), 32),
@@ -161,7 +161,11 @@ public sealed class LobbyOptions
 public sealed class LobbyState
 {
     public const int MaxSlots = 8;
+    /// <summary>(10a-2) Observers at most (next to the slots; they are not armies and send no turns).</summary>
+    public const int MaxObservers = 16;
     public readonly List<NetSlot> Slots = new();
+    /// <summary>(10a-2) Observers (Kind = Observer, PlayerId, Name, MapReady/MapProgress): watch the whole game, chat.</summary>
+    public readonly List<NetSlot> Observers = new();
     public LobbyOptions Options = new();
     /// <summary>Incremented by the host at every change.</summary>
     public int Version;
@@ -182,6 +186,7 @@ public sealed class LobbyState
     {
         var c = new LobbyState { Options = Options.Clone(), Version = Version };
         foreach (var s in Slots) c.Slots.Add(s.Clone());
+        foreach (var o in Observers) c.Observers.Add(o.Clone());
         return c;
     }
 
@@ -189,6 +194,13 @@ public sealed class LobbyState
     public int FirstOpenSlot() => Slots.FindIndex(s => s.Kind == NetSlotKind.Open);
     public int ArmyCount => Slots.Count(s => s.IsArmy);
     public int HumanCount => Slots.Count(s => s.Kind == NetSlotKind.Human);
+    /// <summary>(10a-2) Index in <see cref="Observers"/> of a player id (-1 = not observing).</summary>
+    public int ObserverOf(int playerId) => Observers.FindIndex(o => o.PlayerId == playerId);
+    public bool IsObserver(int playerId) => ObserverOf(playerId) >= 0;
+    /// <summary>(10a-2) The slot or observer entry of a connected player (null = unknown).</summary>
+    public NetSlot? EntryOf(int playerId) => SlotOf(playerId) is int i and >= 0 ? Slots[i] : ObserverOf(playerId) is int k and >= 0 ? Observers[k] : null;
+    /// <summary>(10a-2) Every connected person: human slots, then observers.</summary>
+    public IEnumerable<NetSlot> People => Slots.Where(s => s.Kind == NetSlotKind.Human).Concat(Observers);
 
     /// <summary>Why the host can't start yet (null = it can).</summary>
     public string? Problem()
@@ -198,7 +210,7 @@ public sealed class LobbyState
         if (armies.All(s => s.Team > 0 && s.Team == armies[0].Team)) return "Everybody is on the same team";
         var o = Options;
         if (o.HasMapFile && armies.Count > o.MapPlayers) return $"{o.MapName} has only {o.MapPlayers} start positions";
-        var loading = Slots.FirstOrDefault(s => s.Kind == NetSlotKind.Human && s.PlayerId != 0 && !s.MapReady);
+        var loading = People.FirstOrDefault(s => s.PlayerId != 0 && !s.MapReady); // (10a-2) observers need the map too
         if (loading != null) return $"{loading.Name} is downloading the map ({loading.MapProgress} %)";
         var notReady = Slots.FirstOrDefault(s => s.Kind == NetSlotKind.Human && s.PlayerId != 0 && !s.Ready);
         if (notReady != null) return $"{notReady.Name} is not ready";
@@ -211,6 +223,8 @@ public sealed class LobbyState
         Options.Write(w);
         w.VarU((ulong)Slots.Count);
         foreach (var s in Slots) s.Write(w);
+        w.VarU((ulong)Observers.Count); // (10a-2) protocol 5
+        foreach (var o in Observers) o.Write(w);
     }
 
     public static LobbyState Read(ByteReader r)
@@ -218,6 +232,13 @@ public sealed class LobbyState
         var l = new LobbyState { Version = r.Count(int.MaxValue), Options = LobbyOptions.Read(r) };
         int n = r.Count(MaxSlots);
         for (int i = 0; i < n; i++) l.Slots.Add(NetSlot.Read(r));
+        int m = r.Count(MaxObservers);
+        for (int i = 0; i < m; i++)
+        {
+            var o = NetSlot.Read(r);
+            o.Kind = NetSlotKind.Observer;
+            l.Observers.Add(o);
+        }
         return l;
     }
 }
@@ -231,6 +252,8 @@ public sealed class LobbyRequest
     public int Color = -1;
     /// <summary>-1 unchanged, 0 not ready, 1 ready.</summary>
     public int Ready = -1;
+    /// <summary>(10a-2) -1 unchanged, 1 = become an observer, 0 = leave the observers for <see cref="MoveToSlot"/> (or the first open slot).</summary>
+    public int Observe = -1;
 
     public void Write(ByteWriter w)
     {
@@ -239,11 +262,13 @@ public sealed class LobbyRequest
         w.VarI(Team);
         w.VarI(Color);
         w.VarI(Ready);
+        w.VarI(Observe); // (10a-2)
     }
 
     public static LobbyRequest Read(ByteReader r) => new()
     {
         MoveToSlot = (int)r.VarI(), Faction = r.Str(), Team = (int)r.VarI(), Color = (int)r.VarI(), Ready = (int)r.VarI(),
+        Observe = r.AtEnd ? -1 : (int)r.VarI(),
     };
 }
 
@@ -292,6 +317,9 @@ public sealed class GameStart
 
     /// <summary>Turn player index of a player id (-1 = not playing).</summary>
     public int TurnIndexOf(int playerId) => Array.IndexOf(TurnPlayers, playerId);
+
+    /// <summary>(10a-2) The player watches the game (an observer of the lobby: gets every turn, sends none).</summary>
+    public bool IsObserver(int playerId) => Lobby.IsObserver(playerId);
 
     public void Write(ByteWriter w)
     {

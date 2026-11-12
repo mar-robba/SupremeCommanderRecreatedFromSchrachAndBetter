@@ -10,7 +10,7 @@ using Rts.Sim.Data;
 /// thread running the lockstep as fast as the turns allow with random commands. Checks that every peer has the same
 /// StateHash every 10 ticks (exit 1 on a desync/fault). "drop" disconnects the last client halfway: the others must
 /// stay in sync with its army handed to the AI.
-/// Usage: Rts.Bench mp [peers=4] [ticks=1200] [mapSize=256] [aiSlots=1] [threads=0] [drop]
+/// Usage: Rts.Bench mp [peers=4] [ticks=1200] [mapSize=256] [aiSlots=1] [threads=0] [drop] [map=ID] [biome=X] [obs=N]
 /// </summary>
 static class MpSelfTest
 {
@@ -21,6 +21,8 @@ static class MpSelfTest
         // (8b-3) named options anywhere: map=ID (a map file of data/maps), biome=NAME
         string? mapId = args.FirstOrDefault(a => a.StartsWith("map="))?[4..];
         string? biomeArg = args.FirstOrDefault(a => a.StartsWith("biome="))?[6..];
+        // (10a-2) obs=N: N observers join (they get every turn, send none; their hashes must match too)
+        int obsN = int.TryParse(args.FirstOrDefault(a => a.StartsWith("obs="))?[4..], out int on) ? Math.Clamp(on, 0, 16) : 0;
         args = args.Where(a => !a.Contains('=')).ToArray();
         int peersN = args.Length > 0 ? Math.Clamp(int.Parse(args[0]), 2, 8) : 4;
         int ticks = args.Length > 1 ? int.Parse(args[1]) : 1200;
@@ -56,6 +58,14 @@ static class MpSelfTest
                 if (host.Lobby.Options.HasMapFile) Console.WriteLine($"Peer{i}: map {(c.MapTransfer!.Path?.Contains("downloaded") == true ? "downloaded" : "present")} in {mt.ElapsedMilliseconds} ms");
                 c.SetReady(true);
             }
+            var observers = new List<ClientSession>();
+            for (int i = 0; i < obsN; i++)
+            {
+                var c = ClientSession.Join("127.0.0.1", host.Port, "Obs" + i, observe: true);
+                observers.Add(c);
+                Wait(() => c.IsLocalObserver);
+                Wait(() => !host.Lobby.Options.HasMapFile || c.MapTransfer?.State is MapTransferState.Present or MapTransferState.Failed);
+            }
             Wait(() => host.Lobby.Problem() == null);
             var setup = Stopwatch.StartNew();
             if (host.StartGame() is string problem) throw new InvalidOperationException(problem);
@@ -63,6 +73,9 @@ static class MpSelfTest
             peers.Add(new HeadlessPeer(host, db, 1));
             for (int i = 0; i < clients.Count; i++) peers.Add(new HeadlessPeer(clients[i], db, 2 + i));
             Wait(() => peers.All(p => p.Hooks.Started));
+            foreach (var c in observers) Wait(() => c.Game != null);
+            var obsPeers = observers.Select((c, i) => new HeadlessPeer(c, db, 100 + i)).ToList(); // built after Go: nobody waited
+            Wait(() => obsPeers.All(p => p.Hooks.Started));
             Console.WriteLine($"mp: {peersN} peers + {ais} AI, map {mapSize}, delay {host.Game!.Start.Delay}, setup {setup.ElapsedMilliseconds} ms (port {host.Port})");
 
             int dropId = clients.Count > 1 && drop ? clients[^1].PlayerId : -1;
@@ -72,7 +85,8 @@ static class MpSelfTest
                 {
                     if (dropId >= 0 && peer == peers[0] && tick == ticks / 2) host.Disconnect(dropId, "self-test drop");
                 });
-            foreach (var p in peers)
+            foreach (var p in obsPeers) p.Run(ticks, 0);
+            foreach (var p in peers.Concat(obsPeers))
                 if (!p.Wait(600_000)) throw new TimeoutException($"{p.Session.LocalName} stuck at tick {p.Sim.World.Tick}");
             double sec = run.Elapsed.TotalSeconds;
 
@@ -87,6 +101,13 @@ static class MpSelfTest
                 if (!same || p.Fault != null) fails++;
                 Console.WriteLine($"  {p.Session.LocalName,-6} tick {p.Sim.World.Tick}  commands {p.CommandsIssued,5}  waited {p.HeldMs,7:F0} ms  " +
                     $"tcp out {sent / 1024.0,7:F1} KB in {received / 1024.0,7:F1} KB  hashes {(k >= compared ? "(dropped: offline)" : same ? "OK" : "DIFFERENT")}" +
+                    (p.Fault != null ? "  FAULT " + p.Fault.Message : ""));
+            }
+            foreach (var p in obsPeers)
+            {
+                bool same = p.Hashes.SequenceEqual(reference);
+                if (!same || p.Fault != null) fails++;
+                Console.WriteLine($"  {p.Session.LocalName,-6} tick {p.Sim.World.Tick}  observer  tcp in {p.Session.Traffic.received / 1024.0,7:F1} KB  hashes {(same ? "OK" : "DIFFERENT")}" +
                     (p.Fault != null ? "  FAULT " + p.Fault.Message : ""));
             }
             int desync = host.Game.DesyncTick;

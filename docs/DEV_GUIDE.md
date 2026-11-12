@@ -192,7 +192,13 @@ Things learned while building the project that are not about how a system works 
   `tools/agents/dn.sh`, run the two built binaries directly (`src/Rts.Client/bin/Debug/net10.0/Rts.Client ...`): a
   `dn.sh run` holds the build lock until the window closes, so a second one waits. Received maps land in
   `./downloaded_maps` (dev, git-ignored) or next to `saves/` in release; delete a file there to download it again.
-- A protocol bump (`Msg.ProtocolVersion`, 3 since 8b-3) refuses older peers with both versions in the message: every
+- (10a-2) Observers: add `--observe` to a `--join` window (or press Observe in the lobby); a full game also puts
+  joiners among the observers. Headless: `... mp 3 600 256 0 0 obs=2` (observers built after Go, hashes compared).
+  The drop-vote banner can't be provoked by hand easily (a peer must stall while connected): `--host 47702 --players 2
+  --autostart --net-vote-demo --screenshot v.png --frames 500` draws it with a fake waiting player "Bob"; the logic is
+  covered by `ObserverTests` (`HostSession.SetStallForTests`). Run screenshot windows with `dotnet
+  src/Rts.Client/bin/Debug/net10.0/Rts.Client.dll ...` (dn.sh would serialize them on the build lock).
+- A protocol bump (`Msg.ProtocolVersion`, 3 since 8b-3; 5 since 10a-2) refuses older peers with both versions in the message: every
   player needs the same build anyway (`GameInfo.CurrentSimBuild`).
 - Internet play: the host forwards TCP port 47624 (or the `--host` port) on the router to its machine and tells the
   others its public IP; LAN games appear by themselves (UDP 47625, same subnet). Firewalls must allow both.

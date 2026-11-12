@@ -11,6 +11,8 @@ public interface ITurnSink
     void SendTurn(int turnPlayer, int tick, byte[] payload);
     /// <summary>The local StateHash after <paramref name="tick"/> (sim thread; must not block).</summary>
     void SendHash(int tick, ulong hash);
+    /// <summary>(10a-2) The local player stopped playing after <paramref name="lastTick"/> (sim thread, after its turns up to it were sent).</summary>
+    void SendResign(int lastTick) { }
 }
 
 /// <summary>
@@ -58,6 +60,7 @@ public sealed class LockstepHooks : ITickHooks
     private volatile bool _go;
     private volatile int _delay;
     private volatile int _waitingFor = -1;
+    private volatile bool _resignRequested;
 
     /// <summary>Local turn player index (-1 = observer: sends nothing).</summary>
     public readonly int LocalTurn;
@@ -69,6 +72,8 @@ public sealed class LockstepHooks : ITickHooks
     public int WaitingFor => _waitingFor;
     /// <summary>Total commands sent by the local player / ticks stepped (stats).</summary>
     public long CommandsSent, TicksStepped;
+    /// <summary>(10a-2) Last tick of the local player's turns after <see cref="RequestResign"/> took effect (-1 = still playing).</summary>
+    public int ResignedAt { get; private set; } = -1;
     /// <summary>Optional hook: called on the sim thread after each hash tick with (tick, hash).</summary>
     public Action<int, ulong>? HashComputed;
 
@@ -158,11 +163,37 @@ public sealed class LockstepHooks : ITickHooks
         }
     }
 
+    /// <summary>(10a-2) The local player (defeated) stays as an observer: at the next step it stops sending turns after
+    /// the last one already produced, drops itself locally (<see cref="DropAction.Defeat"/>) and tells the sink.</summary>
+    public void RequestResign()
+    {
+        if (LocalTurn >= 0) _resignRequested = true;
+    }
+
+    /// <summary>Under the lock: the local player's turns end at the last one produced.</summary>
+    private int ResignLocal()
+    {
+        _resignRequested = false;
+        if (_lastTick[LocalTurn] != int.MaxValue) return -1;
+        int last = _nextSend - 1;
+        _lastTick[LocalTurn] = last;
+        _dropAction[LocalTurn] = DropAction.Defeat;
+        _pending.Clear();
+        ResignedAt = last;
+        return last;
+    }
+
     // ------------------------------------------------------------------ ITickHooks (sim thread)
 
     public bool Hold(Simulation sim)
     {
         if (!_go) return true;
+        if (_resignRequested) // (10a-2) also while waiting for somebody (the outbox is empty between steps)
+        {
+            int last;
+            lock (_lock) last = ResignLocal();
+            if (last >= 0) _sink.SendResign(last);
+        }
         int t = sim.World.Tick + 1;
         lock (_lock)
         {
@@ -184,9 +215,11 @@ public sealed class LockstepHooks : ITickHooks
     {
         int next = sim.World.Tick + 1;
         _tickCommands.Clear();
+        int resigned = -1;
         lock (_lock)
         {
-            if (LocalTurn >= 0) SendLocalCommands(next, incoming);
+            if (_resignRequested) resigned = ResignLocal();
+            if (LocalTurn >= 0 && _lastTick[LocalTurn] == int.MaxValue) SendLocalCommands(next, incoming);
             for (int p = 0; p < Players; p++)
             {
                 if (next > _lastTick[p])
@@ -201,6 +234,7 @@ public sealed class LockstepHooks : ITickHooks
             }
         }
         FlushOutbox();
+        if (resigned >= 0) _sink.SendResign(resigned);
         for (int i = 0; i < _tickCommands.Count; i++)
         {
             _tickCommands[i].Sequence = i + 1;
