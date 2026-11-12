@@ -76,7 +76,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
 
     private void Use(UnitModel m)
     {
-        if (m.Body.Count == 0 && (m.Turret == null || m.Turret.Count == 0)) _active.Add(m);
+        if (m.Body.Count == 0 && (m.Turret == null || m.Turret.Count == 0) && LodCount(m) == 0) _active.Add(m);
     }
 
     public void Draw(SimSnapshot cur, SimSnapshot? prev, float alpha, Color[] armyColors)
@@ -89,8 +89,9 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         if (fade <= 0.001f) return;
         float time = Atmosphere.Time;
 
-        foreach (var m in _active) { m.Body.Clear(); m.Turret?.Clear(); }
+        foreach (var m in _active) { m.Body.Clear(); m.Turret?.Clear(); m.LodBody?.Clear(); m.LodTurret?.Clear(); }
         _active.Clear();
+        BeginLod(fv); // (9b-2) far units use the low-poly meshes: UnitRenderer.Lod.cs
         _holo.Clear();
 
         Span<Vector4> teamCols = stackalloc Vector4[Math.Max(1, armyColors.Length)];
@@ -161,6 +162,8 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             {
                 m.Body.Draw();
                 m.Turret?.Draw();
+                m.LodBody?.Draw();
+                m.LodTurret?.Draw();
             }
             _shadow.End();
         }
@@ -174,13 +177,15 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         sp.Set("fade", fade);
         ShadowMap.Bind(sp);
         FogRenderer.Bind(sp);
+        TerrainRenderer.BindSelfShadow(sp); // (9b-2) units in the shadow of hills
         sp.Use();
         foreach (var m in _active)
         {
-            if (shadowPass) { m.Body.DrawAgain(); m.Turret?.DrawAgain(); }
-            else { m.Body.Draw(); m.Turret?.Draw(); }
-            DrawCalls += m.Turret != null ? 2 : 1;
+            if (shadowPass) { m.Body.DrawAgain(); m.Turret?.DrawAgain(); m.LodBody?.DrawAgain(); m.LodTurret?.DrawAgain(); }
+            else { m.Body.Draw(); m.Turret?.Draw(); m.LodBody?.Draw(); m.LodTurret?.Draw(); }
+            DrawCalls += (m.Body.Count > 0 ? 1 : 0) + (m.Turret?.Count > 0 ? 1 : 0) + (m.LodBody?.Count > 0 ? 1 : 0) + (m.LodTurret?.Count > 0 ? 1 : 0);
         }
+        EndLod();
 
         // 3) Construction holograms (translucent, no depth writes).
         if (_holo.Count > 0)
@@ -210,6 +215,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
     private void AddUnit(UnitModel model, int index, Vector3 pos, float heading, float turretYaw, float turnPerTick,
                          Vector4 teamCol, bool building, float buildFrac, float time)
     {
+        bool lod = !building && LodFor(model, index, pos); // (9b-2) UnitRenderer.Lod.cs
         var fwd = new Vector3(MathF.Cos(heading), 0, MathF.Sin(heading));
         var up = Vector3.UnitY;
         if (model.Air)
@@ -241,7 +247,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         else
         {
             Use(model);
-            model.Body.Add(m, teamCol);
+            (lod ? model.LodBody! : model.Body).Add(m, teamCol);
         }
 
         if (model.Turret == null) return;
@@ -255,7 +261,7 @@ public sealed unsafe partial class UnitRenderer : IDisposable
             var wp = Vector3.Transform(pivot, m);
             var tm = new Matrix4x4(tx.X, tx.Y, tx.Z, 0, up.X, up.Y, up.Z, 0, tz.X, tz.Y, tz.Z, 0, wp.X, wp.Y, wp.Z, 1);
             if (building) _holo.Add((model, true, tm, new Vector4(teamCol.X, teamCol.Y, teamCol.Z, cut - pivot.Y)));
-            else model.Turret.Add(tm, teamCol);
+            else (lod ? model.LodTurret! : model.Turret).Add(tm, teamCol);
         }
     }
 
@@ -321,6 +327,8 @@ public sealed unsafe partial class UnitRenderer : IDisposable
         {
             m.Body.Dispose();
             m.Turret?.Dispose();
+            m.LodBody?.Dispose();
+            m.LodTurret?.Dispose();
         }
         _models.Clear();
         _shadow.Dispose();

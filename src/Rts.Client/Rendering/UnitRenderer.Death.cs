@@ -39,12 +39,14 @@ public sealed unsafe partial class UnitRenderer
             var col = (uint)army < (uint)teamCols.Length ? teamCols[army] : new Vector4(0.7f, 0.7f, 0.7f, 0);
             col.W = DeathAnim.PackShaderW(pose.Char, pose.Visible);
             var m = DeathAnim.Matrix(in pose);
+            bool lod = LodFor(model, -1, pose.Pos); // (9b-2) far wrecks-to-be use the LOD mesh, same w death fade
             Use(model);
-            model.Body.Add(m, col);
+            (lod ? model.LodBody! : model.Body).Add(m, col);
             if (model.Turret == null) continue;
             var yaw = Matrix4x4.CreateRotationY(model.TurretMode == TurretMode.Spin ? 0f : -turretRel);
+            var turret = lod ? model.LodTurret! : model.Turret;
             foreach (var pivot in model.TurretPivots)
-                model.Turret.Add(yaw * Matrix4x4.CreateTranslation(pivot) * m, col);
+                turret.Add(yaw * Matrix4x4.CreateTranslation(pivot) * m, col);
         }
     }
 }
