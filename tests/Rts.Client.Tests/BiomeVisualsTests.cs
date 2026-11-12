@@ -47,6 +47,22 @@ public class BiomeVisualsTests
     }
 
     [Fact]
+    public void MinimapPaletteFollowsTheBiome()
+    {
+        var t = BiomePalettes.Minimap(Biome.Temperate); // the pre-8b-3 minimap constants
+        Assert.Equal(new Vector3(0.25f, 0.45f, 0.62f), t.WaterShallow);
+        Assert.Equal(new Vector3(0.08f, 0.18f, 0.36f), t.WaterDeep);
+        Assert.Equal(new Vector3(0.66f, 0.62f, 0.45f), t.Shore);
+        Assert.Equal(new Vector3(0.30f, 0.44f, 0.22f), t.Low);
+        Assert.Equal(new Vector3(0.55f, 0.53f, 0.38f), t.High);
+        Assert.Equal(new Vector3(0.42f, 0.38f, 0.34f), t.Slope);
+        var seen = new HashSet<MinimapPalette>();
+        foreach (var b in Enum.GetValues<Biome>()) Assert.True(seen.Add(BiomePalettes.Minimap(b)), b + " shares a minimap palette");
+        var lava = BiomePalettes.Minimap(Biome.Lava); // molten: red-orange, not blue
+        Assert.True(lava.WaterShallow.X > lava.WaterShallow.Z && lava.WaterDeep.X > lava.WaterDeep.Z);
+    }
+
+    [Fact]
     public void BiomeOptionReachesConfigAndSkirmish()
     {
         var o = ClientOptions.Parse(["--demo", "--biome", "lava"]);

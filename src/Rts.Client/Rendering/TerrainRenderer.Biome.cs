@@ -39,7 +39,7 @@ public static class BiomePalettes
 
     /// <summary>Snow fields with grey tundra patches, blue-grey rock, cold steel water, pale cool sun.</summary>
     public static readonly BiomePalette Tundra = new(
-        Grass1: V(0.74f, 0.77f, 0.81f), Grass2: V(0.62f, 0.65f, 0.67f), Dry: V(0.82f, 0.85f, 0.89f), Dirt: V(0.40f, 0.40f, 0.36f),
+        Grass1: V(0.70f, 0.73f, 0.77f), Grass2: V(0.62f, 0.65f, 0.67f), Dry: V(0.77f, 0.80f, 0.85f), Dirt: V(0.40f, 0.40f, 0.36f),
         Rock1: V(0.45f, 0.47f, 0.51f), Rock2: V(0.30f, 0.32f, 0.36f), Sand: V(0.52f, 0.51f, 0.47f), Wet: V(0.36f, 0.38f, 0.40f),
         ShoreGlow: Vector3.Zero,
         Shallow: V(0.22f, 0.44f, 0.52f), Deep: V(0.04f, 0.12f, 0.22f), Foam: V(0.92f, 0.96f, 1.0f), WaterGlow: 0f,
@@ -52,12 +52,13 @@ public static class BiomePalettes
         Rock1: V(0.22f, 0.20f, 0.19f), Rock2: V(0.11f, 0.10f, 0.10f), Sand: V(0.13f, 0.11f, 0.10f), Wet: V(0.24f, 0.11f, 0.06f),
         ShoreGlow: V(1.15f, 0.40f, 0.10f),
         Shallow: V(1.0f, 0.60f, 0.16f), Deep: V(0.88f, 0.22f, 0.04f), Foam: V(1.0f, 0.82f, 0.42f), WaterGlow: 1f,
-        SunColor: V(1.05f, 0.84f, 0.70f), SkyAmbient: V(0.40f, 0.32f, 0.31f), GroundAmbient: V(0.40f, 0.21f, 0.13f),
+        // Sun/sky keep some blue so army colours stay readable on units; the red comes from the ground bounce.
+        SunColor: V(1.05f, 0.88f, 0.78f), SkyAmbient: V(0.40f, 0.34f, 0.38f), GroundAmbient: V(0.36f, 0.22f, 0.15f),
         FogColor: V(0.38f, 0.27f, 0.23f), SkyTop: V(0.22f, 0.16f, 0.16f), Abyss: V(0.10f, 0.04f, 0.03f));
 
     /// <summary>Lush green, red laterite, white beaches, turquoise lagoons, bright humid sky.</summary>
     public static readonly BiomePalette Tropical = new(
-        Grass1: V(0.17f, 0.40f, 0.13f), Grass2: V(0.30f, 0.48f, 0.15f), Dry: V(0.38f, 0.44f, 0.20f), Dirt: V(0.47f, 0.29f, 0.19f),
+        Grass1: V(0.21f, 0.37f, 0.14f), Grass2: V(0.30f, 0.43f, 0.16f), Dry: V(0.38f, 0.42f, 0.21f), Dirt: V(0.47f, 0.29f, 0.19f),
         Rock1: V(0.42f, 0.42f, 0.38f), Rock2: V(0.27f, 0.29f, 0.26f), Sand: V(0.88f, 0.82f, 0.64f), Wet: V(0.60f, 0.55f, 0.42f),
         ShoreGlow: Vector3.Zero,
         Shallow: V(0.10f, 0.66f, 0.62f), Deep: V(0.02f, 0.16f, 0.32f), Foam: V(0.95f, 0.98f, 1.0f), WaterGlow: 0f,
@@ -72,7 +73,26 @@ public static class BiomePalettes
         Biome.Tropical => Tropical,
         _ => Temperate,
     };
+
+    /// <summary>(8b-3) Minimap thumbnail colours of a biome (UI/Minimap bake). Temperate = the pre-8b-3 minimap
+    /// constants; the others match what the terrain shader shows under that biome's light (lava = molten orange).</summary>
+    public static MinimapPalette Minimap(Biome b) => b switch
+    {
+        Biome.Desert => new(V(0.24f, 0.56f, 0.55f), V(0.05f, 0.22f, 0.30f), V(0.85f, 0.77f, 0.58f),
+            V(0.80f, 0.62f, 0.40f), V(0.84f, 0.70f, 0.50f), V(0.55f, 0.38f, 0.27f)),
+        Biome.Tundra => new(V(0.27f, 0.45f, 0.55f), V(0.06f, 0.14f, 0.26f), V(0.55f, 0.55f, 0.52f),
+            V(0.80f, 0.83f, 0.87f), V(0.88f, 0.90f, 0.94f), V(0.38f, 0.40f, 0.44f)),
+        Biome.Lava => new(V(1.0f, 0.62f, 0.18f), V(0.90f, 0.28f, 0.06f), V(0.32f, 0.15f, 0.09f),
+            V(0.27f, 0.21f, 0.18f), V(0.37f, 0.32f, 0.28f), V(0.17f, 0.15f, 0.14f)),
+        Biome.Tropical => new(V(0.14f, 0.62f, 0.62f), V(0.03f, 0.18f, 0.36f), V(0.88f, 0.82f, 0.64f),
+            V(0.24f, 0.45f, 0.18f), V(0.43f, 0.50f, 0.27f), V(0.40f, 0.38f, 0.33f)),
+        _ => new(V(0.25f, 0.45f, 0.62f), V(0.08f, 0.18f, 0.36f), V(0.66f, 0.62f, 0.45f),
+            V(0.30f, 0.44f, 0.22f), V(0.55f, 0.53f, 0.38f), V(0.42f, 0.38f, 0.34f)),
+    };
 }
+
+/// <summary>(8b-3) Minimap colours: water shallow → deep, the shore band, land low → high (by height), steep slopes.</summary>
+public readonly record struct MinimapPalette(Vector3 WaterShallow, Vector3 WaterDeep, Vector3 Shore, Vector3 Low, Vector3 High, Vector3 Slope);
 
 public sealed partial class TerrainRenderer
 {

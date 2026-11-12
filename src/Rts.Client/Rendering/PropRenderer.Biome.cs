@@ -82,7 +82,7 @@ public sealed partial class PropRenderer
                 {
                     // Snowy conifer: dark tiers, each with a snow cone over its upper part.
                     var leaf = v == 0 ? Leaf(34, 62, 44) : Leaf(40, 66, 60);
-                    var snow = Leaf(222, 230, 236);
+                    var snow = Leaf(206, 215, 226); // a bit darker than the snow ground so crowns stay readable
                     float w = v == 0 ? 1f : 0.8f;
                     b.Cylinder(Vector3.Zero, Axis.Y, 0.9f, 0.11f, 0.07f, sd, Bark(78, 64, 52));
                     int tiers = far ? 1 : 3;
@@ -90,8 +90,9 @@ public sealed partial class PropRenderer
                     {
                         float y0 = far ? 0.45f : 0.5f + i * 0.62f, len = far ? 2.35f : 1.0f, rr = (far ? 0.68f : 0.74f - i * 0.17f) * w;
                         b.Cylinder(new Vector3(0, y0, 0), Axis.Y, len, rr, 0.03f, far ? 5 : 8, leaf, phase: i * 0.4f);
-                        float sy = len * 0.35f, sr = rr - (rr - 0.03f) * 0.35f + 0.035f;
-                        b.Cylinder(new Vector3(0, y0 + sy, 0), Axis.Y, len * 0.66f, sr, 0.045f, far ? 5 : 8, snow, phase: i * 0.4f);
+                        // Snow on the upper half only: the dark lower ring shows from above (readable on snow).
+                        float sy = len * 0.5f, sr = rr - (rr - 0.03f) * 0.5f + 0.03f;
+                        b.Cylinder(new Vector3(0, y0 + sy, 0), Axis.Y, len * 0.52f, sr, 0.045f, far ? 5 : 8, snow, phase: i * 0.4f);
                     }
                 }
                 else

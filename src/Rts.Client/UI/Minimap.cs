@@ -37,6 +37,7 @@ public sealed partial class Minimap : IDisposable
         int w = t.Width, h = t.Height;
         var pixels = new Color[w * h];
         var sun = Vector3.Normalize(new Vector3(-0.5f, 0.75f, -0.45f));
+        var pal = Rendering.BiomePalettes.Minimap(_ctx.TerrainRenderer.Biome); // (8b-3) biome colours
         float maxH = 1;
         foreach (var v in t.Heights) maxH = MathF.Max(maxH, v - t.WaterLevel);
         for (int z = 0; z < h; z++)
@@ -49,15 +50,14 @@ public sealed partial class Minimap : IDisposable
             if (rel < 0)
             {
                 float depth = Math.Clamp(-rel / 8f, 0, 1);
-                c = Vector3.Lerp(new Vector3(0.25f, 0.45f, 0.62f), new Vector3(0.08f, 0.18f, 0.36f), depth);
+                c = Vector3.Lerp(pal.WaterShallow, pal.WaterDeep, depth);
             }
             else
             {
                 float k = Math.Clamp(rel / maxH, 0, 1);
-                c = rel < 1.0f ? new Vector3(0.66f, 0.62f, 0.45f)
-                    : Vector3.Lerp(new Vector3(0.30f, 0.44f, 0.22f), new Vector3(0.55f, 0.53f, 0.38f), k);
+                c = rel < 1.0f ? pal.Shore : Vector3.Lerp(pal.Low, pal.High, k);
                 float slope = 1f - n.Y;
-                c = Vector3.Lerp(c, new Vector3(0.42f, 0.38f, 0.34f), Math.Clamp((slope - 0.12f) * 4f, 0, 1));
+                c = Vector3.Lerp(c, pal.Slope, Math.Clamp((slope - 0.12f) * 4f, 0, 1));
                 c *= 0.55f + 0.6f * MathF.Max(0, Vector3.Dot(n, sun));
             }
             pixels[z * w + x] = new Color((byte)Math.Clamp(c.X * 255, 0, 255), (byte)Math.Clamp(c.Y * 255, 0, 255), (byte)Math.Clamp(c.Z * 255, 0, 255), (byte)255);
