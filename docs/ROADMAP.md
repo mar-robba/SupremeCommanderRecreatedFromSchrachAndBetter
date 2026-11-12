@@ -2,6 +2,30 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
+## Waves at a glance
+A **wave** is a batch of modules built by agents in parallel and merged before the next one (WORKFLOW "Waves").
+The **Phase 0-4** sections further down are not waves: they are the feature chapters of the first plan, and each
+feature there names the wave that delivered it. Update this table at every merge (WORKFLOW "Lifecycle of a wave"
+step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
+
+| Wave | Modules | State |
+|---|---|---|
+| Foundation | Solution, deterministic sim core, threaded runner, blueprints, map generator, orders, movement, basic client | ✅ 2026-10-10 |
+| 1 | Combat, economy & construction, pathfinding & movement, client visuals, UI | ✅ 2026-10-10 |
+| 2 | Fog of war & radar, first skirmish AI, map presets, menus / setup / end screens, audio | ✅ 2026-10-11 |
+| 3 | (a) T2/T3 tech + upgrades, (b) shields & strategic weapons, (c) naval, (d) skirmish AI, (e) sandbox | ✅ 2026-10-12 |
+| 4 | (d) AI finish, (f) SupCom polish, (g) experimentals + commander enhancements + SCUs, (h) transports, (i) save/load + replays | ✅ 2026-10-14 |
+| 5 | (j) faction infrastructure, (m) scale/perf, (n) UX polish, (o) lockstep multiplayer, (l) Cybran faction, (k) AI uses everything + (k-navy) | ✅ 2026-10-16 → 10-24 |
+| 6 | (6a) commander & engineers, (6b) game options & team play | ✅ 2026-10-24 |
+| 7 | (7a) release package + settings + autosave, (7b) orders & selection UX | ✅ 2026-10-24 (7a), 2026-11-11 (7b) |
+| 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
+| 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
+| 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅ (all 2026-11-12); (10a-2) observers + vote to drop + lobby pings + chat sounds: in progress; (10a-3) multiplayer save/load: to do | in progress |
+| 11+ | Planned, waiting for the owner's answers ("Questions for the owner"): Italian localization, pathing (G12) + save migration (G41), tutorial / scenarios, campaign, mod support, Forged Alliance units, relay server, reconnect | to do |
+
+Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
+what waves 1-5 delivered, feature by feature, in the Phase sections.
+
 ## ▶ NEXT STEPS (updated 2026-11-12 21:15 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
@@ -193,7 +217,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 Free keys today: O, I, J, W, F2-F4, F11, F12 (`HotkeyTableTests`). Each agent: AGENT_RULES block, cap 150k.
 Agents that change sim results document the new reference hash of `Rts.Bench -- ai 30 256 42 hard,normal`.
 
-**Wave 6: core SupCom mechanics (P1)**
+#### Wave 6: core SupCom mechanics (P1) ✅
 - 6a Commander & engineers (G1, G2, G3; G7 if time). Overcharge (energy cost, damage from storage, ACU only, key O,
   order button, fx/sound), commander death blast (hook in `Commander/`, NOT CleanupSystem: 6b owns it), patrol
   automation in a new `Economy/EngineerPatrol.cs` (+ the Patrol case), then teleporter + UEF drones + SCU jammer. Owns
@@ -206,7 +230,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   Army (append), UnitTransfer, new EconomyShare/DiplomacyCommands, setup/lobby screens, NetGameConfig, Hud,
   EndScreen. Tests: each victory mode, cap, transfers, overflow, codec round trip, MP loopback with options.
 
-**Wave 7: something the owner can launch + everyday UX**
+#### Wave 7: something the owner can launch + everyday UX ✅
 - 7a Release, settings, autosave (G45, G18, G40). `tools/package/` script (dotnet publish Release self-contained,
   data copied, icon, `.desktop` + desktop shortcut, Windows zip optional), user-folder paths for saves/replays/
   settings/screenshots, version label, crash log; graphics + gameplay settings and Settings in the pause menu;
@@ -218,7 +242,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   GameAudio alerts, new overlay, new sim `Orders/QueueEditCommands.cs` + ping command (additive). Tests: hotkey
   table, queue-edit + ping sim tests, ping in replay/MP loopback. Screenshots.
 
-**Wave 8: content (P2)**
+#### Wave 8: content (P2) ✅
 - 8a Missing units & walls (G8, G9; Atlantis dive from G11). Mech Marine, both strategic missile subs (submerged
   launch), Cybran carrier (reuse the Atlantis cargo/factory), T3 sonar platforms, UEF stealth field generator, Salem
   on land, wall sections. Owns `data/blueprints`, faction json (optional roles: AI ignores what it doesn't know),
@@ -229,7 +253,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   `Map/` (new MapFile, props placement), PropRenderer, TerrainRenderer palettes, map picker UI, `Rts.Net` map
   transfer. Tests: file round trip, props reclaim, MP map hash, MapScaleTests; screenshots per biome.
 
-**Wave 9: visual polish**
+#### Wave 9: visual polish ✅
 - 9a AI: removed from the plan (owner, 2026-11-11: improving the AI is no longer a goal).
 - 9b Visual & audio polish (G23, G22; G24/G25 if the owner says yes; re-cut 2026-11-11 into 9b-1 and 9b-2:
   HISTORY "Wave 9"). Terrain shadows, unit LOD, death animations,
@@ -248,7 +272,8 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     wrecks are not darkened by terrain shadows (props have their own shader); LOD meshes are built lazily on a
     model's first far frame (a small hitch the first time); a hotkey for minimap zoom.
 
-**Wave 10: multiplayer robustness + keybindings** (re-cut 2026-11-12 into 10a-1, 10b-1, 10a-2, 10b-2, 10a-3: HISTORY "Wave 10")
+#### Wave 10: multiplayer robustness + keybindings (in progress)
+(re-cut 2026-11-12 into 10a-1, 10b-1, 10a-2, 10b-2, 10a-3: HISTORY "Wave 10")
 - 10a Multiplayer (G34, G35, G36; G39 if time). `DMath` software trig/exp across the sim (mechanical, one hash
   change, golden-value tests), observers, MP save/load, vote to drop, lobby pings, chat sounds. Owns `Rts.Sim` math
   call sites, `Rts.Net`, Net menus. Tests: Net tests, `Rts.Bench -- mp`, replays still verify.
@@ -278,7 +303,8 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     load, fogged wrecks reappear when seen); the enhancement chain queue is client-side and not saved (a load stops
     after the current step); ~22 KB/frame left with 500 selected (input + placement ghosts walk the selection).
 
-**Wave 11+ (depends on the owner's answers)**: Italian localization (G28 + G25: touches every UI file, so pair it
+#### Wave 11+ (to do; depends on the owner's answers)
+Italian localization (G28 + G25: touches every UI file, so pair it
 with a sim-only agent: G12 pathing + G41 save migration); tutorial/scenario system (G42) then campaign (G43); mod
 support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
 

@@ -46,7 +46,10 @@ merges them all before the next wave.
 | pre-5 | 2026-10-13 → | (j) faction infrastructure (factions + roles, so a second faction can be added). |
 | 5 | 2026-10-14 → | (m) scale/perf, (n) UX polish, (o) lockstep multiplayer; after (j): (k) AI uses everything, (l) Cybran faction. |
 
-Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The current state: ROADMAP "NEXT STEPS".
+Waves 6 and later, and the state of every wave: the table in ROADMAP "Waves at a glance" (kept current at every
+merge; this table stopped at wave 5, and until 2026-11-12 ROADMAP had no list of the waves either: the owner asked
+where the waves after 4 were). Details per agent, including the briefs: [HISTORY.md](HISTORY.md). The current
+state: ROADMAP "NEXT STEPS".
 
 ## Lifecycle of a wave
 
@@ -96,7 +99,7 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    branch's worktree. It merges main into the branch there and resolves the conflicts. Then main merges the
    branch with no conflicts.
 7. **After the merge.** Copy the agent's report into [HISTORY.md](HISTORY.md) (its own section) and update ROADMAP
-   "NEXT STEPS". Write the lines the module added into `purposes.json` (`righe`; the command is in
+   "NEXT STEPS" and its "Waves at a glance" table. Write the lines the module added into `purposes.json` (`righe`; the command is in
    [tokens/README.org](tokens/README.org) "Onde e righe"), run `ledger.py update` and commit `docs/tokens/` (the hooks
    keep it current): `summary.org` then shows the module's and the wave's cost per 1000 lines. Every 2-3 waves, or
    when the owner asks (owner, 2026-11-10; before: after every wave), bring the whole "Costi" chapter of
@@ -222,6 +225,7 @@ Owner request (2026-10-16): keep evaluating how much many small contexts harm th
 | 2026-11-12 | (8b-3) Maps in multiplayer + biomes | module agents medium (200k), no coordinator, Opus 5.5; biome-visuals sub-agents low (150k, then 120k) | 5 agents, 0 dead: agent 1 cut by a usage limit at 162k after ~28 minutes (its last edits committed unbuilt by the orchestrator); agent 2 CHECKPOINT at 171k after 14 minutes (watcher at 170k); agent 3 finished at 137k in 15 minutes (one network drop at its start, resumed); sub-agent 1 stopped at its 130k checkpoint, sub-agent 2 finished at 97k (one network drop, resumed) | low: no redone work. One seam bug: the unbuilt WIP broke a sim test that agent 2 did not run (it ran only net and its own tests); agent 3 found it in the full suite. The separable visuals piece split cleanly into "build" and "check and tune" sub-agents. |
 | 2026-11-12 | (10b-1) Keybinding editor | module agent medium (200k), no coordinator, Opus 5.5 | 2 agents, 0 dead: agent 1 CHECKPOINT at 172k after 15 minutes (watcher at 170k) with the feature, tests and docs done and the sim tests unrun; agent 2 (low, 150k) ran the checks and wrote the report, 92k in 6 minutes | none: the note was enough; it lacked one command and the normal allocation numbers, so agent 2 built main to compare. |
 | 2026-11-12 | (10a-1) Deterministic math across the sim | module agent medium (200k), no coordinator, Opus 5.5 | 2 agents, 0 dead: agent 1 CHECKPOINT at 175k after 21 minutes (watcher at 170k) with the math, the call sites and the protocol bump committed and the full suites unrun; agent 2 finished at 137k in 17 minutes | low: no redone work; agent 2 found one seam the note lacked (replay writes kept the old header after loading an old save) and a screenshot pitfall. |
+| 2026-11-12 | (10b-2) Selection overlays and client leftovers | module agent medium (200k), no coordinator, Opus 5.5 | 3 agents, 1 dead: agent 1 CHECKPOINT at 170k after 14 minutes (rings, fog memory, 7 tests); agent 2 cut by the weekly-limit message after a minute or two, nothing changed (dead); agent 3 finished at 147k in 14 minutes (81 calls) | low: the note was accurate and its plan for the enhancement swap worked as written; it had no way to find which frame stage allocates, so agent 3 added per-stage allocations to `--perf-log`. Nothing redone, no seam bug. |
 
 ## Usage limits
 
