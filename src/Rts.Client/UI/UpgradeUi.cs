@@ -58,7 +58,7 @@ public static class UpgradeUi
     /// <summary>U: upgrade every selected own structure that can (any panel). Call once per frame, not in dialogs.</summary>
     public static void HandleHotkey(GameContext ctx, IEnumerable<UnitHandle> selected, SimSnapshot snap)
     {
-        if (Ui.Ctrl || Ui.Alt || !Raylib.IsKeyPressed(Hotkey)) return;
+        if (Ui.Alt && (Hotkeys.Upgrade.Mods & KeyMods.Alt) == 0 || !Hotkeys.Upgrade.Pressed()) return;
         var ready = new List<UnitHandle>();
         var upgrading = new List<UnitHandle>();
         Collect(ctx, selected, snap, ready, upgrading);

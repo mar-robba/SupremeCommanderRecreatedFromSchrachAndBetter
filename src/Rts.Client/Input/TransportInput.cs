@@ -175,7 +175,7 @@ public static class TransportInput
         var b = ButtonsFor(CargoSelection.Of(ctx, sel.Selected, snap));
         bool queue = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
         // U also upgrades selected structures (UpgradeUi): leave it to the upgrade when one can start.
-        if (u && (b & (TransportButtons.Unload | TransportButtons.Launch)) != 0 && !UpgradeWantsU(ctx, sel, snap)) StartUnload(ctx, sel, queue);
+        if (u && (b & (TransportButtons.Unload | TransportButtons.Launch)) != 0 && !(Hotkeys.SameBinding(Hotkeys.Unload, Hotkeys.Upgrade) && UpgradeWantsU(ctx, sel, snap))) StartUnload(ctx, sel, queue);
         // E / D are shared with capture / dive (SharedHotkeys): transports win E; D docks the aircraft while
         // UnitToggles dives the subs of the same selection.
         if (e && (b & TransportButtons.TransportTo) != 0) StartMode(sel, Mode.TransportTo);

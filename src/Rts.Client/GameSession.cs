@@ -173,7 +173,7 @@ public sealed class GameSession : IDisposable
             return;
         }
         if (!interactive || Ctx.ReadOnly || KeyboardCaptured || EffectsRenderer.DebugKeysEnabled || snap == null) return;
-        bool panel = Raylib.IsKeyPressed(Hotkeys.SandboxPanel.Key), console = Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[0]);
+        bool panel = Hotkeys.SandboxPanel.Pressed(), console = Hotkeys.SandboxConsole.PressedIndex() == 0;
         if (!panel && !console) return;
         if (!snap.Options.Cheats && snap.Sandbox == null)
         {

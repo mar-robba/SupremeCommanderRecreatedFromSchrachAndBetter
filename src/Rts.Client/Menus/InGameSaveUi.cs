@@ -36,8 +36,8 @@ public sealed class InGameSaveUi
     public void HandleHotkeys(int frame)
     {
         if (_opt.SaveAt == frame) QuickSave();
-        if (MenuUi.Key(Hotkeys.QuickSave.Key)) QuickSave();
-        if (MenuUi.Key(Hotkeys.QuickLoad.Key)) QuickLoad();
+        if (!MenuUi.Automated && Hotkeys.QuickSave.Pressed()) QuickSave();
+        if (!MenuUi.Automated && Hotkeys.QuickLoad.Pressed()) QuickLoad();
     }
 
     public void QuickSave() => Save(SaveStore.QuickSaveName);

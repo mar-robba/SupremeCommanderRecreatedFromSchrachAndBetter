@@ -11,6 +11,7 @@ namespace Rts.Client.Tests;
 /// <see cref="Hotkeys.All"/>, and every key polled in the game's input code is in the table (so the F1 help overlay is
 /// complete). Menus and text fields are not checked (their keys are not game hotkeys).
 /// </summary>
+[Collection("HotkeyTable")] // (10b-1) KeyBindingTests rebinds the shared table
 public class HotkeyTableTests
 {
     [Fact]
@@ -92,7 +93,7 @@ public class HotkeyTableTests
     {
         rel = rel.Replace('\\', '/');
         if (rel.StartsWith("Menus/")) return !(rel.EndsWith("/InGameSaveUi.cs") || rel.EndsWith("/ReplayScreen.cs"));
-        return rel is "Sandbox/SandboxTextField.cs" or "Sandbox/SandboxConsole.cs" or "UI/Ui.cs" or "Input/Hotkeys.cs";
+        return rel is "Sandbox/SandboxTextField.cs" or "Sandbox/SandboxConsole.cs" or "UI/Ui.cs" or "Input/Hotkeys.cs" or "Input/Hotkeys.Bindings.cs";
     }
 
     [Fact]

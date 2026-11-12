@@ -73,7 +73,7 @@ public sealed class OrdersPanel
         if (UnitToggles.AnyCapturer(_ctx, _sel.Selected))
         {
             // E is transport-to while transports are selected (SharedHotkeys): no key on the Capture button then.
-            string key = UnitToggles.EKey(_ctx, _sel.Selected) == SharedHotkeys.EAction.Capture ? UnitToggles.CaptureKeyName : "";
+            string key = !Hotkeys.SameBinding(Hotkeys.Capture, Hotkeys.TransportTo) || UnitToggles.EKey(_ctx, _sel.Selected) == SharedHotkeys.EAction.Capture ? UnitToggles.CaptureKeyName : "";
             b.Add((Btn.Capture, "Capture", key, true, _sel.Mode == Mode.Capture));
         }
         _pause = UnitToggles.PauseState(_ctx, _sel.Selected);

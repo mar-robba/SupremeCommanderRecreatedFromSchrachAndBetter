@@ -116,8 +116,8 @@ public sealed partial class SandboxController : IDisposable
         Ui.BeginFrame();
 
         bool searchFocused = Panel.SearchFocused;
-        if (Raylib.IsKeyPressed(Hotkeys.SandboxPanel.Key)) TogglePanel();
-        if (Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[0]) || (!searchFocused && Raylib.IsKeyPressed(Hotkeys.SandboxConsole.Keys[1]))) ToggleConsole();
+        if (Hotkeys.SandboxPanel.Pressed()) TogglePanel();
+        if (Hotkeys.SandboxConsole.PressedIndex() is int ci && (ci == 0 || ci > 0 && !searchFocused)) ToggleConsole();
         if (Raylib.IsKeyPressed(KeyboardKey.Escape))
         {
             if (ConsoleUi.Focused) ConsoleUi.Hide();

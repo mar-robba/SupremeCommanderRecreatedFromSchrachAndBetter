@@ -296,10 +296,9 @@ public sealed class Hud : IDisposable
         var (yes, no) = DialogButtons();
         bool first = _dialogFrames++ == 0;
         bool click = Raylib.IsMouseButtonPressed(MouseButton.Left);
-        bool confirm = Raylib.IsKeyPressed(KeyboardKey.Enter) || Raylib.IsKeyPressed(KeyboardKey.KpEnter) || Raylib.IsKeyPressed(KeyboardKey.Y)
-                       || (!first && Ui.Ctrl && Raylib.IsKeyPressed(KeyboardKey.K))
+        bool confirm = Hotkeys.DialogConfirm.Pressed() || (!first && Hotkeys.SelfDestruct.Pressed())
                        || (click && Raylib.CheckCollisionPointRec(Ui.Mouse, yes));
-        bool cancel = Raylib.IsKeyPressed(KeyboardKey.Escape) || Raylib.IsKeyPressed(KeyboardKey.N)
+        bool cancel = Hotkeys.DialogCancel.Pressed()
                       || (click && Raylib.CheckCollisionPointRec(Ui.Mouse, no))
                       || Raylib.IsMouseButtonPressed(MouseButton.Right);
         if (confirm) _sel.ConfirmSelfDestruct();
