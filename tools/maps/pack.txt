@@ -1,0 +1,13 @@
+# (8b-2) The map pack in data/maps: `dotnet run -c Release --project tools/Rts.Bench -- mapexport --pack tools/maps/pack.txt data/maps`
+# One map per line: id size seed players preset "Name" "Description". Each map must pass MapChecks (refused otherwise).
+# Changing the generator changes the maps this file produces: only re-export on purpose (saves name maps by id + hash).
+twin_meadows    256  7    2 Plains      "Twin Meadows"   "Open rolling grassland for a quick duel."
+red_gorge       256  12   2 Canyon      "Red Gorge"      "Two bases at the ends of a winding valley network."
+four_ponds      256  5    4 Lakes       "Four Ponds"     "Four corners split by ponds and fords."
+three_terraces  256  3    3 Highlands   "Three Terraces" "Three plateaus; ramps are the only way up."
+coral_strait    512  4    2 Archipelago "Coral Strait"   "Two islands across open sea: navy and air decide."
+highland_cross  512  9    4 Highlands   "Highland Cross" "Four terraced bases around a high center."
+six_fields      512  21   6 Plains      "Six Fields"     "Six players on wide open farmland."
+mesa_pentagon   512  15   5 Canyon      "Mesa Pentagon"  "Five bases among high mesas and narrow passes."
+great_lakes     1024 2    8 Lakes       "Great Lakes"    "Eight players around a wide lake district."
+badlands        1024 11   4 Canyon      "Badlands"       "A huge canyon maze for four."

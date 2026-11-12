@@ -913,6 +913,54 @@ scratch. Nothing was broken between the two agents' work.
 net green; reference match and bench give the two new hashes above; screenshot of `--scene props:fire` (standing,
 fallen and burning trees) looked right. The branch already contained main, so the merge changed nothing else.
 
+### (8b-2) Map files, map pack, map picker — report (merged 2026-11-12, 9528229)
+Two module agents on Opus 5.5, one after the other in the same worktree (a first start at 10:52 died on its first
+call from a network error and wrote nothing). Agent 1 wrote the sim side, the pack and the client picker in 15
+minutes and stopped at 166k when the orchestrator asked; agent 2 ran the suites and the reference checks, fixed
+three screens and wrote the docs in 10 minutes (112k). 1,037 lines in `src`, `tests` and `tools`, plus 2.4 MB of
+map files. Generated maps play exactly as before (same reference hashes).
+
+**What works.** A versioned `*.rtsmap` file (`Rts.Sim/Map/MapFile.cs`: heights, water, deposits, starts, props,
+name, content hash; Brotli, bit-exact round trip; heights rounded to 1/256 in the pack). `MapLibrary` finds the
+maps, `MapChecks` tests the generator's guarantees (starts connected, deposits buildable) through faction roles.
+`Rts.Bench -- mapexport` writes one map, `--pack` the whole pack (`tools/maps/pack.txt`), `--scan` finds seeds that
+pass the checks. 10 named maps in `data/maps` for 2-8 players and the three sizes. A game with fewer players than
+the map has starts uses a well-spread subset of them. The skirmish setup has a "Map" row ("Random map" keeps the
+generator rows; a file map shows its thumbnail with the starts the game will use); the loading screen, the
+"separate islands" warning and the screenshot info follow the file. Saves and replays store the map id and hash and
+refuse a missing or different file. How it works: ARCHITECTURE "Map files".
+
+**How to try it.** `dotnet run --project src/Rts.Client -- --setup --mapfile coral_strait`, or
+`-- --mapfile great_lakes --players 8`. No new hotkeys.
+
+**Tests.** `MapFileTests` (11, sim: exact and rounded round trip, damaged files, a game on an exact file equals the
+generated game, spread starts, every pack map passes the checks, a pinned hash, save/load and replay on a file map,
+missing or different file refused); `GameConfigTests.MapFilePickerChecksPlayersAndStartsTheGameOnTheFile` (client).
+
+**Shared files** (additive): GameApp.cs (3 lines), AppHost (1 line), Menus (GameConfig, SkirmishSetupScreen,
+LoadingScreen, MapPreview), Persistence (GameInfo, SaveGame), CLAUDE.md (2 lines).
+
+**Numbers.**
+- Map sizes (KB): twin_meadows 64, red_gorge 60, four_ponds 54, three_terraces 54 (256); coral_strait 210,
+  highland_cross 186, six_fields 204, mesa_pentagon 203 (512); great_lakes 701, badlands 637 (1024). Pack 2,373 KB.
+- Bench `2000 300` tick, interleaved, both copies on tmpfs: main 2.53 ms, branch 2.57 ms (+1.6 %, noise). With the
+  branch on the repo volume and main on tmpfs the branch looked 10 % slower: the perf check depends on the
+  filesystem (now in DEV_GUIDE "Perf check").
+- Reference match and bench: the hashes of main (FB269C29202773C1, 6A8312040EFA67F2).
+
+**Known issues / later** (ROADMAP): a save made on a map loaded from a path outside `data/maps` reloads only if the
+file is copied there; map files in the lobby (8b-3); a user maps folder; a map editor.
+
+**Handoff review** (second agent). The note was complete and accurate. Rediscovered: the filesystem bias of the
+perf check. The note listed only the island warning as a gap; the loading screen and the screenshot info had the
+same problem and were fixed too. Nothing broken at the seam. `tools/agents/dn.sh` fails in a worktree under the
+scratchpad (git `safe.directory`), so the main copy for the perf runs was built with dotnet directly.
+
+**Merge checks on main** (orchestrator, 2026-11-12 11:23-11:27): build 0 errors; tests 599 sim + 332 client + 27
+net green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A8312040EFA67F2; screenshot of
+`--setup --mapfile great_lakes --players 4` (thumbnail with the four starts in use numbered, the other four as
+white slots) looked right.
+
 ## Wave 9: visual polish (briefs re-cut 2026-11-11, not started)
 9a (AI) was removed from the plan by the owner on 2026-11-11. 9b is cut into two modules of about 1,500 lines, one
 module agent each as in (8b). Their files are disjoint from 8b-1 and 8b-2, so the pairs 8b-1 + 9b-1 and

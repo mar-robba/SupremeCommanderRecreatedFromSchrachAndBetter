@@ -35,6 +35,9 @@ public sealed class SkirmishSettings
     /// <summary>Game options (victory, unit cap, start resources, fog, cheats, prebuilt base); defaults = classic game.
     /// <see cref="StartMass"/>/<see cref="StartEnergy"/> (when >= 0) override <see cref="GameOptions.Resources"/>.</summary>
     public GameOptions Options = new();
+    /// <summary>(8b-2) Play on this map file instead of a generated map (null = generator with MapSize/Seed/MapPreset/
+    /// WaterAmount). Players must not exceed its start positions; <see cref="MapFile.TerrainFor"/> picks spread starts.</summary>
+    public MapFile? MapFile;
 }
 
 public static class GameSetup
@@ -68,9 +71,18 @@ public static class GameSetup
         return result;
     }
 
+    /// <summary>The terrain of a skirmish: the map file's (for its player count) or a generated one.</summary>
+    public static Terrain TerrainFor(SkirmishSettings s)
+    {
+        if (s.MapFile == null) return MapGenerator.Generate(MapSettingsFor(s));
+        if (s.Players > s.MapFile.Info.Players)
+            throw new InvalidOperationException($"The map '{s.MapFile.Info.Name}' has {s.MapFile.Info.Players} start positions, not {s.Players}");
+        return s.MapFile.TerrainFor(s.Players);
+    }
+
     public static Simulation CreateSkirmish(BlueprintDb db, SkirmishSettings s)
     {
-        var terrain = MapGenerator.Generate(MapSettingsFor(s));
+        var terrain = TerrainFor(s);
         var factions = ResolveFactions(db, s);
         var armies = new Army[s.Players];
         for (int a = 0; a < s.Players; a++)

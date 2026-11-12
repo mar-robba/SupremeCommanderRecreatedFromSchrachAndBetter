@@ -972,3 +972,43 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   rises bottom-up as a hologram (`WarpFrac` read by `UnitRenderer`) over 0.35 + 1.5 s.
 - Test scene `--scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]` (`DeathScene.cs`): army 1 groups killed
   together by a sandbox Kill 1.2 s after start, the run pauses N ticks later (defaults per group) for screenshots.
+
+## Map files (8b-2: `Rts.Sim/Map/MapFile.cs`, `MapLibrary.cs`, `MapChecks.cs`, `tools/Rts.Bench/MapExport.cs`, `data/maps`)
+- Format `*.rtsmap` v1 (`MapFile.Version`; a new version = a new decode branch, old files must keep loading): magic
+  "RTSMAP", u16 version, header block (`MapFileInfo`: name, description, players = start count, width, height,
+  HeightBits, origin Generated/Preset/Seed/WaterAmount, informational only), u64 content hash, raw length, Brotli
+  payload (size, water level, terrain seed, heights, deposits, starts, props in column order). Heights are integers
+  (float bits, or multiples of 2^-HeightBits) as gradient-predicted (left + up - up-left) zigzag varints. The id is the
+  file name, not stored. `Decode` checks magic/version/sizes and the hash (`MapFileException` = damaged); `ReadHeader`
+  reads only the header (menus). The round trip is bit-exact (heights, deposits, starts, props; passability is
+  recomputed by `Terrain`'s constructor). Content hash = `Hash64` of the raw payload (`MapFile.ContentHash`).
+- `MapFile.Quantize(t, 8)` rounds heights to 1/256 (files ~4x smaller); the exported file is then an exact copy of the
+  quantized terrain. Rounded values must be normalized with `+ 0f` (a negative value that rounds to 0 gives -0,
+  whose bits differ, and the round trip broke on Archipelago).
+- `MapLibrary`: `DefaultDir` = data/maps, `List` (headers, damaged files skipped), `Resolve(id or path)` (exact id,
+  then case-insensitive), `Load`. `MapChecks.Check(terrain, db, naval)` = the generator's guarantees for any terrain
+  (same rules as `MapGeneratorTests`): 2-8 starts connected over land (naval maps: land + water surface), every
+  deposit buildable by every faction's extractor / hydrocarbon role, a flat start area (r 16) with a factory site and
+  base resources per start. Faction roles only.
+- Games: `SkirmishSettings.MapFile` (null = generator). `GameSetup.TerrainFor(s)` = `MapFile.TerrainFor(players)`:
+  the whole file when every start is used, else a copy with `SpreadStarts` (the subset, always with start 0, with the
+  largest minimum pairwise distance, then the largest distance sum; exhaustive, ascending index), so
+  `StartPositions[army]` is the army's start everywhere. More players than starts throws. Props come from the file.
+  A file exported with `--exact` gives the same `StateHash` as the generated map (`MapFileTests`).
+- Saves/replays: `GameInfo.MapFile` (id) + `MapFileHash` + `MapName`, `Map` (generator settings) = null and no
+  embedded terrain. Loading (`SaveGame.MapFileTerrain`) refuses with `IncompatibleSaveException` a map that is not
+  installed or whose header hash differs, then rebuilds `TerrainFor(info.Players.Count)`; the usual terrain hash check
+  follows. Fields are optional in the JSON: older saves of generated maps load unchanged. Replay file names use the
+  map id (`SaveStore`).
+- `Rts.Bench -- mapexport <out> <size> <seed> <players> [preset] [name] [--water X] [--exact] [--desc T]`; `--pack
+  tools/maps/pack.txt data/maps` writes the pack (one map per line: id size seed players preset "Name" "Desc");
+  `--scan <size> <players> <preset> <seed0> <count>` lists which seeds pass and their file sizes. Each map is checked
+  on the terrain read back from the encoded bytes (exact round trip + `MapChecks`) and refused (exit 1) if it fails.
+  Re-exporting after a generator change changes the files and their hashes (saves on the old files are refused).
+- Pack (10 maps, 2373 KB): 256: twin_meadows 2p, red_gorge 2p, four_ponds 4p, three_terraces 3p (54-64 KB);
+  512: coral_strait 2p (Archipelago), highland_cross 4p, six_fields 6p, mesa_pentagon 5p (186-210 KB); 1024:
+  great_lakes 8p, badlands 4p (637-701 KB). Pinned test hash: twin_meadows 0AF9AD17AF615153.
+- Client: `Menus/MapFileCache` (headers sorted by players / size / name, decoded files cached, thread-safe),
+  `GameConfig.MapFile` (Problem(): "X has room for N players", "not found"), `--mapfile NAME` (also with `--setup`).
+  Skirmish setup row "Map" (Cycle: Random map | pack maps); a file map hides the generator rows and shows its
+  description; `MapPreview.RequestFile(id, players)` draws the starts the game will use, unused ones as empty slots.

@@ -2,12 +2,13 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-11 19:55 — read this first in a new session)
-main has waves 1-7, (8a), (8b-1) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
+## ▶ NEXT STEPS (updated 2026-11-12 11:32 — read this first in a new session)
+main has waves 1-7, (8a), (8b-1), (8b-2) and (9b-1): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
-2026-11-11), (8b-1) map props: trees and rocks and (9b-1) death animations + ACU warp-in (both merged 2026-11-12).
-Tests: 588 sim + 331 client + 27 net.
+2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in and (8b-2) map files + map
+pack + map picker (all three merged 2026-11-12).
+Tests: 599 sim + 332 client + 27 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
 **FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
 rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
@@ -16,22 +17,19 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 00:15, orchestrator session 9cdd3b47, the one that began as 26701b91):
-- **No agent is running, no agent worktree is open, nothing waits for a merge.** (8b-1) Map props (dd28b4a) and
-  (9b-1) Death animations + ACU warp-in (3a000b0) are merged and verified on main (build, the three suites,
-  reference match, bench hash, screenshots: HISTORY "(8b-1)" and "(9b-1)" reports). What they left: their "later:"
-  lines in the wave lists below.
-- **FIRST THING TO DO: start (8b-2) Map files + map pack + map picker and (9b-2) Terrain self-shadows + unit LOD +
-  minimap options**, together, one module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k, 0
-  sub-agents), at the start of a usage window. Then (8b-3) Maps in multiplayer + biomes alone. Briefs: HISTORY
-  "(8b) Maps" and "Wave 9"; ledger purposes already in `tools/token-ledger/purposes.json`. The orchestrator session
-  of 2026-11-12 (26701b91 / 9cdd3b47) holds a one-shot job for **06:07** (CronCreate 92ba51cb) that starts them: it
-  carries the facts for the two prompts (also in that session's transcript) and does nothing if agents are already
-  started. It lives only while that session stays open and idle; otherwise a new session starts them by hand.
-- **Usage window:** the one that began 2026-11-12 00:00 held 22.4 $ at 00:52 (two generations of two Opus agents,
-  43 minutes, plus the orchestrator on Fable 5.2) without a limit message; it should reset at 05:00, and the job is
-  set one hour later because the evening window of 11-11 reset an hour later than worked out (WORKFLOW "Usage
-  limits", "When a window resets"). Other `claude` sessions of the owner were open.
+**ON RESUME** (2026-11-12 11:32, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
+- **(8b-2) is merged and verified** (9528229; HISTORY "(8b-2)" report); its worktree and branch are removed.
+- **One module agent is running: (9b-2) Terrain self-shadows + unit LOD + minimap options**, agent 2
+  ac5141e246be5f8c5 (CTX-TAG `9b2-mod-2`, `model: "opus"`, cap 200k, CHECKPOINT 180k, 0 sub-agents), since 11:15
+  in worktree `.claude/worktrees/agent-a0aac67ba2177f048` (branch `worktree-agent-a0aac67ba2177f048`), continuing
+  from `.claude/handoff.md`. Agent 1 (a0aac67ba2177f048) CHECKPOINTed at 185k at 11:12 with the shadow bake, the
+  mesh simplifier and the LOD maths written but never built. The worktree also holds a nested worktree
+  `.claude/mainbench` (a main build for perf runs) that the agent removes at the end. Context watcher at 170k in the
+  background of session e3d118ad. Prompts in that session's transcript.
+- Then (8b-3) Maps in multiplayer + biomes alone, after both merges. Briefs: HISTORY "(8b) Maps" and "Wave 9";
+  ledger purposes already in `tools/token-ledger/purposes.json`.
+- **Usage window:** since 05:00 only 8 calls (1.2 $) before these agents started, so the window was nearly fresh.
+  Other `claude` sessions of the owner were open but idle.
 - **Watch the agents' context from the start:** module agents reach 200k in about 19 minutes and do not stop by
   themselves (WORKFLOW "Context limits and handoffs"): watcher at 170k, CHECKPOINT message at once, then a fresh
   agent in the same worktree.
@@ -431,6 +429,14 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       `PropRenderer.Nature` (instanced, near/far LOD, fall/burn looks); reclaim tooltip; `--scene props[:fire|:rocks]`
       - [ ] later: trees cast no shadows (the shadow pass is in UnitRenderer); a fallen tree that ignites replays its
         fall animation (needs a FallTick field); trees on the minimap; old saves/replays refused (layout change)
+- [x] Map files, map pack, map picker (2026-11-12, module 8b-2; ARCHITECTURE "Map files"): versioned `*.rtsmap`
+      (`Map/MapFile`: heights, water, deposits, starts, props, name, content hash; bit-exact round trip, Brotli),
+      `MapLibrary` + `MapChecks` (generator guarantees); `Rts.Bench -- mapexport` (+ `--pack`, `--scan`); 10 named
+      maps in `data/maps` (2-8 players, 256/512/1024, 2373 KB, spec `tools/maps/pack.txt`); fewer players than starts
+      = spread subset; skirmish setup "Map" picker (Random map keeps the generator rows) + `--mapfile NAME`; saves and
+      replays record map id + hash and refuse a missing or different file; generated maps unchanged
+      - [ ] later: saves of a map loaded from a path outside data/maps reload only if the file is copied there; map
+        files in the lobby / multiplayer (8b-3); a user maps folder (release mode); a map editor
 
 ## Phase 4 — Scale and polish
 - [x] 1024 maps with 4–8 players, 5k+ units at 60 FPS (wave 5m, 2026-10-16; ARCHITECTURE "Performance & scale"):
