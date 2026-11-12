@@ -2,7 +2,8 @@
 
 The orchestrator pastes the block below into every agent prompt, after the agent's own brief (goal, must-haves,
 files it owns). Fill in the `<...>` parts. Why these rules exist: [WORKFLOW.md](WORKFLOW.md).
-Start every agent with `model: "opus"` in the Agent call, and run at most 2 agents at a time, sub-agents counted
+Start every agent with `model: "opus"` in the Agent call (`model: "sonnet"` for a trivial task: owner, 2026-11-12,
+WORKFLOW "Lifecycle of a wave" step 3), and run at most 2 agents at a time, sub-agents counted
 (WORKFLOW "Owner decisions", 2026-11-10): so `<S>` below is 1 for an agent that runs alone and 0 when two module
 agents run.
 
@@ -52,7 +53,9 @@ agents run.
   into sim and client, and at most `<S>` at a time (the project runs at most 2 agents at once, sub-agents counted;
   each sub-agent pays its own start-up reading). Rules:
   - pass `model: "opus"` in every Agent call (a sub-agent otherwise inherits the session's model, and on Fable 5.2
-    a usage window holds a fifth of the work);
+    a usage window holds a fifth of the work); for a trivial piece (the prompt says exactly what to do, no design
+    choice is left, a command tells whether it is right: data files from a table, running checks) pass
+    `model: "sonnet"` instead (owner, 2026-11-12: no Opus 5.5 for very simple tasks);
   - they work in YOUR worktree (give them the absolute path; no isolation flag) on disjoint files;
   - only ONE `dotnet build`/`dotnet test` may run at a time per worktree: everyone runs dotnet through
     `bash tools/agents/dn.sh <dotnet args>` (call it through `bash`: the volume is mounted without exec bits and git has `core.fileMode=false`);

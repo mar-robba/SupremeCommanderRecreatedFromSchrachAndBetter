@@ -28,6 +28,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-10-23 | **Two factions are enough** (UEF + Cybran): don't create further factions (no Aeon/Seraphim). "Everything must be done" means the full feature set for these two. |
 | 2026-11-10 | The owner asked for a judgment of these rules and approved its four changes ("effettua le modifiche consigliate"; "Review of the process rules (2026-11-10)"): (1) agents and sub-agents run on **Opus 5.5** (`model: "opus"` in every Agent call); Fable 5.2 only for the orchestrator and for pieces of class high or critical. (2) **One agent per module, no coordinator**: modules of about 1,500 lines, cap 200k; sub-agents only for separable content with a written contract (blueprints, models, tests). (3) **At most 2 agents at a time, sub-agents counted**, and no start when other sessions of the owner have already used part of the usage window. (4) LESSONS "Costi" is brought up to date **every 2-3 waves** or when the owner asks, not after every wave. |
 | 2026-11-11 | **Improving the AI is no longer a goal of the project** ("l'ai non deve essere più un obbiettivo del progetto, terremo quella già fatta"; then "mantieni la doc sulla ai soltanto togli dal programma l'obbiettivo di migliorarla"). The skirmish AI stays as merged in wave 5. Removed from ROADMAP: wave 9a, gap rows G30-G33, the "later: AI ..." lines. The AI docs (ARCHITECTURE "Skirmish AI", AI_TUNING) stay unchanged. Agents plan no AI work and write no "later: AI uses X" lines; the AI only has to keep working (AI tests, the reference match at every merge). |
+| 2026-11-12 | **Cheaper models for trivial tasks** ("i sotto se il compito è molto banale non c'è bisogno di usare opus 5.5 xhigh quando potresti usare modelli meno costosi come sonnet 5.5 etc"): an agent or sub-agent whose task is very simple runs on Sonnet 5.5 (`model: "sonnet"`) or another cheaper model, not on Opus 5.5 at xhigh effort. What counts as trivial is the orchestrator's reading: "Lifecycle of a wave" step 3. |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -65,6 +66,16 @@ Details per agent, including the wave 5 briefs: [HISTORY.md](HISTORY.md). The cu
    waves 6-8 until 2026-11-10; the session-start hook now names the purposes without an area). Every Agent call carries
    `model: "opus"` (owner, 2026-11-10: agents otherwise inherit the session's model, and a Fable 5.2 window holds a
    fifth of the work); `model: "fable"` only for a piece of class high or critical, planned for a window of its own.
+   `model: "sonnet"` for a **trivial** task (owner, 2026-11-12): Sonnet 5.5 costs half of Opus 5.5 per token
+   (`ledger.py` `PRICES`), and by the owner's settings (`~/.claude/settings.json`: default effort medium, xhigh
+   only for Opus 5.5 and Fable 5.2) it runs at medium effort (not checked with a real agent). Trivial, as the
+   orchestrator reads the owner's words: the prompt says exactly what to do, no design choice is left, and a
+   command tells whether the result is right. Examples: run the final checks of a finished module and write its
+   report (the job of 10b-1 agent 2), data files from a written table, map pack exports, copying reports into
+   HISTORY and rows into `purposes.json`, renames. `model: "haiku"` (a fortieth of the price) only for mechanics
+   with no judgment, such as running a list of commands and returning their output. Not trivial: writing sim or
+   client features, anything on determinism or saves, merge conflicts, diagnosing a failure. A cheap agent whose
+   check fails for a cause that is not obvious stops and reports, and an Opus 5.5 agent takes over.
    As a safety net `.claude/settings.json` sets `"env": {"CLAUDE_CODE_SUBAGENT_MODEL": "opus"}`, the default model
    of sub-agents in sessions started after 2026-11-11 (the variable exists in Claude Code 2.1.322; its effect was
    not checked with a real agent, and the file is local, not in git). Keep the explicit `model` in the call.
@@ -277,7 +288,8 @@ previous reset + 5 h, and the job's "one small call" check does not help while t
 ## Sub-agents
 
 Since 2026-11-10 a module agent does its module itself: there is no coordinator, which cost a third of 6a, 6b and
-7a. It starts a sub-agent (general-purpose, `model: "opus"`) only for separable content with a written contract
+7a. It starts a sub-agent (general-purpose, `model: "opus"`; `model: "sonnet"` when the piece is trivial, "Lifecycle of
+a wave" step 3) only for separable content with a written contract
 (blueprints, unit models, tests), not to split a feature into sim and client. Sub-agents count toward the limit of
 2 agents at a time, so the orchestrator writes in the prompt how many the agent may run at once: 1 when it runs
 alone, 0 when two module agents run. Rules for a sub-agent:
