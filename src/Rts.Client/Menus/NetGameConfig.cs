@@ -22,6 +22,8 @@ public static class NetGameConfig
     {
         var o = lobby.Options;
         var cfg = new GameConfig { MapSize = o.MapSize, Preset = o.Preset, WaterAmount = o.Water, Seed = o.Seed, Options = o.Game.Clone() };
+        cfg.MapFile = o.HasMapFile ? o.MapFile : null; // (8b-3)
+        cfg.Biome = o.EffectiveBiome;
         for (int i = 0; i < GameConfig.MaxSlots; i++)
         {
             var c = cfg.Slots[i];
@@ -41,9 +43,9 @@ public static class NetGameConfig
     }
 
     /// <summary>Replay recording of the game (call before the runner starts: reads the world).</summary>
-    public static GameRecording Recording(GameStart start, GameConfig cfg, Simulation sim, int localArmy)
+    public static GameRecording Recording(GameStart start, GameConfig cfg, Simulation sim, int localArmy, Rts.Sim.Map.MapFile? map = null)
     {
-        var info = GameInfo.ForSkirmish(NetGameSetup.ToSkirmish(start), sim, localArmy, false);
+        var info = GameInfo.ForSkirmish(NetGameSetup.ToSkirmish(start, map), sim, localArmy, false); // (8b-3) records map id + hash
         info.Name = "Multiplayer";
         info.ClientData = ClientGameData.From(cfg).ToJson();
         return new GameRecording(info);

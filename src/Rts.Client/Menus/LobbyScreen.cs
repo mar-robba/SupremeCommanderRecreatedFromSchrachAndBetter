@@ -17,7 +17,7 @@ namespace Rts.Client.Menus;
 /// GameStarting → <see cref="NetLoadingScreen"/> (the session moves on with it); a lost connection → the
 /// multiplayer menu. Leaving the screen any other way leaves the session.
 /// </summary>
-public sealed class LobbyScreen : IScreen
+public sealed partial class LobbyScreen : IScreen
 {
     private readonly AppHost _app;
     private readonly NetSession _s;
@@ -54,6 +54,8 @@ public sealed class LobbyScreen : IScreen
         o.Water = c.WaterAmount;
         o.Seed = c.Seed;
         o.Game = c.Options.Clone(); // game options from the setup screen (or --options)
+        o.MapFile = c.MapFile ?? ""; // (8b-3) map file + biome from the setup (or --mapfile / --biome)
+        o.Biome = c.Biome is Biome b ? (byte)(1 + (int)b) : (byte)0;
         _host.SetOptions(o);
         if (_app.Options.PlayersGiven)
             for (int i = 1; i < Math.Min(_app.Options.Players, LobbyState.MaxSlots); i++)
@@ -72,7 +74,7 @@ public sealed class LobbyScreen : IScreen
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
         MenuUi.BeginFrame();
-        _preview.Request(NetGameConfig.From(lobby, _s.PlayerId).MapSettings());
+        RequestPreview(lobby); // (8b-3) LobbyScreen.Maps.cs
         _preview.Update();
 
         float x0 = Ui.P(48), y0 = Ui.P(30);
@@ -273,14 +275,15 @@ public sealed class LobbyScreen : IScreen
         Ui.Panel(p);
         Ui.PanelTitle(p, "Map");
         float pad = Ui.P(14);
-        float size = MathF.Min(p.Width - 2 * pad, p.Height * 0.46f);
+        int rows = _host != null ? (l.Options.HasMapFile ? 3 : 7) : (l.Options.HasMapFile ? 5 : 7); // (8b-3) map + biome rows
+        float size = MathF.Min(p.Width - 2 * pad, MathF.Min(p.Height * 0.5f, p.Height - Ui.P(36) * rows - Ui.P(70)));
         var pr = Ui.R(p.X + (p.Width - size) * 0.5f, p.Y + Ui.P(28), size, size);
         var colors = l.Slots.Where(s => s.IsArmy).Select(s => ColorUtil.FromRgba(GameSetup.ArmyColors[s.Color % GameSetup.ArmyColors.Length])).ToList();
         _preview.Draw(pr, colors);
 
         float y = pr.Y + pr.Height + Ui.P(6);
         var t = _preview.Terrain;
-        string info = t == null ? "Generating…"
+        string info = MapStatusLine(l) is string ms ? ms : t == null ? "Generating…"
             : $"{t.StartPositions.Length} start positions · {t.Deposits.Count(d => d.Type == DepositType.Mass)} mass · {t.Deposits.Count(d => d.Type == DepositType.Hydrocarbon)} hydrocarbon";
         Ui.TextCentered(info, Ui.R(p.X, y, p.Width, Ui.P(16)), Ui.F(10.5f), Ui.TextDim);
         y += Ui.P(22);
@@ -296,16 +299,24 @@ public sealed class LobbyScreen : IScreen
                 Ui.Text(value, cx, y + (rowH - Ui.F(13)) * 0.5f - 1, Ui.F(13), Ui.TextColor, true);
                 y += rowH + Ui.P(2);
             }
+            if (o.HasMapFile) Line("Map", $"{o.MapName} · {o.MapPlayers} players"); // (8b-3)
             Line("Size", $"{o.MapSize / 51.2f:0} km · {o.MapSize}");
-            Line("Terrain", MapPresets.Name(o.Preset));
-            Line("Water", $"{(o.Water < 0 ? MapPresets.DefaultWater(o.Preset) : o.Water) * 100:0}%");
-            Line("Seed", o.Seed.ToString());
+            if (!o.HasMapFile)
+            {
+                Line("Terrain", MapPresets.Name(o.Preset));
+                Line("Water", $"{(o.Water < 0 ? MapPresets.DefaultWater(o.Preset) : o.Water) * 100:0}%");
+                Line("Seed", o.Seed.ToString());
+            }
+            Line("Biome", BiomeLabel(o));
             Line("On drop", o.OnDrop == DropAction.AiTakeover ? "AI takes over" : "Defeated");
             Ui.Text("The host chooses the map.", lx, y + Ui.P(4), Ui.F(10.5f), Ui.TextFaint);
             return;
         }
 
         var n = o.Clone();
+        y = DrawMapRows(n, o, lx, cx, cw, y, rowH, gap); // (8b-3) map file + biome
+        if (!o.HasMapFile)
+        {
         MenuUi.Label("Size", lx, y, rowH);
         int si = Array.IndexOf(GameConfig.MapSizes, o.MapSize);
         int nsi = MenuUi.Segmented(Ui.R(cx, y, cw, rowH), ["5 km · 256", "10 km · 512", "20 km · 1024"], si, true, 11.5f);
@@ -340,13 +351,15 @@ public sealed class LobbyScreen : IScreen
             _seedText = n.Seed.ToString();
         }
         y += rowH + gap;
+        }
 
         MenuUi.Label("On drop", lx, y, rowH);
         int di = o.OnDrop == DropAction.AiTakeover ? 0 : 1;
         int ndi = MenuUi.Segmented(Ui.R(cx, y, cw, rowH), ["AI takes over", "Defeated"], di, true, 11.5f);
         if (ndi != di && ndi >= 0) n.OnDrop = ndi == 0 ? DropAction.AiTakeover : DropAction.Defeat;
 
-        if (n.MapSize != o.MapSize || n.Preset != o.Preset || n.Water != o.Water || n.Seed != o.Seed || n.OnDrop != o.OnDrop)
+        if (n.MapSize != o.MapSize || n.Preset != o.Preset || n.Water != o.Water || n.Seed != o.Seed || n.OnDrop != o.OnDrop
+            || n.MapFile != o.MapFile || n.Biome != o.Biome)
             _host.SetOptions(n);
     }
 
@@ -428,7 +441,9 @@ public sealed class LobbyScreen : IScreen
             bool ready = me?.Ready == true;
             string text = _status ?? (ready ? "Waiting for the host to start" : "Press Ready when you are set");
             Ui.TextRight(text, start.X - Ui.P(14), ty, Ui.F(12), _status != null ? Ui.Warn : Ui.TextDim, true);
-            if (MenuUi.BigButton(start, ready ? "Not Ready" : "Ready", me != null, !ready, 16)) _client!.SetReady(!ready);
+            bool mapOk = MapPresent(l); // (8b-3) Ready only with the map file
+            if (!mapOk && _status == null && MapStatusLine(l) is string ml) Ui.TextRight(ml, start.X - Ui.P(14), ty + Ui.P(16), Ui.F(10.5f), Ui.TextDim);
+            if (MenuUi.BigButton(start, ready ? "Not Ready" : "Ready", me != null && (mapOk || ready), !ready, 16)) _client!.SetReady(!ready);
         }
     }
 
@@ -443,6 +458,7 @@ public sealed class LobbyScreen : IScreen
         if (!_app.Options.AutoStart || _autoDone || _frames < 5) return;
         if (_client != null)
         {
+            if (!MapPresent(l)) return; // (8b-3) wait for the download
             _autoDone = true;
             _client.SetReady(true);
         }

@@ -160,7 +160,7 @@ public sealed class SkirmishSetupScreen : IScreen
         Ui.Panel(p);
         Ui.PanelTitle(p, "Map");
         float pad = Ui.P(14);
-        float size = MathF.Min(p.Width - 2 * pad, p.Height * 0.48f);
+        float size = MathF.Min(p.Width - 2 * pad, p.Height * 0.44f); // (8b-3) 0.48 -> 0.44: room for the biome row
         var pr = Ui.R(p.X + (p.Width - size) * 0.5f, p.Y + Ui.P(28), size, size);
         var colors = _cfg.OpenSlots.Select(s => ColorUtil.FromRgba(GameSetup.ArmyColors[s.ColorIndex % GameSetup.ArmyColors.Length])).ToList();
         _preview.Draw(pr, colors);
@@ -180,6 +180,16 @@ public sealed class SkirmishSetupScreen : IScreen
         MenuUi.Label("Map", lx, y, rowH);
         int md = MenuUi.Cycle(Ui.R(cx, y, cw, rowH), mapInfo != null ? $"{mapInfo.Name}  ({mapInfo.SizeLabel}, {mapInfo.Players}p)" : "Random map");
         if (md != 0) _cfg.MapFile = MapFileCache.Next(_cfg.MapFile, md);
+        y += rowH + gap;
+        // (8b-3) Biome: "Map default" (null: the file's, temperate for generated maps) or a fixed one. Visual only.
+        MenuUi.Label("Biome", lx, y, rowH);
+        int bd = MenuUi.Cycle(Ui.R(cx, y, cw, rowH), _cfg.Biome is Biome cb ? Biomes.Name(cb) : $"Map default ({Biomes.Name(_cfg.EffectiveBiome)})");
+        if (bd != 0)
+        {
+            int cur = _cfg.Biome is Biome b0 ? (int)b0 + 1 : 0, n = Biomes.All.Length + 1;
+            int next = ((cur + bd) % n + n) % n;
+            _cfg.Biome = next == 0 ? null : Biomes.All[next - 1];
+        }
         y += rowH + gap;
         if (mapInfo != null)
         {

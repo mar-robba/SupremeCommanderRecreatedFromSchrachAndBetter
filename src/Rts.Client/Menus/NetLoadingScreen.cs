@@ -20,7 +20,7 @@ public sealed class NetLoadingScreen : IScreen
     private readonly NetSession _s;
     private readonly NetGame _game;
     private readonly ClientOptions _opt;
-    private readonly Task<(Simulation sim, ulong hash)> _task;
+    private readonly Task<(Simulation sim, ulong hash, Rts.Sim.Map.MapFile? map)> _task;
     private GameSession? _session;
     private bool _handedOff, _shownFinal;
     private float _time;
@@ -33,8 +33,9 @@ public sealed class NetLoadingScreen : IScreen
         _opt = app.MenuGameOptions();
         _task = Task.Run(() =>
         {
-            var sim = NetGameSetup.CreateSimulation(app.Db, game.Start);
-            return (sim, sim.StateHash());
+            var map = NetGameSetup.LoadMap(game.Start, session.MapDir); // (8b-3) null = generated map
+            var sim = NetGameSetup.CreateSimulation(app.Db, game.Start, map);
+            return (sim, sim.StateHash(), map);
         });
     }
 
@@ -55,7 +56,8 @@ public sealed class NetLoadingScreen : IScreen
         Ui.PanelTitle(p, "Starting multiplayer game");
         float x = p.X + Ui.P(22), y = p.Y + Ui.P(36);
         var o = _game.Start.Lobby.Options;
-        Ui.Text($"{MapPresets.Name(o.Preset)} · {o.MapSize / 51.2f:0} km · seed {o.Seed}", x, y, Ui.F(20), Ui.TextColor, true);
+        Ui.Text(o.HasMapFile ? $"{o.MapName} · {o.MapSize / 51.2f:0} km · {Rts.Sim.Map.Biomes.Name(o.EffectiveBiome)}"
+            : $"{MapPresets.Name(o.Preset)} · {o.MapSize / 51.2f:0} km · seed {o.Seed}", x, y, Ui.F(20), Ui.TextColor, true);
         y += Ui.P(34);
         float px = x;
         foreach (int slot in _game.Start.ArmySlots)
@@ -93,10 +95,10 @@ public sealed class NetLoadingScreen : IScreen
         if (_task.IsCompletedSuccessfully && _session == null && _time > 0.3f)
         {
             if (!_shownFinal) { _shownFinal = true; return; }
-            var (sim, hash) = _task.Result;
+            var (sim, hash, map) = _task.Result;
             var start = _game.Start;
             var cfg = NetGameConfig.From(start, _s.PlayerId);
-            var rec = NetGameConfig.Recording(start, cfg, sim, _game.LocalArmy);
+            var rec = NetGameConfig.Recording(start, cfg, sim, _game.LocalArmy, map);
             _session = new GameSession(_app.Db, sim, cfg, _game.LocalArmy, _opt, _app.Audio, rec,
                 wrapHooks: inner => _game.CreateHooks(inner));
             _game.AttachRunner(_session.Runner);
