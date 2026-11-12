@@ -1,5 +1,6 @@
 using Rts.Client.Menus;
 using Rts.Sim.Data;
+using Rts.Sim.Map;
 using Rts.Sim.World;
 
 namespace Rts.Client.Tests;
@@ -60,5 +61,34 @@ public class GameConfigTests
         Assert.True(o.VolumeGiven);
         Assert.Equal(0.25f, o.Audio.Music);
         Assert.False(ClientOptions.Parse(["--demo"]).VolumeGiven);
+    }
+
+    /// <summary>(8b-2) Map picker: cycling, player-count check, --mapfile, a game on the file's spread starts.</summary>
+    [Fact]
+    public void MapFilePickerChecksPlayersAndStartsTheGameOnTheFile()
+    {
+        var maps = MapFileCache.List;
+        Assert.True(maps.Count >= 8, $"{maps.Count} pack maps");
+        string? id = null;
+        for (int i = 0; i <= maps.Count; i++) id = MapFileCache.Next(id, 1);
+        Assert.Null(id); // Random map → every pack map → back to Random map
+        Assert.Equal(maps[^1].Id, MapFileCache.Next(null, -1));
+
+        var cfg = GameConfig.FromOptions(ClientOptions.Parse(["--mapfile", "twin_meadows"]));
+        Assert.Equal("twin_meadows", cfg.MapFile);
+        Assert.Null(cfg.Problem());
+        cfg.Slots[2].Kind = SlotKind.AI;
+        Assert.Contains("room for 2", cfg.Problem());
+        cfg.MapFile = "zz_no_such_map";
+        Assert.Contains("not found", cfg.Problem());
+
+        cfg.MapFile = "four_ponds"; // 4 starts, 3 players: a spread subset
+        Assert.Null(cfg.Problem());
+        var sim = GameSession.CreateSimulation(Db, cfg, out _);
+        var file = MapFileCache.Get("four_ponds");
+        Assert.Equal(3, sim.World.Terrain.StartPositions.Length);
+        Assert.Equal(file.Terrain.Heights, sim.World.Terrain.Heights);
+        Assert.Equal(MapFile.SpreadStarts(file.Terrain.StartPositions, 3).Select(i => file.Terrain.StartPositions[i]),
+            sim.World.Terrain.StartPositions);
     }
 }

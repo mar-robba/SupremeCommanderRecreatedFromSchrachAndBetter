@@ -432,6 +432,14 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       `PropRenderer.Nature` (instanced, near/far LOD, fall/burn looks); reclaim tooltip; `--scene props[:fire|:rocks]`
       - [ ] later: trees cast no shadows (the shadow pass is in UnitRenderer); a fallen tree that ignites replays its
         fall animation (needs a FallTick field); trees on the minimap; old saves/replays refused (layout change)
+- [x] Map files, map pack, map picker (2026-11-12, module 8b-2; ARCHITECTURE "Map files"): versioned `*.rtsmap`
+      (`Map/MapFile`: heights, water, deposits, starts, props, name, content hash; bit-exact round trip, Brotli),
+      `MapLibrary` + `MapChecks` (generator guarantees); `Rts.Bench -- mapexport` (+ `--pack`, `--scan`); 10 named
+      maps in `data/maps` (2-8 players, 256/512/1024, 2373 KB, spec `tools/maps/pack.txt`); fewer players than starts
+      = spread subset; skirmish setup "Map" picker (Random map keeps the generator rows) + `--mapfile NAME`; saves and
+      replays record map id + hash and refuse a missing or different file; generated maps unchanged
+      - [ ] later: saves of a map loaded from a path outside data/maps reload only if the file is copied there; map
+        files in the lobby / multiplayer (8b-3); a user maps folder (release mode); a map editor
 
 ## Phase 4 — Scale and polish
 - [x] 1024 maps with 4–8 players, 5k+ units at 60 FPS (wave 5m, 2026-10-16; ARCHITECTURE "Performance & scale"):

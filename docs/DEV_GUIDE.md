@@ -37,6 +37,7 @@ Things learned while building the project that are not about how a system works 
 - **zsh does not word-split unquoted variables**: with `ids="a b"`, `cmd $ids` passes ONE argument. Use an array or
   `${=ids}`.
 - `tr` is aliased to `tree` in this shell. Use `sed`/`paste` instead.
+- `sed -i` fails on the repo volume (it cannot preserve permissions there): edit with the Edit tool or `python3 -I`.
 - Long one-liners that mix `&&`, `cd` and inline Python with f-strings are often blocked by the permission
   checker. Put the script in a file (scratchpad) and pass the repo path as an argument. Use `python3 -I`.
 - `jq -c . data/blueprints/units/<id>.json` prints a blueprint compactly.
@@ -106,6 +107,9 @@ Things learned while building the project that are not about how a system works 
   `QueryRadius`/`FindNearest`. Tests that count wrecks or reclaim call `TestUtil.ClearMapProps(w)` first. Rocks shift
   mirrored AI-vs-AI economies: `AiVersusAiReachesCombat` (seed 42) launched no wave in 8 min with them, so it clears
   the props (knife edge, not an AI bug).
+- (8b-2) Bit-exact round trips (map files, saves): `MathF.Round(-0.3f) / k` is **-0**, whose bits differ from +0, so
+  a value written as an integer and read back as `0f` no longer matches. Normalize rounded floats with `+ 0f`
+  (`MapFile.Quantize`); the Archipelago export failed its own read-back check until this fix.
 
 ## Client pitfalls
 
@@ -175,6 +179,9 @@ your branch, not one run against an old number:
 2. Alternate 3–4 times, from each tree's root: `dotnet tools/Rts.Bench/bin/Release/net10.0/Rts.Bench.dll 2000 300`
    and compare the `tick ms` lines.
 3. The budget is a regression of at most 10%. Remove the extra worktree afterwards (`git worktree remove`).
+4. Run both builds from the same filesystem: the repo volume is FUSE (`fuseblk`) and the scratchpad is tmpfs, and
+   that alone made an unchanged sim look ~10% slower in (8b-2). Copy your branch's `bin/Release/net10.0` into a
+   folder inside the main copy (it finds `data/` by walking up) and run both from there.
 
 ## Profiling
 

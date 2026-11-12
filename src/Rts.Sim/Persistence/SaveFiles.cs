@@ -143,7 +143,7 @@ public static class SaveGame
         return new Captured
         {
             Info = i, State = WorldState.Capture(sim), Replay = recorder?.Snapshot(),
-            Terrain = i.Map == null ? TerrainBytes(sim.World.Terrain) : null,
+            Terrain = i.Map == null && i.MapFile == null ? TerrainBytes(sim.World.Terrain) : null,
         };
     }
 
@@ -225,6 +225,7 @@ public static class SaveGame
             throw new IncompatibleSaveException("The unit blueprints changed since this file was made (different game version)");
         Terrain terrain;
         if (info.Map != null) terrain = MapGenerator.Generate(info.Map);
+        else if (info.MapFile != null) terrain = MapFileTerrain(info);
         else
         {
             if (embedded.Length == 0) throw ByteReader.Corrupt("missing terrain");
@@ -233,7 +234,28 @@ public static class SaveGame
             g.Complete();
         }
         if (GameInfo.TerrainHashOf(terrain) != info.TerrainHash)
-            throw new IncompatibleSaveException("The map generator changed since this file was made (different game version)");
+            throw new IncompatibleSaveException(info.MapFile != null
+                ? $"The map '{info.MapFile}' does not give the terrain this file was made on"
+                : "The map generator changed since this file was made (different game version)");
         return terrain;
+    }
+
+    /// <summary>(8b-2) The terrain of a game played on a map file: the installed file with the same id and content hash.</summary>
+    public static Terrain MapFileTerrain(GameInfo info, string? mapDir = null)
+    {
+        string id = info.MapFile!;
+        var path = MapLibrary.Resolve(id, mapDir)
+            ?? throw new IncompatibleSaveException($"This game was played on the map '{info.MapName ?? id}' ({id}{MapFile.Extension}), which is not installed in data/maps");
+        MapFile file;
+        try
+        {
+            var head = MapFile.ReadHeader(path);
+            if (head.Hash != info.MapFileHash)
+                throw new IncompatibleSaveException($"The map file '{id}' is different from the one this game was played on (hash {head.HashHex}, expected {info.MapFileHash:X16})");
+            file = MapFile.Load(path);
+        }
+        catch (MapFileException e) { throw new IncompatibleSaveException($"The map file '{id}' cannot be read: {e.Message}"); }
+        catch (IOException e) { throw new IncompatibleSaveException($"The map file '{id}' cannot be read: {e.Message}"); }
+        return file.TerrainFor(Math.Max(1, info.Players.Count));
     }
 }

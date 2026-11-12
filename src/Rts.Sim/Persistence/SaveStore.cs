@@ -23,7 +23,7 @@ public static class SaveStore
     public static string WriteReplay(byte[] file, GameInfo info)
     {
         Directory.CreateDirectory(ReplaysDir);
-        string map = info.Map == null ? "custom" : $"{info.Map.Preset}{info.Map.Size}";
+        string map = info.Map == null ? Sanitize(info.MapFile ?? "custom") : $"{info.Map.Preset}{info.Map.Size}";
         string baseName = $"{DateTime.Now:yyyy-MM-dd_HH-mm-ss}_{map}_{info.Players.Count}p";
         string path = Path.Combine(ReplaysDir, baseName + ReplayExt);
         for (int k = 2; File.Exists(path); k++) path = Path.Combine(ReplaysDir, $"{baseName}_{k}{ReplayExt}");

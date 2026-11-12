@@ -29,14 +29,15 @@ public sealed class SkirmishSetupScreen : IScreen
         _seedText = _cfg.Seed.ToString();
     }
 
-    public string ScreenshotInfo => _preview.Terrain != null ? $"(preview {_cfg.Preset} {_cfg.MapSize}, {_preview.LastGenMs:F0} ms)" : "(preview pending)";
+    public string ScreenshotInfo => _preview.Terrain != null ? $"(preview {_cfg.MapFile ?? $"{_cfg.Preset} {_cfg.MapSize}"},{_preview.LastGenMs:F0} ms)" : "(preview pending)";
 
     public void Frame(float dt)
     {
         _app.Backdrop.Draw(dt, 1.0f);
         MenuUi.Dim(70);
         MenuUi.BeginFrame();
-        _preview.Request(_cfg.MapSettings());
+        if (_cfg.MapFile != null) _preview.RequestFile(_cfg.MapFile, _cfg.Players); // (8b-2) map picker
+        else _preview.Request(_cfg.MapSettings());
         _preview.Update();
 
         float x0 = Ui.P(48), y0 = Ui.P(30);
@@ -166,12 +167,29 @@ public sealed class SkirmishSetupScreen : IScreen
 
         float y = pr.Y + pr.Height + Ui.P(6);
         var t = _preview.Terrain;
-        string info = t == null ? "Generating…"
+        var mapInfo = _cfg.MapFile != null ? MapFileCache.Info(_cfg.MapFile) : null;
+        string info = t == null ? (_cfg.MapFile != null ? "Loading…" : "Generating…")
+            : mapInfo != null ? $"{mapInfo.Name} · {mapInfo.SizeLabel} · up to {mapInfo.Players} players · {t.Deposits.Count(d => d.Type == DepositType.Mass)} mass"
             : $"{t.StartPositions.Length} start positions · {t.Deposits.Count(d => d.Type == DepositType.Mass)} mass · {t.Deposits.Count(d => d.Type == DepositType.Hydrocarbon)} hydrocarbon";
         Ui.TextCentered(info, Ui.R(p.X, y, p.Width, Ui.P(16)), Ui.F(10.5f), Ui.TextDim);
         y += Ui.P(22);
 
         float lx = p.X + pad, cx = p.X + Ui.P(92), cw = p.X + p.Width - pad - cx, rowH = Ui.P(28), gap = Ui.P(8);
+
+        // (8b-2) Map picker: "Random map" (the generator rows below) or a map file of data/maps.
+        MenuUi.Label("Map", lx, y, rowH);
+        int md = MenuUi.Cycle(Ui.R(cx, y, cw, rowH), mapInfo != null ? $"{mapInfo.Name}  ({mapInfo.SizeLabel}, {mapInfo.Players}p)" : "Random map");
+        if (md != 0) _cfg.MapFile = MapFileCache.Next(_cfg.MapFile, md);
+        y += rowH + gap;
+        if (mapInfo != null)
+        {
+            foreach (var line in Ui.Wrap(mapInfo.Description, cw, Ui.F(10.5f)).Take(3))
+            {
+                Ui.Text(line, cx, y, Ui.F(10.5f), MapPresets.NeedsNaval(mapInfo.Preset) ? Ui.Warn : Ui.TextDim);
+                y += Ui.F(10.5f) + Ui.P(2);
+            }
+            return;
+        }
 
         MenuUi.Label("Size", lx, y, rowH);
         int si = Array.IndexOf(GameConfig.MapSizes, _cfg.MapSize);
@@ -228,7 +246,7 @@ public sealed class SkirmishSetupScreen : IScreen
         var start = Ui.R(right - Ui.P(220), y, Ui.P(220), bh);
         if (problem != null)
             Ui.TextRight(problem, start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.Warn, true);
-        else if (MapPresets.NeedsNaval(_cfg.Preset))
+        else if (MapPresets.NeedsNaval(_cfg.MapFile != null ? MapFileCache.Info(_cfg.MapFile)?.Preset ?? _cfg.Preset : _cfg.Preset))
             Ui.TextRight("Bases are on separate islands", start.X - Ui.P(14), y + (bh - Ui.F(12)) * 0.5f - 1, Ui.F(12), Ui.TextDim);
         if (_sandbox)
         {

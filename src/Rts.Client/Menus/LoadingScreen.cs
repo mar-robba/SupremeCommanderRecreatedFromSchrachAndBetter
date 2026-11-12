@@ -44,7 +44,9 @@ public sealed class LoadingScreen : IScreen
         Ui.Panel(p);
         Ui.PanelTitle(p, "Loading");
         float x = p.X + Ui.P(22), y = p.Y + Ui.P(36);
-        Ui.Text($"{MapPresets.Name(_cfg.Preset)} · {_cfg.MapSize / 51.2f:0} km · seed {_cfg.Seed}", x, y, Ui.F(20), Ui.TextColor, true);
+        var mapFile = _cfg.MapFile != null ? MapFileCache.Info(_cfg.MapFile) : null; // (8b-2) map file: its name and size
+        Ui.Text(mapFile != null ? $"{mapFile.Name} · {mapFile.Width / 51.2f:0} km"
+            : $"{MapPresets.Name(_cfg.Preset)} · {_cfg.MapSize / 51.2f:0} km · seed {_cfg.Seed}", x, y, Ui.F(20), Ui.TextColor, true);
         y += Ui.P(34);
         // Players line: colored names.
         float px = x;

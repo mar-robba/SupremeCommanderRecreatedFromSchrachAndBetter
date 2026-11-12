@@ -23,7 +23,7 @@ public sealed class MapPreview : IDisposable
 
     public Terrain? Terrain { get; private set; }
     public double LastGenMs { get; private set; }
-    public bool Busy => _task != null || _pending != null;
+    public bool Busy => _task != null || _pending != null || _pendingFile != null;
 
     private static string Key(MapGenSettings s) => $"{s.Size}|{s.Players}|{s.Seed}|{s.Preset}|{s.WaterAmount:F3}";
 
@@ -34,6 +34,22 @@ public sealed class MapPreview : IDisposable
         if (k == _shownKey && _task == null) return;
         if (k == _taskKey || k == _pendingKey) return;
         _pending = s;
+        _pendingFile = null;
+        _pendingKey = k;
+    }
+
+    private string? _pendingFile;
+    private int _pendingPlayers;
+
+    /// <summary>(8b-2) Asks for a preview of a map file (data/maps id), loaded on a worker like a generated map.</summary>
+    public void RequestFile(string id, int players)
+    {
+        string k = "file:" + id + "|" + players;
+        _pendingPlayers = players;
+        if (k == _shownKey && _task == null) return;
+        if (k == _taskKey || k == _pendingKey) return;
+        _pending = null;
+        _pendingFile = id;
         _pendingKey = k;
     }
 
@@ -54,20 +70,34 @@ public sealed class MapPreview : IDisposable
             _task = null;
             _taskKey = "";
         }
-        if (_task == null && _pending != null)
+        if (_task == null && (_pending != null || _pendingFile != null))
         {
             var s = _pending;
+            var file = _pendingFile;
+            int players = _pendingPlayers;
+            _pendingFile = null;
             _taskKey = _pendingKey;
             _pending = null;
             _pendingKey = "";
             _taskStart = Raylib.GetTime();
             _task = Task.Run(() =>
             {
-                var t = MapGenerator.Generate(s);
+                var t = file != null ? GameStarts(MapFileCache.Get(file), players) : MapGenerator.Generate(s!);
                 int res = Math.Min(t.Width, 512);
                 return (t, Bake(t, res), res);
             });
         }
+    }
+
+    /// <summary>The file's terrain with the starts a game of <paramref name="players"/> uses first (army order, as
+    /// <see cref="MapFile.TerrainFor"/>), then the unused ones (drawn as empty slots).</summary>
+    private static Terrain GameStarts(MapFile f, int players)
+    {
+        var all = f.Terrain.StartPositions;
+        if (players >= all.Length || players < 1) return f.Terrain;
+        var used = MapFile.SpreadStarts(all, players);
+        var order = used.Concat(Enumerable.Range(0, all.Length).Except(used)).Select(i => all[i]).ToArray();
+        return new Terrain(f.Terrain.Width, f.Terrain.Height, f.Terrain.Heights, f.Terrain.WaterLevel, f.Terrain.Deposits, order, f.Terrain.Seed);
     }
 
     private void Upload(Color[] px, int res)

@@ -56,6 +56,7 @@ public sealed class AppHost : IDisposable
             Preset = options.PresetGiven ? options.Preset : Rts.Sim.Map.MapPresets.TryParse(s.Preset, out var p) ? p : default,
             WaterAmount = options.PresetGiven || options.WaterAmount >= 0 ? options.WaterAmount : s.WaterAmount,
             Seed = options.Seed,
+            MapFile = options.MapFile, // (8b-2) --setup --mapfile NAME
         };
         if (options.PlayersGiven)
             for (int i = 0; i < GameConfig.MaxSlots; i++)

@@ -20,6 +20,7 @@ if (args.Length > 0 && args[0] == "replay") { Environment.ExitCode = ReplayBench
 if (args.Length > 0 && args[0] == "savebench") { ReplayBench.SaveBench(args[1..]); return; }
 if (args.Length > 0 && args[0] == "parbench") { ParBench.Run(args[1..]); return; }
 if (args.Length > 0 && args[0] is "duel" or "duelmatrix") { if (args[0] == "duel") Duel.Run(args[1..]); else Duel.Matrix(args[1..]); return; }
+if (args.Length > 0 && args[0] == "mapexport") { Environment.ExitCode = MapExport.Run(args[1..]); return; }
 if (args.Length > 0 && args[0] == "mp") { Environment.ExitCode = MpSelfTest.Run(args[1..]); return; }
 if (args.Length > 0 && args[0] is "ai" or "aipassive")
 {
