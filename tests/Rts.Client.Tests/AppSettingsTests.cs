@@ -29,6 +29,7 @@ public class AppSettingsTests
         MapSize = 512, Preset = "Lakes", WaterAmount = 0.4f, PlayerName = "Tester", JoinAddress = "10.0.0.2:5000", HostPort = 50000,
         Shadows = false, ParticleQuality = 0, TerrainDetail = 2, VSync = false, FpsCap = 144, UiScale = 1.25f,
         EdgeScroll = false, PanSpeed = 1.7f, ZoomSpeed = 0.6f, Autosave = false,
+        TerrainShadows = false, UnitLod = false, MinimapSize = 1.5f, MinimapZoom = 3f, MinimapResources = false, MinimapUnits = false, MinimapTrees = true, // (9b-2)
     };
 
     [Fact]

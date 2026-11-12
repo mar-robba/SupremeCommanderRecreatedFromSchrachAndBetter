@@ -83,10 +83,35 @@ public static class TerrainShadowBake
     /// shadow line <paramref name="s"/>; the same soft edge as the shader's <c>terrainShadow</c>.</summary>
     public static float Lit(float y, float s, float softness = Softness)
     {
-        float d = Math.Clamp((s - y + softness) / (2 * softness), 0f, 1f);
+        float d = Math.Clamp((s - y) / (2 * softness), 0f, 1f);
         return 1f - d * d * (3f - 2f * d);
     }
 
-    /// <summary>Half width (world height units) of the shadow edge in the shaders.</summary>
-    public const float Softness = 0.4f;
+    /// <summary>Half width (world height units) of the shadow edge in the shaders. The edge starts at the shadow
+    /// line itself (d = 0), not around it: flat ground under a low sun has a line FirstStep·tan(elev) below the
+    /// ground (the march's first sample) and must stay fully lit.</summary>
+    public const float Softness = 0.6f;
+
+    /// <summary>Separable 3×3 box blur of the shadow line (<paramref name="passes"/> times): the ray march samples
+    /// far ridges every few cells, so the raw line has stair steps along the shadow edge; the blur turns them into
+    /// a soft penumbra of about a cell.</summary>
+    public static void Blur(float[] s, int w, int h, int passes = 2)
+    {
+        var tmp = new float[s.Length];
+        for (int p = 0; p < passes; p++)
+        {
+            for (int z = 0; z < h; z++)
+            {
+                int row = z * w;
+                for (int x = 0; x < w; x++)
+                    tmp[row + x] = (s[row + Math.Max(x - 1, 0)] + s[row + x] + s[row + Math.Min(x + 1, w - 1)]) * (1f / 3f);
+            }
+            for (int z = 0; z < h; z++)
+            {
+                int up = Math.Max(z - 1, 0) * w, row = z * w, dn = Math.Min(z + 1, h - 1) * w;
+                for (int x = 0; x < w; x++)
+                    s[row + x] = (tmp[up + x] + tmp[row + x] + tmp[dn + x]) * (1f / 3f);
+            }
+        }
+    }
 }

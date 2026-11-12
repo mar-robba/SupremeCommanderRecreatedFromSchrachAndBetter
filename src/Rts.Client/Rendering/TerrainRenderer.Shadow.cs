@@ -50,14 +50,14 @@ public sealed unsafe partial class TerrainRenderer
         float terrainShadowAt(vec3 wpos) {
             if (terrainShadowOn < 0.5) return 1.0;
             float d = texture(terrainShadowTex, (wpos.xz + 0.5) * terrainShadowScale).r - wpos.y;
-            return 1.0 - smoothstep(-0.4, 0.4, d);
+            return 1.0 - smoothstep(0.0, 1.2, d); // TerrainShadowBake.Lit (Softness 0.6)
         }
         // Lit fraction of the ground (true heightmap height, independent of the terrain LOD mesh).
         float terrainShadowGround(vec2 xz) {
             if (terrainShadowOn < 0.5) return 1.0;
             vec2 uv = (xz + 0.5) * terrainShadowScale;
             float d = texture(terrainShadowTex, uv).r - texture(terrainHeightTex, uv).r;
-            return 1.0 - smoothstep(-0.4, 0.4, d);
+            return 1.0 - smoothstep(0.0, 1.2, d);
         }
         """;
 
@@ -74,6 +74,7 @@ public sealed unsafe partial class TerrainRenderer
         _shadowBaked = true;
         var sw = Stopwatch.StartNew();
         var line = TerrainShadowBake.Bake(_t.Heights, _t.Width + 1, _t.Height + 1, SunDir);
+        TerrainShadowBake.Blur(line, _t.Width + 1, _t.Height + 1);
         LastShadowBakeMs = sw.Elapsed.TotalMilliseconds;
         fixed (float* p = line)
         {
