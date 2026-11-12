@@ -12,7 +12,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 |---|---|---|
 | Foundation | Solution, deterministic sim core, threaded runner, blueprints, map generator, orders, movement, basic client | ✅ 2026-10-10 |
 | 1 | Combat, economy & construction, pathfinding & movement, client visuals, UI | ✅ 2026-10-10 |
-| 2 | Fog of war & radar, first skirmish AI, map presets, menus / setup / end screens, audio | ✅ 2026-10-11 |
+| 2 ("Phase 2 work", never numbered at the time) | Fog of war & radar, first skirmish AI, map presets, menus / setup / end screens, audio | ✅ 2026-10-11 |
 | 3 | (a) T2/T3 tech + upgrades, (b) shields & strategic weapons, (c) naval, (d) skirmish AI, (e) sandbox | ✅ 2026-10-12 |
 | 4 | (d) AI finish, (f) SupCom polish, (g) experimentals + commander enhancements + SCUs, (h) transports, (i) save/load + replays | ✅ 2026-10-14 |
 | 5 | (j) faction infrastructure, (m) scale/perf, (n) UX polish, (o) lockstep multiplayer, (l) Cybran faction, (k) AI uses everything + (k-navy) | ✅ 2026-10-16 → 10-24 |
