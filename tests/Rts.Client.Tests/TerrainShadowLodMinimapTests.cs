@@ -40,6 +40,23 @@ public class TerrainShadowLodMinimapTests
         Assert.True(TerrainShadowBake.Lit(0, s[z0 + 14]) < 0.05f && TerrainShadowBake.Lit(0, s[z0 + 30]) > 0.95f, "blur keeps the shape");
     }
 
+    [Fact]
+    public void GroundLitAndFootprintMeanForTerrainLodVertices()
+    {
+        int w = 41, h = 9;
+        var heights = new float[w * h];
+        for (int z = 0; z < h; z++)
+            for (int x = 18; x <= 22; x++) heights[z * w + x] = 12f;
+        var s = TerrainShadowBake.Bake(heights, w, h, SunFromPlusX, parallel: false);
+        var lit = TerrainShadowBake.GroundLit(heights, s);
+        int z0 = 4 * w;
+        Assert.True(lit[z0 + 15] < 0.01f && lit[z0 + 25] > 0.99f && lit[z0 + 20] > 0.99f, "shadow behind the wall, lit in front and on top");
+        Assert.Equal(lit[z0 + 15], TerrainShadowBake.BoxMean(lit, w, h, 15, 4, 0)); // stride 1: the vertex itself
+        float m = TerrainShadowBake.BoxMean(lit, w, h, 4, 4, 4); // stride 8 vertex straddling the shadow end (x 0..8)
+        Assert.True(m > 0.2f && m < 0.95f, $"coarse vertex = footprint mean, got {m}");
+        Assert.Equal(1f, TerrainShadowBake.BoxMean(lit, w, h, 40, 0, 4), 3); // clamped at the grid corner, all lit
+    }
+
     private static (Vector3[] pos, Vector3[] nrm, Color[] col, ushort[] idx) Sphere(int rings, int segs)
     {
         var pos = new List<Vector3>(); var nrm = new List<Vector3>(); var col = new List<Color>(); var idx = new List<ushort>();

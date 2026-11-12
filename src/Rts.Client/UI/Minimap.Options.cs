@@ -78,7 +78,7 @@ public sealed partial class Minimap
     {
         float zoom = Menus.AppSettings.Current.MinimapZoom;
         if (zoom > 1.0001f)
-            Ui.TextShadow($"{zoom:0.#}×", vis.X + Ui.P(4), vis.Y + vis.Height - Ui.F(11) - Ui.P(3), Ui.F(11), Ui.TextColor, true);
+            Ui.TextShadow(zoom.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "×", vis.X + Ui.P(4), vis.Y + vis.Height - Ui.F(11) - Ui.P(3), Ui.F(11), Ui.TextColor, true);
         if (!ButtonsAlways && (!Ui.Hover(panel) || _dragging)) return;
         for (int i = 0; i < ButtonLabels.Length; i++)
         {

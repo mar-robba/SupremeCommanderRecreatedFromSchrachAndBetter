@@ -174,7 +174,7 @@ public sealed class SettingsScreen : IScreen
     }
 
     private static readonly string[] MinimapSizeLabels = MinimapView.Sizes.Select(v => $"{v * 100:0}%").ToArray();
-    private static readonly string[] MinimapZoomLabels = MinimapView.Zooms.Select(v => $"{v:0}×").ToArray();
+    private static readonly string[] MinimapZoomLabels = MinimapView.Zooms.Select(v => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "×").ToArray();
 
     /// <summary>(9b-2) Minimap size, zoom and layers; also changed in game with the buttons on the minimap.</summary>
     private void MinimapTab()
