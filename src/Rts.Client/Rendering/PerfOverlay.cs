@@ -31,7 +31,7 @@ public sealed class PerfOverlay
             else { _sumFrame += frame; _measured++; _maxFrame = MathF.Max(_maxFrame, frame); }
         }
         _start = Stopwatch.GetTimestamp();
-        if (Raylib.IsKeyPressed(Input.Hotkeys.Perf.Key)) Visible = !Visible;
+        if (Input.Hotkeys.Perf.Pressed()) Visible = !Visible;
     }
 
     private void MarkCpu()

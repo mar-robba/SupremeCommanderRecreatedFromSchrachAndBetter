@@ -149,7 +149,8 @@ public static partial class UnitToggles
         if (Hotkeys.FireState.Pressed() && FireStateOf(ctx, sel.Selected).Any) CycleFireState(ctx, sel.Selected, Ui.Shift ? -1 : 1);
         // D and E are shared with the transport orders (SharedHotkeys): D also docks aircraft (TransportInput);
         // E is transport-to as soon as transports are selected.
-        if (Hotkeys.Capture.Pressed() && EKey(ctx, sel.Selected) == SharedHotkeys.EAction.Capture)
+        if (Hotkeys.Capture.Pressed() && (Hotkeys.SameBinding(Hotkeys.Capture, Hotkeys.TransportTo) // (10b-1) split keys: each its own
+                ? EKey(ctx, sel.Selected) == SharedHotkeys.EAction.Capture : AnyCapturer(ctx, sel.Selected)))
             sel.SetMode(SelectionController.CommandMode.Capture);
     }
 

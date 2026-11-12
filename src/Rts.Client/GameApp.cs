@@ -101,6 +101,8 @@ public sealed class ClientOptions
     public bool SaveDialog, WriteReplay;
     /// <summary>--autosave-every TICKS: autosave interval for tests/screenshots (forces autosave on, also in --screenshot runs).</summary>
     public int AutosaveEvery = -1;
+    /// <summary>(10b-1) --bind "Id=Spec,...": key bindings for this run, on top of the saved ones (e.g. screenshots).</summary>
+    public string? Bind;
     /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
     public int HostPort;
     public string? JoinAddress, PlayerName;
@@ -120,7 +122,8 @@ public sealed class ClientOptions
             if (a is not ("--size" or "--novsync" or "--menu" or "--setup" or "--settings" or "--autostart" or "--flow-test"
                 or "--nofog" or "--nosound" or "--sound" or "--volume" or "--sfx-volume" or "--music-volume" or "--nomusic" or "--name"
                 or "--perf-log" or "--terrain-lod" or "--settings-tab"
-                or "--terrain-shadows" or "--unit-lod" or "--sun-elevation" or "--minimap")) gameArg = true;
+                or "--terrain-shadows" or "--unit-lod" or "--sun-elevation" or "--minimap"
+                or "--bind" or "--keys-capture")) gameArg = true;
             switch (a)
             {
                 case "--seed": o.Seed = int.Parse(Next()); break;
@@ -149,6 +152,8 @@ public sealed class ClientOptions
                 case "--setup": screen = StartScreen.Setup; break;
                 case "--settings": screen = StartScreen.Settings; break;
                 case "--settings-tab": SettingsScreen.Tab = SettingsScreen.ParseTab(Next()); screen ??= StartScreen.Settings; break;
+                case "--bind": o.Bind = Next(); break; // (10b-1)
+                case "--keys-capture": KeyBindingsScreen.CaptureCli = Next(); SettingsScreen.Tab = SettingsScreen.ParseTab("keys"); screen ??= StartScreen.Settings; break;
                 case "--pause-menu": o.PauseMenu = true; break;
                 case "--autostart": o.AutoStart = true; break;
                 case "--flow-test": o.FlowTest = o.AutoStart = true; break;
@@ -245,6 +250,8 @@ public static class GameApp
         MenuUi.Automated = opt.ScreenshotPath != null;
         Persistence.GameRecording.AutoWriteReplays = opt.ScreenshotPath == null || opt.WriteReplay;
         var settings = AppSettings.Load();
+        if (opt.Bind != null && Input.Hotkeys.ApplyBindings(opt.Bind, out var badBinds) >= 0 && badBinds.Count > 0)
+            Console.Error.WriteLine("--bind: ignored " + string.Join(", ", badBinds));
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
         SimWarmup.Start(db); // JIT warm-up of the sim on a background thread while the menu/loading shows (wave 5m)
 

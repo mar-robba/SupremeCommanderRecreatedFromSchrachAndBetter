@@ -58,6 +58,8 @@ public sealed class AppSettings
     public bool MinimapResources { get; set; } = true;
     public bool MinimapUnits { get; set; } = true;
     public bool MinimapTrees { get; set; }
+    /// <summary>(10b-1) Rebound keys, "v1;Id=Spec;..." (only non-default entries; Input/Hotkeys.Bindings.cs).</summary>
+    public string KeyBindings { get; set; } = "";
 
     /// <summary>The settings in use (loaded at startup).</summary>
     public static AppSettings Current { get; private set; } = new();
@@ -71,6 +73,7 @@ public sealed class AppSettings
     public static AppSettings Load()
     {
         if (Persist) Current = LoadFrom(FilePath);
+        Input.Hotkeys.LoadBindings(Current.KeyBindings); // (10b-1) bad entries are skipped
         return Current;
     }
 
@@ -121,6 +124,7 @@ public sealed class AppSettings
         PanSpeed = MathF.Round(Clamp(PanSpeed, 0.5f, 2f, d.PanSpeed) * 10f) / 10f;
         ZoomSpeed = MathF.Round(Clamp(ZoomSpeed, 0.5f, 2f, d.ZoomSpeed) * 10f) / 10f;
         MinimapSize = UI.MinimapView.Sizes[NearestIndex(UI.MinimapView.Sizes, Clamp(MinimapSize, 0f, 10f, d.MinimapSize))];
+        KeyBindings ??= "";
         MinimapZoom = UI.MinimapView.ClampZoom(Clamp(MinimapZoom, 1f, UI.MinimapView.MaxZoom, d.MinimapZoom));
         return this;
     }

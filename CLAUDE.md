@@ -26,7 +26,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   `resources=normal|low|high`, `fog=normal|explored|none`, `speed=adjustable|normal|fast`, `cheats=on|off`, `prebuilt=on|off`,
   e.g. `--options victory=supremacy,cap=500,cheats=off`; also presets `--setup` and `--host`; `--teams 1,1,2,2` = team per slot
   (0 = none); `--diplomacy` opens the F4 diplomacy panel at start; in-game chat Shift+Enter = to allies (multiplayer))
-  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--settings-tab audio|graphics|gameplay|minimap`; `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
+  (`--menu` / `--setup` / `--settings` open a menu screen, e.g. for screenshots; `--settings-tab audio|graphics|gameplay|minimap|keys`; (10b-1) `--keys-capture ID` (Keys tab with the capture prompt for that entry), `--bind "Stop=F11,Patrol=Ctrl+G"` (key bindings for this run, ids = `Hotkeys` field names); `--pause-menu` / `--endscreen` / `--help-overlay` (F1) show overlays;
   `--autostart` with `--setup` starts the game when the preview is ready; `--nofog`, `--nosound` see `Program.cs`; perf: `--perf-log` (fps, frame stages, allocations, sim tick once per second), `--terrain-lod 0..3` (force a terrain LOD), `--novsync`;
   (9b-2) `--terrain-shadows on|off`, `--unit-lod on|off|PIXELS` (a number = LOD below that projected radius, shows LOD meshes up close), `--sun-elevation DEG` (testing),
   `--minimap size=1.5,zoom=3,resources=off,units=on,trees=on,buttons=on` (any subset; minimap wheel = zoom, hover buttons);

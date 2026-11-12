@@ -166,15 +166,17 @@ public sealed partial class GameAudio : IDisposable
 
     private void HandleKeys(int selectedCount, bool inputBlocked)
     {
-        if (!_engine.Ready || inputBlocked || !Raylib.IsKeyPressed(KeyboardKey.M)) return;
-        bool ctrl = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
-        bool shift = Raylib.IsKeyDown(KeyboardKey.LeftShift) || Raylib.IsKeyDown(KeyboardKey.RightShift);
-        if (ctrl && shift)
+        if (!_engine.Ready || inputBlocked) return;
+        // (10b-1) table keys: Music, MuteCtrl, Mute (M shares its key with Move: mute only with nothing selected while shared).
+        bool music = Input.Hotkeys.Music.Pressed();
+        bool mute = !music && (Input.Hotkeys.MuteCtrl.Pressed() || Input.Hotkeys.Mute.Pressed()
+            && (selectedCount == 0 || !Input.Hotkeys.SameBinding(Input.Hotkeys.Mute, Input.Hotkeys.Move)));
+        if (music)
         {
             Settings.MusicOn = !Settings.MusicOn;
             Toast(Settings.MusicOn ? "Music on" : "Music off", Ui.TextColor, 1.5);
         }
-        else if (ctrl || selectedCount == 0)
+        else if (mute)
         {
             Settings.Muted = !Settings.Muted;
             Toast(Settings.Muted ? "Sound muted (M)" : "Sound on", Ui.TextColor, 1.5);

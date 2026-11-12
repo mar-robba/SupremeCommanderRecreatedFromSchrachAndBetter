@@ -10,7 +10,7 @@ namespace Rts.Client.Menus;
 /// returns to it.</summary>
 public sealed class SettingsScreen : IScreen
 {
-    public static readonly string[] TabNames = ["Audio & Display", "Graphics", "Gameplay", "Minimap"];
+    public static readonly string[] TabNames = ["Audio & Display", "Graphics", "Gameplay", "Minimap", "Keys"];
     /// <summary>Selected tab (kept for the session; <c>--settings-tab</c> sets it for screenshots).</summary>
     public static int Tab;
 
@@ -19,6 +19,7 @@ public sealed class SettingsScreen : IScreen
     private readonly IScreen? _returnTo;
     private bool _returned;
     private bool _dirty;
+    private readonly KeyBindingsScreen _keys = new(); // (10b-1) Keys tab
 
     public SettingsScreen(AppHost app, IScreen? returnTo = null)
     {
@@ -32,7 +33,8 @@ public sealed class SettingsScreen : IScreen
         "graphics" => 1,
         "gameplay" => 2,
         "minimap" => 3,
-        _ => throw new ArgumentException("unknown settings tab " + s + " (audio, graphics, gameplay, minimap)"),
+        "keys" => 4,
+        _ => throw new ArgumentException("unknown settings tab " + s + " (audio, graphics, gameplay, minimap, keys)"),
     };
 
     // Layout of the current frame.
@@ -42,7 +44,9 @@ public sealed class SettingsScreen : IScreen
     {
         _app.Backdrop.Draw(dt, 0.75f);
         MenuUi.BeginFrame();
-        float panelW = Ui.P(620), panelH = Ui.P(340), tabsH = Ui.P(30);
+        bool keysTab = Tab == 4, keysBusy = _keys.Capturing; // (10b-1) bigger panel; Esc belongs to the key capture
+        float panelW = Ui.P(keysTab ? 820 : 620), panelH = Ui.P(340), tabsH = Ui.P(30);
+        if (keysTab) panelH = MathF.Max(panelH, MathF.Min(Ui.P(560), Ui.Sh - Ui.P(72) - tabsH - Ui.P(90) - Ui.P(16)));
         float x = Ui.P(80);
         // Title, tabs, panel, Back button; moved up when a large UI scale would push the button off a small window.
         float total = Ui.P(72) + tabsH + Ui.P(10) + panelH + Ui.P(20) + Ui.P(40);
@@ -67,11 +71,12 @@ public sealed class SettingsScreen : IScreen
             case 0: AudioDisplayTab(); break;
             case 1: GraphicsTab(); break;
             case 3: MinimapTab(); break;
+            case 4: _keys.Draw(panel); break;
             default: GameplayTab(); break;
         }
 
         string back = _returnTo != null ? "Back to Game" : "Back";
-        if (MenuUi.BigButton(Ui.R(x, panel.Y + panel.Height + Ui.P(20), Ui.P(160), Ui.P(40)), back) || MenuUi.Key(KeyboardKey.Escape))
+        if (MenuUi.BigButton(Ui.R(x, panel.Y + panel.Height + Ui.P(20), Ui.P(160), Ui.P(40)), back, !keysBusy) && !keysBusy || !keysBusy && !_keys.Capturing && MenuUi.Key(KeyboardKey.Escape))
         {
             if (_returnTo != null)
             {
@@ -274,7 +279,8 @@ public sealed class SettingsScreen : IScreen
 
     public void Dispose()
     {
-        if (_dirty) _s.Save();
+        if (_keys.Changed) _s.KeyBindings = Input.Hotkeys.ExportBindings(); // (10b-1)
+        if (_dirty || _keys.Changed) _s.Save();
         if (!_returned) _returnTo?.Dispose();
     }
 }

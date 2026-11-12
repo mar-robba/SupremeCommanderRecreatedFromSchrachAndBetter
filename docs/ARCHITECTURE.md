@@ -1086,3 +1086,37 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   `Minimap.Options.cs`: hover buttons (− + size, Z− Z+ zoom, R resources, U units, T trees) and the tree layer.
   Settings tab "Minimap" (size, zoom, resources, units, trees) saved in `AppSettings`; `--minimap
   size=1.5,zoom=3,resources=off,units=on,trees=on,buttons=on` overrides for one run.
+
+## Keybindings (10b-1, client only: `Input/Hotkeys.cs`, `Input/Hotkeys.Bindings.cs`, `Menus/KeyBindingsScreen.cs`)
+- **Override layer**: `Hotkey.DefaultKeys/DefaultMods` = the table (never changed); `Keys/Mods/Label` = the effective
+  binding (`SetBinding`, `Label` cached, no per-frame allocation). `Hotkey.Id` = the field name in `Hotkeys` (assigned
+  by reflection after `Groups`; `Hotkeys.ById`). The table is kept clash-free: `TryBind` refuses a clash (same key +
+  mods, overlapping scopes, no common `Share` tag = the old `Clashes` logic), `TrySwap` gives the clashing entries the
+  old binding (refused when one is fixed, has another key count, or a third entry would clash), `Reset` (= TryBind to
+  the default, refused/swappable the same way), `ResetAll`. `Hotkeys.Revision` counts changes.
+- **Rules**: one key or alternatives (`alt: true`: = / keypad +, Enter / keypad Enter, T / Tab, F10 / `, dialog keys)
+  rebind to ONE key + mods; a row of slots (arrows, PgUp/PgDn, 0-9, 1-5, Z X C V B N, Ctrl+Shift+L A N E) rebinds as a
+  whole row (same number of distinct keys, one modifier set; the capture asks key 1 of N…); entries on Esc (`Menu`,
+  `DialogCancel`) are fixed (Esc cancels the capture). Modifier semantics unchanged: Ctrl must match, Shift/Alt free
+  unless bound. Held keys (`Down(i)`) follow the same rule, so the camera arrows / PgUp / PgDn now stop while Ctrl is
+  held (before 10b-1 they ignored modifiers); exact Ctrl keeps a WASD pan from firing on Ctrl+A (select all combat units).
+- **Shared keys** (D, E, U, M) resolve by selection only while both entries still have the same binding
+  (`Hotkeys.SameBinding`): split, each key does its own action (UnitToggles capture, TransportInput unload vs upgrade,
+  GameAudio mute vs move, OrdersPanel capture label).
+- **Saved** in `AppSettings.KeyBindings` (string, only non-default entries): `"v1;Stop=Ctrl+F11;FactorySlots=Alt+Q W E R T Y"`
+  (raylib key names, digits also "1"). `AppSettings.Load()` → `Hotkeys.LoadBindings` (reset + apply). `ApplyBindings`
+  skips unknown ids, bad keys/mods, invalid counts and fixed entries, then undoes the later-applied entry of any clash
+  pair (a saved swap loads because all are applied before the check). `--bind "Id=Spec,..."` applies on top for one
+  run (screenshot runs never read settings.json); the Keys tab writes `ExportBindings()` on close only when it changed.
+- **Screen**: Settings tab "Keys" (`--settings-tab keys`, also from the pause menu's Settings): the table by help
+  group, scrollable; click = capture (`GetKeyPressed`, mods held at the first key), right click / "Reset" = default,
+  "Reset all"; a clash opens a prompt (Swap / Cancel); `Capturing` keeps Esc from closing the settings. `--keys-capture ID`.
+- **Input source**: `Hotkeys.Input` (`IKeyState`, raylib by default) so tests drive `Pressed/PressedIndex/Down` without a window.
+- **Key checks moved into the table** (they rebind now): camera pan/rotate/reset (`RtsCamera`: `Pan.Down(i)`,
+  `Rotate.Down(i)`), mute/music (`GameAudio`), self-destruct dialog (`Hud`: DialogConfirm/Cancel, SelfDestruct),
+  build/factory slot rows, tiers, category, repeat (`BuildMenu`, `FactoryPanel`), Rotate90, Fog, Perf, debug F9/F10,
+  sandbox panel/console, upgrade U, quicksave/quickload (`IsKeyPressed(Hotkeys.X.Key)` → `X.Pressed()`).
+- **Fixed on purpose** (not in the editor): Esc everywhere (menus, placement cancel, help close, order-mode cancel);
+  modifier reads (Shift = queue/add, Ctrl/Alt clicks); text fields (`SandboxTextField`, `NetTextField`, `MenuUi`
+  number fields, chat line), the sandbox console's Up/Down/Tab history keys, menu keys (`MenuUi.Key`, Enter/Backspace
+  in lists), `ReplayScreen` (follows the rebound keys, modifiers ignored), `PingInput` mouse+Alt combos.

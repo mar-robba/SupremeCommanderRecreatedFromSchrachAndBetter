@@ -78,9 +78,9 @@ public sealed class RtsCamera
         bool alt = Raylib.IsKeyDown(KeyboardKey.LeftAlt) || Raylib.IsKeyDown(KeyboardKey.RightAlt);
 
         // Rotation.
-        if (Raylib.IsKeyDown(KeyboardKey.PageUp)) _targetYaw += 1.6f * dt;
-        if (Raylib.IsKeyDown(KeyboardKey.PageDown)) _targetYaw -= 1.6f * dt;
-        if (Raylib.IsKeyPressed(KeyboardKey.Home)) _targetYaw = MathF.PI * 0.5f;
+        if (Input.Hotkeys.Rotate.Down(0)) _targetYaw += 1.6f * dt;
+        if (Input.Hotkeys.Rotate.Down(1)) _targetYaw -= 1.6f * dt;
+        if (Input.Hotkeys.ResetRotation.Pressed()) _targetYaw = MathF.PI * 0.5f;
         if (alt && Raylib.IsMouseButtonDown(MouseButton.Middle)) _targetYaw += Raylib.GetMouseDelta().X * 0.006f;
         Yaw += (_targetYaw - Yaw) * (1f - MathF.Exp(-dt * 14f));
 
@@ -89,10 +89,10 @@ public sealed class RtsCamera
         var fwd = new Vector3(MathF.Cos(Yaw), 0, MathF.Sin(Yaw));
         var right = new Vector3(-fwd.Z, 0, fwd.X);
         var move = Vector3.Zero;
-        if (Raylib.IsKeyDown(KeyboardKey.Up)) move -= fwd;
-        if (Raylib.IsKeyDown(KeyboardKey.Down)) move += fwd;
-        if (Raylib.IsKeyDown(KeyboardKey.Left)) move += right;
-        if (Raylib.IsKeyDown(KeyboardKey.Right)) move -= right;
+        if (Input.Hotkeys.Pan.Down(0)) move -= fwd;
+        if (Input.Hotkeys.Pan.Down(1)) move += fwd;
+        if (Input.Hotkeys.Pan.Down(2)) move += right;
+        if (Input.Hotkeys.Pan.Down(3)) move -= right;
         if (CameraSettings.EdgeScroll && Raylib.IsWindowFocused() && Raylib.IsCursorOnScreen() && !mouseOverUi)
         {
             int sw = Raylib.GetScreenWidth(), sh = Raylib.GetScreenHeight();

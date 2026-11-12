@@ -112,6 +112,10 @@ Things learned while building the project that are not about how a system works 
   (`MapFile.Quantize`); the Archipelago export failed its own read-back check until this fix.
 
 ## Client pitfalls
+- (10b-1) Keys: read game keys only through `Hotkeys.X.Pressed()` / `PressedIndex()` / `Down(i)` (never
+  `IsKeyPressed(Hotkeys.X.Key)`: that ignores the modifiers and the second key of a rebound row). Tests that rebind
+  must `Hotkeys.ResetAll()` in a finally and sit in `[Collection("HotkeyTable")]` (the table is global). Screenshot
+  runs never read settings.json: preset bindings with `--bind`.
 
 - Unit models are built lazily per blueprint index (`UnitRenderer.ModelFor` → `UnitModels.Build`), so every
   enhancement variant gets its own mesh with its attachments.

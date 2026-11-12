@@ -123,7 +123,7 @@ public sealed class BuildMenu
 
     public void HandleHotkeys()
     {
-        if (Raylib.IsKeyPressed(Hotkeys.BuildCategory.Key))
+        if (Hotkeys.BuildCategory.Pressed())
         {
             var tabs = Tabs().Where(t => _byTab[t].Count > 0).ToList();
             if (tabs.Count > 0)
@@ -133,10 +133,10 @@ public sealed class BuildMenu
             }
         }
         if (Ui.Ctrl || Ui.Alt) return;
-        if (Raylib.IsKeyPressed(TierKey)) CycleTier(Ui.Shift ? -1 : 1);
+        if (Hotkeys.BuildTier.Pressed()) CycleTier(Ui.Shift ? -1 : 1);
         var items = _byTab[_tab];
         for (int k = 0; k < SlotKeys.Length && k < items.Count; k++)
-            if (Raylib.IsKeyPressed(SlotKeys[k])) Choose(items[k]);
+            if (Hotkeys.BuildSlots.PressedIndex() == k) Choose(items[k]);
     }
 
     private void Choose(int bp)
