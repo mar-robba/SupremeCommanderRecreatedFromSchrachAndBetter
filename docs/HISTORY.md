@@ -961,6 +961,69 @@ net green; reference match "Hard wins after 12:18", FB269C29202773C1; bench 6A83
 `--setup --mapfile great_lakes --players 4` (thumbnail with the four starts in use numbered, the other four as
 white slots) looked right.
 
+### (8b-3) Maps in multiplayer + biomes — report (merged 2026-11-12, e4371c2)
+Three module agents and two sub-agents on Opus 5.5, in one worktree, 15:07-16:20. Agent 1 (started by a scheduled
+job) wrote the biome field and the map library side, then a usage limit cut it at 162k at about 15:35 (the window
+reset at 15:40, not at 15:00 as `windows.py` estimated: the job started in the tail of the old window); its last
+edits were committed unbuilt by the orchestrator. Agent 2 wrote the net protocol, the transfer, the lobby, the bench
+option and the tests in 14 minutes (CHECKPOINT at 171k). Agent 3 ran the suites, fixed one test, took the lobby
+screenshots, added `mapexport --biome` and biome-coloured previews, and wrote the docs in 15 minutes (137k). The
+biome visuals were a separate piece: sub-agent 1 (palettes, shaders, trees and rocks, `--biome`, stopped at its
+130k checkpoint after one screenshot), sub-agent 2 (24 shots in six 2x2 grids, tuning, minimap, 97k). Two network
+drops (ECONNRESET) stopped agent 3 and sub-agent 2 once each; both resumed by message. 1,563 lines in `src`,
+`tests` and `tools`.
+
+**What works.** The host picks "Random map" or a map file and a biome in the lobby; the lobby state carries the
+map id, content hash, name, starts, size and biome (net protocol 3: older peers are refused with both versions
+named). A client that has the file (id + hash, in `data/maps` or `downloaded_maps`) uses it; the others request
+it: 32 KB chunks, at most 256 KB beyond the client's acknowledged bytes, a progress line in the map panel and the
+bottom bar, the file decoded and hash-checked off-thread, stored in `downloaded_maps` (release: the user data
+folder), and Ready stays off until then (the host also refuses it); a wrong file is refused. Net replays record the
+map. Biomes (temperate, desert, tundra, lava, tropical; append-only enum `Rts.Sim/Map/Biome.cs`) are an optional
+trailing byte of the map file header (old files read as temperate, content hashes unchanged), a generator /
+skirmish / lobby setting and a `GameInfo` field; the client draws per-biome ground, cliff, water (lava glows with a
+drifting crust), sky, minimap and preview palettes and per-biome trees and rocks (cacti, snowy conifers, birches,
+charred trees, palms; sand, snow, ash or glowing cracks on rocks). The sim is the same on every biome. How it works:
+ARCHITECTURE "Maps in multiplayer and biomes".
+
+**How to try it.** `dotnet run --project src/Rts.Client -- --setup --biome desert`; `-- --demo --preset lakes
+--biome lava`; `-- --host --mapfile great_lakes`; a throttled transfer by hand: DEV_GUIDE (`RTS_MAP_UPLOAD_KBPS`,
+`RTS_USER_DIR`); headless `Rts.Bench -- mp 2 600 256 0 0 0 map=great_lakes biome=tundra`. No new hotkeys.
+
+**Tests.** `MapTransferTests` (6, net: codec round trip, map present on both sides, missing map downloaded and
+used, corrupted upload refused, old protocol refused, an 884 KB map in loopback), `BiomeMapTests` (4, sim: header
+without the biome byte, header rewrite keeps the hash, biome in `GameInfo`, same sim state on every biome),
+`BiomeVisualsTests` (client: a palette per biome, temperate = the old shader and minimap constants);
+`MapFileTests.MissingOrDifferentMapFileIsRefused` changed: a save now also finds its map by content hash, so a
+renamed copy loads.
+
+**Shared files** (additive): NetSession / HostSession / ClientSession / LobbyScreen made partial (new `*.Maps.cs`),
+`ClientSession.Join` optional map folder, GameApp (`--biome`), GameSession, AppHost, GameConfig, ClientGameData,
+Program, Shaders (terrain and water colours became uniforms, `Atmosphere` colours settable), MapPreview (optional
+biome), SkirmishSetupScreen (Biome row, preview 0.48 → 0.44 of the panel), CLAUDE.md (3 lines).
+
+**Numbers.**
+- Bench `2000 300` tick, 3 interleaved runs: main 1.75-1.95 ms, branch 1.79-1.83 ms (no regression).
+- Transfer in loopback: an 884 KB map (1024, 8 players) in about 120 ms; great_lakes is 718 KB. A 20 KB/s
+  throttled upload shows 41 % in the lobby screenshot.
+- Reference match and bench: the hashes of main (FB269C29202773C1, 6A8312040EFA67F2).
+
+**Known issues / later** (ROADMAP): an interrupted download starts again from zero; all pack maps are temperate;
+the players list says "Not ready" while a client downloads (the progress is only in the map panel and the bottom
+bar); on lava, units look warm and grey up close and the ash-crown trees read as grey mushrooms from above; the
+retouched snowy conifers were not re-checked up close.
+
+**Handoff review** (orchestrator; the agents wrote none). The notes were accurate and every successor continued
+without redoing work. One seam bug: the unbuilt WIP the orchestrator committed after the usage limit (save finds its
+map by hash) broke `MapFileTests`, and agent 2 ran only the net tests and its own sim tests, so agent 3 found it in
+the full suite (as in 8b-1: run the full suites before a hand-over). Sub-agent 1 left the missing per-biome checks
+and the minimap as named open items, which made sub-agent 2 a short, self-contained piece.
+
+**Merge checks on main** (orchestrator, 2026-11-12 16:21-16:24, `tools/agents/merge-check.sh`): build 0 errors;
+tests 603 sim + 343 client + 33 net green; reference match "Hard wins after 12:18", FB269C29202773C1; bench
+6A8312040EFA67F2; screenshot `--demo --biome desert` (sand plateau with dark rock cliffs, cacti and sandstone
+rocks, units readable, minimap in desert colours) looked right.
+
 ## Wave 9: visual polish (briefs re-cut 2026-11-11; 9b-1 and 9b-2 merged 2026-11-12)
 9a (AI) was removed from the plan by the owner on 2026-11-11. 9b is cut into two modules of about 1,500 lines, one
 module agent each as in (8b). Their files are disjoint from 8b-1 and 8b-2, so the pairs 8b-1 + 9b-1 and

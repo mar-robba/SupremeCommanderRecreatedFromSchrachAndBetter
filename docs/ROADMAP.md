@@ -2,14 +2,14 @@
 
 Legend: [x] done · [~] in progress (owner) · [ ] todo. Keep this file updated when you finish work.
 
-## ▶ NEXT STEPS (updated 2026-11-12 12:25 — read this first in a new session)
-main has waves 1-7, (8a), (8b-1), (8b-2), (9b-1) and (9b-2): (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
+## ▶ NEXT STEPS (updated 2026-11-12 16:40 — read this first in a new session)
+main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
 2026-11-11), (8b-1) map props: trees and rocks, (9b-1) death animations + ACU warp-in, (8b-2) map files + map
-pack + map picker and (9b-2) terrain self-shadows + unit LOD + minimap options (all four merged 2026-11-12).
-Wave 9 is complete (9a was removed by the owner); wave 8 lacks only (8b-3).
-Tests: 599 sim + 339 client + 27 net.
+pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
+biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner).
+Tests: 603 sim + 343 client + 33 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:18", hash
 **FB269C29202773C1** (agents that must not change sim results compare against it; before 8b-1, which put trees and
 rocks on the maps, it was "after 15:35", BBD1FF3C4E116A4A). Bench `2000 300` hash 6A8312040EFA67F2
@@ -18,31 +18,22 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 12:05, orchestrator session e3d118ad, on Opus 5.5: the owner's Fable 5.2 usage ran out):
-- **(8b-2) and (9b-2) are merged and verified** (9528229, af7f792; HISTORY reports); their worktrees and branches
-  are removed. No module agent is running.
-- **NEXT: (8b-3) Maps in multiplayer + biomes**, alone, one module agent (`model: "opus"`, `isolation: "worktree"`,
-  cap 200k, sub-agents 0 or 1), at the start of a usage window: the window that began about 10:00 had used 22.4 $
-  by 12:01 (two module chains of 3 and 4 agents), too little left for a module. Brief: HISTORY "(8b) Maps", brief
-  8b-3; it now builds on 8b-2's `MapFile` / `MapLibrary` (ARCHITECTURE "Map files") and 9b-2's terrain shader
-  (ground lit value in the chunk vertex colours: biome palettes must keep the G channel free or move it).
-- **LESSONS "Costi" re-aligned after wave 9** (merged e43f997, 2026-11-12 12:20); next after wave 11.
-- **(8b-3) STARTED 2026-11-12 15:07** by the scheduled job (orchestrator session 46ab30e4, the same process as
-  e3d118ad after a `/clear`): module agent a5a28d62964ea7188 (CTX-TAG `8b3-mod-1`, cap 200k), worktree
-  `.claude/worktrees/agent-a5a28d62964ea7188` (locked), branch `worktree-agent-a5a28d62964ea7188`, from 63a9028.
-  **Usage limit at ~15:35** (the window really reset at 15:40, not 15:00: `windows.py` placed it at 10:00, the
-  first calls were 10:34-10:41): mod-1 stopped at 162k (its TODO 1 committed by the orchestrator as WIP 3f2880a,
-  unbuilt), its sub-agent a882f8ecab5f18722 (`8b3-sub-1`, biome visuals, 67k) resumed by SendMessage at 15:43;
-  **15:44 fresh module agent a34d9f569f785d81e (`8b3-mod-2`)** in the same worktree, from `.claude/handoff.md`
-  (TODO 2-7: net transfer, lobby, bench, tests, docs). sub-1 stopped at its 130k checkpoint (34f82b2: palettes,
-  lava water, biome trees/rocks, `--biome`; one screenshot checked); **15:58 sub-agent add10aa761933ea0f
-  (`8b3-sub-2`, cap 120k)**: per-biome screenshots, tuning, minimap palette. mod-2 checkpointed at 170k with the
-  code done (21d9dcb: protocol 3, transfer, lobby, setup biome row, bench `mp map=`, MapTransferTests,
-  BiomeMapTests); **15:58 module agent a7e3f834553387d0e (`8b3-mod-3`)**: lobby screenshots, docs, final checks,
-  report. Watcher: `--watch 135000 a7e3f834553387d0e=170000 add10aa761933ea0f=110000`. Prompt of mod-1:
-  `/tmp/claude-1000/-run-media-marco-RTS/e3d118ad-a778-43e1-9527-d5456edbcaae/scratchpad/prompt-8b3.md` (with
-  "main = 63a9028"). If the orchestrator is gone: a fresh agent in that worktree (no isolation) with that prompt +
-  "read `.claude/handoff.md` first" and a new CTX-TAG. Merge checks: `bash tools/agents/merge-check.sh <log> [screenshot args]`.
+**ON RESUME** (2026-11-12 16:40, orchestrator session 46ab30e4, on Opus 5.5):
+- **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report): its worktree and branch are removed.
+  No module agent is running. Waves 8 and 9 are complete.
+- **NEXT: wave 10** ("Proposed waves" below: 10a multiplayer robustness G34-G36 (+G39), 10b keybindings G19 + client
+  leftovers). Its briefs were written for 2 big agents and **must be re-cut into modules of about 1,500 lines**
+  before a start (owner rule 2026-11-10), with the brief text in HISTORY "Wave 10" like "(8b) Maps". Proposed cut
+  (check sizes against the gap table first): 10a-1 `DMath` software trig/exp across the sim (mechanical, one
+  reference-hash change, golden-value tests); 10a-2 observers + vote to drop + lobby pings + chat sounds (`Rts.Net`,
+  Net menus); 10a-3 MP save/load; 10b-1 keybindings screen + rebinding (G19); 10b-2 client leftovers (G11 client
+  items, G20/G22 leftovers). 10a-1 changes sim results, so it runs alone; 10b-1 can pair with a net module (disjoint
+  files). One module agent each (`model: "opus"`, `isolation: "worktree"`, cap 200k), at most 2 agents at a time.
+- **Start a module only in a fresh usage window, and not on the hour:** the window reset at 15:40 on 2026-11-12,
+  not 15:00 (WORKFLOW "When a window resets"); the 15:07 start was cut after 28 minutes. 8b-3 then used about
+  8 $ of the 15:40 window by 16:20 (5 agents).
+- **Lava biome follow-ups** (HISTORY 8b-3 "Known issues"): warm/grey units up close, ash-crown trees read as grey
+  mushrooms from above; pack maps are all temperate (`mapexport --biome` can set them without changing hashes).
 - **Watch the agents' context from the start:** module agents reach 200k in about 19 minutes and do not stop by
   themselves (WORKFLOW "Context limits and handoffs"): watcher at 170k, CHECKPOINT message at once, then a fresh
   agent in the same worktree.
@@ -61,7 +52,8 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9". Every prompt carries a
   on the home disk: the data partition has no exec bits).
 - **After each merge:** report into HISTORY, a fragmentation row in WORKFLOW, the module's merged lines into
   `tools/token-ledger/purposes.json` `righe` + `ledger.py update` (WORKFLOW "Lifecycle of a wave" step 7). The
-  "Costi" chapter of LESSONS is next due after wave 9 (cost per wave so far: LESSONS "Per onda").
+  "Costi" chapter of LESSONS was re-aligned after wave 9 (e43f997) and is next due after wave 11 (cost per wave so
+  far: LESSONS "Per onda").
 - **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
   Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
 - **Improving the AI is no longer a goal of the project (owner, 2026-11-11):** the skirmish AI stays as merged in
