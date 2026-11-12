@@ -113,7 +113,7 @@ public sealed class GameSession : IDisposable
         if (wrapHooks != null) Runner.Hooks = wrapHooks(Runner.Hooks!);
         _interp = new SnapshotInterpolator(Runner);
         _camera = new RtsCamera(terrain) { InputEnabled = opt.ScreenshotPath == null };
-        _terrainR = new TerrainRenderer(terrain);
+        _terrainR = new TerrainRenderer(terrain, cfg.EffectiveBiome); // (8b-3)
         _unitR = new UnitRenderer(db, terrain);
         UnitRenderer.Gallery = opt.Gallery;
         Ctx = new GameContext

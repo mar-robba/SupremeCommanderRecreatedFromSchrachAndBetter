@@ -6,6 +6,7 @@ using Rts.Client;
 //                   [--autostart] (setup: start as soon as the preview is ready) [--flow-test] (scripted menu flow)
 //        Rts.Client [--seed N] [--map 256|512|1024] [--players N] [--preset plains|lakes|highlands|canyon|archipelago]
 //                   [--water 0..1] [--demo] [--size 1600x900] [--pause-menu] [--endscreen]   -> straight into a game
+//                   [--biome temperate|desert|tundra|lava|tropical] (8b-3 visuals only; default = the map file's or temperate)
 //                   [--faction ID] (local player's faction) [--factions a,b,...] (per slot in order; "random" allowed;
 //                   ids = data/factions/*.json; also preset the --setup screen)
 //                   [--options SPEC] (game options, e.g. victory=supremacy,cap=500,resources=high,fog=explored,speed=fast,

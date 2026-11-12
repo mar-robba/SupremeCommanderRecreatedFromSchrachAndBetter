@@ -154,8 +154,13 @@ public class MapFileTests
         var e = Assert.Throws<IncompatibleSaveException>(() => SaveGame.TerrainFor(other, TestUtil.Db, []));
         Assert.Contains("different", e.Message);
 
-        var missing = info.Clone();
-        missing.MapFile = "no_such_map";
+        // (8b-3) a file is also found by its content hash (e.g. a map downloaded in multiplayer under another name)
+        var renamed = info.Clone();
+        renamed.MapFile = "no_such_map";
+        Assert.Equal(GameInfo.TerrainHashOf(sim.World.Terrain), GameInfo.TerrainHashOf(SaveGame.TerrainFor(renamed, TestUtil.Db, [])));
+
+        var missing = renamed.Clone();
+        missing.MapFileHash ^= 1;
         e = Assert.Throws<IncompatibleSaveException>(() => SaveGame.TerrainFor(missing, TestUtil.Db, []));
         Assert.Contains("not installed", e.Message);
 

@@ -13,3 +13,4 @@ obj/
 # Release packages (tools/package/package.sh)
 /release/
 __pycache__/
+/downloaded_maps/

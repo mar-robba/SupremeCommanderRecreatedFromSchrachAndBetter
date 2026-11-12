@@ -1013,6 +1013,51 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
   Skirmish setup row "Map" (Cycle: Random map | pack maps); a file map hides the generator rows and shows its
   description; `MapPreview.RequestFile(id, players)` draws the starts the game will use, unused ones as empty slots.
 
+## Maps in multiplayer and biomes (8b-3: `Rts.Net/Session/*Session.Maps.cs`, `Rts.Sim/Map/Biome.cs`, `Rts.Client/Menus/LobbyScreen.Maps.cs`, `Rendering/*.Biome.cs`)
+- Biome (`Biome` enum: Temperate, Desert, Tundra, Lava, Tropical; `Biomes.Id/Name/TryParse/Step`) is a look only: it
+  never reaches the sim (`BiomeMapTests`: same `StateHash` on every biome). Map files store it as an optional trailing
+  header byte (older v1 files read as Temperate); the content hash covers the payload only, so the same terrain has the
+  same hash on every biome (`MapFile.WithHeader`, `mapexport --biome B`). Choice: `MapGenSettings.Biome`,
+  `SkirmishSettings.Biome` (null = the map file's biome, else Temperate: `GameSetup.BiomeFor`), `GameInfo.Biome` (id,
+  null = temperate) in saves/replays. Client: `GameConfig.Biome` / `EffectiveBiome`, `--biome X`, skirmish setup row
+  "Biome" (cycles Map default | the five), lobby row (host edits, clients read).
+- Lobby (`Msg.ProtocolVersion` 3; a v2 peer is refused with both versions in the text): `LobbyOptions` += `MapFile`
+  (id, null = generated), `MapHash`, `MapName`, `MapPlayers`, `MapBytes`, `MapBiome` (the file's), `Biome` (0 = map
+  default, 1 + biome) → `HasMapFile`, `EffectiveBiome`; `NetSlot` += `MapReady`, `MapProgress`. The host resolves the
+  file outside the lock (`HostSession.SetOptions` → `ResolveMap`: by hash in data/maps then `MapDir`, else by id) and
+  fills the header fields; a new map resets every client's map state. `LobbyState.Problem()` adds "too many armies for
+  the map" and "X is downloading the map (N %)"; the host refuses Ready from a slot without the map. The LAN listing
+  shows the map name.
+- Transfer: on each lobby the client (`ClientSession.CheckMap`) looks for the file with `MapLibrary.Find(id, hash,
+  MapDir)` (data/maps, then the download folder; same id first, then any file with that hash). Missing → `MapRequest`
+  (id, hash); the host uploads `MapChunk`s of 32 KB (`MapChunkBytes`), at most 256 KB (`MapWindowBytes`) beyond what the
+  client acknowledged; the client acks every chunk with `MapStatus` (state 0 receiving / 1 have it / 2 failed, bytes),
+  which also drives the host's slot progress. Uploads are pumped by the host's monitor thread; env
+  `RTS_MAP_UPLOAD_KBPS` throttles them (screenshots/tests). Files over 64 MB (`MaxMapBytes`) are refused. The complete
+  file is verified on a worker (`MapFile.Decode` + header hash = the lobby's hash) and stored as `<id>.rtsmap` (via a
+  `.part` file and a move; `<id>_<HASH>.rtsmap` when another file already has that name) in `MapDir` =
+  `MapLibrary.DownloadDir` (dev: `./downloaded_maps`, release / `RTS_USER_DIR`: next to `saves/`). Status for the UI:
+  `NetSession.MapTransfer` (immutable `MapTransferStatus`: Present / Downloading / Verifying / Failed, received, total,
+  path), `MapPath`. A broken download starts again from zero.
+- Game start: `NetGameSetup.LoadMap(start, mapDir)` / `ToSkirmish(start, map)` / `CreateSimulation(db, start, mapDir)`
+  (`HeadlessPeer` and `NetLoadingScreen` use the session's `MapDir`); `NetGameConfig` sets `MapFile` + `Biome`; the
+  net replay records the map id and hash like a skirmish (`Recording(..., map)`). `Rts.Bench -- mp ... map=ID
+  biome=X` runs the self-test on a file map (named args anywhere; peers wait for the transfer). Tests:
+  `MapTransferTests` (codec, pack map on both sides, missing map downloaded + used in sync, corrupted upload refused,
+  old protocol refused, big map timing), `BiomeMapTests`.
+- Lobby UI (`LobbyScreen.Maps.cs`): host "Map" row cycles Random map | `MapFileCache` maps, "Biome" row; a file hides
+  the generator rows (generated maps: 7 rows, fit at 720p); the preview loads the file once it is here; the info line
+  and the bottom bar show "Downloading map N % (x/y KB)"; Ready stays off until the map is present (`--autostart`
+  clients wait for it). Previews (`MapPreview`, setup and lobby) bake in the biome's minimap colours.
+- Biome visuals (client only): `BiomePalettes.For(biome)` (`TerrainRenderer.Biome.cs`, record `BiomePalette`: 8
+  ground colours bound as terrain shader uniforms, shore glow (lava), water shallow/deep/foam/glow (lava water = dark
+  drifting crust over a molten glow, nearly opaque), atmosphere sun/sky/fog colours set on `Atmosphere`'s static
+  fields in `ApplyBiome()`, called every Draw so the Temperate menu backdrop resets them); `BiomePalettes.Minimap(b)`
+  for the minimap and previews. Props (`PropRenderer.Biome.cs`): `NatureLook` (rock colours, moss, crack glow) and
+  `BuildBiomeTree`: desert saguaros / dry shrubs / dead trees, tundra snowy conifers / birches, lava charred conifers /
+  dead and ash trees, tropical palms / jungle trees; meshes rebuild when the biome changes. Temperate = the pre-8b-3
+  constants (`BiomeVisualsTests`).
+
 ## Terrain self-shadows, unit LOD, minimap options (9b-2, client only)
 - Terrain self-shadows: `TerrainShadowBake` (pure, tests in `TerrainShadowLodMinimapTests`) marches each height
   vertex towards `TerrainRenderer.SunDir` (the unit shadow map's sun) and stores the shadow line S = max(h(p + t·sun)

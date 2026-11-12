@@ -22,6 +22,12 @@ public static class MapFileCache
         }
     }
 
+    /// <summary>(8b-3) Re-scan the folders (a map was downloaded).</summary>
+    public static void Invalidate()
+    {
+        lock (Lock) _list = null;
+    }
+
     public static MapFileInfo? Info(string id) =>
         List.FirstOrDefault(m => string.Equals(m.Id, id, StringComparison.OrdinalIgnoreCase))
         ?? (File.Exists(id) ? TryHeader(id) : null);

@@ -14,11 +14,12 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   (unit = blueprint id or `faction:role`, e.g. `uef:tank_t1`); grids: `... -- duelmatrix <factionA> [factionB] [masses=600,2000,6000] [seeds=3]`
 - AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions] [options]`
   (`options` = a game options spec as `--options` below, e.g. `victory=supremacy,prebuilt=on,cap=250`)
-- Map files (ARCHITECTURE "Map files"): `dotnet run -c Release --project tools/Rts.Bench -- mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc T]`;
+- Map files (ARCHITECTURE "Map files"): `dotnet run -c Release --project tools/Rts.Bench -- mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc T] [--biome B]`;
   the pack: `... -- mapexport --pack tools/maps/pack.txt data/maps`; which seeds pass the checks: `... -- mapexport --scan <size> <players> <preset> <seed0> <count>`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
   (`--mapfile NAME` = play on the map file `data/maps/NAME.rtsmap` (or a path) instead of a generated map; also presets `--setup`)
+  (`--biome temperate|desert|tundra|lava|tropical` = visual biome (terrain/water/sky/trees, no sim effect; default = the map file's or temperate); also presets `--setup`)
   (`--faction ID` = local player's faction, `--factions a,b,...` = per slot in order, `random` allowed; ids = `data/factions/*.json`;
   both also preset `--setup`)
   (`--options SPEC` = game options, keys `victory=assassination|supremacy|annihilation|sandbox`, `cap=1..16384`,
@@ -41,7 +42,8 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
 - Multiplayer (lockstep, ARCHITECTURE "Multiplayer"): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
   --host [port] | --join ip[:port] [--name N] [--autostart]` (default port 47624; `--autostart`: clients Ready, host
   starts with 2+ humans or with `--players N` AI slots). Headless self-test: `dotnet run -c Release --project
-  tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop]` (exit 1 = desync).
+  tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop] [map=ID] [biome=X]` (exit 1 = desync;
+  `map=` = on a map file). Map transfer by hand (env `RTS_MAP_UPLOAD_KBPS`): DEV_GUIDE "Multiplayer checks".
 - Saves & replays (folders `saves/`, `replays/`; every game is recorded; F5 quicksave, F6 quickload, Esc → Save Game):
   `dotnet run --project src/Rts.Client -- --saves | --replays | --load FILE | --replay FILE [--seek TICK]`
   (`--save-at N` quicksaves at frame N, `--save-dialog` opens the save dialog; `--screenshot` runs write no replay unless `--write-replay`;

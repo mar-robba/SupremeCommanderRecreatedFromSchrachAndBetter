@@ -25,32 +25,36 @@ public sealed class MapPreview : IDisposable
     public double LastGenMs { get; private set; }
     public bool Busy => _task != null || _pending != null || _pendingFile != null;
 
-    private static string Key(MapGenSettings s) => $"{s.Size}|{s.Players}|{s.Seed}|{s.Preset}|{s.WaterAmount:F3}";
+    private static string Key(MapGenSettings s, Biome biome) => $"{s.Size}|{s.Players}|{s.Seed}|{s.Preset}|{s.WaterAmount:F3}|{biome}";
 
-    /// <summary>Asks for a preview of these settings (no-op if already shown or being generated).</summary>
-    public void Request(MapGenSettings s)
+    /// <summary>Asks for a preview of these settings (no-op if already shown or being generated), in the colours of
+    /// <paramref name="biome"/> (8b-3, the in-game minimap palette).</summary>
+    public void Request(MapGenSettings s, Biome biome = Biome.Temperate)
     {
-        string k = Key(s);
+        string k = Key(s, biome);
         if (k == _shownKey && _task == null) return;
         if (k == _taskKey || k == _pendingKey) return;
         _pending = s;
         _pendingFile = null;
         _pendingKey = k;
+        _pendingBiome = biome;
     }
 
     private string? _pendingFile;
     private int _pendingPlayers;
+    private Biome _pendingBiome;
 
     /// <summary>(8b-2) Asks for a preview of a map file (data/maps id), loaded on a worker like a generated map.</summary>
-    public void RequestFile(string id, int players)
+    public void RequestFile(string id, int players, Biome biome = Biome.Temperate)
     {
-        string k = "file:" + id + "|" + players;
+        string k = "file:" + id + "|" + players + "|" + biome;
         _pendingPlayers = players;
         if (k == _shownKey && _task == null) return;
         if (k == _taskKey || k == _pendingKey) return;
         _pending = null;
         _pendingFile = id;
         _pendingKey = k;
+        _pendingBiome = biome;
     }
 
     /// <summary>Call once per frame on the main thread.</summary>
@@ -75,6 +79,7 @@ public sealed class MapPreview : IDisposable
             var s = _pending;
             var file = _pendingFile;
             int players = _pendingPlayers;
+            var biome = _pendingBiome;
             _pendingFile = null;
             _taskKey = _pendingKey;
             _pending = null;
@@ -84,7 +89,7 @@ public sealed class MapPreview : IDisposable
             {
                 var t = file != null ? GameStarts(MapFileCache.Get(file), players) : MapGenerator.Generate(s!);
                 int res = Math.Min(t.Width, 512);
-                return (t, Bake(t, res), res);
+                return (t, Bake(t, res, biome), res);
             });
         }
     }
@@ -118,9 +123,10 @@ public sealed class MapPreview : IDisposable
         Raylib.UpdateTexture(_tex, px);
     }
 
-    /// <summary>Hill-shaded color image of the terrain (same palette as the in-game minimap).</summary>
-    public static Color[] Bake(Terrain t, int res)
+    /// <summary>Hill-shaded color image of the terrain (same palette as the in-game minimap, per biome).</summary>
+    public static Color[] Bake(Terrain t, int res, Biome biome = Biome.Temperate)
     {
+        var pal = Rendering.BiomePalettes.Minimap(biome); // (8b-3)
         var px = new Color[res * res];
         var sun = Vector3.Normalize(new Vector3(-0.5f, 0.75f, -0.45f));
         float maxH = 1;
@@ -138,15 +144,14 @@ public sealed class MapPreview : IDisposable
                 if (rel < 0)
                 {
                     float depth = Math.Clamp(-rel / 8f, 0, 1);
-                    c = Vector3.Lerp(new Vector3(0.25f, 0.45f, 0.62f), new Vector3(0.08f, 0.18f, 0.36f), depth);
+                    c = Vector3.Lerp(pal.WaterShallow, pal.WaterDeep, depth);
                 }
                 else
                 {
                     float k = Math.Clamp(rel / maxH, 0, 1);
-                    c = rel < 1.0f ? new Vector3(0.66f, 0.62f, 0.45f)
-                        : Vector3.Lerp(new Vector3(0.30f, 0.44f, 0.22f), new Vector3(0.58f, 0.55f, 0.42f), k);
+                    c = rel < 1.0f ? pal.Shore : Vector3.Lerp(pal.Low, pal.High, k);
                     float slope = 1f - n.Y;
-                    c = Vector3.Lerp(c, new Vector3(0.42f, 0.38f, 0.34f), Math.Clamp((slope - 0.12f) * 4f, 0, 1));
+                    c = Vector3.Lerp(c, pal.Slope, Math.Clamp((slope - 0.12f) * 4f, 0, 1));
                     c *= 0.55f + 0.6f * MathF.Max(0, Vector3.Dot(n, sun));
                 }
                 px[z * res + x] = new Color((byte)Math.Clamp(c.X * 255, 0, 255), (byte)Math.Clamp(c.Y * 255, 0, 255), (byte)Math.Clamp(c.Z * 255, 0, 255), (byte)255);

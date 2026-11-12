@@ -18,6 +18,10 @@ static class MpSelfTest
     {
         bool drop = args.Contains("drop");
         args = args.Where(a => a != "drop").ToArray();
+        // (8b-3) named options anywhere: map=ID (a map file of data/maps), biome=NAME
+        string? mapId = args.FirstOrDefault(a => a.StartsWith("map="))?[4..];
+        string? biomeArg = args.FirstOrDefault(a => a.StartsWith("biome="))?[6..];
+        args = args.Where(a => !a.Contains('=')).ToArray();
         int peersN = args.Length > 0 ? Math.Clamp(int.Parse(args[0]), 2, 8) : 4;
         int ticks = args.Length > 1 ? int.Parse(args[1]) : 1200;
         int mapSize = args.Length > 2 ? int.Parse(args[2]) : 256;
@@ -36,12 +40,20 @@ static class MpSelfTest
             var o = host.Lobby.Options.Clone();
             o.MapSize = mapSize;
             o.Seed = 11;
+            o.MapFile = mapId ?? "";
+            if (Rts.Sim.Map.Biomes.TryParse(biomeArg, out var biome)) o.Biome = (byte)(1 + (int)biome);
             host.SetOptions(o);
+            if (mapId != null && !host.Lobby.Options.HasMapFile) throw new InvalidOperationException($"map file '{mapId}' not found");
+            if (mapId != null) Console.WriteLine($"Map file {host.Lobby.Options.MapName} ({host.Lobby.Options.MapBytes / 1024} KB, {host.Lobby.Options.MapPlayers} starts), biome {Rts.Sim.Map.Biomes.Id(host.Lobby.Options.EffectiveBiome)}");
             for (int i = 1; i < peersN; i++)
             {
                 var c = ClientSession.Join("127.0.0.1", host.Port, "Peer" + i);
                 clients.Add(c);
                 Wait(() => c.LocalSlot >= 0);
+                var mt = Stopwatch.StartNew();
+                Wait(() => !host.Lobby.Options.HasMapFile || c.MapTransfer?.State is MapTransferState.Present or MapTransferState.Failed); // (8b-3)
+                if (c.MapTransfer?.State == MapTransferState.Failed) throw new InvalidOperationException("map transfer failed: " + c.MapTransfer.Error);
+                if (host.Lobby.Options.HasMapFile) Console.WriteLine($"Peer{i}: map {(c.MapTransfer!.Path?.Contains("downloaded") == true ? "downloaded" : "present")} in {mt.ElapsedMilliseconds} ms");
                 c.SetReady(true);
             }
             Wait(() => host.Lobby.Problem() == null);

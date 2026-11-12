@@ -458,6 +458,15 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
       replays record map id + hash and refuse a missing or different file; generated maps unchanged
       - [ ] later: saves of a map loaded from a path outside data/maps reload only if the file is copied there; map
         files in the lobby / multiplayer (8b-3); a user maps folder (release mode); a map editor
+- [x] Maps in multiplayer + biomes (2026-11-12, module 8b-3; ARCHITECTURE "Maps in multiplayer and biomes"): the host
+      picks a map file in the lobby (Map + Biome rows); clients with the same file (id + content hash, data/maps or
+      `downloaded_maps`) use it, the others download it from the host (32 KB chunks, 256 KB window, progress line,
+      Ready off until verified; hash checked off-thread), net protocol 3 (old peers refused); net replays record the
+      map; `Rts.Bench -- mp ... map=ID biome=X`; biomes temperate / desert / tundra / lava / tropical (map file header
+      byte, generator/skirmish setting, `--biome`, setup + lobby rows; terrain, water, sky, minimap and preview
+      palettes, biome trees and rocks; no effect on the sim); `mapexport --biome B`; 884 KB map in ~120 ms on loopback
+      - [ ] later: resume a broken download (it restarts from zero); biomes for the pack maps (all Temperate now);
+        a lobby map browser with thumbnails; a client-side cache limit for `downloaded_maps`
 
 ## Phase 4 — Scale and polish
 - [x] 1024 maps with 4–8 players, 5k+ units at 60 FPS (wave 5m, 2026-10-16; ARCHITECTURE "Performance & scale"):

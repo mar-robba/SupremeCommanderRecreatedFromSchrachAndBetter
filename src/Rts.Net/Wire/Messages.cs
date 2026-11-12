@@ -46,12 +46,18 @@ public enum MsgType : byte
     Abort = 19,
     /// <summary>H→C: varu count, then per turn player varu ping ms (display only).</summary>
     Pings = 20,
+    /// <summary>(8b-3) C→H: str map id, u64 content hash (the client lacks the lobby's map file: send it).</summary>
+    MapRequest = 21,
+    /// <summary>(8b-3) H→C: u64 hash, varu offset, varu total bytes, block data (a piece of the map file).</summary>
+    MapChunk = 22,
+    /// <summary>(8b-3) C→H: u64 hash, u8 state (0 missing/receiving, 1 have it, 2 failed), varu bytes received.</summary>
+    MapStatus = 23,
 }
 
 /// <summary>Builds message frames.</summary>
 public static class Msg
 {
-    public const uint ProtocolVersion = 2; // 2: LobbyOptions.Game (game options)
+    public const uint ProtocolVersion = 3; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer
 
     [ThreadStatic] private static ByteWriter? _w;
 

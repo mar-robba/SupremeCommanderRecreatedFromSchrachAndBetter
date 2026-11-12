@@ -11,7 +11,7 @@ namespace Rts.Net.Session;
 /// A joined player: mirrors the host's lobby, sends its requests/turns/hashes to the host and applies what the host
 /// relays. If the host disappears during a game, the game continues offline (the other players are dropped locally).
 /// </summary>
-public sealed class ClientSession : NetSession, ITurnSink
+public sealed partial class ClientSession : NetSession, ITurnSink
 {
     private readonly NetConnection _conn;
     private readonly ManualResetEventSlim _welcome = new();
@@ -25,8 +25,9 @@ public sealed class ClientSession : NetSession, ITurnSink
     public float PingMs => _conn.RttMs;
     public string HostEndpoint { get; }
 
-    private ClientSession(System.Net.Sockets.Socket socket, string name, string endpoint)
+    private ClientSession(System.Net.Sockets.Socket socket, string name, string endpoint, string? mapDir = null)
     {
+        if (mapDir != null) MapDir = mapDir; // (8b-3) before the first lobby arrives
         LocalName = CleanText(name, 24) is { Length: > 0 } n ? n : "Player";
         HostEndpoint = endpoint;
         _conn = new NetConnection(socket, OnMessage, OnClosed, "Net client");
@@ -40,12 +41,13 @@ public sealed class ClientSession : NetSession, ITurnSink
     }
 
     /// <summary>Connects and joins (blocks until the host answers). Throws <see cref="NetJoinException"/> with the reason.</summary>
-    public static ClientSession Join(string host, int port, string name, int timeoutMs = 5000)
+    /// <param name="mapDir">(8b-3) Folder for received maps (null = <see cref="Rts.Sim.Map.MapLibrary.DownloadDir"/>).</param>
+    public static ClientSession Join(string host, int port, string name, int timeoutMs = 5000, string? mapDir = null)
     {
         System.Net.Sockets.Socket s;
         try { s = NetConnection.Connect(host, port, timeoutMs); }
         catch (Exception e) { throw new NetJoinException($"Can't reach {host}:{port}: {e.Message}", e); }
-        var c = new ClientSession(s, name, $"{host}:{port}");
+        var c = new ClientSession(s, name, $"{host}:{port}", mapDir);
         if (!c._welcome.Wait(timeoutMs))
         {
             c.Leave("no answer");
@@ -122,6 +124,10 @@ public sealed class ClientSession : NetSession, ITurnSink
                 case MsgType.Lobby:
                     LobbyRef = LobbyState.Read(r);
                     PublishLobby();
+                    CheckMap(); // (8b-3) ClientSession.Maps.cs
+                    break;
+                case MsgType.MapChunk:
+                    OnMapChunk(r);
                     break;
                 case MsgType.Chat:
                 {

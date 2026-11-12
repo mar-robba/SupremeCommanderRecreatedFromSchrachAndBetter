@@ -28,9 +28,12 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
     /// gameplay, picking and the sim keep the real level).</summary>
     public static float? DebugWaterLevel;
 
-    public TerrainRenderer(Terrain terrain)
+    public TerrainRenderer(Terrain terrain, Biome biome = Biome.Temperate)
     {
         _t = terrain;
+        Biome = biome; // (8b-3) TerrainRenderer.Biome.cs
+        Palette = BiomePalettes.For(biome);
+        ApplyBiome();
         _waterLevel = DebugWaterLevel ?? terrain.WaterLevel;
         var ao = ComputeAo();
         BakeSelfShadow(); // (9b-2) TerrainRenderer.Shadow.cs: the ground lit factor goes into the chunk vertex colours
@@ -108,6 +111,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
     public void Draw(Camera3D cam)
     {
         ShadowMap.Frame++;
+        ApplyBiome(); // (8b-3)
         Atmosphere.Update(Vector3.Distance(cam.Position, cam.Target));
         var fv = FrameView.Capture();
 
@@ -131,6 +135,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         ShadowMap.Bind(sp);
         FogRenderer.Bind(sp);
         BindSelfShadow(sp); // (9b-2) terrain self-shadows
+        BindGroundPalette(sp); // (8b-3)
         DrawLodChunks(fv);
         FrameProfiler.Sub("terrain:chunks");
     }
@@ -189,6 +194,7 @@ public sealed unsafe partial class TerrainRenderer : IDisposable
         sp.Set("mapSize", new Vector2(_t.Width, _t.Height));
         sp.Set("waterLevel", _waterLevel);
         sp.Set("skyTop", Atmosphere.SkyTop);
+        BindWaterPalette(sp); // (8b-3)
         FogRenderer.Bind(sp);
         Rlgl.DrawRenderBatchActive();
         Rlgl.DisableBackfaceCulling();

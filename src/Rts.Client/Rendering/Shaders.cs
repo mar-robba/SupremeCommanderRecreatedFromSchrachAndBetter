@@ -35,12 +35,13 @@ public sealed class ShaderProgram
 public static class Atmosphere
 {
     public static Vector3 SunDir => TerrainRenderer.SunDir;
-    public static readonly Vector3 SunColor = new(1.05f, 0.98f, 0.88f);
-    public static readonly Vector3 SkyAmbient = new(0.40f, 0.46f, 0.56f);
-    public static readonly Vector3 GroundAmbient = new(0.26f, 0.24f, 0.21f);
-    public static readonly Vector3 FogColor = new(0.63f, 0.71f, 0.79f);
-    public static readonly Vector3 SkyTop = new(0.27f, 0.45f, 0.74f);
-    public static readonly Vector3 Abyss = new(0.11f, 0.13f, 0.17f);
+    // (8b-3) Set per biome by every TerrainRenderer (TerrainRenderer.Biome.cs, BiomePalettes); these = Temperate.
+    public static Vector3 SunColor = new(1.05f, 0.98f, 0.88f);
+    public static Vector3 SkyAmbient = new(0.40f, 0.46f, 0.56f);
+    public static Vector3 GroundAmbient = new(0.26f, 0.24f, 0.21f);
+    public static Vector3 FogColor = new(0.63f, 0.71f, 0.79f);
+    public static Vector3 SkyTop = new(0.27f, 0.45f, 0.74f);
+    public static Vector3 Abyss = new(0.11f, 0.13f, 0.17f);
     public static Vector2 FogRange = new(300, 900);
     public static float Time;
     public static float CameraDistance = 80;
@@ -291,6 +292,7 @@ public static unsafe class Shaders
         in vec4 vColor;
         uniform float waterLevel;
         uniform vec2 mapSize;
+        uniform vec3 bGrass1, bGrass2, bDry, bDirt, bRock1, bRock2, bSand, bWet, bShoreGlow; // (8b-3) biome palette
         out vec4 finalColor;
         void main() {
             vec3 n = normalize(vNormal);
@@ -301,14 +303,14 @@ public static unsafe class Shaders
             float n2 = fbm(p * 0.19 + 31.0);
             float n3 = vnoise(p * 1.6);
             float n4 = vnoise(p * 6.0);
-            vec3 grass1 = vec3(0.27, 0.38, 0.17);
-            vec3 grass2 = vec3(0.39, 0.44, 0.22);
-            vec3 dry = vec3(0.52, 0.49, 0.32);
-            vec3 dirt = vec3(0.43, 0.36, 0.26);
-            vec3 rock1 = vec3(0.47, 0.45, 0.42);
-            vec3 rock2 = vec3(0.34, 0.33, 0.31);
-            vec3 sand = vec3(0.74, 0.68, 0.50);
-            vec3 wet = vec3(0.44, 0.41, 0.32);
+            vec3 grass1 = bGrass1;
+            vec3 grass2 = bGrass2;
+            vec3 dry = bDry;
+            vec3 dirt = bDirt;
+            vec3 rock1 = bRock1;
+            vec3 rock2 = bRock2;
+            vec3 sand = bSand;
+            vec3 wet = bWet;
             vec3 c = mix(grass1, grass2, smoothstep(0.32, 0.68, n1));
             c = mix(c, dry, smoothstep(9.0, 20.0, h + (n2 - 0.5) * 10.0) * 0.75);
             c = mix(c, dirt, smoothstep(0.6, 0.72, n2) * 0.55);
@@ -327,6 +329,7 @@ public static unsafe class Shaders
             float sh = min(shadowFactor(vWorld, n), terrainShadowGround(vColor.g)); // (9b-2) terrain self-shadows
             vec3 amb = mix(groundAmb, skyAmb, n.y * 0.5 + 0.5);
             vec3 col = c * (amb * 1.05 + sunColor * ndl * mix(0.45, 1.0, sh));
+            col += bShoreGlow * (1.0 - smoothstep(-0.3, 1.0, h + (n2 - 0.5) * 0.8)) * (0.8 + 0.2 * sin(time * 0.9 + n1 * 9.0)); // (8b-3) lava shores
             // Outside the playable area: darken.
             vec2 o = max(vec2(0.0), max(-p, p - mapSize));
             col *= 1.0 - clamp(max(o.x, o.y) * 0.1, 0.0, 0.6);
@@ -344,6 +347,8 @@ public static unsafe class Shaders
         uniform vec2 mapSize;
         uniform float waterLevel;
         uniform vec3 skyTop;
+        uniform vec3 shallowCol, deepCol, foamCol; // (8b-3) biome water tint
+        uniform float waterGlow;                   // (8b-3) 0 = water, 1 = lava (emissive, flowing crust, little reflection)
         out vec4 finalColor;
         float wave(vec2 p) {
             return vnoise(p * 0.45 + vec2(time * 0.21, time * 0.13)) * 0.6
@@ -361,22 +366,31 @@ public static unsafe class Shaders
             vec3 n = normalize(vec3((h0 - hx) / e * 0.28, 1.0, (h0 - hz) / e * 0.28));
             vec3 V = normalize(camPos - vWorld);
             float fres = 0.03 + 0.97 * pow(1.0 - max(dot(n, V), 0.0), 5.0);
-            vec3 shallow = vec3(0.17, 0.52, 0.54);
-            vec3 deep = vec3(0.03, 0.13, 0.25);
+            vec3 shallow = shallowCol;
+            vec3 deep = deepCol;
             float dk = 1.0 - exp(-max(depth, 0.0) * 0.32);
             vec3 col = mix(shallow, deep, dk);
             col *= 0.65 + 0.4 * max(dot(n, sunDir), 0.0);
+            if (waterGlow > 0.0) { // (8b-3) lava: molten glow under slowly drifting dark crust plates
+                vec2 fp = p * 0.07 + vec2(time * 0.011, time * 0.007);
+                float cr = fbm(fp + vec2(fbm(p * 0.031 - time * 0.004), fbm(p * 0.029 + 7.3)) * 1.6);
+                float crust = smoothstep(0.47, 0.6, cr) * (0.55 + 0.45 * dk);
+                vec3 molten = mix(shallow, deep, smoothstep(0.25, 0.55, cr)) * (0.92 + 0.12 * sin(time * 0.8 + cr * 14.0));
+                vec3 rockCol = vec3(0.07, 0.045, 0.035) * (0.6 + 0.5 * max(dot(n, sunDir), 0.0)) + deep * 0.35 * (1.0 - smoothstep(0.6, 0.75, cr));
+                col = mix(col, mix(molten * 1.25, rockCol, crust), waterGlow);
+            }
             vec3 R = reflect(-V, n);
             vec3 sky = mix(fogColor, skyTop, clamp(R.y, 0.0, 1.0));
-            col = mix(col, sky, fres * 0.55);
+            col = mix(col, sky, fres * 0.55 * (1.0 - 0.85 * waterGlow));
             float spec = pow(max(dot(R, sunDir), 0.0), 160.0) * 1.6;
-            col += sunColor * spec;
+            col += sunColor * spec * (1.0 - 0.8 * waterGlow);
             float fn = vnoise(p * 2.2 + vec2(time * 0.35, -time * 0.25));
             float edge = 1.0 - smoothstep(0.0, 0.45, depth);
             float lines = smoothstep(0.82, 1.0, sin(depth * 8.0 - time * 2.0) * 0.5 + 0.5) * (1.0 - smoothstep(0.0, 1.4, depth));
             float foam = clamp(edge * (0.45 + 0.7 * fn) + lines * 0.3 * smoothstep(0.3, 0.8, fn), 0.0, 1.0);
-            col = mix(col, vec3(0.93, 0.97, 1.0), foam * 0.85);
+            col = mix(col, foamCol, foam * 0.85);
             float alpha = clamp(mix(0.32, 0.93, dk) + fres * 0.25 + foam * 0.6, 0.0, 1.0);
+            alpha = mix(alpha, clamp(0.86 + dk + foam, 0.0, 1.0), waterGlow); // (8b-3) lava is (nearly) opaque
             col = applyFogOfWar(col, vWorld.xz);
             col = applyFog(col, vWorld);
             finalColor = vec4(col, alpha);

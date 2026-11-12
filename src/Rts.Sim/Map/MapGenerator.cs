@@ -87,6 +87,8 @@ public sealed class MapGenSettings
     public int ExtraMassDepositPairs = -1;
     /// <summary>Expansion clusters (2–4 mass, sometimes a hydrocarbon) per player; -1 = auto (by map area).</summary>
     public int ExpansionsPerPlayer = -1;
+    /// <summary>(8b-3) Visual biome only: the generator never reads it (same terrain on every biome).</summary>
+    public Biome Biome = Biome.Temperate;
 }
 
 /// <summary>

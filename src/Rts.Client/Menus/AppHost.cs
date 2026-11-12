@@ -57,6 +57,7 @@ public sealed class AppHost : IDisposable
             WaterAmount = options.PresetGiven || options.WaterAmount >= 0 ? options.WaterAmount : s.WaterAmount,
             Seed = options.Seed,
             MapFile = options.MapFile, // (8b-2) --setup --mapfile NAME
+            Biome = options.Biome, // (8b-3) --setup --biome NAME
         };
         if (options.PlayersGiven)
             for (int i = 0; i < GameConfig.MaxSlots; i++)

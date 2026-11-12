@@ -42,6 +42,8 @@ public sealed class GameInfo
     public ulong MapFileHash;
     /// <summary>(8b-2) Display name of the map file (informational).</summary>
     public string? MapName;
+    /// <summary>(8b-3) Visual biome id (<see cref="Biomes.Id"/>; null = temperate). Never affects the simulation.</summary>
+    public string? Biome;
 
     /// <summary>Save slot name / replay title.</summary>
     public string Name = "";
@@ -73,6 +75,7 @@ public sealed class GameInfo
     {
         var info = new GameInfo { Map = s.MapFile == null ? GameSetup.MapSettingsFor(s) : null, LocalArmy = localArmy, Sandbox = sandbox };
         if (s.MapFile != null) { info.MapFile = s.MapFile.Info.Id; info.MapFileHash = s.MapFile.Info.Hash; info.MapName = s.MapFile.Info.Name; }
+        info.Biome = Biomes.Id(GameSetup.BiomeFor(s)); // (8b-3)
         info.FillFrom(sim);
         return info;
     }

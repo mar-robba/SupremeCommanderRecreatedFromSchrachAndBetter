@@ -174,7 +174,17 @@ Things learned while building the project that are not about how a system works 
   are in (or at once with `--players N`, which fills AI slots). Use a new port per run (a closing socket can linger).
 - Host vs AI only: `--host --autostart --players 3`. Add `--write-replay` to keep the replay, then check it with
   `Rts.Bench -- replay replays/<file>`.
-- Headless: `dotnet run -c Release --project tools/Rts.Bench -- mp 4 1200` (and `... mp 3 1200 256 1 0 drop`).
+- Headless: `dotnet run -c Release --project tools/Rts.Bench -- mp 4 1200` (and `... mp 3 1200 256 1 0 drop`);
+  on a map file: `... mp 2 600 256 0 0 0 map=twin_meadows biome=lava` (named args anywhere in the line).
+- (8b-3) Map transfer by hand: a client gets a map it lacks from the host. Pack maps are in data/maps for both windows,
+  so export a new one into the host's download folder (`... mapexport downloaded_maps/frontier_test.rtsmap 512 777 2
+  lakes "Frontier Test"`), start the host with `RTS_MAP_UPLOAD_KBPS=20` (upload throttle, KB/s) and `--mapfile
+  frontier_test`, and the client with `RTS_USER_DIR=<empty folder>` (its own saves/ and downloaded_maps/). With
+  `tools/agents/dn.sh`, run the two built binaries directly (`src/Rts.Client/bin/Debug/net10.0/Rts.Client ...`): a
+  `dn.sh run` holds the build lock until the window closes, so a second one waits. Received maps land in
+  `./downloaded_maps` (dev, git-ignored) or next to `saves/` in release; delete a file there to download it again.
+- A protocol bump (`Msg.ProtocolVersion`, 3 since 8b-3) refuses older peers with both versions in the message: every
+  player needs the same build anyway (`GameInfo.CurrentSimBuild`).
 - Internet play: the host forwards TCP port 47624 (or the `--host` port) on the router to its machine and tells the
   others its public IP; LAN games appear by themselves (UDP 47625, same subnet). Firewalls must allow both.
 - Cross-OS games can desync until the sim trig is software (ARCHITECTURE "Multiplayer", float determinism review).
@@ -234,6 +244,7 @@ integrated GPU.
 | `ai 40 1024 42 hard 0 8 plains` (8 AIs, 40 min) | avg 0.96, p95 2.21, max 12.1 (one AI think), 10 KB/tick (before: 1.64 / 3.68 / 217 / ≈ 125 KB) | wave 5m |
 | Client, 4.8k units in battle, 1024, 960×540 | close: CPU 1.6 ms, GPU 4.2 ms (before CPU 3.2); whole map: CPU 2.2 ms, GPU 2.8 ms (before 2.8 / 8.2: terrain 7.4 → 2.0 with chunk LOD) | wave 5m |
 | Client, 4.8k tanks (scratch `perf.sh` scene: `--map 1024 --players 8 --nofog`, 4×`spawn tank 1200`, `--camera 500,510,D`), 960×540, Debug, main → 9b-2 | GPU / CPU ms: cam 110 4.39 → 3.47 / 4.77 → 5.08 (units GPU 1.74 → 1.11); cam 200 6.26 → 4.31 / 6.69 → 7.15 (Release CPU 4.37 → 4.22; units 2.13 → 0.85, 4794 LOD units = 393k tris instead of ~1.42M); cam 700 3.13 → 3.10 / 4.35 → 4.23 (terrain 2.13 → 2.10). Terrain shadow bake 1025²: ~30 ms Release | 9b-2 |
+| Map transfer, loopback, unthrottled (`MapTransferTests.BigMapTransfersInLoopback`) | 884 KB 1024/8p map: join + download + verify + store ≈ 120 ms | 8b-3 |
 
 ## Tools
 
