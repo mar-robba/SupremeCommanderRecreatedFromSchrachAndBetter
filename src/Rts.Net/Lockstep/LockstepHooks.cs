@@ -188,6 +188,12 @@ public sealed class LockstepHooks : ITickHooks
     public bool Hold(Simulation sim)
     {
         if (!_go) return true;
+        if (_resignRequested) // (10a-2) also while waiting for somebody (the outbox is empty between steps)
+        {
+            int last;
+            lock (_lock) last = ResignLocal();
+            if (last >= 0) _sink.SendResign(last);
+        }
         int t = sim.World.Tick + 1;
         lock (_lock)
         {
