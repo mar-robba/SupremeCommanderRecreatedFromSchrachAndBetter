@@ -40,6 +40,8 @@ public static class UserDirs
         var l = Current;
         SaveStore.SavesDir = l.SavesDir;
         SaveStore.ReplaysDir = l.ReplaysDir;
+        // (8b-3) maps received in multiplayer: next to saves/ (dev: ./downloaded_maps, release: the user data folder)
+        Rts.Sim.Map.MapLibrary.DownloadDir = Path.Combine(Path.GetDirectoryName(l.SavesDir) ?? "", "downloaded_maps");
         return l;
     }
 

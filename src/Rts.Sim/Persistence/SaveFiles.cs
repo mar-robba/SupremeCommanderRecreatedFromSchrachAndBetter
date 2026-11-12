@@ -244,7 +244,8 @@ public static class SaveGame
     public static Terrain MapFileTerrain(GameInfo info, string? mapDir = null)
     {
         string id = info.MapFile!;
-        var path = MapLibrary.Resolve(id, mapDir)
+        var path = (mapDir == null ? MapLibrary.Find(id, info.MapFileHash) : null) // (8b-3) also maps downloaded in MP
+            ?? MapLibrary.Resolve(id, mapDir)
             ?? throw new IncompatibleSaveException($"This game was played on the map '{info.MapName ?? id}' ({id}{MapFile.Extension}), which is not installed in data/maps");
         MapFile file;
         try
