@@ -5,14 +5,17 @@ using Rts.Net.Wire;
 using Rts.Sim.Map;
 using Rts.Sim.Persistence;
 using Xunit;
+using Xunit.Abstractions;
 using static Rts.Net.Tests.NetTestUtil;
 
 namespace Rts.Net.Tests;
 
 /// <summary>(8b-3) Map files in the lobby: codec, the pack map present on both sides, a missing map downloaded from the
 /// host, a corrupted upload refused, old protocol peers refused with both versions named.</summary>
-public class MapTransferTests
+public class MapTransferTests(ITestOutputHelper output)
 {
+    private readonly ITestOutputHelper _out = output;
+
     private static string TempDir()
     {
         var d = Path.Combine(Path.GetTempPath(), "rts_maptest_" + Guid.NewGuid().ToString("N")[..10]);
@@ -152,6 +155,40 @@ public class MapTransferTests
             Assert.False(host.Lobby.Slots[1].Ready); // the host refuses Ready without the map
             Assert.Contains("downloading the map", host.Lobby.Problem());
             Assert.NotNull(host.StartGame());
+        }
+        finally
+        {
+            Close(host, clients);
+            Directory.Delete(hostDir, true);
+            Directory.Delete(clientDir, true);
+        }
+    }
+
+    /// <summary>A pack-sized 1024 map (8 players, heights quantized like the pack, ~700 KB) crosses the window many times
+    /// over loopback, unthrottled; the time is printed (detailed logger) for DEV_GUIDE "Reference numbers".</summary>
+    [Fact]
+    public void BigMapTransfersInLoopback()
+    {
+        var hostDir = TempDir();
+        string id = "nettest_big_" + Guid.NewGuid().ToString("N")[..8];
+        var t = MapFile.Quantize(MapGenerator.Generate(new MapGenSettings { Size = 1024, Players = 8, Seed = 9000 + Environment.TickCount % 5000, Preset = MapPreset.Lakes }), 8);
+        MapFile.Save(Path.Combine(hostDir, id + MapFile.Extension), t, new MapFileInfo { Name = "Big Net Test", Players = 8 });
+        var clientDir = TempDir();
+        var host = HostSession.Start("Host", 0, lanAnnounce: false);
+        host.MapDir = hostDir;
+        var o = host.Lobby.Options.Clone();
+        o.MapFile = id;
+        host.SetOptions(o);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var c = ClientSession.Join("127.0.0.1", host.Port, "P1", mapDir: clientDir);
+        var clients = new List<ClientSession> { c };
+        try
+        {
+            WaitFor(() => c.MapTransfer?.State is MapTransferState.Present or MapTransferState.Failed, "big map transfer done", 30000);
+            Assert.Equal(MapTransferState.Present, c.MapTransfer!.State);
+            Assert.True(host.Lobby.Options.MapBytes > 400_000, $"map is {host.Lobby.Options.MapBytes} bytes");
+            Assert.Equal(host.Lobby.Options.MapBytes, c.MapTransfer.Received);
+            _out.WriteLine($"big map transfer: {host.Lobby.Options.MapBytes / 1024} KB in {sw.ElapsedMilliseconds} ms (join + download + verify + store)");
         }
         finally
         {
