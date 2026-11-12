@@ -49,14 +49,15 @@ public sealed unsafe partial class TerrainRenderer
         // Lit fraction of a point at its own height (units, props, aircraft).
         float terrainShadowAt(vec3 wpos) {
             if (terrainShadowOn < 0.5) return 1.0;
-            float d = texture(terrainShadowTex, (wpos.xz + 0.5) * terrainShadowScale).r - wpos.y;
+            vec2 uv = (wpos.xz + 0.5) * terrainShadowScale;
+            float d = texture(terrainShadowTex, uv).r + texture(terrainHeightTex, uv).r - wpos.y;
             return 1.0 - smoothstep(0.0, 1.2, d); // TerrainShadowBake.Lit (Softness 0.6)
         }
-        // Lit fraction of the ground (true heightmap height, independent of the terrain LOD mesh).
+        // Lit fraction of the ground (true heightmap height, independent of the terrain LOD mesh). The texture holds
+        // shadow line − height (bilinear is linear, so this equals line − height at any point): one fetch per pixel.
         float terrainShadowGround(vec2 xz) {
             if (terrainShadowOn < 0.5) return 1.0;
-            vec2 uv = (xz + 0.5) * terrainShadowScale;
-            float d = texture(terrainShadowTex, uv).r - texture(terrainHeightTex, uv).r;
+            float d = texture(terrainShadowTex, (xz + 0.5) * terrainShadowScale).r;
             return 1.0 - smoothstep(0.0, 1.2, d);
         }
         """;
@@ -75,13 +76,15 @@ public sealed unsafe partial class TerrainRenderer
         var sw = Stopwatch.StartNew();
         var line = TerrainShadowBake.Bake(_t.Heights, _t.Width + 1, _t.Height + 1, SunDir);
         TerrainShadowBake.Blur(line, _t.Width + 1, _t.Height + 1);
+        for (int i = 0; i < line.Length; i++) line[i] -= _t.Heights[i]; // store line − height (see SelfShadowFs)
         LastShadowBakeMs = sw.Elapsed.TotalMilliseconds;
         fixed (float* p = line)
         {
             var img = new Image { Data = p, Width = _t.Width + 1, Height = _t.Height + 1, Mipmaps = 1, Format = PixelFormat.UncompressedR32 };
             _shadowTex = Raylib.LoadTextureFromImage(img);
         }
-        Raylib.SetTextureFilter(_shadowTex, TextureFilter.Bilinear);
+        Raylib.GenTextureMipmaps(ref _shadowTex); // far views minify the texture a lot: mipmaps keep the fetch cache-friendly
+        Raylib.SetTextureFilter(_shadowTex, TextureFilter.Trilinear);
         Raylib.SetTextureWrap(_shadowTex, TextureWrap.Clamp);
         Console.WriteLine($"terrain shadows: baked {_t.Width + 1}x{_t.Height + 1} in {LastShadowBakeMs:F1} ms");
     }
