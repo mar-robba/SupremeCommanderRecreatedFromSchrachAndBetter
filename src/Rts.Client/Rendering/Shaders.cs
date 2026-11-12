@@ -193,7 +193,7 @@ public static unsafe class Shaders
         }
         """;
 
-    private static readonly string UnitLitFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + """
+    private static readonly string UnitLitFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + TerrainRenderer.SelfShadowFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -216,7 +216,7 @@ public static unsafe class Shaders
             glow *= 1.0 - charF;
             vec3 V = normalize(camPos - vWorld);
             float ndl = max(dot(n, sunDir), 0.0);
-            float sh = shadowFactor(vWorld, n);
+            float sh = min(shadowFactor(vWorld, n), terrainShadowAt(vWorld)); // (9b-2) terrain self-shadows
             vec3 H = normalize(sunDir + V);
             float spec = pow(max(dot(n, H), 0.0), 48.0) * 0.28 * ndl * sh;
             vec3 amb = mix(groundAmb, skyAmb, n.y * 0.5 + 0.5);
@@ -285,7 +285,7 @@ public static unsafe class Shaders
         }
         """;
 
-    private static readonly string TerrainFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + """
+    private static readonly string TerrainFs = "#version 330\n" + CommonFs + ShadowFs + FogOfWarFs + TerrainRenderer.SelfShadowFs + """
         in vec3 vWorld;
         in vec3 vNormal;
         in vec4 vColor;
@@ -324,7 +324,7 @@ public static unsafe class Shaders
             c *= 0.86 + 0.18 * n3 + 0.08 * n4 + (n5 - 0.5) * 0.16 * detail;
             c *= vColor.r;
             float ndl = max(dot(n, sunDir), 0.0);
-            float sh = shadowFactor(vWorld, n);
+            float sh = min(shadowFactor(vWorld, n), terrainShadowGround(vWorld.xz)); // (9b-2) terrain self-shadows
             vec3 amb = mix(groundAmb, skyAmb, n.y * 0.5 + 0.5);
             vec3 col = c * (amb * 1.05 + sunColor * ndl * mix(0.45, 1.0, sh));
             // Outside the playable area: darken.
