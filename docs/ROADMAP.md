@@ -68,7 +68,9 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   next module. The 5-hour window began about 20:45 and has had about 50 agent-minutes (next fresh window about
   01:45 on 2026-11-13, an estimate); if an agent is cut, the usual resume applies (WIP commit, fresh agent).
 - **(10a-3) multiplayer save/load is running** since 2026-11-12 21:47, alone (no wave 11 pair: the window that
-  began about 20:45 is partly used): module agent 1 on Opus 5.5, tag `10a3-mod-1`, worktree
+  began about 20:45 is partly used). Agent 1 (tag `10a3-mod-1`) stopped at its checkpoint after 10 minutes (167k;
+  WIP d1994d7: save header, protocol 6, load-lobby codec, save ticks in the lockstep hooks; it did not build);
+  agent 2 (tag `10a3-mod-2`) runs since 21:59 in the same worktree. Module agents on Opus 5.5, worktree
   `.claude/worktrees/agent-ae3f156b0aa925428` (branch `worktree-agent-ae3f156b0aa925428`), cap 200k, CHECKPOINT
   170k, may run 1 sub-agent. Its prompt (brief, state, design guidance, TODO, rules) is in the scratchpad of this
   session, `prompt-10a3.md` (lost at a reboot: the brief is in HISTORY, the design guidance is repeated in the
