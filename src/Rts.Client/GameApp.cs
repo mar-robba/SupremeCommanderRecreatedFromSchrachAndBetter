@@ -284,6 +284,7 @@ public static class GameApp
         if (opt.ScreenshotPath == null && settings.Fullscreen) settings.ApplyFullscreen();
         // Saved volumes, unless given on the command line; one audio device for the whole app (menus + games).
         if (!opt.VolumeGiven) settings.ApplyVolume(opt.Audio);
+        else settings.ApplyVoice(opt.Audio); // (11b-1)
         var audio = new AudioSystem(opt.Audio, automated: opt.ScreenshotPath != null);
 
         var app = new AppHost(db, opt, audio);

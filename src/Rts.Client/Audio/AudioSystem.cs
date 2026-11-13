@@ -22,11 +22,16 @@ public sealed class AudioSystem : IDisposable
     /// <summary>True when the audio device is open (sounds may still be loading for a moment).</summary>
     public bool Active => Engine.Ready;
 
+    /// <summary>(11b-1) The spoken announcer (inert without a device).</summary>
+    public VoiceAnnouncer Voice { get; private set; }
+
     public AudioSystem(AudioSettings settings, bool automated = false)
     {
         Settings = settings;
+        Voice = new VoiceAnnouncer(settings, device: false, voiceDir: ""); // no table, no files: silent until the device opens
         if (!settings.Enabled || (automated && !settings.ForceOn)) return;
         if (!Engine.Init()) return;
+        Voice = new VoiceAnnouncer(settings, device: true);
         _bank = Task.Run(() =>
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -52,6 +57,7 @@ public sealed class AudioSystem : IDisposable
             _bank = null;
         }
         Engine.SetMasterVolume(Settings.Muted ? 0f : Settings.Master);
+        Voice.Update(Raylib_cs.Raylib.GetTime());
         MusicFade = MathF.Min(1f, MusicFade + dt / 2.5f);
     }
 
@@ -79,6 +85,7 @@ public sealed class AudioSystem : IDisposable
     public void Dispose()
     {
         try { _bank?.Wait(2000); } catch { /* synthesis errors are irrelevant at shutdown */ }
+        Voice.Dispose(); // before the device closes
         Engine.Dispose();
     }
 }

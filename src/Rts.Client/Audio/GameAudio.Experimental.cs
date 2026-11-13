@@ -31,6 +31,7 @@ public sealed partial class GameAudio
         if (now - _lastExperimentalAlert < 4.0) return;
         _lastExperimentalAlert = now;
         PlayUi(SoundId.ExperimentalAlert);
+        Say(VoiceIds.ExperimentalDetected); // (11b-1)
     }
 
     /// <summary>Overrides the regular mapping for super-heavy shots/impacts and huge explosions; null = not handled.</summary>

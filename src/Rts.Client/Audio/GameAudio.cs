@@ -21,6 +21,9 @@ public sealed class AudioSettings
     public float Ambient = 0.55f;
     public bool MusicOn = true;
     public bool Muted;
+    /// <summary>(11b-1) Voice announcer on/off and its volume (VoiceAnnouncer; saved in AppSettings).</summary>
+    public bool VoiceOn = true;
+    public float Voice = 0.9f;
 
     /// <summary>Parses one audio CLI option (--nosound, --sound, --volume F, --sfx-volume F, --music-volume F,
     /// --nomusic). Returns false if the argument is not an audio option.</summary>
@@ -148,6 +151,7 @@ public sealed partial class GameAudio : IDisposable
             CheckLaunches(cur);
             _lastTick = cur.Tick;
         }
+        VoiceFrame(interp); // (11b-1) GameAudio.Voice.cs
         // Battle intensity (audible combat events per second) brightens the music.
         _combatRate += (combat / MathF.Max(dt, 1e-3f) - _combatRate) * MathF.Min(1f, dt / 3f);
 
@@ -278,12 +282,14 @@ public sealed partial class GameAudio : IDisposable
         if (_massLowTicks >= 15 && now - _lastMassWarn > 30)
         {
             PlayUi(SoundId.WarnMass);
+            Say(VoiceIds.MassLow);
             Toast("Low mass", Ui.MassColor, 2.5);
             _lastMassWarn = now;
         }
         else if (_energyLowTicks >= 15 && now - _lastEnergyWarn > 30)
         {
             PlayUi(SoundId.WarnEnergy);
+            Say(VoiceIds.EnergyLow);
             Toast("Low energy", Ui.EnergyColor, 2.5);
             _lastEnergyWarn = now;
         }
@@ -430,6 +436,7 @@ public sealed partial class GameAudio : IDisposable
         if (_engine.Ready) Console.WriteLine($"Audio: {PlayedCount} one-shots played");
         // Shared system: silence this game's hums (the menus keep the stream going with music only).
         _ambient.ReclaimGain = _ambient.BuildGain = 0;
+        _sys.Voice.Reset(); // (11b-1) no announcements of the old game in the menus or the next game
         if (_ownsSystem) _sys.Dispose();
     }
 }
