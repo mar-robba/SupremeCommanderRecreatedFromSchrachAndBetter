@@ -1387,6 +1387,45 @@ C87C46C4EA726A82; bench 2F09CD7D01AF287E; `Rts.Bench -- mp 3 600 256 0 0 obs=2` 
 sync (60 hash checks each); screenshot of `--host 47702 --players 2 --autostart --net-vote-demo` ("Waiting for
 Bob…", the "Drop Bob" button, "1/2 votes to drop Bob") looked right.
 
+### (10a-3) Multiplayer save/load — report (merged 2026-11-13, 7a84828)
+Four agents: the first stopped at its checkpoint (167k, 10 minutes) with the save header, protocol 6, the load-lobby
+codec and the save ticks, not building; the second was cut by the 5-hour limit after 2 minutes of reading and
+changed nothing; the third built and tested the whole net layer (166k, 11 minutes); the fourth built the bench step
+and the client screens and finished (172k, 16 minutes, 105 calls). 2,141 lines.
+
+**(10a-3) Multiplayer save/load — report (agents 1-4)**
+
+**Works**: any player asks to save (Esc → Save Game, F5 = `mp_quicksave`), the host orders a tick, every peer (observers too) writes the same save (id + state hash) with the lobby, toasts "Saving…" / "Game saved…", failures as a chat line naming who differs. Multiplayer → Load Saved Game (or `--host [port] --load-mp FILE`) opens a load lobby: saved slots with saved name, who plays them now, fixed faction/team/colour, Take, host "AI plays" / "Free", per-copy download %, start blocked with the reason. Missing/changed copies are sent by the host; all resume lockstep at the saved tick; camera restored only from one's own file; replay continues. Host autosave (its Autosave setting) → `mp_autosave_1..3`.
+
+**Try**: `dotnet run --project src/Rts.Client -- --host 47699 --load-mp FILE --name Host`; in game `--host --players 2 --autostart --save-at 5`; headless `dotnet run -c Release --project tools/Rts.Bench -- mp 3 600 256 1 0 save=300`.
+
+**Tests**: `tests/Rts.Net.Tests/SaveLoadTests.cs` (5); bench `save=TICK` (load in a new session, one client downloads, hashes = uninterrupted run).
+
+**Hotkeys**: none new (F5 in a net game = save for everybody).
+
+**Shared files**: GameApp.cs (`--load-mp` option + field), AppHost.cs (MenuGameOptions copies SaveAt/AutosaveEvery), InGameSaveUi.cs (`NetSave` hook), SaveText.cs (MULTIPLAYER tag), CLAUDE.md, ARCHITECTURE (own section), DEV_GUIDE, ROADMAP (G36 + 10a-3 lines).
+
+**Numbers** (after merging main): build OK; tests 615 sim + 371 client + 43 net green; bench `2000 300` hash 2F09CD7D01AF287E and AI match "WINNER: Player (Hard) after 12:00" hash C87C46C4EA726A82 (both unchanged); `mp 3 600 256 1 0 save=300` OK (save 640 KB, download 56 ms, load+start 954 ms, 30 hashes = uninterrupted run); `mp 2 600 256 0 0 obs=1 save=250` OK; `mp 4 1200 256 1` OK.
+
+**Known issues / unverified**: load-lobby map panel and options look editable for the host (ignored by the net layer); a GUI client joining a load lobby only tested headless; a save on a map file and a save while a peer resigned not verified; autosave checked in the GUI (2 files) only, no test.
+
+**Design errors found**
+- Save ordered 1 past only the slowest player's turns: a client could step past the save tick; fixed by ordering past the highest turn held (d1994d7).
+- A client checks the lobby during `Join` before its save folder can be set; fixed with the `saveDir` Join option (agent 3).
+- `MenuGameOptions` did not copy `--save-at` / `--autosave-every`, so CLI save hooks never reached net games (nor menu skirmishes); fixed in bf04924.
+- `CurrentSimBuild` = the Rts.Sim MVID: a stale Rts.Sim.dll in the client bin (after a test build) refuses every fresh MP save; by design for peers, a trap for checks (DEV_GUIDE note). Open.
+
+**Handoff review**: the note was complete for the API; it lacked that `MenuGameOptions` drops `--save-at` and the build-id trap; I rediscovered both by failed screenshots (3 extra runs).
+
+**Merge checks on main** (orchestrator, 2026-11-13 04:06-04:11): build and tests 615 sim + 371 client + 43 net
+green; reference match "Player (Hard) after 12:00", C87C46C4EA726A82; bench 2F09CD7D01AF287E; `Rts.Bench -- mp 3 600
+256 1 0 save=300` and `mp 3 600 256 0 0 obs=1 save=250` (loaded at tick 302 / 252, 30 / 35 hashes equal to the
+uninterrupted run), `mp 4 1200 256 1` (120 hash checks, no desync); `--host 47698 --players 2 --autostart
+--save-at 5` wrote `saves/mp_quicksave.rtssave` (664 KB), and the screenshot of `--host 47699 --load-mp
+saves/mp_quicksave.rtssave --name Host` (title "Multiplayer lobby · Load game", the saved slots with the saved
+name, "played by Host (host)", "Host's copy", the AI slot, "Everybody is ready") looked right. Seen there, as the
+report says: the map panel and the game options still look editable in a load lobby.
+
 ## Wave 11: pathing, save migration, voice announcer (briefs cut 2026-11-13)
 The owner answered the "Questions for the owner" on 2026-11-13 (WORKFLOW "Owner decisions", ROADMAP "Wave 11"):
 wave 11 is pathing (G12) + save migration (G41) on the sim side and the voice announcer (G24) on the audio side;

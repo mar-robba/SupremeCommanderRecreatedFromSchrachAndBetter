@@ -226,6 +226,34 @@ e ogni scopo.
   "Avversario eliminato". Gli eventi che tutti devono conoscere (morte di un comandante, sconfitta) dovrebbero
   viaggiare in un canale dell'istantanea non filtrato dalla nebbia: aperto.
 
+** Il tick di salvataggio era calcolato sul giocatore più lento
+- Errore: in multiplayer (10a-3, 2026-11-13) l'host ordinava il salvataggio un tick dopo i turni del giocatore più
+  indietro. Ma un client può già avere eseguito tick più avanzati con i propri turni, che sono ancora in viaggio
+  verso l'host: l'ordine gli sarebbe arrivato dopo il tick da salvare, e i peer avrebbero salvato stati diversi.
+- Soluzione: l'host ordina il salvataggio un tick oltre il turno più alto che possiede da qualunque giocatore, e lo
+  calcola sotto lo stesso lock dei turni (~d1994d7~). Regola del lockstep: un evento deciso dall'host va messo dopo
+  tutto ciò che un peer può avere già eseguito, non dopo ciò che l'host ha ricevuto da tutti.
+
+** Il client controllava la lobby prima di sapere dov'è la sua cartella dei salvataggi
+- Errore: un client che entra in una lobby di caricamento controlla subito, dentro ~Join~, se ha già il file del
+  salvataggio; ma la cartella dei salvataggi si poteva impostare solo dopo ~Join~, quindi il controllo guardava
+  nel posto sbagliato.
+- Soluzione: ~Join~ riceve la cartella come opzione (~saveDir~, modulo 10a-3). Regola: ciò che serve a gestire il
+  primo messaggio va passato alla creazione della sessione, non impostato dopo.
+
+** Le opzioni copiate campo per campo perdono quelle nuove
+- Errore: ~MenuGameOptions~ copia le opzioni di gioco un campo alla volta, e ~--save-at~ / ~--autosave-every~ non
+  erano nell'elenco: non arrivavano mai alle partite in rete né a quelle avviate dal menu. È la seconda volta
+  (10a-2: un'opzione nuova aveva bisogno della sua riga); qui è costata tre screenshot falliti.
+- Soluzione: i due campi sono copiati (~bf04924~). Resta aperta la causa: una copia campo per campo senza un test
+  che fallisca quando si aggiunge un campo e non lo si copia.
+
+** L'identità della build rifiuta i salvataggi multiplayer dopo una build di test
+- Errore: l'identità della build (~CurrentSimBuild~) è quella del file ~Rts.Sim.dll~. Dopo una build dei test la
+  cartella del client può contenere una copia vecchia di quel file, e allora rifiuta ogni salvataggio multiplayer
+  appena fatto come "di un'altra versione". Per i giocatori il rifiuto è voluto; per chi fa i controlli è una trappola.
+- Soluzione: aperto; nota in DEV_GUIDE "Multiplayer checks" (ricompilare il client prima di provare un caricamento).
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa

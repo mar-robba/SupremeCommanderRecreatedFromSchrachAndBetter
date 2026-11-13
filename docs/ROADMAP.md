@@ -20,7 +20,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 7 | (7a) release package + settings + autosave, (7b) orders & selection UX | ✅ 2026-10-24 (7a), 2026-11-11 (7b) |
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
-| 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12); (10a-3) multiplayer save/load: to do | in progress |
+| 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12), (10a-3) multiplayer save/load ✅ 2026-11-13 | ✅ 2026-11-13 |
 | 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing, (11a-2) save migration, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | in progress |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
@@ -34,19 +34,19 @@ autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing
 pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and (8b-3) maps in multiplayer +
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
 (10b-1) keybinding editor, (10a-1) deterministic math, (10b-2) selection overlays and (10a-2) observers + vote to
-drop merged 2026-11-12; left: (10a-3) multiplayer save/load. Wave 11: (11b-1) voice announcer merged 2026-11-13;
-left: (11a-1) pathing, (11a-2) save migration.
-Tests: 615 sim + 371 client + 38 net.
+drop merged 2026-11-12, (10a-3) multiplayer save/load merged 2026-11-13: **wave 10 is complete**. Wave 11: (11b-1)
+voice announcer merged 2026-11-13; left: (11a-1) pathing, (11a-2) save migration.
+Tests: 615 sim + 371 client + 43 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:00", hash
 **C87C46C4EA726A82** (agents that must not change sim results compare against it; before 10a-1, which made the sim
 math software-deterministic, it was "after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
 Bench `2000 300` hash **2F09CD7D01AF287E** (6A8312040EFA67F2 before 10a-1). Replays made before 10a-1 and saves on
-generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 5 (10a-2).
+generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 6 (10a-3; 5 = 10a-2).
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-13 03:40, orchestrator session 5473885b on Fable 5.2, started after the owner's `/clear` of 2026-11-12 21:43):
+**ON RESUME** (2026-11-13 04:15, written by orchestrator session 5473885b on Fable 5.2, at 250k of context, for the next session):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -73,36 +73,40 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   `tools/voice/generate.py` from `data/audio/voice/lines.json`. **Nobody has heard it yet**: the owner judges it with
   `dotnet run --project src/Rts.Client -- --voice-test` (told 2026-11-13 04:00); a wording or the voice can be
   changed and regenerated (DEV_GUIDE "Voice announcer").
-- **(10a-3) multiplayer save/load is running** since 2026-11-12 21:47 (first alone: the window that
-  began about 20:45 was partly used). Agent 1 (tag `10a3-mod-1`) stopped at its checkpoint after 10 minutes (167k;
-  WIP d1994d7: save header, protocol 6, load-lobby codec, save ticks in the lockstep hooks; it did not build);
-  agent 2 (tag `10a3-mod-2`, started 21:59) was cut by the 5-hour limit at 22:01 ("resets 2am") at 108k, after
-  reading only: nothing changed, so it was not resumed; **agent 3 (tag `10a3-mod-3`) runs since 2026-11-13 03:37**
-  in the same worktree, from the same note (the owner: "continua", 03:36) and stopped at its checkpoint at 03:50
-  (166k, 11 minutes): the whole net layer is done and builds (7d57eb7), `SaveLoadTests` 5 tests green, net suite
-  43/43 (911e1db); sim and client suites not run yet. **Agent 4 (tag `10a3-mod-4`) runs since 03:51**: the
-  `Rts.Bench -- mp save=TICK` step, the client screens (load lobby, in-game save request), screenshots, docs, the
-  final checks. Module agents on Opus 5.5, worktree
-  `.claude/worktrees/agent-ae3f156b0aa925428` (branch `worktree-agent-ae3f156b0aa925428`), cap 200k, CHECKPOINT
-  170k, may run 1 sub-agent. Its prompt (brief, state, design guidance, TODO, rules) is in the scratchpad of this
-  session, `prompt-10a3.md` (lost at a reboot: the brief is in HISTORY, the design guidance is repeated in the
-  worktree's `.claude/handoff.md` once the agent writes it). If this session is gone: look at the worktree
-  (`git -C <worktree> log --oneline -5`, `.claude/handoff.md`, `.claude/agent-report.md`), commit leftovers as WIP,
-  start a fresh agent there. What follows is how the module was planned:
-- **Planned: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
-  "Salvataggi in multiplayer (10a-3)"; it builds on 10a-2, now on main: protocol 5, observers). Its pair is a
-  wave 11 module. **Wave 11 is decided since 2026-11-13** ("Wave 11" below: G12 pathing + G41 save migration,
-  G24 voice announcer; the owner's answers were recorded by another session, ed4bc96a) and cut into
-  three modules on 2026-11-13 (briefs in HISTORY "Wave 11", purposes in `purposes.json`): **11a-1** pathing
-  (G12; sim only, files disjoint from 10a-3: it can start as soon as usage allows), **11b-1** voice announcer
-  (G24; the owner decided on 2026-11-13: the `espeak` voice ("usa espeak"), in Italian ("e la lingua italiano");
-  started 2026-11-13 next to 10a-3, see the first bullet of this list for its agent), **11a-2** save migration (G41; after 10a-3 is merged,
-  both change `Rts.Sim/Persistence`). One module agent each: `model: "opus"`,
-  `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, rules block from AGENT_RULES, a `CTX-TAG:` line, watcher
-  `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (stop it by its process id:
-  `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:
-  `bash tools/agents/merge-check.sh <log> <screenshot args>`; for `Rts.Net` work also `Rts.Bench -- mp ... obs=1`.
-  A successor that only runs the final checks and writes the report is a trivial task: `model: "sonnet"`.
+- **(10a-3) multiplayer save/load is merged and verified** (7a84828, 2026-11-13 04:11; HISTORY report, four design
+  errors in LESSONS, worktree and branch removed): four agents (one cut by the 5-hour limit of 2026-11-12 22:01
+  after 2 minutes), 2,141 lines. Left open by its report (ROADMAP 10a-3 "later" lines): the map panel and the game
+  options look editable in a load lobby (the net layer ignores the changes); a client joining a load lobby was
+  tested only headless; saves on a map file, a save after a resign and the MP autosave have no test.
+- **Next: the wave 11 pair, (11a-1) pathing + (11a-2) save migration** (briefs in HISTORY "Wave 11", purposes in
+  `purposes.json`; both sim-side with disjoint files: `Pathfinding` + `MovementSystem` against `Persistence`).
+  11a-1 changes the reference hashes and the golden values of `CrossOsDeterminismTests`; 11a-2 must change none: merge
+  11a-2 first, or check the second one against the first one's new values. One module agent each: `model: "opus"`,
+  `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, no sub-agents while two run, rules block from AGENT_RULES, a
+  `CTX-TAG:` line. The prompts of this session are the model (scratchpad of session 5473885b, `prompt-10a3.md`; lost
+  at a reboot): brief, state with file sizes, design guidance, ordered TODO, rules. Watcher:
+  `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=162000 <id2>=162000` in the background; stop it with
+  `for p in $(pgrep -f "agent_ctx.py --watc[h]"); do kill $p; done` (the `[h]` keeps the shell's own command line
+  out of the match; `pkill -f` with the plain text kills the shell that runs it).
+  **What worked on 2026-11-13:** an agent at 162-166k whose tree is clean and whose docs are committed is not told
+  to CHECKPOINT but "run only the final checks and write the report, no more reading, stop before 185k, CHECKPOINT
+  if a check fails for a cause that is not obvious": 11b-1 and 10a-3 both finished that way at 172k, without a
+  successor. An agent at 165k with features still to write gets CHECKPOINT at once. Agents now reach 165k in 10-11
+  minutes (they read about 100k in the first 3).
+  Merge checks: `bash tools/agents/merge-check.sh <log> <screenshot args>`; for `Rts.Net` or save work also
+  `Rts.Bench -- mp 3 600 256 1 0 save=300` and `... obs=1 save=250` (the script of this session,
+  `check-10a3.sh` in its scratchpad, chains them). A successor that only runs the final checks is a trivial task:
+  `model: "sonnet"`.
+- **Usage on 2026-11-13:** the 5-hour window after the 02:00 reset began with the first call of another session of
+  the owner (ed4bc96a, the one that recorded the answers; some time before 03:36). By 04:12 it held 43 agent-minutes
+  on Opus 5.5 (three module agents) plus this orchestrator on Fable 5.2 at 150-250k of context, with no limit
+  message. A fresh window begins between about 07:00 and 08:40 (estimate; only a limit message tells). The owner said
+  "continua" at 03:36 with the window already begun; start the next pair when the owner says so or in a fresh window.
+- **Three sessions of the owner were open on this project on 2026-11-13** (terminals pts/0 = the orchestrator, pts/1
+  = session 3fb9c6bc waiting on a dialog since 2026-11-12, pts/5 = ed4bc96a, docs). Only one may orchestrate: check
+  `~/.claude/sessions/*.json` (status, `updatedAt`) and `git status` for uncommitted edits of another session
+  before editing ROADMAP or WORKFLOW (on 2026-11-13 the owner's answers were uncommitted edits of ed4bc96a; the
+  orchestrator committed them with its own, 05331d0).
 - **Owner, 2026-11-12 (session 4ebba5f4):** trivial agent tasks on Sonnet 5.5, effort by the task's complexity
   (WORKFLOW "Owner decisions"). The owner asked why ROADMAP shows no waves after 4, meaning: where is the plan of
   the whole project (answer: "Wave 6+ plan" below). The orchestrator added the "Waves at a glance" table above and
