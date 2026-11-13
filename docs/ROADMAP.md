@@ -21,7 +21,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
 | 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12); (10a-3) multiplayer save/load: to do | in progress |
-| 11+ | Planned, waiting for the owner's answers ("Questions for the owner"): Italian localization, pathing (G12) + save migration (G41), tutorial / scenarios, campaign, mod support, Forged Alliance units, relay server, reconnect | to do |
+| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24). Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | to do |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
@@ -45,7 +45,7 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-12 21:48, orchestrator session 5473885b on Fable 5.2, started after the owner's `/clear` at 21:43):
+**ON RESUME** (2026-11-13 03:40, orchestrator session 5473885b on Fable 5.2, started after the owner's `/clear` of 2026-11-12 21:43):
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -70,7 +70,9 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **(10a-3) multiplayer save/load is running** since 2026-11-12 21:47, alone (no wave 11 pair: the window that
   began about 20:45 is partly used). Agent 1 (tag `10a3-mod-1`) stopped at its checkpoint after 10 minutes (167k;
   WIP d1994d7: save header, protocol 6, load-lobby codec, save ticks in the lockstep hooks; it did not build);
-  agent 2 (tag `10a3-mod-2`) runs since 21:59 in the same worktree. Module agents on Opus 5.5, worktree
+  agent 2 (tag `10a3-mod-2`, started 21:59) was cut by the 5-hour limit at 22:01 ("resets 2am") at 108k, after
+  reading only: nothing changed, so it was not resumed; **agent 3 (tag `10a3-mod-3`) runs since 2026-11-13 03:37**
+  in the same worktree, from the same note (the owner: "continua", 03:36). Module agents on Opus 5.5, worktree
   `.claude/worktrees/agent-ae3f156b0aa925428` (branch `worktree-agent-ae3f156b0aa925428`), cap 200k, CHECKPOINT
   170k, may run 1 sub-agent. Its prompt (brief, state, design guidance, TODO, rules) is in the scratchpad of this
   session, `prompt-10a3.md` (lost at a reboot: the brief is in HISTORY, the design guidance is repeated in the
@@ -79,9 +81,11 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   start a fresh agent there. What follows is how the module was planned:
 - **Planned: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
   "Salvataggi in multiplayer (10a-3)"; it builds on 10a-2, now on main: protocol 5, observers). Its pair is a
-  wave 11 module, but wave 11 is not cut into modules ("Wave 11+" below is a list that depends on "Questions for
-  the owner"; without answers the recommendations hold): start 10a-3 alone, or cut one wave 11 module with files
-  disjoint from `Rts.Net`, Persistence and the Net menus. One module agent each: `model: "opus"`,
+  wave 11 module. **Wave 11 is decided since 2026-11-13** ("Wave 11" below: G12 pathing + G41 save migration,
+  G24 voice announcer; the owner's answers were recorded by another session, ed4bc96a) but not yet cut into
+  modules with briefs: write them in HISTORY "Wave 11" and the purposes in `purposes.json` before starting one.
+  G12 (Pathfinding, MovementSystem) has files disjoint from 10a-3; G41 (Persistence) starts after 10a-3 is
+  merged; G24 waits for the voice language (Q7). One module agent each: `model: "opus"`,
   `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, rules block from AGENT_RULES, a `CTX-TAG:` line, watcher
   `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (stop it by its process id:
   `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:
@@ -121,8 +125,9 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   `tools/token-ledger/purposes.json` `righe` + `ledger.py update` (WORKFLOW "Lifecycle of a wave" step 7). The
   "Costi" chapter of LESSONS was re-aligned after wave 9 (e43f997) and is next due after wave 11 (cost per wave so
   far: LESSONS "Per onda").
-- **Owner questions pending** (asked 2026-10-23 ~19:05 and again 2026-10-24 00:45; "Questions for the owner" in the
-  Wave 6+ plan). Without an answer the recommendations hold. Record answers in WORKFLOW "Owner decisions".
+- **Owner questions answered 2026-11-13** (asked 2026-10-23 and 2026-10-24; "Questions for the owner" in the Wave 6+
+  plan). Answers and the open ones are there; recorded in WORKFLOW "Owner decisions". Still open: voice language (Q7),
+  split screen (Q9, the owner asked what it means), reconnect (G37, not answered).
 - **Improving the AI is no longer a goal of the project (owner, 2026-11-11):** the skirmish AI stays as merged in
   wave 5 ((k) + (k-navy)); its unmet goals (stalls, finished games, tech v T1-only) stay unmet. Removed from the
   plan: wave 9a, gap rows G30-G33 and every "later: AI ..." line below. The AI docs stay as they are (ARCHITECTURE
@@ -130,7 +135,8 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   mechanics stay things the AI ignores. Still required: the AI must not break (AI tests green, the reference match
   `Rts.Bench -- ai 30 256 42 hard,normal` as the regression check of every merge).
 - Worktrees: git trusts every folder under `.claude/worktrees/` since 2026-11-12 (one `safe.directory` entry with `/*`, WORKFLOW "Incidents"); a worktree elsewhere still needs its own entry.
-  History of usage limits: weekly 2026-10-14 08:14 and 2026-11-12 ~21:05 (reset 2026-11-17 15:00, after ~17 min of pair 2); sessions 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
+  History of usage limits: weekly 2026-10-14 08:14 and 2026-11-12 ~21:05 (reset 2026-11-17 15:00, after ~17 min of pair 2); sessions
+  2026-11-12 22:01 (reset 02:00; the window began about 20:45 and held about 65 agent-minutes on Opus 5.5 plus two orchestrator sessions on Fable 5.2), 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
   2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
   2026-11-10 14:08 (reset 18:00): both coordinators and their two sub-agents cut after 10 minutes of work; other
@@ -193,27 +199,27 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G18 | [x] 2026-10-24 (7a) Settings: graphics (shadows, particles, terrain LOD, vsync, fps cap, UI scale), gameplay (edge scroll, camera/zoom speed); Settings from the pause menu (today: fullscreen, resolution, 3 volumes) | SC1 | M | SettingsScreen, AppSettings, renderer flags, InGameScreen | — | 2 |
 | G19 | [x] 2026-11-12 (10b-1) Keybinding editor (rebind any Hotkeys entry, reuse the clash check, saved) | SC1 | M | Hotkeys.cs (overrides), new `Menus/KeyBindingsScreen` | G14, G18 | 2 |
 | G20 | [x] 2026-11-12 (10b-2) Range/intel overlays for the selection (weapon, radar, shield; today only while placing) | SC1 | S | Rendering overlay | — | 3 |
-| G21 | Split screen (two views, one strategic) / second monitor | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | 3 |
+| G21 | Split screen (two views, one strategic) / second monitor: parked, the owner asked what it means (Q9) | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | parked |
 | G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
 | G23 | [x] 2026-11-12 (9b-1, 9b-2) Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
-| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected") | SC1 | M | Audio + voice assets | owner Q7 | 3 |
-| G25 | TTF font (raylib's default font has no è/à) | — | S | Ui text | G28 | 2 if G28 |
+| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected"): planned, owner yes 2026-11-13; language open (Q7) | SC1 | M | Audio + voice assets | owner Q7 | 11 |
+| G25 | cut 2026-11-13 (owner Q4: no Italian localization, so no accent font) | — | S | — | — | — |
 | G26 | Map files + curated map pack: save/load maps (heightmap, water, deposits, starts, props), 8-12 named maps with thumbnails, map picker in setup/lobby (host sends the map) | SC1 | M-L | `Rts.Sim/Map`, Menus setup/lobby, `Rts.Net` transfer | G10 | 2 |
 | G27 | Terrain biomes (temperate, desert, tundra, lava, tropical) | SC1 | S-M | TerrainRenderer palettes + generator option | — | 3 |
-| G28 | Italian localization (string table, language setting, UI/tooltips/help/unit names) | — | M-L | whole client + blueprint names | owner Q4, G25 | Q |
-| G29 | Map editor (SupCom1 had none in game) | — | L | — | owner Q2 | 3 |
+| G28 | cut 2026-11-13 (owner Q4: no Italian localization) | — | — | — | owner Q4 | — |
+| G29 | cut 2026-11-13 (owner Q2: no map editor; map files + pack + seeds cover variety) | — | — | — | owner Q2 | — |
 | G30-G33 | removed from the plan 2026-11-11 (owner: improving the AI is no longer a goal; the AI of wave 5 stays). They were: AI personalities, AI team play, AI use of the new mechanics, AI think cost on 1024 | — | — | — | — | — |
 | G34 | [x] 2026-11-12 (10a-1) Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
 | G35 | [x] 2026-11-12 (10a-2) Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
 | G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
 | G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
-| G38 | NAT traversal / relay server (today: port forwarding) | SC1 | L | `Rts.Net` + a hosted server | owner Q6 | 3 |
+| G38 | cut 2026-11-13 (owner Q6: online only on the LAN; NAT traversal and relay server out of the plan) | SC1 | — | — | owner Q6 | — |
 | G39 | [x] 2026-11-12 (10a-2) Vote to drop, per-player lobby pings, chat sounds (host migration: later, below) | — | S-M | `Rts.Net`, Net menus | — | 3 |
 | G40 | [x] 2026-10-24 (7a) Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
 | G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
-| G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | Q |
-| G43 | Campaign (UEF + Cybran operations: scripted missions, dialogue, handmade maps) | SC1 | XL | scenario system, maps, AI scripts | G42, G26 | Q |
-| G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | Q |
+| G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages): parked, not answered (owner Q1) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | parked |
+| G43 | cut 2026-11-13 (owner Q1: no campaign / story) | SC1 | — | — | — | — |
+| G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash): parked, estimate S-M (owner Q3 asked how hard it is) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | parked |
 | G45 | [x] 2026-10-24 (7a) **Release packaging**: self-contained Release build (linux-x64; win-x64 zip optional), data next to the exe, saves/replays/settings/screenshots in the user folder (today `saves/` = current dir), icon, `.desktop` launcher + desktop shortcut, version in the main menu, crash log | — | S-M | new `tools/package/`, csproj, SaveStore dirs, Program.cs | — | 1 |
 - [ ] later (7b): G20 range/intel overlays for the selection (done in 10b-2); bookmarks are per session (not saved) with
   no on-screen list; class filters (Ctrl+Shift+L/A/N/E) have no "add" variant; Ctrl+A/Z/C, Alt+1-5, Backspace, Y and
@@ -323,10 +329,17 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
     load, fogged wrecks reappear when seen); the enhancement chain queue is client-side and not saved (a load stops
     after the current step); ~22 KB/frame left with 500 selected (input + placement ghosts walk the selection).
 
-#### Wave 11+ (to do; depends on the owner's answers)
-Italian localization (G28 + G25: touches every UI file, so pair it
-with a sim-only agent: G12 pathing + G41 save migration); tutorial/scenario system (G42) then campaign (G43); mod
-support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
+#### Wave 11 (to do; the owner's answers of 2026-11-13)
+- **Planned:** G12 pathing + G41 save migration (one pair, sim-side, no UI work), G24 voice announcer (the owner said
+  yes; voice language still open, Q7). Pair them so the sim work and the audio work do not share files.
+- **Cut from the plan (owner, 2026-11-13):** campaign (G43), map editor (G29), Italian localization (G28, G25), online
+  outside the LAN / relay server (G38; LAN and Tailscale/ZeroTier stay the way to play with friends).
+- **Parked, not planned until the owner asks:** interactive tutorial (G42; the owner did not answer it), mod support
+  (G44), FA units (G13; "not before the SupCom1 list G1-G45 is done", the owner did not object), split screen / second
+  monitor (G21; the owner asked what it means, see Q9), reconnect (G37; not answered).
+- **Mod support estimate (owner asked, for later):** S-M, after G45 (done). Work: an overlay loader on `BlueprintDb` for
+  `mods/<name>/` JSON, an enable list in the menus, a mod hash in the lobby so every MP player loads the same set, and
+  saves that record their mods. No script mods.
 
 ### Questions for the owner
 1. **Campaign / story missions?** Recommendation: not now. First a short interactive tutorial (G42, one window) on a
@@ -349,6 +362,17 @@ support (G44, after G45); FA units (G13); relay server (G38); reconnect (G37).
    Recommendation: not until the SupCom1 list (G1-G45) is done.
 9. **Split screen / second monitor?** Recommendation: skip (L cost, little use on one screen) unless you play on two
    monitors.
+
+**Answers recorded 2026-11-13** (WORKFLOW "Owner decisions"; the list above keeps the original recommendations):
+1. Campaign / story: no, cut (G43). Tutorial (G42): not answered, parked.
+2. Map editor: no, cut (G29).
+3. Mod support: not in the plan now; the owner asked how hard it is later. Estimate S-M, after G45 (see Wave 11).
+4. Italian localization: no, cut (G28, G25).
+5. Release step: the owner does not care; no further release work planned (G45 stays as delivered).
+6. Online outside the LAN / with Windows friends: LAN only, cut (G38).
+7. Voice announcer: yes (G24, Wave 11). Open: voice language, Italian or English.
+8. FA units (G13): no separate answer; the recommendation holds, parked until G1-G45 is done.
+9. Split screen / second monitor (G21): the owner asked what it means; not decided, parked until explained.
 
 ## Phase 0 — Foundation ✅ (2026-10-10)
 - [x] .NET 10 solution: Sim / Client / Tests / Bench
