@@ -224,7 +224,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G9 | [x] 2026-11-11 (8a) **Walls** (T1 wall sections, both factions: block movement and shots, Shift-drag lines) | SC1 | S-M | data, Pathfinding blocked cells, Combat projectile hits | — | 2 |
 | G10 | Map props: trees (energy) and rocks (mass) to reclaim; trees fall / burn | SC1 | M | PropStore kinds, `Map/` generator, PropRenderer | — | 2 |
 | G11 | Leftovers: swap an occupied enhancement slot in one click, mobile TML moves into range, shield HP kept on enhancement swap, Mavor arc/priority, crush animation, emergency drop, staging repair cost, fog wrecks/deposits, sandbox selects enemies | SC1 | M (many S) | various | — | 3 |
-| G12 | Pathing: exact unit clearance, per-unit MaxSlope, ships steering in narrow channels | SC1 | M | Pathfinding, MovementSystem | — | 3 |
+| G12 | [x] 2026-11-13 (11a-1) Pathing: exact unit clearance, per-unit MaxSlope, ships steering in narrow channels | SC1 | M | Pathfinding, MovementSystem | — | 3 |
 | G13 | FA-only units for UEF/Cybran (Broadsword, Wailer, Continental, Novax, Megalith, Brick, Hoplite, Kennel/Hive); some FA units exist (Percival, Janus, Ravager) | FA | L | data + models | owner Q8 | 3 |
 | G14 | [x] 2026-11-11 (7b) Selection/camera keys: all of a type on the map, all land / air / naval / engineers, ACU (select + center), camera bookmarks, jump to last alert | SC1 | S | Hotkeys (new entries), SelectionController, new `Input/SelectionFilters.cs` | — | 2 |
 | G15 | [x] 2026-11-11 (7b) Formation move with facing (right-drag), waypoint editing (drag / delete queued order markers), ferry route editing | SC1 | M | Input, new `Orders/QueueEditCommands.cs` (+ one CommandSystem line) | — | 2 |
@@ -518,8 +518,8 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
       torpedo bubble trails, dim submerged subs, sonar ring, `--scene naval`
       - [x] AI builds and uses navy + transport drops on island maps (wave 5 k-navy, 2026-10-23; AI_TUNING "Navy and
             transports")
-      - [ ] later: ships steering around each other in narrow channels
-            (they only push apart now)
+      - [x] ships steering around each other in narrow channels (11a-1, 2026-11-13: oncoming hulls steer to their
+            right, the higher index brakes and queues; ARCHITECTURE "Pathing: clearance, slope classes, channels")
 - [x] Experimentals (2026-10-13, wave 4g): data-driven `Experimental` block (crush, delayed death blast, big wreck), Tech 4 + "EXP"
       build-menu tier, built by T3 engineers / SCUs / ACU with T3 Engineering, mobile sites shared by assisting engineers;
       **Fatboy** (mobile factory building T1–T3 land units while moving, bubble shield, gauss cannons, riot gun, flak) and
