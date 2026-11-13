@@ -78,7 +78,11 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   WIP d1994d7: save header, protocol 6, load-lobby codec, save ticks in the lockstep hooks; it did not build);
   agent 2 (tag `10a3-mod-2`, started 21:59) was cut by the 5-hour limit at 22:01 ("resets 2am") at 108k, after
   reading only: nothing changed, so it was not resumed; **agent 3 (tag `10a3-mod-3`) runs since 2026-11-13 03:37**
-  in the same worktree, from the same note (the owner: "continua", 03:36). Module agents on Opus 5.5, worktree
+  in the same worktree, from the same note (the owner: "continua", 03:36) and stopped at its checkpoint at 03:50
+  (166k, 11 minutes): the whole net layer is done and builds (7d57eb7), `SaveLoadTests` 5 tests green, net suite
+  43/43 (911e1db); sim and client suites not run yet. **Agent 4 (tag `10a3-mod-4`) runs since 03:51**: the
+  `Rts.Bench -- mp save=TICK` step, the client screens (load lobby, in-game save request), screenshots, docs, the
+  final checks. Module agents on Opus 5.5, worktree
   `.claude/worktrees/agent-ae3f156b0aa925428` (branch `worktree-agent-ae3f156b0aa925428`), cap 200k, CHECKPOINT
   170k, may run 1 sub-agent. Its prompt (brief, state, design guidance, TODO, rules) is in the scratchpad of this
   session, `prompt-10a3.md` (lost at a reboot: the brief is in HISTORY, the design guidance is repeated in the
