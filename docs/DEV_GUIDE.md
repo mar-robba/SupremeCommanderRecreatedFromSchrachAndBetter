@@ -262,6 +262,21 @@ integrated GPU.
 | Client, 4.8k tanks (scratch `perf.sh` scene: `--map 1024 --players 8 --nofog`, 4×`spawn tank 1200`, `--camera 500,510,D`), 960×540, Debug, main → 9b-2 | GPU / CPU ms: cam 110 4.39 → 3.47 / 4.77 → 5.08 (units GPU 1.74 → 1.11); cam 200 6.26 → 4.31 / 6.69 → 7.15 (Release CPU 4.37 → 4.22; units 2.13 → 0.85, 4794 LOD units = 393k tris instead of ~1.42M); cam 700 3.13 → 3.10 / 4.35 → 4.23 (terrain 2.13 → 2.10). Terrain shadow bake 1025²: ~30 ms Release | 9b-2 |
 | Map transfer, loopback, unthrottled (`MapTransferTests.BigMapTransfersInLoopback`) | 884 KB 1024/8p map: join + download + verify + store ≈ 120 ms | 8b-3 |
 
+## Voice announcer: change a line or the voice (11b-1)
+
+- Wording: edit `text.it` of the line in `data/audio/voice/lines.json` (priority / cooldown / maxWait too; never rename an
+  id: the code uses them, `VoiceIds`), then `python3 -I tools/voice/generate.py` (all lines, ~10 s) or
+  `... --only mass_low,energy_low`. It prints duration, RMS, peak and size per file and fails on a bad one;
+  `--check` only prints. Listen: `dotnet run --project src/Rts.Client -- --voice-test [--voice-only id,id]`.
+- Voice: the block at the top of `tools/voice/generate.py`: `ESPEAK_VOICE` (`it+m3`; variants m1..m7, f1..f5, klatt..),
+  speed, pitch, word gap, and the ffmpeg `FILTER` (trim, band-pass, compressor, echo, loudnorm). Regenerate all, listen,
+  commit the `.wav` files. The output format (22050 Hz mono 16-bit) must stay equal to `VoiceLineTable.SampleRate`
+  (`VoiceTests` checks it, plus 0.6–4 s, not silent, no clipping, total < 2.5 MB).
+- A new line: add it to `lines.json` and to `VoiceIds` (+ `All`), raise it with `Say(VoiceIds.X)` in
+  `Audio/GameAudio.Voice.cs`, generate. A new language: add it to `languages` and `text.<lang>` of every line, an
+  `ESPEAK_VOICE` entry, generate (the game still speaks `VoiceLineTable.DefaultLanguage`; a language setting is a later item).
+- Needs `espeak` and `ffmpeg` only when generating (both on this machine); the game reads the files.
+
 ## Tools
 
 | Tool | What for |
