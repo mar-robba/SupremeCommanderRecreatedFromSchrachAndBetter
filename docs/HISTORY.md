@@ -1454,3 +1454,32 @@ change a saved type". Leaves alone: the sim systems, `Rts.Net`, the client beyon
 save written with a synthetic older layout of a test type (field added, removed, renamed, retyped) loads with the
 expected values; a real save from before a deliberate field addition loads and plays on; the load time and file
 size of `savebench` stay within 10 %; hashes unchanged (this module changes no sim result).
+
+### (11b-1) Voice announcer — report (merged 2026-11-13, 556afff)
+One agent finished the module (172k, 16 minutes, 101 calls); at 164k the orchestrator told it to run only the
+final checks instead of stopping it at the checkpoint. 992 lines (code, tests, generator, line table). The owner
+chose the voice and the language on 2026-11-13 ("usa espeak", "e la lingua italiano").
+
+**(11b-1) Voice announcer — report**
+
+**Works:** 19 spoken Italian lines on top of the existing beeps/toasts (on-screen text stays English). Queue: one line at a time (0.3 s gap), higher priority first, never cuts a line, stale lines dropped (maxWait), per-line cooldowns (alert cooldowns unchanged). Missing/broken file = silence. Files decoded on a worker thread, uploaded on first use. Settings → Audio: "Voice" on/off + "Voice volume" (saved; Mute/--nosound silence it). Screenshot: `screenshots/voice-settings.png`.
+
+**Try:** `dotnet run --project src/Rts.Client -- --voice-test [--voice-only id,id]` (prints id, length, text). New wording: edit `data/audio/voice/lines.json`, run `python3 -I tools/voice/generate.py [--only id]`; voice/speed/pitch/ffmpeg filter = block at the top of that script (DEV_GUIDE "Voice announcer").
+
+**Lines:** nuke_launch_detected = Lancio nucleare rilevato; strategic_missile_launched = Missile strategico lanciato; commander_under_attack = Comandante sotto attacco; enemy_commander_destroyed = Comandante nemico distrutto; ally_commander_destroyed = Comandante alleato distrutto; enemy_defeated = Avversario eliminato; ally_defeated = Alleato eliminato; experimental_detected = Unità sperimentale nemica rilevata; tactical_launch_detected = Lancio di missile tattico rilevato; base_under_attack = La base è sotto attacco; units_under_attack = Unità sotto attacco; ally_under_attack = Alleato sotto attacco; structure_lost = Struttura distrutta; experimental_complete = Unità sperimentale completata; enhancement_complete = Miglioramento del comandante completato; upgrade_complete = Potenziamento completato; mass_low = Massa insufficiente; energy_low = Energia insufficiente; unit_cap_reached = Limite di unità raggiunto.
+
+**Numbers:** 19 WAV, 22050 Hz mono 16-bit, 1.5 MB total, 1.34–2.62 s, RMS −17…−20 dBFS, peak ≤ 0.84.
+
+**Tests:** `VoiceTests` (10: table = VoiceIds, every file valid, queue overlap/priority/stale/cooldown/full, missing files, WAV garbage, alert mapping); AppSettingsTests data. Sim 615, client 371, net 38 green; bench 2000 300 hash 2F09CD7D01AF287E unchanged.
+
+**Shared-file edits:** Program.cs (1 line + usage comment), GameApp.cs (1 line `ApplyVoice`), AppSettings (2 fields + ApplyVoice), SettingsScreen (partial, 1 call, Audio tab gap 9), AlertMonitor (text constant), GameAudio.cs/Alerts/Experimental (one-line hooks), AudioSystem (Voice), CLAUDE.md, docs.
+
+**Known issues / follow-ups:** I cannot hear: the owner should judge the voice (`it+m3`) by ear; no mbrola binary, so espeak's robotic timbre is the ceiling. Not spoken: victory/defeat, own commander lost, construction done, pings. No language setting (only `it` ships).
+
+**Design errors found:** (1) Strategic launches in the snapshot (`LaunchView`) carry no kind, and tactical launches are not in `Launches` at all; the voice relies on the effect Size (1.2 vs 3) to tell them apart — open (sim-side field, out of scope). (2) Enemy commander deaths under fog never reach the client (effects are vision-filtered), so "enemy defeated" via `ArmyView.Defeated` is the fallback — by design of fog, worked around in GameAudio.Voice.cs.
+
+**Merge checks on main** (orchestrator, 2026-11-13 03:59-04:03): build and tests 615 sim + 371 client + 38 net
+green; reference match "Player (Hard) after 12:00", C87C46C4EA726A82; bench 2F09CD7D01AF287E; screenshot of
+`--settings --settings-tab audio` (rows "Voice" ON and "Voice volume" 90 % between the music volume and
+Fullscreen, nothing overlapping) looked right. Not checked by anybody yet: how the voice sounds (an agent cannot
+hear; `--voice-test` plays every line, the orchestrator did not run it at 4 in the morning).

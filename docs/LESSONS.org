@@ -209,6 +209,23 @@ e ogni scopo.
   "nessun esercito" (-1) non è rappresentabile. Un osservatore non ha un esercito.
 - Soluzione: aperto. Per ora un osservatore parte con la vista dell'esercito 0 e poi sceglie chi seguire.
 
+** L'istantanea dei lanci non dice che missile è partito
+- Errore: l'elenco dei lanci che il client riceve (~LaunchView~) non indica il tipo di missile, e i lanci tattici
+  non ci sono affatto. L'annunciatore vocale (11b-1, 2026-11-13) deve distinguere "lancio nucleare" da "missile
+  tattico" e lo fa dalla grandezza dell'effetto di lancio (1,2 contro 3): un dato di gioco dedotto da un dato
+  grafico, che si rompe appena qualcuno ritocca gli effetti.
+- Soluzione: aperto. Serve un campo nella simulazione (tipo di lancio nell'istantanea); era fuori dal modulo, che
+  non doveva toccare il sim. Regola: quando il client deve indovinare un fatto di gioco da un effetto visivo,
+  manca un campo nell'istantanea.
+
+** La morte di un comandante nemico nella nebbia non arriva al client
+- Errore: gli effetti (esplosioni, morti) sono filtrati per visibilità, quindi la distruzione di un comandante
+  nemico fuori vista non raggiunge il client, e l'annuncio "Comandante nemico distrutto" non poteva partire, anche
+  se in SupCom quell'evento lo sentono tutti.
+- Soluzione: aggirato nel client (~fcf836f~, modulo 11b-1): quando un esercito risulta sconfitto l'annunciatore dice
+  "Avversario eliminato". Gli eventi che tutti devono conoscere (morte di un comandante, sconfitta) dovrebbero
+  viaggiare in un canale dell'istantanea non filtrato dalla nebbia: aperto.
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa
