@@ -136,6 +136,10 @@ public sealed partial class ClientSession : NetSession, ITurnSink
                     LobbyRef = LobbyState.Read(r);
                     PublishLobby();
                     CheckMap(); // (8b-3) ClientSession.Maps.cs
+                    CheckSave(); // (10a-3) ClientSession.Saves.cs
+                    break;
+                case MsgType.SaveOrder or MsgType.SaveResult or MsgType.SaveChunk: // (10a-3)
+                    OnSaveMessage(type, r);
                     break;
                 case MsgType.MapChunk:
                     OnMapChunk(r);

@@ -176,7 +176,7 @@ public sealed partial class HostSession
         }
     }
 
-    private void PumpUpload(MapUpload u)
+    private void PumpUpload(MapUpload u, MsgType type = MsgType.MapChunk) // (10a-3) SaveChunk for saves
     {
         var bytes = u.Bytes;
         long rate = MapUploadBytesPerSecond;
@@ -187,7 +187,7 @@ public sealed partial class HostSession
             long off = u.Sent;
             int n = (int)Math.Min(chunk, bytes.Length - off);
             ulong hash = u.Hash;
-            u.Conn.Send(Msg.Build(MsgType.MapChunk, w =>
+            u.Conn.Send(Msg.Build(type, w =>
             {
                 w.Raw(hash);
                 w.VarU((ulong)off);
