@@ -32,6 +32,10 @@ public sealed class InGameSaveUi
 
     public bool DialogOpen => _field != null;
 
+    /// <summary>(10a-3) Multiplayer: a save goes to the host as a request (every peer writes the same save) instead of
+    /// this peer's recording.</summary>
+    public Action<string>? NetSave;
+
     /// <summary>Playing state: F5 / F6 and the --save-at helper.</summary>
     public void HandleHotkeys(int frame)
     {
@@ -45,6 +49,7 @@ public sealed class InGameSaveUi
     public void Save(string name, string? toast = null)
     {
         if (_s.Recording == null) return;
+        if (NetSave != null) { NetSave(name); return; }
         var cam = _s.Ctx.Camera;
         _s.Recording.Save(_s.Runner, name, ClientGameData.From(_s.Config, new Vector3(cam.Focus.X, cam.Focus.Z, cam.TargetDistance)), toast: toast);
     }
