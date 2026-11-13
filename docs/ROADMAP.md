@@ -26,7 +26,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-12 22:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-13 10:00 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -47,6 +47,23 @@ writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: 
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
 **ON RESUME** (2026-11-13 04:15, written by orchestrator session 5473885b on Fable 5.2, at 250k of context, for the next session):
+- **The wave 11 pair is running since 2026-11-13 09:58** (orchestrator session 84a8eb5c; the owner said "continua" at
+  04:12 and again about 09:55, probably a fresh usage window): (11a-1) pathing in
+  `.claude/worktrees/agent-a1cfe2a85950cb38b`, (11a-2) save migration in `.claude/worktrees/agent-a3aed1e9bdbb580ce`
+  (folder name = agent id, branch `worktree-agent-<id>`), one module agent each on Opus 5.5, cap 200k, watcher at 162k.
+  Their prompts are files that survive a reboot, in the main checkout (ignored by git): `.claude/prompts/11a-1.md`,
+  `11a-2.md` and the shared `rules-wave11.md`; a successor gets the same files plus "continue from
+  `.claude/handoff.md`". Found while writing them: no blueprint is above clearance class 4 today (largest radius 3.0),
+  `Movement.MaxSlope` is read nowhere in the sim, and any blueprint edit refuses every older save (hash check), so
+  11a-2 also has to record a blueprint id table and remap. **Merge 11a-2 first, then 11a-1**, and at 11a-1's merge run
+  the fixture test of 11a-2 (a save written before 11a-1 must load after it; 11a-1 was told to give its saved nav
+  state a version and to rebuild it when it does not fit).
+  Both first agents stopped by themselves at their checkpoint (11a-2 at 163k after 12 minutes: design + core read
+  plans, no test run; 11a-1 at 170k after 14 minutes: clearance field + slope classes + `Fits` in movement, sim tests
+  613/615). Second agents started 10:12 and 10:15 in the same worktrees (ids ae776a28a65768b6e for 11a-2,
+  a9de212776f657d3a for 11a-1). Open in 11a-1: `AiTechTests.AiReachesTech2OnFixedSeed` fails (army 1 never gets a T2
+  land factory; hypothesis: the ACU and builders are refused the cells next to structures by the new fit check);
+  agent 2 diagnoses it first, time-boxed to 120k of context, else a diagnosis agent with a larger cap.
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
