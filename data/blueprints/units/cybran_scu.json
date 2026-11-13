@@ -21,6 +21,7 @@
     "MaintenanceEnergy": 0
   },
   "Movement": {
+    "MaxSlope": 1.2,
     "Layer": "Amphibious",
     "MaxSpeed": 1.9,
     "Acceleration": 1.8,

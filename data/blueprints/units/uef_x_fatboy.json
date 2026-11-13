@@ -10,7 +10,7 @@
   "FootprintX": 6,
   "FootprintZ": 8,
   "Economy": { "BuildCostMass": 28000, "BuildCostEnergy": 350000, "BuildTime": 47500, "BuildRate": 120, "MaintenanceEnergy": 200 },
-  "Movement": { "Layer": "Land", "MaxSpeed": 1.6, "Acceleration": 0.8, "TurnRate": 30, "MaxSlope": 0.6 },
+  "Movement": { "Layer": "Land", "MaxSpeed": 1.6, "Acceleration": 0.8, "TurnRate": 30 },
   "Intel": { "VisionRadius": 40, "RadarRadius": 70 },
   "Weapons": [
     { "Name": "Heavy Gauss Cannon (L)", "Range": 70, "Damage": 500, "DamageRadius": 2, "RateOfFire": 0.5, "MuzzleVelocity": 45, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 45 },

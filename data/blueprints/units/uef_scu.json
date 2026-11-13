@@ -8,7 +8,7 @@
   "RegenRate": 5,
   "Radius": 1.0,
   "Economy": { "BuildCostMass": 1900, "BuildCostEnergy": 35000, "BuildTime": 6000, "BuildRate": 40, "MaintenanceEnergy": 0 },
-  "Movement": { "Layer": "Amphibious", "MaxSpeed": 1.9, "Acceleration": 1.8, "TurnRate": 90 },
+  "Movement": { "MaxSlope": 1.2, "Layer": "Amphibious", "MaxSpeed": 1.9, "Acceleration": 1.8, "TurnRate": 90 },
   "Intel": { "VisionRadius": 26 },
   "Weapons": [
     { "Name": "Heavy Plasma Cannon", "Range": 24, "Damage": 120, "RateOfFire": 1, "MuzzleVelocity": 32, "TargetLayers": [ "Land", "Water" ], "TurretTurnRate": 120 }

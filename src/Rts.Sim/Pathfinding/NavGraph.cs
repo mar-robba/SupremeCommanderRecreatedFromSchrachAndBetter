@@ -19,6 +19,8 @@ public sealed class NavGraph
 
     public readonly NavGrid Grid;
     public readonly int Req;
+    /// <summary>(11a-1) Index in PathService's graph table (grid slot * stride + Req): the goal-field cache key.</summary>
+    public int Slot;
     public readonly int SX, SY, SectorCount;
     /// <summary>Local region id of each cell inside its sector (NoRegion = not passable for Req).</summary>
     public readonly ushort[] Local;

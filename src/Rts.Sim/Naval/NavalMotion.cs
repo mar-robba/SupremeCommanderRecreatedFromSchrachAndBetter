@@ -115,7 +115,7 @@ public static class NavalMotion
         var paths = w.Paths;
         ref var self = ref paths.Sep[i];
         float seg = s.HalfSeg[bp.Index], width = s.HalfWidth[bp.Index];
-        float maxReach = MathF.Max(seg + width + s.MaxHalfLength + HullGap, bp.Radius + paths.MaxMobileRadius) + 1f;
+        float maxReach = MathF.Max(seg + width + s.MaxHalfLength + HullGap, bp.Radius + paths.MaxMobileRadius) + 1f + HeadOnLook; // (11a-1) + channel rule lookahead
         var dir = DMath.Dir(s.Heading[i]);
         var v = new HullVisitor
         {
@@ -128,6 +128,8 @@ public static class NavalMotion
             Pos = pos,
             A = pos - dir * seg,
             B = pos + dir * seg,
+            Fwd = dir,
+            Seg = seg,
             Width = width,
             Radius = bp.Radius,
             MaxReach2 = maxReach * maxReach,
@@ -137,6 +139,9 @@ public static class NavalMotion
         return DMath.ClampLength(v.Push, 1.5f);
     }
 
+    /// <summary>(11a-1) Channel rule weights (separation push units, see HullVisitor.HeadOn).</summary>
+    private const float HeadOnSteer = 0.8f, HeadOnYield = 0.9f, HeadOnLook = 6f;
+
     private struct HullVisitor : IUnitVisitor
     {
         public PathService.SepInfo[] Sep;
@@ -145,8 +150,8 @@ public static class NavalMotion
         public int Self;
         public int Team;
         public byte Kind;
-        public Vector2 Pos, A, B;
-        public float Width, Radius;
+        public Vector2 Pos, A, B, Fwd;
+        public float Width, Radius, Seg;
         public float MaxReach2;
         public bool SelfMoving;
         public Vector2 Push;
@@ -168,6 +173,7 @@ public static class NavalMotion
                 ClosestPoints(A, B, o.Pos - dj, o.Pos + dj, out var ci, out var cj);
                 diff = ci - cj;
                 reach = Width + S.HalfWidth[bj] + HullGap;
+                if (SelfMoving && o.Moving != 0) HeadOn(j, o.Pos, segJ, reach);
             }
             else if (Kind == KindShip && o.Kind == KindSurface)
             {
@@ -194,6 +200,28 @@ public static class NavalMotion
             float overlap = (reach - dist) / reach;
             MovementSystem.AddSurfacePush(ref Push, n, d, overlap, o.Team == Team, SelfMoving, o.Moving != 0, o.Vel);
             return true;
+        }
+
+        /// <summary>
+        /// (11a-1) Channel rule: a moving hull j ahead that comes the other way on a colliding line makes this ship
+        /// steer to its own right (both do, so they pass port to port where the channel allows two); the ship of
+        /// lower priority (the higher unit index) also brakes, so in a one-lane channel it queues instead of the two
+        /// pushing bow to bow. Deterministic and local: only the separation snapshot and this unit's push.
+        /// </summary>
+        private void HeadOn(int j, Vector2 oPos, float segJ, float reach)
+        {
+            var fj = DMath.Dir(S.Heading[j]);
+            if (Vector2.Dot(Fwd, fj) > -0.5f) return; // not oncoming
+            var rel = oPos - Pos;
+            float ahead = Vector2.Dot(rel, Fwd);
+            float look = Seg + segJ + 2f * reach + 4f;
+            if (ahead <= 0 || ahead >= look) return;
+            var right = new Vector2(Fwd.Y, -Fwd.X);
+            float lat = Vector2.Dot(rel, right);
+            if (MathF.Abs(lat) >= reach) return; // lines already clear of each other
+            float close = 1f - ahead / look;
+            Push += right * (HeadOnSteer * close);
+            if (Self > j) Push -= Fwd * (HeadOnYield * close);
         }
     }
 
