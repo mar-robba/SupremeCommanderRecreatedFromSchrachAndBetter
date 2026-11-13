@@ -25,7 +25,8 @@ public class CrossOsDeterminismTests
 
     // Written on Linux x64 (2026-11-12, DMath.Version 1). See the class summary before changing them.
     private const ulong GoldenTerrainHash = 0xC870F62B6FC7C28DUL;
-    private const ulong GoldenStateHash = 0xD273E007297C55F1UL;
+    // State: 2026-11-13 (11a-1 pathing: exact clearance, slope classes, channel rule; was 0xD273E007297C55F1).
+    private const ulong GoldenStateHash = 0xED3AD081E0A9502EUL;
 
     /// <summary>AI (Hard, UEF) vs AI (Normal, Cybran) on a generated 256 map (the generator uses DMath trig and
     /// noise), plus a mixed brawl in the middle (tanks, artillery arcs, bombers, interceptors) so weapons, ballistics
