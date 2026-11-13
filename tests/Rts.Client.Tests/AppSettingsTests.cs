@@ -32,6 +32,7 @@ public class AppSettingsTests
         TerrainShadows = false, UnitLod = false, MinimapSize = 1.5f, MinimapZoom = 3f, MinimapResources = false, MinimapUnits = false, MinimapTrees = true, // (9b-2)
         KeyBindings = "v1;Stop=X", // (10b-1)
         RangeRings = false, // (10b-2)
+        VoiceOn = false, VoiceVolume = 0.4f, // (11b-1)
     };
 
     [Fact]
