@@ -21,7 +21,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
 | 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12); (10a-3) multiplayer save/load: to do | in progress |
-| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24). Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | to do |
+| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing, (11a-2) save migration, (11b-1) voice announcer, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | to do |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
@@ -82,10 +82,12 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
 - **Planned: (10a-3) multiplayer save/load** (G36; brief in HISTORY "Wave 10", line "*brief (10a-3)", purpose
   "Salvataggi in multiplayer (10a-3)"; it builds on 10a-2, now on main: protocol 5, observers). Its pair is a
   wave 11 module. **Wave 11 is decided since 2026-11-13** ("Wave 11" below: G12 pathing + G41 save migration,
-  G24 voice announcer; the owner's answers were recorded by another session, ed4bc96a) but not yet cut into
-  modules with briefs: write them in HISTORY "Wave 11" and the purposes in `purposes.json` before starting one.
-  G12 (Pathfinding, MovementSystem) has files disjoint from 10a-3; G41 (Persistence) starts after 10a-3 is
-  merged; G24 waits for the voice language (Q7). One module agent each: `model: "opus"`,
+  G24 voice announcer; the owner's answers were recorded by another session, ed4bc96a) and cut into
+  three modules on 2026-11-13 (briefs in HISTORY "Wave 11", purposes in `purposes.json`): **11a-1** pathing
+  (G12; sim only, files disjoint from 10a-3: it can start as soon as usage allows), **11b-1** voice announcer
+  (G24; waits for the owner: voice language, Q7, and voice source: `espeak` + `ffmpeg` are on this machine, a
+  neural voice would need a download the owner must allow), **11a-2** save migration (G41; after 10a-3 is merged,
+  both change `Rts.Sim/Persistence`). One module agent each: `model: "opus"`,
   `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, rules block from AGENT_RULES, a `CTX-TAG:` line, watcher
   `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (stop it by its process id:
   `pkill -f` killed the orchestrator's own shell again on 2026-11-12). Merge checks:

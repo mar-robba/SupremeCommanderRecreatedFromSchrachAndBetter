@@ -23,6 +23,7 @@ here.
 - [Pre-wave 5: (j) faction infrastructure](#pre-wave-5)
 - [Wave 5 (in progress): the briefs](#wave-5-in-progress)
 - [Wave 10: the briefs (re-cut 2026-11-12)](#wave-10-multiplayer-robustness--keybindings-briefs-re-cut-2026-11-12)
+- [Wave 11: the briefs (cut 2026-11-13)](#wave-11-pathing-save-migration-voice-announcer-briefs-cut-2026-11-13)
 
 ---
 
@@ -1385,3 +1386,71 @@ kept): build and tests 615 sim + 361 client + 38 net green; reference match "Pla
 C87C46C4EA726A82; bench 2F09CD7D01AF287E; `Rts.Bench -- mp 3 600 256 0 0 obs=2` and `mp 2 600 256 1 0 obs=1` in
 sync (60 hash checks each); screenshot of `--host 47702 --players 2 --autostart --net-vote-demo` ("Waiting for
 Bob…", the "Drop Bob" button, "1/2 votes to drop Bob") looked right.
+
+## Wave 11: pathing, save migration, voice announcer (briefs cut 2026-11-13)
+The owner answered the "Questions for the owner" on 2026-11-13 (WORKFLOW "Owner decisions", ROADMAP "Wave 11"):
+wave 11 is pathing (G12) + save migration (G41) on the sim side and the voice announcer (G24) on the audio side;
+campaign, map editor, Italian localization and online play outside the LAN are cut; tutorial, mod support, FA units,
+split screen and reconnect are parked. Three modules of up to about 1,500 lines, one module agent each on Opus 5.5
+(cap 200k, no coordinator), at most 2 at a time:
+1. **11a-1** pathing: sim only, files disjoint from 10a-3, so it can run next to it or right after it.
+2. **11b-1** voice announcer: client audio only; it waits for the owner's choice of the voice language (Q7) and of
+   the voice source (below). It can run next to 11a-1 or 11a-2.
+3. **11a-2** save migration: after 10a-3 is merged (both change `Rts.Sim/Persistence`).
+Sizes measured before the cut: `Rts.Sim/Pathfinding` is 1,677 lines in 5 files (`NavGrid` 237, `PathSystem` 258,
+`PathSolver` 386, `NavGraph` 388, `PathService` 408) and `Systems/MovementSystem*.cs` 525; the clearance grid has
+4 classes (`NavGrid.MaxClearance`, `ClearanceFor(radius)`: every unit of radius 3.75 or more is class 4) and one
+slope limit per motion layer, although `UnitBlueprint.MaxSlope` exists (default 0.75); `Rts.Client/Audio` is 2,695
+lines, all synthesized (no asset files); the alerts come from `UI/AlertMonitor.cs`. On this machine `espeak` (voices
+`en`, `en-us`, `en-gb`, `it`) and `ffmpeg` are installed; no neural speech tool is.
+
+*brief (11a-1) Pathing: exact clearance, per-unit slope, ships in channels* (G12; purpose "Pathing preciso
+(11a-1)"): (1) clearance that matches the unit: today the largest class is 4 cells, so the big experimentals and
+battleships path as if they were narrower than they are and clip cliffs, shores and structures; give every unit the
+clearance of its real radius (more classes, or a distance field that any radius can query), in the path search and
+in the local movement, without making the nav build or the path queries slower than the limits below. (2) Per-unit
+`MaxSlope`: the blueprint value decides where that unit may go (a walker crosses a slope that a tank goes around);
+group the units into a few slope classes rather than one grid per unit, and set the values in the blueprints only
+where SupCom differs between unit kinds (walkers, hover, the ACU). (3) Ships (and other large units) in narrow
+channels: two groups that meet head-on pass or queue instead of pushing each other into a deadlock (ROADMAP "later:
+ships steering around each other in narrow channels"). Owns `Rts.Sim/Pathfinding`, `Systems/MovementSystem*.cs`,
+the nav parts of `Map/MapConnectivity.cs` (the generator must still give every start a path for the largest land
+unit and a channel for battleships), blueprint slope values. Leaves alone: `Rts.Net`, `Persistence`, the client
+(a debug overlay of the clearance grid is fine if one exists already), the AI's choices (it only must not break).
+This module changes sim results: it documents the new reference hashes (AI match, bench `2000 300`, the golden
+`CrossOsDeterminismTests` values) and shows that the AI match still ends with a winner. Tests: a wide unit does
+not enter a gap narrower than itself and a narrow one does; a low-slope unit goes around a hill that a walker
+crosses; two ship groups pass each other in a channel within a time limit; the same on 1 and 4 threads; nav caches
+stay `[NoSave]` and a save → load → continue gives the same hash. Measure: nav build time on 1024 and bench `2000
+300` against main (no regression above 10 %), the map pack still passes `mapexport --scan` checks.
+
+*brief (11b-1) Voice announcer* (G24; purpose "Annunciatore vocale (11b-1)"; waits for the owner: language and
+voice source): spoken lines for the events SupCom announces, on top of today's beeps and toasts: commander under
+attack, units / base under attack, ally under attack, nuclear launch detected, strategic missile launch detected,
+experimental unit detected, enemy commander destroyed, ally commander destroyed, unit cap reached, mass / energy
+low, upgrade / enhancement / experimental complete, transport and build queue lines only if cheap. A line table
+(id, text, priority, cooldown) drives a queue that never talks over itself, drops stale low-priority lines and
+respects the existing alert cooldowns; a "Voice" volume and an on/off switch in Settings → Audio; missing files =
+silence (the beep stays). The voice files are assets generated once by a script in `tools/voice/` from the line
+table and committed under `data/audio/voice/<lang>/` (the game needs no speech tool at run time; the release
+package ships them). Owns new `Audio/Voice*.cs`, the hooks in `GameAudio.Alerts.cs` / `UI/AlertMonitor.cs`,
+`tools/voice/`, `data/audio/voice/`, the Audio settings rows, `tools/package` (the files in the package). Leaves
+alone: the sim, `Rts.Net`, rendering. Tests: the queue (priority, cooldown, no overlap, drop of stale lines), every
+line id has a file in every shipped language, settings round trip. Since an agent cannot hear, the check of the
+result is the owner's ear: the report lists a command that plays every line in order.
+
+*brief (11a-2) Saves that survive sim layout changes* (G41; purpose "Migrazione dei salvataggi (11a-2)"; after
+10a-3): today a save loads only when every saved type has exactly today's field layout (`GraphIO` compares the
+signature and throws `IncompatibleSaveException`), so every sim change makes all older saves unreadable. Make loading
+tolerant field by field: a field added since the save takes its default (or a value from a per-type hook), a field
+removed is skipped, a renamed field or type is found through a rename table, a changed type goes through a
+converter or refuses with a clear message; `[NoSave]` caches are rebuilt as today. The save records what it needs
+for this (field names and types per saved type: check what `TypeLayout.cs` already writes). A migrated save restarts
+its replay log at the loaded tick (as old-math saves do since 10a-1), because an older sim build cannot be replayed;
+replays stay bound to the exact sim build. Blueprint changes: decide and document what is safe (a unit whose
+blueprint id is gone: refuse with the id in the message). Owns `Rts.Sim/Persistence` (`TypeLayout`, `Codecs`,
+`GraphIO`, `SaveMigrations`, `SaveFiles`), `SaveCoverageTests` / `PersistenceTests` additions, DEV_GUIDE "how to
+change a saved type". Leaves alone: the sim systems, `Rts.Net`, the client beyond the load error texts. Tests: a
+save written with a synthetic older layout of a test type (field added, removed, renamed, retyped) loads with the
+expected values; a real save from before a deliberate field addition loads and plays on; the load time and file
+size of `savebench` stay within 10 %; hashes unchanged (this module changes no sim result).
