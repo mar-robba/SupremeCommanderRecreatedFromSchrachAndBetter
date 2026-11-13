@@ -10,9 +10,12 @@ using Rts.Sim.Data;
 /// thread running the lockstep as fast as the turns allow with random commands. Checks that every peer has the same
 /// StateHash every 10 ticks (exit 1 on a desync/fault). "drop" disconnects the last client halfway: the others must
 /// stay in sync with its army handed to the AI.
-/// Usage: Rts.Bench mp [peers=4] [ticks=1200] [mapSize=256] [aiSlots=1] [threads=0] [drop] [map=ID] [biome=X] [obs=N]
+/// (10a-3) "save=TICK": the host orders a save at TICK (commands stop there), the run goes on to the end; then the session
+/// is torn down, the save is loaded in a new load lobby where the last client lacks the file (it is sent by the host),
+/// and the loaded game runs to the end: its hashes must equal the uninterrupted run's after the save tick.
+/// Usage: Rts.Bench mp [peers=4] [ticks=1200] [mapSize=256] [aiSlots=1] [threads=0] [drop] [map=ID] [biome=X] [obs=N] [save=TICK]
 /// </summary>
-static class MpSelfTest
+static partial class MpSelfTest
 {
     public static int Run(string[] args)
     {
@@ -23,6 +26,7 @@ static class MpSelfTest
         string? biomeArg = args.FirstOrDefault(a => a.StartsWith("biome="))?[6..];
         // (10a-2) obs=N: N observers join (they get every turn, send none; their hashes must match too)
         int obsN = int.TryParse(args.FirstOrDefault(a => a.StartsWith("obs="))?[4..], out int on) ? Math.Clamp(on, 0, 16) : 0;
+        int saveTick = int.TryParse(args.FirstOrDefault(a => a.StartsWith("save="))?[5..], out int st) ? Math.Max(0, st) : 0; // (10a-3)
         args = args.Where(a => !a.Contains('=')).ToArray();
         int peersN = args.Length > 0 ? Math.Clamp(int.Parse(args[0]), 2, 8) : 4;
         int ticks = args.Length > 1 ? int.Parse(args[1]) : 1200;
@@ -30,6 +34,9 @@ static class MpSelfTest
         int ais = args.Length > 3 ? int.Parse(args[3]) : 1;
         if (args.Length > 4 && int.Parse(args[4]) > 0) Par.MaxThreads = int.Parse(args[4]);
         ais = Math.Clamp(ais, 0, LobbyState.MaxSlots - peersN);
+        if (saveTick >= ticks - 10) saveTick = 0;
+        if (saveTick > 0) drop = false; // the save step compares a full run: no drop
+        var saveDirs = new List<string>();
 
         var db = BlueprintDb.LoadDirectory(DataPaths.UnitBlueprintDir);
         var host = HostSession.Start("Host", 0, lanAnnounce: false);
@@ -49,7 +56,7 @@ static class MpSelfTest
             if (mapId != null) Console.WriteLine($"Map file {host.Lobby.Options.MapName} ({host.Lobby.Options.MapBytes / 1024} KB, {host.Lobby.Options.MapPlayers} starts), biome {Rts.Sim.Map.Biomes.Id(host.Lobby.Options.EffectiveBiome)}");
             for (int i = 1; i < peersN; i++)
             {
-                var c = ClientSession.Join("127.0.0.1", host.Port, "Peer" + i);
+                var c = ClientSession.Join("127.0.0.1", host.Port, "Peer" + i, saveDir: saveTick > 0 ? NewSaveDir(saveDirs) : null);
                 clients.Add(c);
                 Wait(() => c.LocalSlot >= 0);
                 var mt = Stopwatch.StartNew();
@@ -61,11 +68,12 @@ static class MpSelfTest
             var observers = new List<ClientSession>();
             for (int i = 0; i < obsN; i++)
             {
-                var c = ClientSession.Join("127.0.0.1", host.Port, "Obs" + i, observe: true);
+                var c = ClientSession.Join("127.0.0.1", host.Port, "Obs" + i, observe: true, saveDir: saveTick > 0 ? NewSaveDir(saveDirs) : null);
                 observers.Add(c);
                 Wait(() => c.IsLocalObserver);
                 Wait(() => !host.Lobby.Options.HasMapFile || c.MapTransfer?.State is MapTransferState.Present or MapTransferState.Failed);
             }
+            if (saveTick > 0) host.SaveDir = NewSaveDir(saveDirs);
             Wait(() => host.Lobby.Problem() == null);
             var setup = Stopwatch.StartNew();
             if (host.StartGame() is string problem) throw new InvalidOperationException(problem);
@@ -80,8 +88,9 @@ static class MpSelfTest
 
             int dropId = clients.Count > 1 && drop ? clients[^1].PlayerId : -1;
             var run = Stopwatch.StartNew();
+            if (saveTick > 0) RunToSave(host, peers, obsPeers, saveTick);
             foreach (var p in peers)
-                p.Run(ticks, 0.4, (peer, tick) =>
+                p.Run(ticks, saveTick > 0 ? 0 : 0.4, (peer, tick) =>
                 {
                     if (dropId >= 0 && peer == peers[0] && tick == ticks / 2) host.Disconnect(dropId, "self-test drop");
                 });
@@ -118,6 +127,13 @@ static class MpSelfTest
                 int army = peers[^1].Game.LocalArmy;
                 Console.WriteLine($"mp: dropped {peers[^1].Session.LocalName} (army {army}) at tick ~{ticks / 2}: host sees IsAI={peers[0].Sim.World.Armies[army].IsAI}");
             }
+            if (saveTick > 0 && fails == 0 && desync < 0)
+            {
+                fails += WaitSaveResult(host);
+                foreach (var p in peers.Concat(obsPeers)) p.Dispose();
+                var savePath = host.Game.LastSavePath ?? throw new InvalidOperationException("the host wrote no save");
+                fails += LoadAndCompare(db, savePath, clients.Select(c => c.LocalName).ToList(), saveDirs, saveTick, ticks, reference);
+            }
             bool ok = fails == 0 && desync < 0;
             Console.WriteLine(ok ? "mp: OK" : "mp: FAILED");
             return ok ? 0 : 1;
@@ -127,6 +143,8 @@ static class MpSelfTest
             foreach (var p in peers) p.Dispose();
             foreach (var c in clients) c.Leave();
             host.Leave();
+            foreach (var d in saveDirs)
+                try { Directory.Delete(d, true); } catch (IOException) { }
         }
     }
 
