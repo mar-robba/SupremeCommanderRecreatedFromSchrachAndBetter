@@ -49,6 +49,9 @@ public sealed class ByteWriter
 
     public void Bytes(ReadOnlySpan<byte> s) => s.CopyTo(Grow(s.Length));
 
+    /// <summary>(11a-2) Overwrites a value written earlier at byte <paramref name="pos"/> (a reserved slot).</summary>
+    public void PatchRaw<T>(int pos, T v) where T : unmanaged => MemoryMarshal.Write(_buf.AsSpan(pos, Unsafe.SizeOf<T>()), in v);
+
     /// <summary>Length-prefixed byte block.</summary>
     public void Block(ReadOnlySpan<byte> s) { VarU((ulong)s.Length); Bytes(s); }
 
@@ -79,6 +82,9 @@ public sealed class ByteReader
     }
 
     public int Position => _pos;
+
+    /// <summary>(11a-2) A second reader over the same data from absolute position <paramref name="pos"/> to the end.</summary>
+    public ByteReader At(int pos) => pos >= _pos && pos <= _end ? new ByteReader(_buf, pos, _end - pos) : throw Corrupt("bad offset");
     public int Remaining => _end - _pos;
     public bool AtEnd => _pos >= _end;
 

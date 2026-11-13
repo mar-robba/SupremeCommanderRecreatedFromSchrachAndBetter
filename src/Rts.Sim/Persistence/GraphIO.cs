@@ -115,6 +115,7 @@ public sealed class GraphReader
             case Tag.External:
             {
                 ulong id = In.VarU();
+                if (ExternalMap != null) id = id < (ulong)ExternalMap.Length ? (ulong)(uint)ExternalMap[id] : ulong.MaxValue;
                 if (_ext == null || id >= (ulong)_ext.Count) throw ByteReader.Corrupt("bad external reference");
                 return _ext.Get((int)id);
             }
@@ -144,24 +145,29 @@ public sealed class GraphReader
         if (tid != (ulong)_types.Count) throw ByteReader.Corrupt("bad type id");
         string name = In.Str() ?? throw ByteReader.Corrupt("type name");
         string sig = In.Str() ?? throw ByteReader.Corrupt("type signature");
-        var type = TypeNames.Resolve(name);
-        RefCodec codec;
-        try { codec = RefCodec.For(type); }
-        catch (NotSupportedException e) { throw new IncompatibleSaveException(e.Message); }
-        if (codec.Signature != sig) throw new IncompatibleSaveException(DescribeMismatch(type, codec.Signature, sig));
+        // (11a-2) Fast path: the layout this build has (the normal case) reads through the generated codecs. Any other
+        // layout (or a type that is gone / renamed, or one holding blueprint indices to translate) gets a read plan.
+        var type = _mig == null ? TypeNames.TryResolve(name) : _mig.Resolve(name);
+        RefCodec? codec = null;
+        if (type != null)
+        {
+            try { codec = RefCodec.For(type); }
+            catch (NotSupportedException e) { throw new IncompatibleSaveException(e.Message); }
+        }
+        if (codec == null || codec.Signature != sig || (_mig != null && _mig.Forced(type!)))
+            codec = Migration.CodecFor(name, sig, type);
         _types.Add(codec);
         return codec;
     }
 
-    private static string DescribeMismatch(Type t, string now, string saved)
-    {
-        int i = 0;
-        while (i < now.Length && i < saved.Length && now[i] == saved[i]) i++;
-        int from = Math.Max(0, now.LastIndexOf(';', Math.Max(0, Math.Min(i, now.Length - 1))) + 1);
-        string Snip(string s) => s.Substring(Math.Min(from, s.Length), Math.Min(80, s.Length - Math.Min(from, s.Length)));
-        return $"The saved state layout of {t.Name} differs from this build (saved: '{Snip(saved)}…', now: '{Snip(now)}…'). " +
-               "The file was made by a different version of the game.";
-    }
+    private MigrationContext? _mig;
+    internal MigrationContext Migration => _mig ??= new MigrationContext();
+
+    /// <summary>(11a-2) What this read had to migrate (null or empty = the data matched this build exactly).</summary>
+    public SaveMigrationReport? MigrationReport => _mig?.Report;
+
+    /// <summary>(11a-2) Saved external id → id in this build's <see cref="ExternalSet"/> (null = same ids).</summary>
+    internal int[]? ExternalMap;
 
     internal void AddFixup(Action a) => _fixups.Add(a);
     internal void AddAfterLoad(IAfterLoad o) => _afterLoad.Add(o);
@@ -172,11 +178,17 @@ public sealed class GraphReader
         while (_pending.TryDequeue(out var p)) p.codec.ReadBody(this, p.obj);
         foreach (var f in _fixups) f();
         _fixups.Clear();
+        if (_mig != null)
+        {
+            foreach (var f in _mig.PostFixups) f();
+            _mig.PostFixups.Clear();
+        }
     }
 
     /// <summary>Calls <see cref="IAfterLoad.AfterLoad"/> on the loaded objects (in load order).</summary>
     public void RunAfterLoad()
     {
+        _mig?.RunMigratedHooks();
         foreach (var o in _afterLoad) o.AfterLoad();
         _afterLoad.Clear();
     }
