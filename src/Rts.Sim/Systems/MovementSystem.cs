@@ -171,7 +171,10 @@ public static partial class MovementSystem
         bool wantsMove = false;
         float remaining = 0;
         mv.Arrived = false;
-        bool onBlocked = !grid.Fits(pos, req);
+        // (11a-1) here < req: the unit does not fit where it stands (it left a factory, a structure was built next to
+        // it, an old save); here == 0: it stands on a blocked cell. Steps never lower its fit (see below).
+        int here = grid.ClearAt(pos);
+        bool onBlocked = here < req;
 
         if (mv.HasGoal)
         {
@@ -208,9 +211,10 @@ public static partial class MovementSystem
                 }
             }
         }
-        else if (onBlocked)
+        else if (here == 0 || onBlocked && u.Builder[i].Mode == BuilderMode.None)
         {
-            // A structure was placed on this unit (or it was pushed into a blocked cell): walk out.
+            // A structure was placed on this unit (or it was pushed into a blocked cell): walk out. A wide unit that
+            // only overlaps a blocked cell walks out too, unless it is building / reclaiming from where it stands.
             int cx = (int)MathF.Floor(pos.X), cz = (int)MathF.Floor(pos.Y);
             if (grid.FindNearestPassable(cx, cz, req, 8, out int ex, out int ez) || grid.FindNearestPassable(cx, cz, 1, 8, out ex, out ez))
             {
@@ -247,11 +251,14 @@ public static partial class MovementSystem
         var newPos = pos + vel * dt;
 
         bool blocked = false;
-        if (!onBlocked && !grid.Fits(newPos, req)) // separation/steering never push a unit where it does not fit
+        // (11a-1) Separation / steering never push a unit where it does not fit; a unit that already does not fit may
+        // still move to any cell that fits it at least as well (never trapped), and one on a blocked cell walks freely.
+        int need = Math.Min(req, here);
+        if (here > 0 && !grid.Fits(newPos, need))
         {
             var sx = new Vector2(newPos.X, pos.Y);
             var sz = new Vector2(pos.X, newPos.Y);
-            newPos = grid.Fits(sx, req) ? sx : grid.Fits(sz, req) ? sz : pos;
+            newPos = grid.Fits(sx, need) ? sx : grid.Fits(sz, need) ? sz : pos;
             blocked = true;
         }
         newPos = w.Terrain.Clamp(newPos);

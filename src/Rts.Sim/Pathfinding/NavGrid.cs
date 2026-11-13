@@ -142,6 +142,13 @@ public sealed class NavGrid
     /// <summary>(11a-1) True if a unit with requirement req (<see cref="ClearanceFor"/>) may stand at p.</summary>
     public bool Fits(Vector2 p, int req) => Passable((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y), req);
 
+    /// <summary>(11a-1) <see cref="Clear"/> of the cell containing p (0 outside the map).</summary>
+    public int ClearAt(Vector2 p)
+    {
+        int cx = (int)MathF.Floor(p.X), cz = (int)MathF.Floor(p.Y);
+        return (uint)cx < (uint)Width && (uint)cz < (uint)Height ? Clear[cz * Width + cx] : 0;
+    }
+
     public int CellOf(Vector2 p)
     {
         int cx = Math.Clamp((int)MathF.Floor(p.X), 0, Width - 1);
