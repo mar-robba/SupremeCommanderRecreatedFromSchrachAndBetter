@@ -29,7 +29,7 @@ namespace Rts.Sim.Systems;
 /// parallel on read-only data with thread-local scratch; <see cref="CurrentWaypoint"/> is allocation-free and
 /// only writes the caller's MoveState.
 /// </summary>
-public sealed partial class PathService : Persistence.IAfterLoad
+public sealed partial class PathService : Persistence.IAfterLoad, Persistence.ISaveMigrated
 {
     private readonly SimWorld _w;
     /// <summary>(11a-1) Grid per (layer grid index 0..4, slope class 0..SlopeSlots-1): slot = gi * SlopeSlots + si.</summary>

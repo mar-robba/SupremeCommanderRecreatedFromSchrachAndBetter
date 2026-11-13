@@ -107,6 +107,13 @@ public sealed partial class PathService
         return g != null && g.Fits(p, ClearanceOf(bp));
     }
 
+    /// <summary>(11a-2) A save from before <see cref="NavFormat"/> existed: the migrated object holds the field
+    /// initializer's (current) value, so mark it as an old format and let <see cref="AfterLoad"/> rebuild the nav state.</summary>
+    public void OnMigrated(Persistence.SaveMigrationInfo info)
+    {
+        if (!info.Has(nameof(NavFormat))) NavFormat = 0;
+    }
+
     /// <summary>Drops a nav state of another format (an old save) so it is rebuilt lazily; units re-path.</summary>
     public void AfterLoad()
     {
