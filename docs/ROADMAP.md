@@ -85,8 +85,8 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   G24 voice announcer; the owner's answers were recorded by another session, ed4bc96a) and cut into
   three modules on 2026-11-13 (briefs in HISTORY "Wave 11", purposes in `purposes.json`): **11a-1** pathing
   (G12; sim only, files disjoint from 10a-3: it can start as soon as usage allows), **11b-1** voice announcer
-  (G24; waits for the owner: voice language, Q7, and voice source: `espeak` + `ffmpeg` are on this machine, a
-  neural voice would need a download the owner must allow), **11a-2** save migration (G41; after 10a-3 is merged,
+  (G24; the owner decided on 2026-11-13: the `espeak` voice ("usa espeak"), in Italian ("e la lingua italiano");
+  started 2026-11-13 next to 10a-3, see the first bullet of this list for its agent), **11a-2** save migration (G41; after 10a-3 is merged,
   both change `Rts.Sim/Persistence`). One module agent each: `model: "opus"`,
   `isolation: "worktree"`, cap 200k, CHECKPOINT 170k, rules block from AGENT_RULES, a `CTX-TAG:` line, watcher
   `python3 -I tools/agents/agent_ctx.py --watch 999999 <id1>=165000 <id2>=165000` (stop it by its process id:
@@ -128,8 +128,9 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   "Costi" chapter of LESSONS was re-aligned after wave 9 (e43f997) and is next due after wave 11 (cost per wave so
   far: LESSONS "Per onda").
 - **Owner questions answered 2026-11-13** (asked 2026-10-23 and 2026-10-24; "Questions for the owner" in the Wave 6+
-  plan). Answers and the open ones are there; recorded in WORKFLOW "Owner decisions". Still open: voice language (Q7),
-  split screen (Q9, the owner asked what it means), reconnect (G37, not answered).
+  plan). Answers and the open ones are there; recorded in WORKFLOW "Owner decisions". Voice (Q7): answered later the same day,
+  Italian, made with `espeak`. Still open: split screen (Q9; explained to the owner on 2026-11-13, no answer yet),
+  reconnect (G37, not answered).
 - **Improving the AI is no longer a goal of the project (owner, 2026-11-11):** the skirmish AI stays as merged in
   wave 5 ((k) + (k-navy)); its unmet goals (stalls, finished games, tech v T1-only) stay unmet. Removed from the
   plan: wave 9a, gap rows G30-G33 and every "later: AI ..." line below. The AI docs stay as they are (ARCHITECTURE
@@ -204,7 +205,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G21 | Split screen (two views, one strategic) / second monitor: parked, the owner asked what it means (Q9) | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | parked |
 | G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
 | G23 | [x] 2026-11-12 (9b-1, 9b-2) Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
-| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected"): planned, owner yes 2026-11-13; language open (Q7) | SC1 | M | Audio + voice assets | owner Q7 | 11 |
+| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected"): planned, owner yes 2026-11-13; Italian voice made with `espeak` (owner, 2026-11-13) | SC1 | M | Audio + voice assets | owner Q7 | 11 |
 | G25 | cut 2026-11-13 (owner Q4: no Italian localization, so no accent font) | — | S | — | — | — |
 | G26 | Map files + curated map pack: save/load maps (heightmap, water, deposits, starts, props), 8-12 named maps with thumbnails, map picker in setup/lobby (host sends the map) | SC1 | M-L | `Rts.Sim/Map`, Menus setup/lobby, `Rts.Net` transfer | G10 | 2 |
 | G27 | Terrain biomes (temperate, desert, tundra, lava, tropical) | SC1 | S-M | TerrainRenderer palettes + generator option | — | 3 |
@@ -333,7 +334,7 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
 
 #### Wave 11 (to do; the owner's answers of 2026-11-13)
 - **Planned:** G12 pathing + G41 save migration (one pair, sim-side, no UI work), G24 voice announcer (the owner said
-  yes; voice language still open, Q7). Pair them so the sim work and the audio work do not share files.
+  yes; Italian, made with `espeak`: owner, 2026-11-13). Pair them so the sim work and the audio work do not share files.
 - **Cut from the plan (owner, 2026-11-13):** campaign (G43), map editor (G29), Italian localization (G28, G25), online
   outside the LAN / relay server (G38; LAN and Tailscale/ZeroTier stay the way to play with friends).
 - **Parked, not planned until the owner asks:** interactive tutorial (G42; the owner did not answer it), mod support
@@ -372,7 +373,8 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
 4. Italian localization: no, cut (G28, G25).
 5. Release step: the owner does not care; no further release work planned (G45 stays as delivered).
 6. Online outside the LAN / with Windows friends: LAN only, cut (G38).
-7. Voice announcer: yes (G24, Wave 11). Open: voice language, Italian or English.
+7. Voice announcer: yes (G24, Wave 11). Language: Italian; voice: `espeak`, already on the machine (both answered
+   later on 2026-11-13: "usa espeak", "e la lingua italiano"). The on-screen texts stay English.
 8. FA units (G13): no separate answer; the recommendation holds, parked until G1-G45 is done.
 9. Split screen / second monitor (G21): the owner asked what it means; not decided, parked until explained.
 

@@ -1394,8 +1394,8 @@ campaign, map editor, Italian localization and online play outside the LAN are c
 split screen and reconnect are parked. Three modules of up to about 1,500 lines, one module agent each on Opus 5.5
 (cap 200k, no coordinator), at most 2 at a time:
 1. **11a-1** pathing: sim only, files disjoint from 10a-3, so it can run next to it or right after it.
-2. **11b-1** voice announcer: client audio only; it waits for the owner's choice of the voice language (Q7) and of
-   the voice source (below). It can run next to 11a-1 or 11a-2.
+2. **11b-1** voice announcer: client audio only. The owner chose on 2026-11-13: the `espeak` voice ("usa espeak"),
+   in Italian ("e la lingua italiano"). It can run next to 10a-3, 11a-1 or 11a-2.
 3. **11a-2** save migration: after 10a-3 is merged (both change `Rts.Sim/Persistence`).
 Sizes measured before the cut: `Rts.Sim/Pathfinding` is 1,677 lines in 5 files (`NavGrid` 237, `PathSystem` 258,
 `PathSolver` 386, `NavGraph` 388, `PathService` 408) and `Systems/MovementSystem*.cs` 525; the clearance grid has
@@ -1424,8 +1424,8 @@ crosses; two ship groups pass each other in a channel within a time limit; the s
 stay `[NoSave]` and a save → load → continue gives the same hash. Measure: nav build time on 1024 and bench `2000
 300` against main (no regression above 10 %), the map pack still passes `mapexport --scan` checks.
 
-*brief (11b-1) Voice announcer* (G24; purpose "Annunciatore vocale (11b-1)"; waits for the owner: language and
-voice source): spoken lines for the events SupCom announces, on top of today's beeps and toasts: commander under
+*brief (11b-1) Voice announcer* (G24; purpose "Annunciatore vocale (11b-1)"; Italian lines spoken by `espeak`,
+owner 2026-11-13; the on-screen texts stay English): spoken lines for the events SupCom announces, on top of today's beeps and toasts: commander under
 attack, units / base under attack, ally under attack, nuclear launch detected, strategic missile launch detected,
 experimental unit detected, enemy commander destroyed, ally commander destroyed, unit cap reached, mass / energy
 low, upgrade / enhancement / experimental complete, transport and build queue lines only if cheap. A line table
