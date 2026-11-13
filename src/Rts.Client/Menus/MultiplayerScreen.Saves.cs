@@ -19,6 +19,13 @@ public sealed partial class MultiplayerScreen
         }
     }
 
+    /// <summary>The host's Autosave setting (--autosave-every TICKS forces it on with that interval, for tests).</summary>
+    private static void ApplyAutosave(AppHost app, HostSession host)
+    {
+        host.Autosave = AppSettings.Current.Autosave || app.Options.AutosaveEvery > 0;
+        if (app.Options.AutosaveEvery > 0) host.AutosaveIntervalTicks = app.Options.AutosaveEvery;
+    }
+
     /// <summary>A path, or a save name of the saves folder (with or without the extension).</summary>
     private static string ResolveMpSave(string arg)
     {
@@ -49,7 +56,7 @@ public sealed partial class MultiplayerScreen
         try
         {
             host.FactionKnown = id => app.Db.Factions.Get(id) != null;
-            host.Autosave = AppSettings.Current.Autosave;
+            ApplyAutosave(app, host);
             host.OpenLoadLobby(path);
             error = null;
             return new LobbyScreen(app, host);

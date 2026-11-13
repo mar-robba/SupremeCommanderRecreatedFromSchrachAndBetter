@@ -187,7 +187,7 @@ public sealed partial class MultiplayerScreen : IScreen
         {
             var host = HostSession.Start(PlayerName, port);
             host.FactionKnown = id => _app.Db.Factions.Get(id) != null;
-            host.Autosave = AppSettings.Current.Autosave; // (10a-3) the host's setting: mp_autosave_1..3 on every peer
+            ApplyAutosave(_app, host); // (10a-3) the host's setting: mp_autosave_1..3 on every peer
             _app.Go(new LobbyScreen(_app, host, newHost: true));
         }
         catch (Exception e)
