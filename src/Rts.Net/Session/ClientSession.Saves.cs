@@ -87,16 +87,18 @@ public sealed partial class ClientSession
         if (!Directory.Exists(dir)) return (null, null);
         foreach (var f in Directory.EnumerateFiles(dir, "*" + SaveStore.SaveExt).Order(StringComparer.Ordinal))
         {
+            bool sameSave = false;
             try
             {
                 var info = SaveContainer.ReadInfo(f, out var kind);
                 if (kind != SaveFileKind.Save || info.Multiplayer is not { } mp || mp.SaveId != id) continue;
+                sameSave = true;
                 var (_, h) = MultiplayerSaveInfo.ReadStateHash(File.ReadAllBytes(f));
                 if (h == hash) return (Path.GetFullPath(f), null);
-                replace ??= f;
             }
             catch (SaveFormatException) { }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
+            if (sameSave) replace ??= f; // changed or damaged copy of this save: the download replaces it
         }
         return (null, replace);
     }
