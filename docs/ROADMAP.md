@@ -215,7 +215,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G21 | Split screen (two views, one strategic) / second monitor: parked, the owner asked what it means (Q9) | SC1 | L | GameSession, RtsCamera, FrameView, renderers | owner Q9 | parked |
 | G22 | [x] 2026-11-12 (9b-2) Minimap options (resize, zoom, hide/show resources and units) | SC1 | S | Minimap | — | 3 |
 | G23 | [x] 2026-11-12 (9b-1, 9b-2) Visuals: terrain self-shadows, low-poly unit LOD, death animations (aircraft spiral down, ships list and sink, structures collapse), ACU warp-in at start | SC1 | M | Rendering (+ effect event if needed) | — | 2 |
-| G24 | Voice announcer ("Commander under attack", "Nuclear launch detected"): planned, owner yes 2026-11-13; Italian voice made with `espeak` (owner, 2026-11-13) | SC1 | M | Audio + voice assets | owner Q7 | 11 |
+| G24 | [x] 2026-11-13 (11b-1) Voice announcer ("Comandante sotto attacco", "Lancio nucleare rilevato", 19 lines): Italian voice made with `espeak` (owner, 2026-11-13), files in `data/audio/voice/it` | SC1 | M | Audio + voice assets | owner Q7 | 11 |
 | G25 | cut 2026-11-13 (owner Q4: no Italian localization, so no accent font) | — | S | — | — | — |
 | G26 | Map files + curated map pack: save/load maps (heightmap, water, deposits, starts, props), 8-12 named maps with thumbnails, map picker in setup/lobby (host sends the map) | SC1 | M-L | `Rts.Sim/Map`, Menus setup/lobby, `Rts.Net` transfer | G10 | 2 |
 | G27 | Terrain biomes (temperate, desert, tundra, lava, tropical) | SC1 | S-M | TerrainRenderer palettes + generator option | — | 3 |
@@ -636,3 +636,15 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
       - [ ] later: software trig in `DMath` (cross-OS games can desync: libm vs UCRT), reconnecting, observers,
             host migration, saving/loading MP games, lobby pings per player, chat sounds, NAT traversal/relay server
             (today: port forwarding), "Waiting for X" → vote to drop
+- [x] Voice announcer (2026-11-13, wave 11b-1, gap G24; ARCHITECTURE "Voice announcer (11b-1: files)", DEV_GUIDE "Voice
+      announcer"): 19 spoken Italian lines (on-screen text stays English) on top of the beeps and toasts: commander / base /
+      units / ally under attack, structure lost, nuclear launch detected / strategic missile launched, tactical launch
+      detected, enemy experimental detected, enemy / allied commander destroyed, enemy / ally defeated, experimental
+      complete, enhancement complete, upgrade complete, mass / energy low, unit cap. Line table `data/audio/voice/lines.json`
+      (text, priority, cooldown, maxWait) read by the game and by the generator `tools/voice/generate.py` (espeak `it+m3` +
+      ffmpeg trim, band-pass, echo, loudness; 22050 Hz mono WAV, 1.5 MB). Queue: one line at a time, priority first, stale
+      lines dropped, per-line cooldowns. Settings → Audio: Voice on/off + Voice volume. `--voice-test` plays every line.
+      Tests: `VoiceTests` (10).
+      - [ ] later: voice lines for victory / defeat, own commander lost, allied pings; a second language (the layout is
+            per language: add `text.<lang>` + `languages`, regenerate, pick the language in settings); a nicer voice
+            (espeak only; mbrola voices are listed but the mbrola binary is not installed)

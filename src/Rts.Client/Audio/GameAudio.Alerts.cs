@@ -18,6 +18,7 @@ public sealed partial class GameAudio
             Toast(text, color, kind is AlertKind.ConstructionDone or AlertKind.UpgradeDone ? 2.5 : 3);
         }
         if (!_engine.Ready) return;
+        SayAlert(kind, text); // (11b-1) GameAudio.Voice.cs
         double now = Raylib.GetTime();
         var id = AlertSound(kind);
         if (id is SoundId.AlertNotice && now - _lastNotice < 2.5) return; // a burst of finished walls: one chime

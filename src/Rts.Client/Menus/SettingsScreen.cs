@@ -8,7 +8,7 @@ namespace Rts.Client.Menus;
 /// Gameplay (edge scroll, pan / zoom speed, autosave). Everything applies immediately (<see cref="GraphicsSettings"/>)
 /// and is saved when the screen closes. Opened from the pause menu it owns the paused game (<c>returnTo</c>): Back
 /// returns to it.</summary>
-public sealed class SettingsScreen : IScreen
+public sealed partial class SettingsScreen : IScreen
 {
     public static readonly string[] TabNames = ["Audio & Display", "Graphics", "Gameplay", "Minimap", "Keys"];
     /// <summary>Selected tab (kept for the session; <c>--settings-tab</c> sets it for screenshots).</summary>
@@ -64,7 +64,7 @@ public sealed class SettingsScreen : IScreen
         _rowW = panel.Width - Ui.P(40);
         _rowH = Ui.P(30);
         _ry = panel.Y + Ui.P(20);
-        _gap = Ui.P(tab == 1 ? 9 : 14); // Graphics has 8 rows
+        _gap = Ui.P(tab is 0 or 1 ? 9 : 14); // Graphics has 8 rows, Audio 7 (11b-1)
 
         switch (tab)
         {
@@ -101,6 +101,7 @@ public sealed class SettingsScreen : IScreen
             _s.ApplyVolume(_app.Audio.Settings);
             _dirty = true;
         }
+        VoiceRows(); // (11b-1) SettingsScreen.Voice.cs
 
         Row("Fullscreen", "Borderless window covering the whole monitor.");
         bool fs = MenuUi.Toggle(Ui.R(_cx, _ry, Ui.P(90), _rowH), _s.Fullscreen);

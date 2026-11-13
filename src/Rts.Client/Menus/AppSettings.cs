@@ -16,6 +16,9 @@ public sealed class AppSettings
     public float MasterVolume { get; set; } = 0.8f;
     public float SfxVolume { get; set; } = 1f;
     public float MusicVolume { get; set; } = 0.45f;
+    /// <summary>(11b-1) Voice announcer on/off and its volume (AudioSettings.VoiceOn / Voice).</summary>
+    public bool VoiceOn { get; set; } = true;
+    public float VoiceVolume { get; set; } = 0.9f;
     public bool Fullscreen { get; set; }
     public int Width { get; set; } = 1600;
     public int Height { get; set; } = 900;
@@ -119,6 +122,7 @@ public sealed class AppSettings
         MasterVolume = Clamp(MasterVolume, 0f, 1f, d.MasterVolume);
         SfxVolume = Clamp(SfxVolume, 0f, 1f, d.SfxVolume);
         MusicVolume = Clamp(MusicVolume, 0f, 1f, d.MusicVolume);
+        VoiceVolume = Clamp(VoiceVolume, 0f, 1f, d.VoiceVolume);
         ParticleQuality = Math.Clamp(ParticleQuality, 0, GraphicsSettings.ParticleScales.Length - 1);
         TerrainDetail = Math.Clamp(TerrainDetail, -1, 3);
         FpsCap = Nearest(GraphicsSettings.FpsCaps, FpsCap <= 0 ? 0 : FpsCap);
@@ -152,6 +156,14 @@ public sealed class AppSettings
         audio.Master = Math.Clamp(MasterVolume, 0f, 1f);
         audio.Sfx = Math.Clamp(SfxVolume, 0f, 1f);
         audio.Music = Math.Clamp(MusicVolume, 0f, 1f);
+        ApplyVoice(audio);
+    }
+
+    /// <summary>(11b-1) Copies the voice announcer settings (also when --volume overrides the other volumes).</summary>
+    public void ApplyVoice(AudioSettings audio)
+    {
+        audio.VoiceOn = VoiceOn;
+        audio.Voice = Math.Clamp(VoiceVolume, 0f, 1f);
     }
 
     /// <summary>Applies fullscreen (borderless) on/off.</summary>
