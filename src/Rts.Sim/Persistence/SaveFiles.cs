@@ -194,6 +194,15 @@ public static class SaveGame
 
     /// <summary>(11a-2) True when a saved state carries the blueprint id table (state format 2+): its blueprints may
     /// differ from this build's (translated by id); older states load only with the same blueprints.</summary>
+    /// <summary>(11a-2) The blueprint check a menu may run on a file's header (<see cref="SaveContainer.ReadInfo"/>) before
+    /// loading it, the same rule the loader applies: a replay needs exactly these blueprints; a save is not refused here
+    /// (changed blueprints migrate, a blueprint in use that is gone, or an older save without a blueprint table, is
+    /// refused by the loader with the id). Null = go ahead.</summary>
+    public static string? BlueprintMismatch(GameInfo info, SaveFileKind kind, BlueprintDb db) =>
+        kind == SaveFileKind.Replay && info.BlueprintHash != GameInfo.BlueprintHashOf(db)
+            ? "The unit blueprints changed since this replay was made (different game version)"
+            : null;
+
     public static bool StateHasBlueprintTable(byte[] state) => state.Length > 0 && new ByteReader(state).VarU() >= 2;
 
     public static LoadedGame Load(string path, BlueprintDb db) => Decode(ReadFile(path), db);

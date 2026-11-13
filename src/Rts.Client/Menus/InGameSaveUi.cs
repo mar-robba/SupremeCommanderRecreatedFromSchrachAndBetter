@@ -81,9 +81,8 @@ public sealed class InGameSaveUi
         }
         try
         {
-            var info = SaveContainer.ReadInfo(path, out _);
-            if (info.BlueprintHash != GameInfo.BlueprintHashOf(_app.Db))
-                throw new IncompatibleSaveException("The unit blueprints changed since this file was made (different game version)");
+            var info = SaveContainer.ReadInfo(path, out var kind);
+            if (SaveGame.BlueprintMismatch(info, kind, _app.Db) is { } why) throw new IncompatibleSaveException(why); // (11a-2)
         }
         catch (Exception e) when (e is SaveFormatException or IOException or UnauthorizedAccessException)
         {
