@@ -17,6 +17,7 @@
     "BuildTime": 2100
   },
   "Movement": {
+    "MaxSlope": 1.2,
     "Layer": "Land",
     "MaxSpeed": 3.0,
     "Acceleration": 3,

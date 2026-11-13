@@ -162,7 +162,8 @@ public static partial class MovementSystem
         var paths = w.Paths;
         ref var mv = ref u.Move[i];
         var mb = bp.Movement;
-        var grid = paths.GridFor(mb.Layer)!;
+        var grid = paths.GridFor(bp)!; // (11a-1) its layer + slope class
+        int req = PathService.ClearanceOf(bp); // and its radius: the same cells the path search allows
         var pos = u.Pos[i];
         float heading = u.Heading[i];
         float desiredSpeed = 0;
@@ -170,7 +171,7 @@ public static partial class MovementSystem
         bool wantsMove = false;
         float remaining = 0;
         mv.Arrived = false;
-        bool onBlocked = !grid.CanStand(pos);
+        bool onBlocked = !grid.Fits(pos, req);
 
         if (mv.HasGoal)
         {
@@ -211,7 +212,7 @@ public static partial class MovementSystem
         {
             // A structure was placed on this unit (or it was pushed into a blocked cell): walk out.
             int cx = (int)MathF.Floor(pos.X), cz = (int)MathF.Floor(pos.Y);
-            if (grid.FindNearestPassable(cx, cz, 1, 8, out int ex, out int ez))
+            if (grid.FindNearestPassable(cx, cz, req, 8, out int ex, out int ez) || grid.FindNearestPassable(cx, cz, 1, 8, out ex, out ez))
             {
                 var to = new Vector2(ex + 0.5f, ez + 0.5f) - pos;
                 if (to.LengthSquared() > 1e-6f)
@@ -246,11 +247,11 @@ public static partial class MovementSystem
         var newPos = pos + vel * dt;
 
         bool blocked = false;
-        if (!onBlocked && !grid.CanStand(newPos))
+        if (!onBlocked && !grid.Fits(newPos, req)) // separation/steering never push a unit where it does not fit
         {
             var sx = new Vector2(newPos.X, pos.Y);
             var sz = new Vector2(pos.X, newPos.Y);
-            newPos = grid.CanStand(sx) ? sx : grid.CanStand(sz) ? sz : pos;
+            newPos = grid.Fits(sx, req) ? sx : grid.Fits(sz, req) ? sz : pos;
             blocked = true;
         }
         newPos = w.Terrain.Clamp(newPos);
