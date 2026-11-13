@@ -224,7 +224,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G30-G33 | removed from the plan 2026-11-11 (owner: improving the AI is no longer a goal; the AI of wave 5 stays). They were: AI personalities, AI team play, AI use of the new mechanics, AI think cost on 1024 | — | — | — | — | — |
 | G34 | [x] 2026-11-12 (10a-1) Cross-OS determinism: software trig/exp (`DMath`) in all sim code + golden-value tests (Linux↔Windows games) | — | M | `Rts.Sim` wide (mechanical) | — | 2 (1 if Windows players) |
 | G35 | [x] 2026-11-12 (10a-2) Observers (lobby slot, no fog, sends nothing) | SC1 | S | `Rts.Net/Lobby`, Net menus | — | 2 |
-| G36 | Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
+| G36 | [x] 2026-11-13 (10a-3) Multiplayer save/load (host saves, all reload with the same lobby) | SC1 | M | `Rts.Net`, Persistence, Net menus | — | 2 |
 | G37 | Reconnect to a running game (host streams a save + command tail) | FAF | M | `Rts.Net` | G36 | 3 |
 | G38 | cut 2026-11-13 (owner Q6: online only on the LAN; NAT traversal and relay server out of the plan) | SC1 | — | — | owner Q6 | — |
 | G39 | [x] 2026-11-12 (10a-2) Vote to drop, per-player lobby pings, chat sounds (host migration: later, below) | — | S-M | `Rts.Net`, Net menus | — | 3 |
@@ -324,6 +324,15 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
   - [ ] later: host migration (the host can't be dropped by vote; its loss still ends the game for everybody);
     observers joining a game already running (needs G37 catch-up); an observer that loads late only catches up at the
     normal sim speed (no fast-forward); dedicated sounds for chat/join (today the click/confirm/error UI cues).
+  - [x] 10a-3 Multiplayer save/load (2026-11-13; ARCHITECTURE "Multiplayer save/load (10a-3)"): any player asks (Esc →
+    Save Game, F5), the host orders a tick, every peer writes the same save (id + state hash) with the lobby; Multiplayer
+    → Load Saved Game / `--host --load-mp FILE` opens a load lobby (saved slots claimed by name, Take, "AI plays" for a
+    missing player, fixed faction/team/colour); a missing or changed copy is sent by the host in chunks; lockstep resumes
+    at the saved tick; host autosave `mp_autosave_1..3`; protocol 6; `Rts.Bench -- mp ... save=TICK`.
+  - [ ] later: in the load lobby the map panel and game options still look editable for the host (the net layer
+    ignores the changes: show them read-only); a GUI client joining a load lobby, a save on a map file and a save while
+    a peer resigned are tested headless only or not at all; a save from another build of `Rts.Sim.dll` can't be resumed
+    (by design, no migration: 11a-2).
 - 10b Keybindings & client leftovers (G19; G21 if the owner wants it, else G11 client items and G20/G22 leftovers).
   Owns Hotkeys.cs, new KeyBindingsScreen, the listed client files. Tests: rebinding + clash tests; screenshots.
   - [x] 2026-11-12 (10b-1) Keybinding editor: Settings → Keys (capture with modifiers, rows rebind whole, clash

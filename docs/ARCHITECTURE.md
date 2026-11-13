@@ -1209,6 +1209,36 @@ build them. Tests: `MissingUnitsRosterTests` (roles, reachable from the commande
 - Tests: `tests/Rts.Net.Tests/ObserverTests.cs` (codec, lobby moves, full game, pings, late observer in sync, resign,
   votes); `Rts.Bench -- mp ... obs=N`.
 
+## Multiplayer save/load (10a-3: `Rts.Net/Session/*Saves.cs`, `Rts.Net/Lobby/LoadLobby.cs`, `Rts.Sim/Persistence/MultiplayerSaveInfo.cs`, `Menus/*Saves.cs`, `Menus/LobbyScreen.Load.cs`, `Menus/NetLoadListScreen.cs`)
+
+- **Order**: any peer asks (`NetGame.RequestSave(name)`: Esc → Save Game, F5 = `mp_quicksave`), the host decides
+  (`HostSession.OrderSave`). Refused while desynced, while another save is pending, or when the host is not a live turn
+  player and fewer than 2 live turn players remain (a lone client is gated by nobody). The save tick is
+  T = 1 + the highest turn the host holds from anybody (its own included), computed and broadcast under the session
+  gate, so no peer can step past T before the order arrives. A paused game steps up to T (`NetGame.HoldForPause`).
+- **Same save**: at T every peer (players and observers) captures the world on its sim thread (`NetGame.CaptureSave`
+  = `GameRecording.CaptureForNet`: replay so far + this peer's camera), writes `<SaveDir>/<name>.rtssave` on a worker
+  and reports Hash64 of the state bytes (`SaveDone`); the host compares them and broadcasts `SaveResult` ("Game
+  saved", or a system chat line naming who differs / failed, timeout 30 s). Identity = save id + state hash; headers
+  differ per peer (camera, `SavedBy`).
+- **Header**: `GameInfo.Multiplayer` (`MultiplayerSaveInfo`: SaveId, StateHash, Tick, the encoded lobby, SavedBy +
+  SavedBySlot, Auto, Humans). Single-player saves keep it null; the save list tags these files MULTIPLAYER.
+- **Load lobby**: Multiplayer → Load Saved Game (`NetSession.ListMultiplayerSaves`) or `--host [port] --load-mp FILE`
+  → `HostSession.OpenLoadLobby(path)` (refuses another `CurrentSimBuild`, a missing map file). `LobbyState.ForLoad`:
+  factions, teams, colours and options come from the save (only On drop can change); saved humans become Open slots with
+  `SavedName`, taken by a joiner of that name (case-insensitive; the host prefers `SavedBySlot`), "Take", or handed to
+  the AI by the host ("AI plays": an AI takeover command at StartTick+1). `Problem()` blocks the start while a saved slot
+  is free or a person's copy isn't ready.
+- **Transfer**: each client looks for its copy by save id + recomputed state hash (`ClientSession.Saves.cs`); else (or a
+  changed copy) the host sends the file in chunks like a map file (`SaveTransfer`, progress `SaveProgress` in the slot),
+  verified before it is stored.
+- **Resume**: `NetSession.LoadSavedGame` checks id + hash + tick and decodes; every peer reports its loaded state hash,
+  Go as usual, lockstep resumes at T. The camera is restored only from a file this peer wrote (`WroteSave`); the replay
+  of the loaded game continues the saved replay.
+- **Autosave**: the host's Autosave setting (`HostSession.Autosave`, `--autosave-every TICKS` forces it) orders
+  `mp_autosave_1..3` every 3000 ticks, the same order path (every peer writes it).
+- Checks: `tests/Rts.Net.Tests/SaveLoadTests.cs`; `Rts.Bench -- mp ... save=TICK` (DEV_GUIDE "Multiplayer checks").
+
 ## Voice announcer (11b-1: files)
 
 Spoken lines for the events SupCom announces (gap G24). Owner decisions (2026-11-13): voice made with `espeak`, spoken

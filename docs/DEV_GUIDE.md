@@ -203,6 +203,14 @@ Things learned while building the project that are not about how a system works 
 - Internet play: the host forwards TCP port 47624 (or the `--host` port) on the router to its machine and tells the
   others its public IP; LAN games appear by themselves (UDP 47625, same subnet). Firewalls must allow both.
 - Cross-OS games can desync until the sim trig is software (ARCHITECTURE "Multiplayer", float determinism review).
+- (10a-3) Save/load: `Rts.Bench -- mp 3 600 256 1 0 save=300` orders a save at tick 300 (random commands stop there),
+  runs on, tears the session down, opens a load lobby on the host's copy, rejoins the clients by name (the last one with
+  an empty save folder: the host sends the file) and compares the loaded game's hashes with the uninterrupted run (exit 1
+  on a mismatch). Temp folders only; never write test saves into the real `saves/`.
+- A multiplayer save is refused by another build of `Rts.Sim.dll` (`CurrentSimBuild` = its MVID): after running tests,
+  rebuild the client before a `--load-mp` screenshot (its bin may hold a stale copy). GUI checks:
+  `--host 47699 --load-mp FILE --name Host` (load lobby), `--host --players 2 --autostart --save-at 5` (toasts),
+  `--autosave-every 30` (mp_autosave_N); delete those files from the worktree's `saves/` by full path afterwards.
 
 ## Perf check (before finishing a branch)
 
