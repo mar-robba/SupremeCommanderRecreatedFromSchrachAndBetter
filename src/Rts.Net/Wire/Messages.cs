@@ -59,12 +59,27 @@ public enum MsgType : byte
     LobbyPings = 25,
     /// <summary>(10a-2) C→H: varu last tick: a defeated player stops sending turns after it and stays as an observer.</summary>
     Resign = 26,
+    /// <summary>(10a-3) C→H: str save name (a player asks the host to save the game).</summary>
+    SaveRequest = 27,
+    /// <summary>(10a-3) H→C: str save id, varu tick, str name, u8 auto, str by (every peer saves after that tick) — or,
+    /// with tick 0, str reason (the host refused a request of this client).</summary>
+    SaveOrder = 28,
+    /// <summary>(10a-3) C→H: str save id, u8 ok, u64 state hash, str error (this peer wrote its file).</summary>
+    SaveDone = 29,
+    /// <summary>(10a-3) H→C: str save id, u8 ok, str name, str text (the outcome for everybody).</summary>
+    SaveResult = 30,
+    /// <summary>(10a-3) C→H: str save id, u64 state hash (load lobby: the client lacks the save: send it).</summary>
+    SaveFileRequest = 31,
+    /// <summary>(10a-3) H→C: u64 state hash, varu offset, varu total bytes, block data (a piece of the save file).</summary>
+    SaveChunk = 32,
+    /// <summary>(10a-3) C→H: u64 state hash, u8 state (0 receiving / checking, 1 have it, 2 failed), varu bytes received.</summary>
+    SaveStatus = 33,
 }
 
 /// <summary>Builds message frames.</summary>
 public static class Msg
 {
-    public const uint ProtocolVersion = 5; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer; 4 (10a-1): software DMath (other sim results); 5 (10a-2): observers, drop votes, lobby pings, resign
+    public const uint ProtocolVersion = 6; // 2: LobbyOptions.Game (game options); 3 (8b-3): map files + biome, map transfer; 4 (10a-1): software DMath (other sim results); 5 (10a-2): observers, drop votes, lobby pings, resign; 6 (10a-3): multiplayer save/load (save orders, load lobby, save transfer)
 
     [ThreadStatic] private static ByteWriter? _w;
 

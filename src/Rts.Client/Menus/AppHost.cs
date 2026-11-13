@@ -91,6 +91,7 @@ public sealed class AppHost : IDisposable
         FlowTest = Options.FlowTest, AutoStart = Options.AutoStart,
         Audio = Options.Audio, VolumeGiven = Options.VolumeGiven, NoFog = Options.NoFog, Exec = Options.Exec,
         NetVoteDemo = Options.NetVoteDemo, // (10a-2)
+        SaveAt = Options.SaveAt, AutosaveEvery = Options.AutosaveEvery, // (10a-3) net games: --save-at, --autosave-every
     };
 
     public void StartGame(GameConfig cfg, ClientOptions opt) => Go(new LoadingScreen(this, cfg.Clone(), opt));

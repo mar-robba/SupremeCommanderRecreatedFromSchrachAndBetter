@@ -28,6 +28,12 @@ public sealed class NetSlot
     public bool MapReady = true;
     /// <summary>(8b-3) Map download progress 0..100 (display only).</summary>
     public int MapProgress;
+    /// <summary>(10a-3) Load lobby: the name of the human who played this slot in the saved game ("" = not a saved human slot).
+    /// An unclaimed saved slot is Open; an AI that takes over a missing human is AI with this name set.</summary>
+    public string SavedName = "";
+    /// <summary>(10a-3) Load lobby: the person has the save file (host and AIs always); progress 0..100 while downloading.</summary>
+    public bool SaveReady = true;
+    public int SaveProgress;
 
     /// <summary>The slot becomes an army (human or AI).</summary>
     public bool IsArmy => Kind is NetSlotKind.Human or NetSlotKind.AI;
@@ -46,6 +52,9 @@ public sealed class NetSlot
         w.U8(Ready ? (byte)1 : (byte)0);
         w.U8(MapReady ? (byte)1 : (byte)0); // (8b-3)
         w.U8((byte)Math.Clamp(MapProgress, 0, 100));
+        w.Str(SavedName); // (10a-3) protocol 6
+        w.U8(SaveReady ? (byte)1 : (byte)0);
+        w.U8((byte)Math.Clamp(SaveProgress, 0, 100));
     }
 
     public static NetSlot Read(ByteReader r) => new()
@@ -60,6 +69,9 @@ public sealed class NetSlot
         Ready = r.U8() != 0,
         MapReady = r.U8() != 0,
         MapProgress = Math.Min(r.U8(), (byte)100),
+        SavedName = Clip(r.Str(), 24),
+        SaveReady = r.U8() != 0,
+        SaveProgress = Math.Min(r.U8(), (byte)100),
     };
 
     internal static string Clip(string? s, int max) => s == null ? "" : s.Length <= max ? s : s[..max];
@@ -158,7 +170,7 @@ public sealed class LobbyOptions
 }
 
 /// <summary>The whole lobby (host authoritative: clients receive a full copy after every change).</summary>
-public sealed class LobbyState
+public sealed partial class LobbyState
 {
     public const int MaxSlots = 8;
     /// <summary>(10a-2) Observers at most (next to the slots; they are not armies and send no turns).</summary>
@@ -169,6 +181,9 @@ public sealed class LobbyState
     public LobbyOptions Options = new();
     /// <summary>Incremented by the host at every change.</summary>
     public int Version;
+    /// <summary>(10a-3) Set in a load lobby: the multiplayer save being resumed (slots, options fixed by it).</summary>
+    public LoadInfo? Load;
+    public bool IsLoad => Load != null;
 
     public static LobbyState CreateDefault(string hostName)
     {
@@ -184,7 +199,7 @@ public sealed class LobbyState
 
     public LobbyState Clone()
     {
-        var c = new LobbyState { Options = Options.Clone(), Version = Version };
+        var c = new LobbyState { Options = Options.Clone(), Version = Version, Load = Load?.Clone() };
         foreach (var s in Slots) c.Slots.Add(s.Clone());
         foreach (var o in Observers) c.Observers.Add(o.Clone());
         return c;
@@ -205,6 +220,7 @@ public sealed class LobbyState
     /// <summary>Why the host can't start yet (null = it can).</summary>
     public string? Problem()
     {
+        if (Load != null && LoadProblem() is string lp) return lp; // (10a-3) LoadLobby.cs
         var armies = Slots.Where(s => s.IsArmy).ToList();
         if (armies.Count < 2) return "At least two players are needed";
         if (armies.All(s => s.Team > 0 && s.Team == armies[0].Team)) return "Everybody is on the same team";
@@ -225,6 +241,8 @@ public sealed class LobbyState
         foreach (var s in Slots) s.Write(w);
         w.VarU((ulong)Observers.Count); // (10a-2) protocol 5
         foreach (var o in Observers) o.Write(w);
+        w.U8(Load != null ? (byte)1 : (byte)0); // (10a-3) protocol 6
+        Load?.Write(w);
     }
 
     public static LobbyState Read(ByteReader r)
@@ -239,6 +257,7 @@ public sealed class LobbyState
             o.Kind = NetSlotKind.Observer;
             l.Observers.Add(o);
         }
+        if (r.U8() != 0) l.Load = LoadInfo.Read(r);
         return l;
     }
 }
@@ -276,7 +295,7 @@ public sealed class LobbyRequest
 /// The start message: the final lobby + the initial input delay. Every peer derives the same armies from it:
 /// army slots (human or AI) in slot order are armies 0..n-1, human slots in slot order are the lockstep turn players.
 /// </summary>
-public sealed class GameStart
+public sealed partial class GameStart
 {
     public LobbyState Lobby = new();
     public int Delay = 2;

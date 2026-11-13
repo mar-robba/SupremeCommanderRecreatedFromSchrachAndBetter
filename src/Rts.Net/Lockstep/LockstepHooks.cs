@@ -34,7 +34,7 @@ public interface ITurnSink
 /// </list>
 /// Threads: Hold/BeforeStep/AfterStep on the sim thread; AddTurn/Drop/Start on network threads (locked).
 /// </summary>
-public sealed class LockstepHooks : ITickHooks
+public sealed partial class LockstepHooks : ITickHooks
 {
     public const int HashInterval = ReplayLog.HashInterval;
     public const int MaxDelay = 30;
@@ -240,6 +240,7 @@ public sealed class LockstepHooks : ITickHooks
             _tickCommands[i].Sequence = i + 1;
             _tickCommands[i].ExecuteTick = next;
         }
+        InjectCommands(next); // (10a-3) LockstepHooks.Saves.cs: AI takeovers of a loaded game
         TicksStepped++;
         return _inner != null ? _inner.BeforeStep(sim, _tickCommands) : _tickCommands;
     }
@@ -248,6 +249,7 @@ public sealed class LockstepHooks : ITickHooks
     {
         _inner?.AfterStep(sim);
         int t = sim.World.Tick;
+        CheckSaves(sim, t); // (10a-3) LockstepHooks.Saves.cs
         if (t % HashInterval != 0) return;
         ulong h = sim.StateHash();
         _sink.SendHash(t, h);

@@ -38,10 +38,25 @@ public sealed class HeadlessPeer : IDisposable
     {
         Session = session;
         Game = session.Game ?? throw new InvalidOperationException("no game started");
-        Sim = NetGameSetup.CreateSimulation(db, Game.Start, session.MapDir); // (8b-3) data/maps or the session folder
+        GameInfo info;
+        if (Game.Start.Lobby.IsLoad) // (10a-3) a loaded multiplayer save: this peer's copy (found or downloaded)
+        {
+            var g = NetSession.LoadSavedGame(db, Game.Start, session.SavePath ?? throw new InvalidOperationException("the save is not here"), session.MapDir);
+            Sim = g.Sim;
+            info = g.Info;
+            Recorder = new ReplayRecorder(g.Replay);
+        }
+        else
+        {
+            var map = NetGameSetup.LoadMap(Game.Start, session.MapDir); // (8b-3) data/maps or the session folder
+            Sim = NetGameSetup.CreateSimulation(db, Game.Start, map);
+            info = GameInfo.ForSkirmish(NetGameSetup.ToSkirmish(Game.Start, map), Sim, Math.Max(0, Game.LocalArmy), false);
+            Recorder = new ReplayRecorder();
+        }
+        info.Multiplayer = null;
+        Game.CaptureSave = (sim, name) => SaveGame.Capture(sim, info, Recorder.Started ? Recorder : null, name); // (10a-3)
         ulong hash = Sim.StateHash();
         Runner = new SimRunner(Sim);
-        Recorder = new ReplayRecorder();
         Hooks = Game.CreateHooks(Recorder);
         Hooks.HashComputed = (t, h) => Hashes.Add((t, h));
         Runner.Hooks = Hooks;
@@ -59,7 +74,7 @@ public sealed class HeadlessPeer : IDisposable
             {
                 while (!_stop && Sim.World.Tick < ticks)
                 {
-                    if (Hooks.Hold(Sim) || Game.Paused)
+                    if (Hooks.Hold(Sim) || Game.HoldForPause) // (10a-3) a pending save runs a paused game up to its tick
                     {
                         held.Start();
                         Thread.Sleep(1);

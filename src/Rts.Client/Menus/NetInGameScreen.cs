@@ -66,6 +66,7 @@ public sealed partial class NetInGameScreen : IScreen
     {
         _frames++;
         HandleEvents();
+        SaveFrame(); // (10a-3) NetInGameScreen.Saves.cs
         double now = Raylib.GetTime();
 
         switch (_state)
@@ -92,7 +93,7 @@ public sealed partial class NetInGameScreen : IScreen
                 CheckOutcome();
                 break;
             case State.Menu:
-                if (MenuUi.Key(KeyboardKey.Escape)) _state = State.Playing;
+                if (!SaveDialogOpen && MenuUi.Key(KeyboardKey.Escape)) _state = State.Playing; // (10a-3) Esc closes the save dialog first
                 break;
             case State.Ending:
                 _endTimer += dt;
@@ -122,7 +123,7 @@ public sealed partial class NetInGameScreen : IScreen
         }
         switch (_state)
         {
-            case State.Menu: DrawMenu(); break;
+            case State.Menu: if (SaveDialogOpen) DrawSaveDialog(); else DrawMenu(); break;
             case State.Ending: DrawEndingBanner(); break;
             case State.Stats: DrawStats(); break;
         }
@@ -159,6 +160,9 @@ public sealed partial class NetInGameScreen : IScreen
                     break;
                 case DisconnectedEvent d:
                     if (!_net.IsHost) Toasts.Show($"Connection to the host lost ({d.Reason}): the game continues offline", error: true);
+                    break;
+                default:
+                    HandleSaveEvent(e); // (10a-3)
                     break;
             }
         }
@@ -301,7 +305,7 @@ public sealed partial class NetInGameScreen : IScreen
         MenuUi.BeginFrame();
         MenuUi.Dim(110);
         float w = Ui.P(320), bh = Ui.P(42), gap = Ui.P(10);
-        float h = Ui.P(64) + 4 * (bh + gap) + Ui.P(10);
+        float h = Ui.P(64) + 5 * (bh + gap) + Ui.P(10);
         var p = Ui.R((Ui.Sw - w) * 0.5f, (Ui.Sh - h) * 0.42f, w, h);
         Ui.Panel(p);
         Ui.TextCentered("GAME MENU", Ui.R(p.X, p.Y + Ui.P(12), p.Width, Ui.P(30)), Ui.F(22), Ui.TextColor, true);
@@ -311,10 +315,12 @@ public sealed partial class NetInGameScreen : IScreen
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, _game.Paused ? "Unpause Game" : "Pause Game", !_game.IsObserver)) _game.RequestSpeed(_game.Speed, !_game.Paused);
         r.Y += bh + gap;
+        if (MenuUi.BigButton(r, "Save Game", _s.Recording != null)) OpenSaveDialog(); // (10a-3) a request to the host
+        r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Leave Game")) _app.ToMainMenu();
         r.Y += bh + gap;
         if (MenuUi.BigButton(r, "Quit to Desktop")) _app.QuitRequested = true;
-        Ui.Text("Multiplayer: the game keeps running while this menu is open.", p.X, p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
+        Ui.Text("Multiplayer: the game keeps running while this menu is open. F5 saves for everybody.", p.X, p.Y + p.Height + Ui.P(8), Ui.F(10.5f), Ui.TextFaint);
         Ui.DrawTooltip();
     }
 

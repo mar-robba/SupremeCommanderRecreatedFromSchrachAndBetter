@@ -61,6 +61,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
     public void SetSlotKind(int slot, NetSlotKind kind)
     {
         if (kind == NetSlotKind.Human) return;
+        if (IsLoadLobby) { SetLoadSlotKind(slot, kind); return; } // (10a-3) HostSession.Saves.cs
         NetConnection? kick = null;
         lock (Gate)
         {
@@ -89,6 +90,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         lock (Gate)
         {
             if (Phase != NetPhase.Lobby || (uint)slot >= (uint)LobbyRef.Slots.Count) return;
+            if (LobbyRef.IsLoad) return; // (10a-3) the saved slots keep their settings
             var s = LobbyRef.Slots[slot];
             if (!s.IsArmy || (s.Kind == NetSlotKind.Human && s.PlayerId != 0)) return;
             if (team >= 0) s.Team = Math.Min(team, 4);
@@ -105,6 +107,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
     /// <summary>Changes the game options (everybody's ready flag is reset).</summary>
     public void SetOptions(LobbyOptions o)
     {
+        if (IsLoadLobby) { SetLoadOptions(o); return; } // (10a-3) HostSession.Saves.cs
         var map = ResolveMap(o); // (8b-3) file I/O outside the lock
         lock (Gate)
         {
@@ -226,6 +229,9 @@ public sealed partial class HostSession : NetSession, ITurnSink
                 case MsgType.MapRequest or MsgType.MapStatus: // (8b-3) HostSession.Maps.cs
                     OnMapMessage(c, type, r);
                     break;
+                case MsgType.SaveRequest or MsgType.SaveDone or MsgType.SaveFileRequest or MsgType.SaveStatus: // (10a-3) HostSession.Saves.cs
+                    OnSaveMessage(c, type, r);
+                    break;
                 default:
                     throw new ProtocolException($"unexpected {type}");
             }
@@ -254,6 +260,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         for (int k = 2; LobbyRef.People.Any(s => s.Name == unique); k++) unique = $"{name} {k}";
         c.Name = unique;
         c.PlayerId = _nextPlayerId++;
+        if (LobbyRef.IsLoad) { SeatInLoadLobby(c, unique, observe); return; } // (10a-3) HostSession.Saves.cs
         int slot = LobbyRef.FirstOpenSlot();
         if (asObserver)
         {
@@ -283,6 +290,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
         lock (Gate)
         {
             if (Phase != NetPhase.Lobby) return;
+            if (LobbyRef.IsLoad) { LoadRequest(playerId, q); return; } // (10a-3) HostSession.Saves.cs
             if (q.Observe >= 0) // (10a-2) to / from the observers
             {
                 if (MoveObserver(playerId, q.Observe == 1, q.MoveToSlot)) Changed();
@@ -482,6 +490,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
             if (Phase == NetPhase.Closed) return;
             conns = _conns.ToList();
             PumpMapUploads(); // (8b-3) throttled uploads continue here
+            PumpSaves(); // (10a-3) save timeouts, autosave, save uploads
         }
         bool second = ++_monitorTicks % 4 == 0;
         foreach (var c in conns)
@@ -524,6 +533,7 @@ public sealed partial class HostSession : NetSession, ITurnSink
 
     private void Changed()
     {
+        StampSaves(); // (10a-3) HostSession.Saves.cs
         LobbyRef.Version++;
         PublishLobby();
         var w = new ByteWriter(512);

@@ -101,6 +101,23 @@ public sealed class GameRecording : ITickHooks
         });
     }
 
+    // ------------------------------------------------------------------ (10a-3) multiplayer saves
+
+    private string? _netClientData;
+
+    /// <summary>Render thread: the client data (camera) the next multiplayer save of this peer writes.</summary>
+    public void SetNetClientData(ClientGameData data) => Volatile.Write(ref _netClientData, data.ToJson());
+
+    /// <summary>Sim thread (<c>NetGame.CaptureSave</c>): captures the world, the replay so far and this peer's client
+    /// data for a multiplayer save; the net layer fills the multiplayer header, encodes and writes the file.</summary>
+    public SaveGame.Captured CaptureForNet(Simulation sim, string name)
+    {
+        var info = _info.Clone();
+        info.Multiplayer = null;
+        info.ClientData = Volatile.Read(ref _netClientData) ?? info.ClientData;
+        return SaveGame.Capture(sim, info, _rec.Started ? _rec : null, name);
+    }
+
     /// <summary>
     /// End of the session (render thread, runner already stopped): runs pending runner jobs (a save requested just
     /// before quitting) and writes the final replay on a worker.

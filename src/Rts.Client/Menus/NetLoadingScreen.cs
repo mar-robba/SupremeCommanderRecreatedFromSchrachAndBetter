@@ -14,13 +14,13 @@ namespace Rts.Client.Menus;
 /// the state hash to the host. The runner is held until the host's Go (everybody loaded with equal hashes) →
 /// <see cref="NetInGameScreen"/>. Abort (a hash differs, somebody left) → back to the lobby.
 /// </summary>
-public sealed class NetLoadingScreen : IScreen
+public sealed partial class NetLoadingScreen : IScreen
 {
     private readonly AppHost _app;
     private readonly NetSession _s;
     private readonly NetGame _game;
     private readonly ClientOptions _opt;
-    private readonly Task<(Simulation sim, ulong hash, Rts.Sim.Map.MapFile? map)> _task;
+    private readonly Task<(Simulation sim, ulong hash, Rts.Sim.Map.MapFile? map, Rts.Sim.Persistence.LoadedGame? loaded)> _task;
     private GameSession? _session;
     private bool _handedOff, _shownFinal, _goSeen; // _goSeen: (10a-2) an observer may get Go before its session exists
     private float _time;
@@ -33,9 +33,10 @@ public sealed class NetLoadingScreen : IScreen
         _opt = app.MenuGameOptions();
         _task = Task.Run(() =>
         {
+            if (game.Start.Lobby.IsLoad) return LoadSaved(app, session, game); // (10a-3) NetLoadingScreen.Saves.cs
             var map = NetGameSetup.LoadMap(game.Start, session.MapDir); // (8b-3) null = generated map
             var sim = NetGameSetup.CreateSimulation(app.Db, game.Start, map);
-            return (sim, sim.StateHash(), map);
+            return (sim, sim.StateHash(), map, (Rts.Sim.Persistence.LoadedGame?)null);
         });
     }
 
@@ -53,7 +54,7 @@ public sealed class NetLoadingScreen : IScreen
         float w = Ui.P(560), h = Ui.P(230);
         var p = Ui.R((sw - w) * 0.5f, (sh - h) * 0.45f, w, h);
         Ui.Panel(p);
-        Ui.PanelTitle(p, "Starting multiplayer game");
+        Ui.PanelTitle(p, _game.Start.Lobby.IsLoad ? "Loading multiplayer save" : "Starting multiplayer game");
         float x = p.X + Ui.P(22), y = p.Y + Ui.P(36);
         var o = _game.Start.Lobby.Options;
         Ui.Text(o.HasMapFile ? $"{o.MapName} · {o.MapSize / 51.2f:0} km · {Rts.Sim.Map.Biomes.Name(o.EffectiveBiome)}"
@@ -81,7 +82,7 @@ public sealed class NetLoadingScreen : IScreen
             if (MenuUi.BigButton(cancel, "Leave")) _app.Go(new MultiplayerScreen(_app, "The game could not be created"));
             return;
         }
-        string stage = !_task.IsCompleted ? "Generating terrain and deposits…"
+        string stage = !_task.IsCompleted ? (_game.Start.Lobby.IsLoad ? "Reading the save…" : "Generating terrain and deposits…")
             : _session == null ? "Preparing graphics…" : "Waiting for the other players…";
         MenuUi.Spinner(new Vector2(x + Ui.P(10), y + Ui.P(10)), Ui.P(9), Ui.Accent);
         Ui.Text(stage, x + Ui.P(30), y + Ui.P(2), Ui.F(13), Ui.TextColor);
@@ -95,11 +96,12 @@ public sealed class NetLoadingScreen : IScreen
         if (_task.IsCompletedSuccessfully && _session == null && _time > 0.3f)
         {
             if (!_shownFinal) { _shownFinal = true; return; }
-            var (sim, hash, map) = _task.Result;
+            var (sim, hash, map, loaded) = _task.Result;
             var start = _game.Start;
             var cfg = NetGameConfig.From(start, _s.PlayerId);
             int army = Math.Max(0, _game.LocalArmy); // (10a-2) an observer (-1) views army 0's start, then the whole map
-            var rec = NetGameConfig.Recording(start, cfg, sim, army, map);
+            var rec = loaded != null ? LoadedRecording(loaded, cfg, army) : NetGameConfig.Recording(start, cfg, sim, army, map);
+            _game.CaptureSave = rec.CaptureForNet; // (10a-3) this peer's file of a multiplayer save
             _session = new GameSession(_app.Db, sim, cfg, army, _opt, _app.Audio, rec,
                 wrapHooks: inner => _game.CreateHooks(inner));
             _game.AttachRunner(_session.Runner);

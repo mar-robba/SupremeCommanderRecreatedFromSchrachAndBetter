@@ -44,6 +44,9 @@ public sealed class GameInfo
     public string? MapName;
     /// <summary>(8b-3) Visual biome id (<see cref="Biomes.Id"/>; null = temperate). Never affects the simulation.</summary>
     public string? Biome;
+    /// <summary>(10a-3) Set in multiplayer saves only (lobby, save id, shared state hash); not written when null.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MultiplayerSaveInfo? Multiplayer;
 
     /// <summary>Save slot name / replay title.</summary>
     public string Name = "";

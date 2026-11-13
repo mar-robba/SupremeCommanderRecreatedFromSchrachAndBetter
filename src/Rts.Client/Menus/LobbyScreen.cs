@@ -81,7 +81,7 @@ public sealed partial class LobbyScreen : IScreen
 
         float x0 = Ui.P(48), y0 = Ui.P(30);
         string where = _host != null ? $"Hosting on port {_host.Port}" : $"Connected to {_client!.HostEndpoint} · ping {_client.PingMs:0} ms";
-        MenuUi.ScreenTitle("Multiplayer Lobby", where, x0, y0);
+        MenuUi.ScreenTitle(lobby.IsLoad ? "Multiplayer Lobby · Load Game" : "Multiplayer Lobby", where, x0, y0);
 
         float top = y0 + Ui.P(84);
         float bottomBar = Ui.Sh - Ui.P(62);
@@ -94,7 +94,8 @@ public sealed partial class LobbyScreen : IScreen
         float optW = MathF.Min(Ui.P(400), leftW * 0.58f);
         var optPanel = Ui.R(x0, lowY, optW, MathF.Min(lowH, GameOptionsBlock.Height(2)));
         var chatPanel = Ui.R(x0 + optW + Ui.P(14), lowY, leftW - optW - Ui.P(14), lowH);
-        DrawPlayers(playersPanel, lobby);
+        if (lobby.IsLoad) DrawLoadPlayers(playersPanel, lobby); // (10a-3) LobbyScreen.Load.cs
+        else DrawPlayers(playersPanel, lobby);
         DrawMap(mapPanel, lobby);
         DrawGameOptions(optPanel, lobby);
         DrawChat(chatPanel);
