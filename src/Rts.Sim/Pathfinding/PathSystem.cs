@@ -63,7 +63,7 @@ public static class PathSystem
         public PathResult[] Results = [];
         public PathResult[] FollowerResults = [];
         public bool[] FollowerOk = [];
-        public readonly bool[] GraphNeeded = new bool[7 * (NavGrid.MaxClearance + 1)];
+        public readonly bool[] GraphNeeded = new bool[PathService.GridSlots * PathService.GraphStride];
     }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<SimWorld, State> States = new();
@@ -95,7 +95,7 @@ public static class PathSystem
                 if (bp.IsStructure || layer is MotionLayer.Air or MotionLayer.None || !u.IsComplete(i)) continue;
                 ref var mv = ref u.Move[i];
                 if (!mv.HasGoal) { mv.PathRequestTick = 0; continue; }
-                var grid = svc.GridFor(layer)!;
+                var grid = svc.GridFor(bp)!;
                 int req = PathService.ClearanceOf(bp);
                 var pos = u.Pos[i];
                 if (!NeedsPath(svc, i, ref mv, pos, grid, req)) { mv.PathRequestTick = 0; continue; }
@@ -104,7 +104,7 @@ public static class PathSystem
                 {
                     Unit = i,
                     RequestTick = mv.PathRequestTick,
-                    Graph = PathService.GraphIndex(layer, req),
+                    Graph = svc.GraphIndexOf(bp),
                     StartCell = grid.CellOf(pos),
                     GoalCell = grid.CellOf(mv.Goal),
                     NoShare = mv.PathNoShare,

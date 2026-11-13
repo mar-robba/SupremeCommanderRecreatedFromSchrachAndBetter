@@ -8,18 +8,27 @@ using Rts.Sim.World;
 namespace Rts.Sim.Pathfinding;
 
 /// <summary>
-/// Clearance grid of one surface motion layer (Land, Hover, Amphibious, Water; Sub shares Water).
-/// <see cref="Clear"/>[cell] = Chebyshev distance (in cells) to the nearest cell that is blocked for this layer
-/// (terrain via <see cref="Terrain.CanTraverse"/>, structures via <see cref="OccupancyGrid"/>, the map border),
-/// capped at <see cref="MaxClearance"/>. 0 = blocked. A unit needing clearance k may stand in cells with Clear &gt;= k
-/// (k = 1: the cell itself is free, k = 2: the 3x3 block around it is free, ...).
+/// Clearance grid of one surface motion layer (Land, Hover, Amphibious, Water; Sub shares Water) and one slope class.
+/// (11a-1) <see cref="Clear"/>[cell] = squared Euclidean distance, in HALF cells, from the cell center to the nearest
+/// point of a cell that is blocked for this layer (terrain slope/water for <see cref="MaxSlope"/>, structures via
+/// <see cref="OccupancyGrid"/>, the map border): ax^2 + az^2 with ax = max(0, 2|dx| - 1), capped at <see cref="MaxReq"/>.
+/// 0 = blocked, 1 = free with a blocked edge neighbour, 2 = only a diagonal one, 9 = the 3x3 block is free, ...
+/// A unit of radius r stands where Clear &gt;= <see cref="ClearanceFor"/>(r) ("one question, one function": the path
+/// search, the local movement, FindNearestPassable and teleport landing all use <see cref="Passable(int,int,int)"/>).
 /// Written only in sequential phases (PathService.UpdateNav); read concurrently by parallel systems.
 /// </summary>
 public sealed class NavGrid
 {
-    public const int MaxClearance = 4;
+    /// <summary>Default cap: the requirement of radius 3.0 (the largest mobile radius, DEV_GUIDE "Sim pitfalls").</summary>
+    public const int MaxClearance = 34;
 
     public readonly MotionLayer Layer;
+    /// <summary>Steepest cell (vertex height range) this grid's units may stand on (Land/Hover/Amphibious).</summary>
+    public readonly float MaxSlope;
+    /// <summary>Cap of <see cref="Clear"/> (largest requirement of any unit using this grid).</summary>
+    public readonly int MaxReq;
+    /// <summary>Window in cells: blocked cells Reach or more cells away never lower a value below MaxReq.</summary>
+    public readonly int Reach;
     public readonly int Width;
     public readonly int Height;
     public readonly byte[] Clear;
@@ -28,12 +37,18 @@ public sealed class NavGrid
 
     private readonly Terrain _terrain;
     private readonly OccupancyGrid _occ;
-    /// <summary>Static terrain traversability for this layer (1 = traversable).</summary>
+    /// <summary>Static terrain traversability for this layer and slope (1 = traversable).</summary>
     private readonly byte[] _terrainOk;
 
     public NavGrid(Terrain terrain, OccupancyGrid occ, MotionLayer layer)
+        : this(terrain, occ, layer, Terrain.DefaultMaxSlope, MaxClearance) { }
+
+    public NavGrid(Terrain terrain, OccupancyGrid occ, MotionLayer layer, float maxSlope, int maxReq)
     {
         Layer = layer;
+        MaxSlope = maxSlope;
+        MaxReq = Math.Clamp(maxReq, 1, 255);
+        Reach = ReachFor(MaxReq);
         _terrain = terrain;
         _occ = occ;
         Width = terrain.Width;
@@ -46,14 +61,72 @@ public sealed class NavGrid
         {
             for (int z = z0; z < z1; z++)
             for (int x = 0; x < w; x++)
-                ok[z * w + x] = terrain.CanTraverse(layer, x, z) ? (byte)1 : (byte)0;
+                ok[z * w + x] = Traversable(terrain, layer, maxSlope, x, z) ? (byte)1 : (byte)0;
         });
         RecomputeAll();
     }
 
-    /// <summary>Clearance class needed by a unit of the given radius (1..MaxClearance).</summary>
-    public static int ClearanceFor(float radius) =>
-        radius < 0.75f ? 1 : Math.Min(MaxClearance, 1 + (int)MathF.Floor(radius + 0.25f));
+    /// <summary>
+    /// Clearance requirement of a unit of the given radius: the smallest value <see cref="Clear"/> can take that is
+    /// &gt;= (2 (r - 0.25))^2, i.e. the unit's disc at a cell center may overlap a blocked cell by at most 0.25
+    /// (a gap of W cells admits the unit when W &gt;= 2r + 0.5, never when W &lt; 2r - 0.5). r &lt; 0.75 -&gt; 1 (any
+    /// free cell, as before). Only values Clear can take, so radii that fit the same cells share one graph.
+    /// </summary>
+    public static int ClearanceFor(float radius)
+    {
+        if (radius < 0.75f) return 1;
+        float x = 2f * (radius - 0.25f);
+        int t = Math.Max(1, (int)MathF.Ceiling(x * x - 1e-4f));
+        return Math.Min(255, CanonicalReq(t));
+    }
+
+    /// <summary>Smallest a^2 + b^2 &gt;= t with a, b in {0, 1, 3, 5, ...} (the values Clear can take).</summary>
+    public static int CanonicalReq(int t)
+    {
+        if (t <= 1) return Math.Max(t, 0);
+        int best = int.MaxValue;
+        for (int a = 0; a * a < best && a <= 63; a = a == 0 ? 1 : a + 2)
+        {
+            int rest = t - a * a, b = 0;
+            if (rest > 0)
+            {
+                b = 1;
+                while (b * b < rest) b += 2;
+            }
+            best = Math.Min(best, a * a + b * b);
+        }
+        return best;
+    }
+
+    /// <summary>Cells needed around a cell to compute values up to maxReq: smallest d with (2d - 1)^2 &gt;= maxReq.</summary>
+    public static int ReachFor(int maxReq)
+    {
+        int d = 1;
+        while ((2 * d - 1) * (2 * d - 1) < maxReq) d++;
+        return d;
+    }
+
+    /// <summary>
+    /// Terrain traversability of a cell for a layer and slope limit. At <see cref="Terrain.DefaultMaxSlope"/> this is
+    /// exactly <see cref="Terrain.CanTraverse"/>; other limits redo its slope test with the same float operations.
+    /// </summary>
+    public static bool Traversable(Terrain t, MotionLayer layer, float maxSlope, int cx, int cz)
+    {
+        if (maxSlope == Terrain.DefaultMaxSlope || layer is not (MotionLayer.Land or MotionLayer.Hover or MotionLayer.Amphibious))
+            return t.CanTraverse(layer, cx, cz);
+        if (!t.CellInBounds(cx, cz)) return false;
+        float h00 = t.VertexHeight(cx, cz), h10 = t.VertexHeight(cx + 1, cz);
+        float h01 = t.VertexHeight(cx, cz + 1), h11 = t.VertexHeight(cx + 1, cz + 1);
+        float min = MathF.Min(MathF.Min(h00, h10), MathF.Min(h01, h11));
+        float max = MathF.Max(MathF.Max(h00, h10), MathF.Max(h01, h11));
+        bool gentle = max - min <= maxSlope;
+        return layer switch
+        {
+            MotionLayer.Land => gentle && min >= t.WaterLevel,
+            MotionLayer.Hover => gentle && min >= t.WaterLevel || min < t.WaterLevel,
+            _ => gentle, // Amphibious: land or sea bed
+        };
+    }
 
     private bool BlockedRaw(int x, int z) =>
         (uint)x >= (uint)Width || (uint)z >= (uint)Height || _terrainOk[z * Width + x] == 0 || _occ.Cells[z * Width + x] >= 0;
@@ -65,6 +138,16 @@ public sealed class NavGrid
 
     /// <summary>True if a unit (point) may stand at p (cell free of terrain/structure blocking).</summary>
     public bool CanStand(Vector2 p) => Passable((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y), 1);
+
+    /// <summary>(11a-1) True if a unit with requirement req (<see cref="ClearanceFor"/>) may stand at p.</summary>
+    public bool Fits(Vector2 p, int req) => Passable((int)MathF.Floor(p.X), (int)MathF.Floor(p.Y), req);
+
+    /// <summary>(11a-1) <see cref="Clear"/> of the cell containing p (0 outside the map).</summary>
+    public int ClearAt(Vector2 p)
+    {
+        int cx = (int)MathF.Floor(p.X), cz = (int)MathF.Floor(p.Y);
+        return (uint)cx < (uint)Width && (uint)cz < (uint)Height ? Clear[cz * Width + cx] : 0;
+    }
 
     public int CellOf(Vector2 p)
     {
@@ -78,8 +161,8 @@ public sealed class NavGrid
     // ------------------------------------------------------------------ clearance computation
 
     /// <summary>
-    /// Full recompute. Separable Chebyshev distance: rowD = 1D distance to the nearest blocked cell in the row, then
-    /// d(x,z) = min over |dz| &lt; C of max(|dz|, rowD(x, z+dz)). Rows are independent -> parallel.
+    /// Full recompute. Separable: rowD = 1D cell distance to the nearest blocked cell in the row, then
+    /// d(x,z) = min over |dz| &lt; Reach of Sq(|dz|) + Sq(rowD(x, z+dz)). Rows are independent -> parallel.
     /// </summary>
     private void RecomputeAll()
     {
@@ -98,12 +181,12 @@ public sealed class NavGrid
     }
 
     /// <summary>
-    /// Recomputes clearance for cells within MaxClearance-1 of the changed rectangle (inclusive cell coords).
+    /// Recomputes clearance for cells within Reach-1 of the changed rectangle (inclusive cell coords).
     /// Returns the rectangle of cells whose clearance actually changed (empty if none: x0 &gt; x1).
     /// </summary>
     public (int x0, int z0, int x1, int z1) RecomputeAround(int cx0, int cz0, int cx1, int cz1)
     {
-        const int C = MaxClearance;
+        int C = Reach;
         int x0 = Math.Max(0, cx0 - (C - 1)), x1 = Math.Min(Width - 1, cx1 + (C - 1));
         int z0 = Math.Max(0, cz0 - (C - 1)), z1 = Math.Min(Height - 1, cz1 + (C - 1));
         int rz0 = Math.Max(0, z0 - (C - 1)), rz1 = Math.Min(Height - 1, z1 + (C - 1));
@@ -126,10 +209,11 @@ public sealed class NavGrid
         return (mx0, mz0, mx1, mz1);
     }
 
-    /// <summary>1D distance (capped) to the nearest blocked cell of row z, for columns xa..xb; out-of-map is blocked.</summary>
+    /// <summary>1D cell distance (capped at Reach) to the nearest blocked cell of row z, for columns xa..xb;
+    /// out-of-map is blocked.</summary>
     private void RowDistance(int z, int xa, int xb, Span<byte> outD)
     {
-        const int C = MaxClearance;
+        int C = Reach;
         int lo = xa - C, hi = xb + C;
         int last = lo - C;
         for (int x = lo; x <= hi; x++)
@@ -149,20 +233,23 @@ public sealed class NavGrid
         }
     }
 
+    /// <summary>Squared half-cell distance from a cell center to the near edge of a cell d cells away (0 -> 0).</summary>
+    private static int Sq(int d) => d == 0 ? 0 : (2 * d - 1) * (2 * d - 1);
+
     private byte ColumnCombine(int x, int z, byte[] rowD, int stride, int xOff, int zOff, int zMax = int.MaxValue)
     {
-        const int C = MaxClearance;
-        int best = C;
+        int C = Reach;
+        int best = MaxReq;
         if (zMax == int.MaxValue) zMax = Height - 1;
         for (int dz = -(C - 1); dz <= C - 1; dz++)
         {
             int rz = z + dz;
-            int adz = Math.Abs(dz);
-            if (adz >= best) continue;
+            int sz = Sq(Math.Abs(dz));
+            if (sz >= best) continue;
             int cand;
-            if (rz < 0 || rz >= Height) cand = adz; // outside the map counts as blocked
+            if (rz < 0 || rz >= Height) cand = sz; // outside the map counts as blocked
             else if (rz < zOff || rz > zMax) continue; // never happens: callers include all needed rows
-            else cand = Math.Max(adz, rowD[(rz - zOff) * stride + (x - xOff)]);
+            else cand = sz + Sq(rowD[(rz - zOff) * stride + (x - xOff)]);
             if (cand < best) best = cand;
         }
         return (byte)best;
@@ -171,7 +258,7 @@ public sealed class NavGrid
     // ------------------------------------------------------------------ queries
 
     /// <summary>
-    /// Line of sight for a unit of clearance req: every cell crossed by segment a-&gt;b (supercover: both side cells
+    /// Line of sight for a unit of requirement req: every cell crossed by segment a-&gt;b (supercover: both side cells
     /// at exact corner crossings) must have Clear &gt;= req. The start cell is not tested (units may stand on a
     /// blocked cell, e.g. right after a structure was placed on them).
     /// </summary>

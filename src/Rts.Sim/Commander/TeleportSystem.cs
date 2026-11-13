@@ -178,7 +178,7 @@ public static class TeleportSystem
         var layer = bp.Movement.Layer;
         if (layer == MotionLayer.Air) return p;
         w.Paths.EnsureGrids();
-        var grid = w.Paths.GridFor(layer);
+        var grid = w.Paths.GridFor(bp); // (11a-1) its slope class and radius (PathService.Fits)
         if (grid == null) return p;
         int req = PathService.ClearanceOf(bp);
         int cx = (int)MathF.Floor(p.X), cz = (int)MathF.Floor(p.Y);

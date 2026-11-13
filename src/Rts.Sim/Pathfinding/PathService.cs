@@ -29,11 +29,13 @@ namespace Rts.Sim.Systems;
 /// parallel on read-only data with thread-local scratch; <see cref="CurrentWaypoint"/> is allocation-free and
 /// only writes the caller's MoveState.
 /// </summary>
-public sealed class PathService
+public sealed partial class PathService : Persistence.IAfterLoad
 {
     private readonly SimWorld _w;
-    private readonly NavGrid?[] _grids = new NavGrid?[7];
-    private readonly NavGraph?[] _graphs = new NavGraph?[7 * (NavGrid.MaxClearance + 1)];
+    /// <summary>(11a-1) Grid per (layer grid index 0..4, slope class 0..SlopeSlots-1): slot = gi * SlopeSlots + si.</summary>
+    private NavGrid?[] _grids = new NavGrid?[GridSlots];
+    /// <summary>Graph per (grid slot, requirement): index = slot * GraphStride + req.</summary>
+    private NavGraph?[] _graphs = new NavGraph?[GridSlots * GraphStride];
     private int[]? _occSnapshot;
     /// <summary>Scratch of the occupancy diff (cleared before each use).</summary>
     [Persistence.NoSave] private readonly Dictionary<int, (int x0, int z0, int x1, int z1)> _diffBoxes = new();
@@ -105,36 +107,64 @@ public sealed class PathService
         _ => -1,
     };
 
-    /// <summary>Builds the per-layer clearance grids on first use. SEQUENTIAL.</summary>
+    /// <summary>Builds the clearance grids (every layer at the default slope, plus the steeper slope classes some
+    /// blueprint uses) on first use. SEQUENTIAL.</summary>
     public void EnsureGrids()
     {
         if (_occSnapshot != null) return;
         var t = _w.Terrain;
-        _grids[1] = new NavGrid(t, _w.Occupancy, MotionLayer.Land);
-        _grids[2] = new NavGrid(t, _w.Occupancy, MotionLayer.Hover);
-        _grids[3] = new NavGrid(t, _w.Occupancy, MotionLayer.Amphibious);
-        _grids[4] = new NavGrid(t, _w.Occupancy, MotionLayer.Water);
+        var classes = SlopeClasses;
+        var used = SlopeGridsUsed;
+        for (int gi = 1; gi <= 4; gi++)
+        for (int si = 0; si < classes.Length; si++)
+        {
+            if (si > 0 && !used[gi * SlopeSlots + si]) continue;
+            var layer = gi switch { 1 => MotionLayer.Land, 2 => MotionLayer.Hover, 3 => MotionLayer.Amphibious, _ => MotionLayer.Water };
+            _grids[gi * SlopeSlots + si] = new NavGrid(t, _w.Occupancy, layer, classes[si], NavGrid.MaxClearance);
+        }
         _occSnapshot = (int[])_w.Occupancy.Cells.Clone();
         _occVersion = _w.Occupancy.Version;
     }
 
-    /// <summary>Clearance grid of a surface layer (null for Air/None). Grids exist after the first PathSystem run.</summary>
+    /// <summary>Clearance grid of a surface layer at the default slope (null for Air/None). Grids exist after the
+    /// first PathSystem run.</summary>
     public NavGrid? GridFor(MotionLayer layer)
     {
         int gi = GridIndex(layer);
-        return gi < 0 ? null : _grids[gi];
+        return gi < 0 ? null : _grids[gi * SlopeSlots];
     }
 
-    internal static int GraphIndex(MotionLayer layer, int req) => GridIndex(layer) * (NavGrid.MaxClearance + 1) + req;
+    /// <summary>(11a-1) The grid a unit of this blueprint moves on (its layer and slope class).</summary>
+    public NavGrid? GridFor(UnitBlueprint bp)
+    {
+        int slot = GridSlotOf(bp);
+        return slot < 0 ? null : _grids[slot];
+    }
 
-    /// <summary>Region graph for a layer and clearance class, built on first use. SEQUENTIAL (may build).</summary>
+    internal static int GraphIndex(MotionLayer layer, int req) => GridIndex(layer) * SlopeSlots * GraphStride + req;
+
+    /// <summary>Graph index of a unit of this blueprint (its grid slot and requirement).</summary>
+    internal int GraphIndexOf(UnitBlueprint bp) => GridSlotOf(bp) * GraphStride + ClearanceOf(bp);
+
+    /// <summary>Region graph for a layer (default slope) and clearance requirement, built on first use. SEQUENTIAL.</summary>
     public NavGraph? GraphFor(MotionLayer layer, int req)
     {
         int gi = GridIndex(layer);
         if (gi < 0) return null;
         EnsureGrids();
-        int k = GraphIndex(layer, req);
-        return _graphs[k] ??= new NavGraph(_grids[gi]!, req);
+        int k = GraphIndex(layer, Math.Clamp(req, 1, NavGrid.MaxClearance));
+        EnsureGraph(k);
+        return _graphs[k];
+    }
+
+    /// <summary>(11a-1) Region graph a unit of this blueprint paths on, built on first use. SEQUENTIAL.</summary>
+    public NavGraph? GraphFor(UnitBlueprint bp)
+    {
+        if (GridSlotOf(bp) < 0) return null;
+        EnsureGrids();
+        int k = GraphIndexOf(bp);
+        EnsureGraph(k);
+        return _graphs[k];
     }
 
     internal NavGraph GraphByIndex(int k) => _graphs[k]!;
@@ -154,8 +184,8 @@ public sealed class PathService
         var built = new NavGraph[missing];
         Par.ForEach(missing, i =>
         {
-            int k = todo[i], gi = k / (NavGrid.MaxClearance + 1), req = k % (NavGrid.MaxClearance + 1);
-            built[i] = new NavGraph(_grids[gi]!, req);
+            int k = todo[i];
+            built[i] = new NavGraph(_grids[k / GraphStride]!, k % GraphStride) { Slot = k };
         });
         for (int i = 0; i < missing; i++) _graphs[todo[i]] = built[i];
     }
@@ -163,12 +193,11 @@ public sealed class PathService
     internal void EnsureGraph(int k)
     {
         if (_graphs[k] != null) return;
-        int gi = k / (NavGrid.MaxClearance + 1), req = k % (NavGrid.MaxClearance + 1);
-        _graphs[k] = new NavGraph(_grids[gi]!, req);
+        _graphs[k] = new NavGraph(_grids[k / GraphStride]!, k % GraphStride) { Slot = k };
     }
 
-    /// <summary>Clearance class of a unit blueprint (1..NavGrid.MaxClearance).</summary>
-    public static int ClearanceOf(UnitBlueprint bp) => NavGrid.ClearanceFor(bp.Radius);
+    /// <summary>Clearance requirement of a unit blueprint (1..NavGrid.MaxClearance, <see cref="NavGrid.ClearanceFor"/>).</summary>
+    public static int ClearanceOf(UnitBlueprint bp) => Math.Min(NavGrid.MaxClearance, NavGrid.ClearanceFor(bp.Radius));
 
     /// <summary>True if a unit of this layer may stand at p (terrain + structures). Air: always. Thread-safe.</summary>
     public bool CanStand(MotionLayer layer, Vector2 p)
@@ -224,13 +253,14 @@ public sealed class PathService
         foreach (int b in order)
         {
             var r = boxes[b];
-            for (int gi = 1; gi <= 4; gi++)
+            for (int slot = 0; slot < _grids.Length; slot++)
             {
-                var grid = _grids[gi]!;
+                var grid = _grids[slot];
+                if (grid == null) continue;
                 var ch = grid.RecomputeAround(r.x0, r.z0, r.x1, r.z1);
                 if (ch.x0 > ch.x1) continue;
                 for (int req = 1; req <= NavGrid.MaxClearance; req++)
-                    _graphs[gi * (NavGrid.MaxClearance + 1) + req]?.MarkDirty(ch.x0, ch.z0, ch.x1, ch.z1);
+                    _graphs[slot * GraphStride + req]?.MarkDirty(ch.x0, ch.z0, ch.x1, ch.z1);
             }
         }
         foreach (var g in _graphs) g?.CommitDirty();
@@ -265,7 +295,7 @@ public sealed class PathService
 
     internal GoalField GetField(NavGraph g, int goalRegion)
     {
-        long key = ((long)GraphIndex(g.Grid.Layer, g.Req) << 32) | (uint)goalRegion;
+        long key = ((long)g.Slot << 32) | (uint)goalRegion;
         var lazy = _fields.GetOrAdd(key, static (_, arg) => new Lazy<GoalField>(() => new GoalField(arg.g, arg.r, arg.svc)), (g, r: goalRegion, svc: this));
         var f = lazy.Value;
         f.LastUsedTick = _w.Tick;
@@ -318,7 +348,7 @@ public sealed class PathService
         if (k < n - 1 && ((_w.Tick + unit) & 3) == 0)
         {
             var bp = _w.BpOf(unit);
-            var grid = GridFor(bp.Movement.Layer);
+            var grid = GridFor(bp);
             if (grid != null && grid.LineOfSight(pos, pts[k + 1], ClearanceOf(bp))) k++;
         }
         mv.PathIndex = k;

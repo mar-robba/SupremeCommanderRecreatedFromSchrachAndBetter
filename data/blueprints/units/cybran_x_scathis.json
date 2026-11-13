@@ -64,7 +64,6 @@
     "Layer": "Land",
     "MaxSpeed": 1.2,
     "Acceleration": 0.6,
-    "TurnRate": 25,
-    "MaxSlope": 0.6
+    "TurnRate": 25
   }
 }

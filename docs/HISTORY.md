@@ -1522,3 +1522,62 @@ green; reference match "Player (Hard) after 12:00", C87C46C4EA726A82; bench 2F09
 `--settings --settings-tab audio` (rows "Voice" ON and "Voice volume" 90 % between the music volume and
 Fullscreen, nothing overlapping) looked right. Not checked by anybody yet: how the voice sounds (an agent cannot
 hear; `--voice-test` plays every line, the orchestrator did not run it at 4 in the morning).
+
+### (11a-1) Pathing: exact clearance, per-unit slope, ships in channels — report (merged 2026-11-13, 2cf82f8)
+Two agents: the first stopped by itself at its checkpoint (170k, 14 minutes) with the clearance field, the slope
+classes and the `Fits` check in movement committed, sim tests 613/615 and no new test; the second diagnosed the
+failing AI test, wrote the tests, the channel rule and the docs, and finished (159k, 19 minutes, 92 calls). 638
+lines. What the brief got wrong: it named the clearance cap (4 classes) as the cause of big units clipping cliffs,
+but no blueprint was above the cap (largest radius 3.0 = class 4); the orchestrator measured that while writing the
+prompt, and the agent then found the real cause: local movement accepted any free cell, whatever the unit's size.
+
+**(11a-1) Pathing — report (agent 2)**
+
+**What works**
+- Clearance by real radius: a Euclidean clearance field (`NavGrid`), and `ClearanceFor(r)` (0.8 -> 2, ACU 1.2 -> 9, 3.0 -> 34). One function, `Fits`, is used by the path search, movement, `FindNearestPassable` and teleport landing. A unit is never trapped: a step is accepted iff `Clear(new) >= min(req, Clear(here))`.
+- Slope classes: 0.75 (default) and 1.2 (bots, ACUs, SCUs, Monkeylord). The 0.6 and 0.7 values are removed.
+- Saved `NavFormat`: after loading an old format, `AfterLoad` rebuilds the nav state.
+- Channel rule (`NavalMotion.HullVisitor.HeadOn`): oncoming ships steer to their own right, and the one with the higher unit index brakes and waits.
+
+**Try it**: `dotnet test tests/Rts.Sim.Tests --filter "PathClearanceTests|NavalChannelTests"`.
+
+**Tests added**: `PathClearanceTests` (10) and `NavalChannelTests` (5). `AiReachesTech2OnFixedSeed` now uses seed 4.
+
+**Shared-file edits**: none. Docs: an ARCHITECTURE section, ROADMAP G12 and the channel line ticked, 3 DEV_GUIDE pitfalls.
+
+**Numbers (old -> new)**
+- GoldenStateHash: 0xD273E007297C55F1 -> 0xED3AD081E0A9502E.
+- AI match: C87C46C4EA726A82 "WINNER after 12:00" -> 31A42EB6FA4BA170 "WINNER: Player (Hard) after 16:01".
+- Bench `2000 300`: hash 2F09CD7D01AF287E unchanged; avg 2.16 -> 2.06 ms.
+- Nav build 1024: setup 483 -> 518 ms (+7 %), first tick 150.2 -> 150.6 ms.
+- Savebench: file 714 -> 754 KB (+5.6 %), load cold 522 -> 493 ms.
+- `mp ... save=300` OK. Map pack: 0 refused.
+- Tests: sim 630, client 371 and net 43, all passing.
+
+**Known issues / follow-ups**
+- Every pack file in `.claude/mapcheck` differs byte-wise from `data/maps`. The cause was not found (11a-1 does not touch the generator or MapFile; GoldenTerrainHash unchanged). `data/maps` was not rewritten.
+- In one-lane channels the ships still squeeze past each other with overlapping hulls. They no longer drive through each other, but no ship backs out to let the other pass.
+- The AI test moved seed because the games now diverge: seed 6 (army 1) no longer reaches land T2 by minute 17.
+
+**Design errors found**
+- The ship separation had no rule for oncoming ships, so their hulls drove through each other (closest centers 0.03-0.86) instead of passing. Fixed (bfb52c4).
+- The movement step had one "must fit here" check, so a unit that did not fit where it stood was either trapped or ignored. Fixed with the never-worse rule (c9edda5).
+- Fixed-seed AI tests break on any movement change (the old comment already noted that only 3 of 12 seeds qualified). Open; noted in DEV_GUIDE.
+
+**Handoff review**: The note was good and the code was ready. It did not say that nav grids are built only on the first tick, so `Fits` is false on a world that was never stepped; I lost a test run to that. The AI test trace had to be built from scratch: the diagnosis took about 45k tokens, the rest is in the note.
+
+**The map pack difference, explained** (orchestrator, 2026-11-13): it is older than this module. A fresh
+`mapexport --pack` on main before the merge gives the same bytes as the branch's export, and both differ from
+`data/maps` in nearly every byte (sizes 2-3 bytes apart). `data/maps` was last written by 8b-2 (0c73f69), before
+10a-1 changed the generator's math: since then `tools/maps/pack.txt` no longer reproduces the shipped files. The
+shipped files stay valid (a map file carries its terrain; saves and multiplayer use the file's hash). Open: nothing
+checks that the pack list still gives the shipped files; re-exporting would change every pack map's hash, so saves
+and replays made on them would refuse.
+
+**Merge checks on main** (orchestrator, 2026-11-13 10:34-10:38): build and tests 630 sim + 371 client + 43 net
+green; reference match "WINNER: Player (Hard) after 16:01", 31A42EB6FA4BA170 (the agent's values); bench `2000 300`
+2F09CD7D01AF287E; `mp 3 600 256 1 0 save=300` and `mp 3 600 256 0 0 obs=1 save=250` in sync; savebench file 754 KB,
+load cold 523 ms, warm 183 ms; `200 20 0 1024` setup 502 ms, first tick with nav build 150.8 ms (another agent was
+building at the same time). Nobody has looked at it in a game yet: no screenshot was taken (the module has no
+client part); the owner can watch big units and ships with `--scene experimental` and `--scene units8a:naval`.
+

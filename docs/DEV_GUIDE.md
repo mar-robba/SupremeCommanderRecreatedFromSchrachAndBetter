@@ -115,6 +115,13 @@ Things learned while building the project that are not about how a system works 
 - (8b-2) Bit-exact round trips (map files, saves): `MathF.Round(-0.3f) / k` is **-0**, whose bits differ from +0, so
   a value written as an integer and read back as `0f` no longer matches. Normalize rounded floats with `+ 0f`
   (`MapFile.Quantize`); the Archipelago export failed its own read-back check until this fix.
+- (11a-1) Clearance cap: `NavGrid.MaxClearance` = 34 = `ClearanceFor(3.0)`, the largest mobile surface radius. A new
+  unit with Radius > 3.0 is silently capped (it paths as if it were 3.0): raise `MaxClearance` (a byte, up to 255;
+  `GraphStride` and the nav format follow, bump `PathService.CurrentNavFormat`). `PathClearanceTests` fails first.
+- (11a-1) Nav grids are built on the first tick: `PathService.Fits` / `GridFor` return false / null on a world that
+  was never stepped (tests: `sim.Step()` once before asserting where a unit fits).
+- (11a-1) Changing pathing changes AI games: fixed-seed AI tests are knife-edge (one ACU step changes a T2 time by
+  minutes). Measure stalls of builders before blaming the change; move to a seed that passes and say why in the test.
 
 ## Client pitfalls
 - (10b-1) Keys: read game keys only through `Hotkeys.X.Pressed()` / `PressedIndex()` / `Down(i)` (never

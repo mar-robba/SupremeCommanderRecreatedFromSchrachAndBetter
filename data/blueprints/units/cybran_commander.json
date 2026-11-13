@@ -25,6 +25,7 @@
     "StorageEnergy": 4000
   },
   "Movement": {
+    "MaxSlope": 1.2,
     "Layer": "Amphibious",
     "MaxSpeed": 1.7,
     "Acceleration": 1.8,
