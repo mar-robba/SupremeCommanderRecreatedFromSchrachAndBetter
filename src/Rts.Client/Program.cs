@@ -28,10 +28,13 @@ using Rts.Client;
 // In game: F5 quicksave, F6 quickload, Esc → Save Game. Every game is recorded; the replay is written at the end/quit.
 // Audio is off in --screenshot runs unless --sound is given. Audio and --nofog flags don't force a direct game.
 //        Rts.Client --export-icon FILE.png                  -> writes the game icon (256x256 PNG) and exits, no window
+//        Rts.Client --voice-test [--voice-only id,id] [--voice-lang it] [--volume F] [--nosound]
+//                   -> (11b-1) plays every voice announcer line (id, text, length printed) and exits, no window
 // Packaged builds (release.txt next to the exe) keep saves/replays in ~/.local/share/RtsGame; crashes are logged to
 // ~/.local/share/RtsGame/crash.log in every mode (docs/DEV_GUIDE.md "Packaging").
 Rts.Sim.Persistence.UserDirs.Apply();
 if (AppIcon.TryExport(args)) return;
+if (Rts.Client.Audio.VoiceTest.TryRun(args, out int voiceExit)) { Environment.ExitCode = voiceExit; return; }
 CrashLog.Install(interactive: !args.Contains("--screenshot"));
 try
 {

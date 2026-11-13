@@ -23,6 +23,9 @@ public sealed class AlertMonitor
 {
     public delegate void Notify(AlertKind kind, string text, Color color);
 
+    /// <summary>The toast of an UnderAttack alert about structures (the voice says "base under attack" for it, 11b-1).</summary>
+    public const string StructuresUnderAttackText = "Structures under attack";
+
     private readonly BlueprintDb _db;
     private readonly AlertLog _log;
     private readonly UnitCapCounter _cap = new();
@@ -76,7 +79,7 @@ public sealed class AlertMonitor
                     raise(AlertKind.CommanderUnderAttack, "Commander under attack!", CommanderColor);
                 continue;
             }
-            string what = bp.IsStructure ? "Structures under attack" : "Units under attack";
+            string what = bp.IsStructure ? StructuresUnderAttackText : "Units under attack";
             if (_log.Add(AlertKind.UnderAttack, v.Pos, now, what) && !onScreen(v.Pos) && _log.ShouldNotify(AlertKind.UnderAttack, now, 25))
                 raise(AlertKind.UnderAttack, what, AttackColor);
         }

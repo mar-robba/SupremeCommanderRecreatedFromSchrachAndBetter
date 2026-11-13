@@ -1,0 +1,25 @@
+{
+  "_doc": "(11b-1) Voice announcer lines. Read by the game (src/Rts.Client/Audio/VoiceLines.cs) and by the generator (tools/voice/generate.py, which writes data/audio/voice/<lang>/<id>.wav). Change a wording, then run: python3 -I tools/voice/generate.py. priority: higher cuts in front of waiting lines (never interrupts a line being spoken). cooldown: seconds before the same line may be queued again. maxWait (optional, default 4): seconds a line may wait in the queue before it is dropped as stale. The ids are used by the game code: do not rename them.",
+  "languages": [ "it" ],
+  "lines": [
+    { "id": "nuke_launch_detected",       "priority": 100, "cooldown": 6,  "maxWait": 6, "text": { "it": "Lancio nucleare rilevato." } },
+    { "id": "strategic_missile_launched", "priority": 70,  "cooldown": 6,  "maxWait": 5, "text": { "it": "Missile strategico lanciato." } },
+    { "id": "commander_under_attack",     "priority": 95,  "cooldown": 20, "maxWait": 5, "text": { "it": "Comandante sotto attacco." } },
+    { "id": "enemy_commander_destroyed",  "priority": 90,  "cooldown": 3,  "maxWait": 8, "text": { "it": "Comandante nemico distrutto." } },
+    { "id": "ally_commander_destroyed",   "priority": 90,  "cooldown": 3,  "maxWait": 8, "text": { "it": "Comandante alleato distrutto." } },
+    { "id": "enemy_defeated",             "priority": 80,  "cooldown": 3,  "maxWait": 8, "text": { "it": "Avversario eliminato." } },
+    { "id": "ally_defeated",              "priority": 80,  "cooldown": 3,  "maxWait": 8, "text": { "it": "Alleato eliminato." } },
+    { "id": "experimental_detected",      "priority": 85,  "cooldown": 20, "maxWait": 6, "text": { "it": "Unità sperimentale nemica rilevata." } },
+    { "id": "tactical_launch_detected",   "priority": 55,  "cooldown": 45, "text": { "it": "Lancio di missile tattico rilevato." } },
+    { "id": "base_under_attack",          "priority": 60,  "cooldown": 30, "text": { "it": "La base è sotto attacco." } },
+    { "id": "units_under_attack",         "priority": 50,  "cooldown": 30, "text": { "it": "Unità sotto attacco." } },
+    { "id": "ally_under_attack",          "priority": 45,  "cooldown": 40, "text": { "it": "Alleato sotto attacco." } },
+    { "id": "structure_lost",             "priority": 40,  "cooldown": 20, "text": { "it": "Struttura distrutta." } },
+    { "id": "experimental_complete",      "priority": 65,  "cooldown": 8,  "maxWait": 6, "text": { "it": "Unità sperimentale completata." } },
+    { "id": "enhancement_complete",       "priority": 30,  "cooldown": 5,  "text": { "it": "Miglioramento del comandante completato." } },
+    { "id": "upgrade_complete",           "priority": 25,  "cooldown": 10, "text": { "it": "Potenziamento completato." } },
+    { "id": "mass_low",                   "priority": 35,  "cooldown": 45, "text": { "it": "Massa insufficiente." } },
+    { "id": "energy_low",                 "priority": 35,  "cooldown": 45, "text": { "it": "Energia insufficiente." } },
+    { "id": "unit_cap_reached",           "priority": 30,  "cooldown": 60, "text": { "it": "Limite di unità raggiunto." } }
+  ]
+}
