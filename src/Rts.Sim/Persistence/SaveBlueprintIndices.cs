@@ -22,6 +22,7 @@ public static class BlueprintIndexFields
         ("Rts.Sim:Rts.Sim.World.ProjectileStore", "SourceBp"),
         ("Rts.Sim:Rts.Sim.World.PropStore", "BlueprintIndex"),
         ("Rts.Sim:Rts.Sim.World.UpgradeState", "TargetBp"),
+        ("Rts.Sim:Rts.Sim.World.FactoryState", "Queue"), // List<int> of queued blueprints (the name heuristic misses it)
         ("Rts.Sim:Rts.Sim.Orders.Order", "BlueprintIndex"),
         ("Rts.Sim:Rts.Sim.Orders.DebugSpawnCommand", "<BlueprintIndex>k__BackingField"),
         ("Rts.Sim:Rts.Sim.Orders.FactoryDequeueCommand", "<BlueprintIndex>k__BackingField"),
