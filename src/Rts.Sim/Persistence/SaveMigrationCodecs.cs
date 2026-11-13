@@ -51,7 +51,7 @@ internal sealed class SkipPlan(SavedNode n) : Plan
         {
             case NodeKind.Prim: r.In.Take(SaveLayout.PrimSize(n.Type)); break;
             case NodeKind.Enum: r.In.Take(SaveLayout.PrimSize(n.Underlying!)); break;
-            case NodeKind.Ref: r.ReadRef(); break;
+            case NodeKind.Ref: r.Skipping++; try { r.ReadRef(); } finally { r.Skipping--; } break;
             default:
                 if (_fields == null) r.In.Take(n.RawSize);
                 else foreach (var f in _fields) f.Read(r);
@@ -96,6 +96,19 @@ internal sealed class RemapPlan(Plan inner, MigrationContext ctx, string where) 
     }
 }
 
+/// <summary>A per-blueprint array (<see cref="BlueprintIndexFields.PerBlueprint"/>): the owner's field is replaced by the
+/// array in this build's blueprint order once the bodies are read (<see cref="MigClassCodec"/>).</summary>
+internal sealed class PermutePlan(Plan inner) : Plan
+{
+    public override object? Read(GraphReader r) => inner.Read(r);
+
+    public void Later(MigrationContext ctx, object owner, FieldInfo f, object? saved)
+    {
+        f.SetValue(owner, saved);
+        if (saved is Array a) ctx.PostFixups.Add(() => f.SetValue(owner, ctx.Permute(a)));
+    }
+}
+
 /// <summary>(11a-2) Per-load state of a tolerant read: renames, read plans per saved type, the report.</summary>
 internal sealed class MigrationContext
 {
@@ -111,7 +124,22 @@ internal sealed class MigrationContext
     /// <summary>Saved blueprint index → this build's index (-1 = the id is gone); null = same blueprint list.</summary>
     public void SetBlueprintMap(int[] map, string[] savedIds) { _bpMap = map; _bpSavedIds = savedIds; }
 
-    public bool Forced(Type t) => _bpMap != null && BlueprintIndexFields.Affects(t);
+    /// <summary>Set when any blueprint differs: objects of <see cref="BlueprintIndexFields.Derived"/> types are rebuilt from it.</summary>
+    public Data.BlueprintDb? RebuildFrom;
+
+    private bool IsRebuilt(Type t) => RebuildFrom != null && BlueprintIndexFields.Derived.ContainsKey(TypeNames.Of(t));
+
+    public bool Forced(Type t) => _bpMap != null && BlueprintIndexFields.Affects(t) || IsRebuilt(t);
+
+    /// <summary>A per-blueprint array (saved index order) in this build's order; other lengths are left as they are.</summary>
+    public Array Permute(Array saved)
+    {
+        if (_bpMap == null || saved.Length != _bpMap.Length) return saved;
+        var now = Array.CreateInstance(saved.GetType().GetElementType()!, RebuildFrom!.All.Count);
+        for (int i = 0; i < saved.Length; i++)
+            if (_bpMap[i] >= 0) now.SetValue(saved.GetValue(i), _bpMap[i]);
+        return now;
+    }
 
     public int MapBlueprint(int saved, string where)
     {
@@ -194,6 +222,7 @@ internal sealed class MigrationContext
         }
         else throw Retype(where, n.Type, target);
         if (field != null && _bpMap != null && BlueprintIndexFields.IsIndex(field)) p = new RemapPlan(p, this, where);
+        if (field != null && _bpMap != null && BlueprintIndexFields.IsPerBlueprint(field)) p = new PermutePlan(p);
         return p;
     }
 
@@ -243,6 +272,14 @@ internal sealed class MigrationContext
         string body = sig[(name.Length + 1)..];
         RefCodec c;
         if (type == null) c = DroppedFor(name, body);
+        else if (IsRebuilt(type) && body.StartsWith('{'))
+        {
+            Report.Add($"{SaveLayout.Short(type)}: rebuilt from the new blueprints");
+            var skips = ParseOrCorrupt(() => SaveLayout.ParseFields(body)).Select(f => (Plan)new SkipPlan(f.Item2)).ToArray();
+            var make = BlueprintIndexFields.Derived[TypeNames.Of(type)];
+            var db = RebuildFrom!;
+            c = new DroppedCodec(DroppedKind.Class, skips) { Make = () => make(db) };
+        }
         else
         {
             RefCodec cur;
@@ -338,7 +375,8 @@ internal sealed class MigClassCodec : RefCodec
         foreach (var (f, p) in _fields)
         {
             var v = p.Read(r);
-            f?.SetValue(o, v);
+            if (p is PermutePlan pp && f != null) pp.Later(_ctx, o, f, v);
+            else f?.SetValue(o, v);
         }
         if (_ctor == null) ClassCodec.ResetSkipped(o, _skipped);
         if (o is IAfterLoad a) r.AddAfterLoad(a);
@@ -435,8 +473,12 @@ internal sealed class DroppedCodec : RefCodec
     public override bool Inline => _kind is DroppedKind.Inline or DroppedKind.Delegate;
     protected override string ComputeSignature() => "";
 
+    /// <summary>Set for a rebuilt type (<see cref="BlueprintIndexFields.Derived"/>): the object references get instead.</summary>
+    public Func<object>? Make;
+
     public override object Create(GraphReader r)
     {
+        if (Make != null) return Make();
         var o = new DroppedObject(Name);
         switch (_kind)
         {
@@ -444,7 +486,7 @@ internal sealed class DroppedCodec : RefCodec
             case DroppedKind.List: r.In.VarU(); break;
             case DroppedKind.HashSet or DroppedKind.Dictionary: r.In.U8(); break;
             case DroppedKind.Inline: _p[0].Read(r); break;
-            case DroppedKind.Delegate: r.ReadRef(); r.In.Str(); r.In.Str(); break;
+            case DroppedKind.Delegate: r.Skipping++; try { r.ReadRef(); } finally { r.Skipping--; } r.In.Str(); r.In.Str(); break;
         }
         return o;
     }

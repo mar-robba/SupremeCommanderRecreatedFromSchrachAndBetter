@@ -30,12 +30,21 @@ public sealed class GraphWriter
     /// <summary>Debug aid: when set, (byte offset, object type) of every object body written, in order.</summary>
     public List<(int Offset, Type Type)>? BodyMap;
 
+    /// <summary>(11a-2) When set, collects the external ids written (WorldState stores a stable key for each).</summary>
+    public HashSet<int>? UsedExternals;
+
     public void WriteRef(object? o)
     {
         if (o == null) { Out.U8(Tag.Null); return; }
         if (o is string s) { Out.U8(Tag.String); Out.Str(s); return; }
         if (_ids.TryGetValue(o, out int id)) { Out.U8(Tag.Ref); Out.VarU((ulong)id); return; }
-        if (_ext != null && _ext.TryGetId(o, out int ext)) { Out.U8(Tag.External); Out.VarU((ulong)ext); return; }
+        if (_ext != null && _ext.TryGetId(o, out int ext))
+        {
+            Out.U8(Tag.External);
+            Out.VarU((ulong)ext);
+            UsedExternals?.Add(ext);
+            return;
+        }
         var codec = RefCodec.For(o.GetType());
         Out.U8(Tag.New);
         WriteType(codec);
@@ -115,7 +124,13 @@ public sealed class GraphReader
             case Tag.External:
             {
                 ulong id = In.VarU();
-                if (ExternalMap != null) id = id < (ulong)ExternalMap.Length ? (ulong)(uint)ExternalMap[id] : ulong.MaxValue;
+                if (ExternalMap != null)
+                {
+                    if (id >= (ulong)ExternalMap.Length || ExternalPaths![id] == null) throw ByteReader.Corrupt("bad external reference");
+                    if (ExternalMap[id] is { } mapped) return mapped;
+                    if (Skipping > 0) return new DroppedObject("external " + ExternalPaths[id]);
+                    throw new IncompatibleSaveException($"This game uses the shared blueprint data '{ExternalPaths[id]}', which does not exist in this version");
+                }
                 if (_ext == null || id >= (ulong)_ext.Count) throw ByteReader.Corrupt("bad external reference");
                 return _ext.Get((int)id);
             }
@@ -166,8 +181,13 @@ public sealed class GraphReader
     /// <summary>(11a-2) What this read had to migrate (null or empty = the data matched this build exactly).</summary>
     public SaveMigrationReport? MigrationReport => _mig?.Report;
 
-    /// <summary>(11a-2) Saved external id → id in this build's <see cref="ExternalSet"/> (null = same ids).</summary>
-    internal int[]? ExternalMap;
+    /// <summary>(11a-2) Saved external id → the object in this build (null entry = gone; null map = same ids), and the
+    /// saved stable path of each id the save uses (null entry = not used by the save).</summary>
+    internal object?[]? ExternalMap;
+    internal string?[]? ExternalPaths;
+
+    /// <summary>(11a-2) &gt; 0 while bytes of a dropped field / type are skipped (a gone external then reads as dropped).</summary>
+    internal int Skipping;
 
     internal void AddFixup(Action a) => _fixups.Add(a);
     internal void AddAfterLoad(IAfterLoad o) => _afterLoad.Add(o);

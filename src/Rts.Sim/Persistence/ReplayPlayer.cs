@@ -44,7 +44,11 @@ public sealed class ReplayPlayer : ITickHooks
         _terrain = terrain;
         _commands = log.DecodeCommands();
         for (int i = 0; i < log.Hashes.Count; i++) _hashes[log.HashTicks[i]] = log.Hashes[i];
-        Sim = WorldState.Restore(log.InitialState, db, terrain);
+        Sim = WorldState.Restore(log.InitialState, db, terrain, out var migration);
+        // (11a-2) a replay re-simulates only on the exact sim build it was recorded with
+        if (migration.Migrated)
+            throw new IncompatibleSaveException("This replay was recorded by another game version (its saved state had to be migrated: " +
+                                                migration.Lines[0] + "): it cannot be played back");
     }
 
     public IReadOnlyList<Command> CommandsFor(int tick) => _commands.TryGetValue(tick, out var c) ? c : Array.Empty<Command>();

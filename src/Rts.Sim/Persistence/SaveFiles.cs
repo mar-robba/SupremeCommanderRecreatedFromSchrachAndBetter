@@ -116,6 +116,9 @@ public sealed class LoadedGame
     public required GameInfo Info;
     public required Simulation Sim;
     public ReplayLog? Replay;
+    /// <summary>(11a-2) What the load had to translate (another sim layout or other blueprints); when
+    /// <c>Migrated</c>, <see cref="Replay"/> is null: the recording restarts at the loaded tick.</summary>
+    public SaveMigrationReport Migration = new();
 }
 
 /// <summary>
@@ -169,8 +172,8 @@ public static class SaveGame
         ReplayLog? replay = r.U8() != 0 ? ReplayLog.Read(r) : null;
         var embedded = r.Block();
         var terrain = map != null && info.MapFile != null && info.Map == null
-            ? CheckedTerrain(info, db, map.TerrainFor(Math.Max(1, info.Players.Count)))
-            : TerrainFor(info, db, embedded);
+            ? CheckedTerrain(info, db, map.TerrainFor(Math.Max(1, info.Players.Count)), StateHasBlueprintTable(state))
+            : TerrainFor(info, db, embedded, StateHasBlueprintTable(state));
         if (info.MathVersion != Core.DMath.Version)
         {
             // (10a-1) A save made with other math (e.g. the old MathF sim, on a map file) loads and plays on, but the
@@ -178,9 +181,20 @@ public static class SaveGame
             replay = null;
             info.MathVersion = Core.DMath.Version;
         }
-        var sim = WorldState.Restore(state, db, terrain);
-        return new LoadedGame { Info = info, Sim = sim, Replay = replay };
+        var sim = WorldState.Restore(state, db, terrain, out var migration);
+        if (migration.Migrated)
+        {
+            // (11a-2) made by another sim build (other layouts or blueprints): it plays on, but the replay recorded so
+            // far cannot be re-simulated by this build, so the recording restarts at the loaded tick (like the math case)
+            replay = null;
+            info.BlueprintHash = GameInfo.BlueprintHashOf(db);
+        }
+        return new LoadedGame { Info = info, Sim = sim, Replay = replay, Migration = migration };
     }
+
+    /// <summary>(11a-2) True when a saved state carries the blueprint id table (state format 2+): its blueprints may
+    /// differ from this build's (translated by id); older states load only with the same blueprints.</summary>
+    public static bool StateHasBlueprintTable(byte[] state) => state.Length > 0 && new ByteReader(state).VarU() >= 2;
 
     public static LoadedGame Load(string path, BlueprintDb db) => Decode(ReadFile(path), db);
 
@@ -248,9 +262,9 @@ public static class SaveGame
 
     /// <summary>The terrain of a file: regenerated from the stored map settings, or the embedded one. Also checks that
     /// the blueprints match (block indices and stats are part of the saved state).</summary>
-    public static Terrain TerrainFor(GameInfo info, BlueprintDb db, byte[] embedded)
+    public static Terrain TerrainFor(GameInfo info, BlueprintDb db, byte[] embedded, bool blueprintsMayDiffer = false)
     {
-        if (info.BlueprintHash != GameInfo.BlueprintHashOf(db))
+        if (!blueprintsMayDiffer && info.BlueprintHash != GameInfo.BlueprintHashOf(db))
             throw new IncompatibleSaveException("The unit blueprints changed since this file was made (different game version)");
         Terrain terrain;
         if (info.Map != null) terrain = MapGenerator.Generate(info.Map);
@@ -273,9 +287,9 @@ public static class SaveGame
     }
 
     /// <summary>(10a-3) Blueprint + terrain hash checks for a terrain supplied by the caller.</summary>
-    private static Terrain CheckedTerrain(GameInfo info, BlueprintDb db, Terrain terrain)
+    private static Terrain CheckedTerrain(GameInfo info, BlueprintDb db, Terrain terrain, bool blueprintsMayDiffer)
     {
-        if (info.BlueprintHash != GameInfo.BlueprintHashOf(db))
+        if (!blueprintsMayDiffer && info.BlueprintHash != GameInfo.BlueprintHashOf(db))
             throw new IncompatibleSaveException("The unit blueprints changed since this file was made (different game version)");
         if (GameInfo.TerrainHashOf(terrain) != info.TerrainHash)
             throw new IncompatibleSaveException($"The map '{info.MapFile}' does not give the terrain this file was made on");

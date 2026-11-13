@@ -38,4 +38,25 @@ public class SaveCoverageTests
         Assert.Contains(problems, p => p.Contains(".Interface"));
         Assert.Contains(problems, p => p.Contains("StringBuilder") && p.Contains("not supported"));
     }
+
+    /// <summary>(11a-2) A saved field that holds a unit blueprint index must be in <see cref="BlueprintIndexFields.Indices"/>
+    /// (so a save made with another blueprint list is translated by id) or, if its name only looks like one, in
+    /// <see cref="BlueprintIndexFields.NotIndices"/>. Every listed entry must still exist.</summary>
+    [Fact]
+    public void EveryBlueprintIndexFieldIsRemapped()
+    {
+        var listed = BlueprintIndexFields.All(out var missing);
+        var notIdx = BlueprintIndexFields.Resolve(BlueprintIndexFields.NotIndices, out var missing2);
+        missing.AddRange(missing2);
+        Assert.True(missing.Count == 0, "BlueprintIndexFields entries that no longer exist:\n" + string.Join("\n", missing));
+        var unlisted = BlueprintIndexFields.ReachableFields()
+            .Where(x => BlueprintIndexFields.LooksLikeIndex(x.Field) && !listed.Contains(x.Field) && !notIdx.Contains(x.Field))
+            .Select(x => $"(\"{TypeNames.Of(x.Field.DeclaringType!)}\", \"{x.Field.Name}\"), // {x.Field.FieldType.Name}")
+            .Distinct().OrderBy(s => s, StringComparer.Ordinal).ToList();
+        Assert.True(unlisted.Count == 0,
+            "Saved fields that look like unit blueprint indices: add each to BlueprintIndexFields.Indices (an index into " +
+            "BlueprintDb.All) or NotIndices (src/Rts.Sim/Persistence/SaveBlueprintIndices.cs):\n" + string.Join("\n", unlisted));
+        foreach (var f in listed)
+            Assert.True(BlueprintIndexFields.SupportedShape(f.FieldType), $"{f.DeclaringType}.{f.Name}: unsupported shape {f.FieldType}");
+    }
 }

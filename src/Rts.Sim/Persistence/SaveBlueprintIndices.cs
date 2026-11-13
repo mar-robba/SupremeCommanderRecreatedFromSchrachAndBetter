@@ -19,7 +19,75 @@ public static class BlueprintIndexFields
     public static readonly (string Type, string Field)[] Indices =
     [
         ("Rts.Sim:Rts.Sim.World.UnitStore", "Bp"),
+        ("Rts.Sim:Rts.Sim.World.ProjectileStore", "SourceBp"),
+        ("Rts.Sim:Rts.Sim.World.PropStore", "BlueprintIndex"),
+        ("Rts.Sim:Rts.Sim.World.UpgradeState", "TargetBp"),
+        ("Rts.Sim:Rts.Sim.Orders.Order", "BlueprintIndex"),
+        ("Rts.Sim:Rts.Sim.Orders.DebugSpawnCommand", "<BlueprintIndex>k__BackingField"),
+        ("Rts.Sim:Rts.Sim.Orders.FactoryDequeueCommand", "<BlueprintIndex>k__BackingField"),
+        ("Rts.Sim:Rts.Sim.Orders.FactoryEnqueueCommand", "<BlueprintIndex>k__BackingField"),
+        ("Rts.Sim:Rts.Sim.Orders.SandboxSpawnCommand", "<BlueprintIndex>k__BackingField"),
+        ("Rts.Sim:Rts.Sim.Combat.ShotRequest", "Bp"),
+        ("Rts.Sim:Rts.Sim.Commander.PendingDeathBlast", "Bp"),
+        ("Rts.Sim:Rts.Sim.Experimental.PendingBlast", "Bp"),
+        ("Rts.Sim:Rts.Sim.Systems.GhostInfo", "Bp"),
+        ("Rts.Sim:Rts.Sim.Systems.SpawnJob", "Blueprint"),
+        ("Rts.Sim:Rts.Sim.AI.KnownStructure", "Bp"),
+        ("Rts.Sim:Rts.Sim.AI.AiPlacement+Reservation", "Bp"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpAA"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpAirFactory"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpAirScout"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpArtillery"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpBomber"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpEnergyStorage"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpEngineer"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpHydro"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpInterceptor"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpLandFactory"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpMassStorage"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpMex"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpMobileAA"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpPD"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpPgen"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpRadar"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpScout"),
+        ("Rts.Sim:Rts.Sim.AI.AiBrain", "BpTank"),
     ];
+
+    /// <summary>Types whose every saved int / int[] field is a blueprint index (whatever its name), e.g. the AI's
+    /// per-army unit roster.</summary>
+    public static readonly string[] IndexTypes =
+    [
+        "Rts.Sim:Rts.Sim.AI.AiRoster",
+    ];
+
+    /// <summary>Saved arrays INDEXED by blueprint index (one entry per blueprint, in classes): when the blueprint list
+    /// changed they are rebuilt in this build's order by id (a new blueprint's entry = default).</summary>
+    public static readonly (string Type, string Field)[] PerBlueprint =
+    [
+        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Count"),
+        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Complete"),
+        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Queued"),
+        ("Rts.Sim:Rts.Sim.AI.AiPlacement", "_failUntil"),
+        ("Rts.Sim:Rts.Sim.Intel.IntelService", "_canSubmerge"),
+    ];
+
+    /// <summary>Saved objects computed only from the blueprints: when any blueprint differs (ids or content) the
+    /// saved one is skipped and a fresh one is built from this build's db (every reference gets the fresh one).</summary>
+    public static readonly Dictionary<string, Func<Data.BlueprintDb, object>> Derived = new(StringComparer.Ordinal)
+    {
+        ["Rts.Sim:Rts.Sim.Combat.CombatCatalog"] = static db => new Combat.CombatCatalog(db),
+    };
+
+    /// <summary>Per-world state keys (<see cref="WorldState.Tables"/>) that are caches of blueprint data: dropped when
+    /// any blueprint differs (their owner builds them again on first use).</summary>
+    public static readonly HashSet<string> DerivedTables = new(StringComparer.Ordinal)
+    {
+        "Rts.Sim.Naval.Torpedoes+DefenseTable.Table",
+    };
+
+    private static HashSet<FieldInfo>? _perBp;
+    public static bool IsPerBlueprint(FieldInfo f) => (_perBp ??= Resolve(PerBlueprint, out _)).Contains(f);
 
     /// <summary>Saved fields whose name looks like a blueprint index but that are not one (or are never saved state
     /// that outlives a tick).</summary>
@@ -41,9 +109,23 @@ public static class BlueprintIndexFields
     private static readonly ConcurrentDictionary<Type, bool> AffectsCache = new();
 
     /// <summary>The fields of <see cref="Indices"/> (an entry that does not resolve is reported by the coverage test).</summary>
-    public static HashSet<FieldInfo> Fields => _fields ??= Resolve(Indices, out _);
+    public static HashSet<FieldInfo> Fields => _fields ??= All(out _);
 
-    internal static HashSet<FieldInfo> Resolve((string Type, string Field)[] list, out List<string> missing)
+    /// <summary><see cref="Indices"/> plus the int-like fields of <see cref="IndexTypes"/>; <paramref name="missing"/> =
+    /// entries that do not resolve in this build.</summary>
+    public static HashSet<FieldInfo> All(out List<string> missing)
+    {
+        var set = Resolve(Indices, out missing);
+        foreach (var tn in IndexTypes)
+        {
+            if (TypeNames.TryResolve(tn) is not { } t) { missing.Add(tn); continue; }
+            foreach (var f in TypeLayout.SavedFields(t))
+                if (SupportedShape(f.FieldType)) set.Add(f);
+        }
+        return set;
+    }
+
+    public static HashSet<FieldInfo> Resolve((string Type, string Field)[] list, out List<string> missing)
     {
         var set = new HashSet<FieldInfo>();
         missing = new List<string>();
@@ -71,7 +153,7 @@ public static class BlueprintIndexFields
         if (RefCodec.IsSystemType(t)) return false;
         foreach (var f in TypeLayout.SavedFields(t))
         {
-            if (Fields.Contains(f)) return true;
+            if (Fields.Contains(f) || IsPerBlueprint(f)) return true;
             if (f.FieldType.IsValueType && AffectsUncached(f.FieldType, depth + 1)) return true;
         }
         return false;
