@@ -33,8 +33,15 @@ internal sealed class RefPlan(Type? expected, string where) : Plan
 {
     public override object? Read(GraphReader r)
     {
-        object? o = r.ReadRef();
-        if (o is DroppedObject) return null;
+        object? o;
+        r.AcceptDropped++;
+        try { o = r.ReadRef(); }
+        finally { r.AcceptDropped--; }
+        if (o is DroppedObject d)
+        {
+            r.Migration.Report.Add($"{where}: its saved {SaveLayout.Short(d.TypeName)} no longer exists (read as null)");
+            return null;
+        }
         if (o != null && expected != null && !expected.IsInstanceOfType(o))
             throw new IncompatibleSaveException($"{where}: saved {SaveLayout.Short(o.GetType())}, now {SaveLayout.Short(expected)}");
         return o;
@@ -198,7 +205,8 @@ internal sealed class MigrationContext
         Plan p;
         if (st == target)
         {
-            if (n.Text == Sig(target) && !Forced(target)) p = Same(target);
+            // A reference always goes through RefPlan: an object of a type that is gone reads as null there.
+            if (n.Text == Sig(target) && !Forced(target) && n.Kind != NodeKind.Ref) p = Same(target);
             else if (n.Kind == NodeKind.Struct) p = StructFor(n, target, where);
             else if (n.Kind == NodeKind.Ref) p = new RefPlan(target, where);
             else if (n.Kind == NodeKind.Enum && SaveLayout.CanConvert(SaveLayout.PrimType(n.Underlying!)!, target))

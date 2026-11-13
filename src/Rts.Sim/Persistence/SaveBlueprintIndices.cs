@@ -66,11 +66,11 @@ public static class BlueprintIndexFields
     /// changed they are rebuilt in this build's order by id (a new blueprint's entry = default).</summary>
     public static readonly (string Type, string Field)[] PerBlueprint =
     [
-        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Count"),
-        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Complete"),
-        ("Rts.Sim:Rts.Sim.AI.AiPerception", "Queued"),
+        ("Rts.Sim:Rts.Sim.AI.AiView", "Count"),
+        ("Rts.Sim:Rts.Sim.AI.AiView", "Complete"),
+        ("Rts.Sim:Rts.Sim.AI.AiView", "Queued"),
         ("Rts.Sim:Rts.Sim.AI.AiPlacement", "_failUntil"),
-        ("Rts.Sim:Rts.Sim.Intel.IntelService", "_canSubmerge"),
+        ("Rts.Sim:Rts.Sim.Systems.IntelService", "_canSubmerge"),
     ];
 
     /// <summary>Saved objects computed only from the blueprints: when any blueprint differs (ids or content) the

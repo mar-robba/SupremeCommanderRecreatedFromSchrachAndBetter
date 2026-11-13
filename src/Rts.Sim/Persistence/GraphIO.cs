@@ -110,6 +110,18 @@ public sealed class GraphReader
 
     public object? ReadRef()
     {
+        var o = ReadRefCore();
+        // (11a-2) An object whose type is gone may only land where a read plan drops it (a dropped field / type, or a
+        // reference field read by a plan, which turns it into null); anywhere else (e.g. inside a container whose
+        // layout did not change) it would be stored in the sim as a foreign object: refuse with the type's name.
+        if (o is DroppedObject d && Skipping == 0 && AcceptDropped == 0)
+            throw new IncompatibleSaveException($"This game holds a {SaveLayout.Short(d.TypeName)}, a type that no longer exists in this " +
+                "version, where it cannot be dropped (add a rename to SaveRenames.Types, DEV_GUIDE \"How to change a saved type\")");
+        return o;
+    }
+
+    private object? ReadRefCore()
+    {
         byte tag = In.U8();
         switch (tag)
         {
@@ -163,6 +175,7 @@ public sealed class GraphReader
         // (11a-2) Fast path: the layout this build has (the normal case) reads through the generated codecs. Any other
         // layout (or a type that is gone / renamed, or one holding blueprint indices to translate) gets a read plan.
         var type = _mig == null ? TypeNames.TryResolve(name) : _mig.Resolve(name);
+        if (_mig == null && type != null && TypeNames.Of(type) != name) type = Migration.Resolve(name); // renamed: report it
         RefCodec? codec = null;
         if (type != null)
         {
@@ -188,6 +201,9 @@ public sealed class GraphReader
 
     /// <summary>(11a-2) &gt; 0 while bytes of a dropped field / type are skipped (a gone external then reads as dropped).</summary>
     internal int Skipping;
+
+    /// <summary>(11a-2) &gt; 0 while a read plan reads a reference it turns into null when its type is gone.</summary>
+    internal int AcceptDropped;
 
     internal void AddFixup(Action a) => _fixups.Add(a);
     internal void AddAfterLoad(IAfterLoad o) => _afterLoad.Add(o);
