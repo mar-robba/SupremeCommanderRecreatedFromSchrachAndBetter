@@ -1303,7 +1303,10 @@ Gap G12: units path and move by their real radius and their own slope limit; onc
   index also brakes, so in a one-lane channel it queues. Query radius + 6 cells. Before, oncoming hulls drove through
   each other (closest centers 0.03-0.86 in `NavalChannelTests`); now 1.53-3.91, no deadlock.
 - Reference values (old -> new): GoldenStateHash 0xD273E007297C55F1 -> 0xED3AD081E0A9502E (GoldenTerrainHash unchanged);
-  NUMBERS_PLACEHOLDER
+  AI match `ai 30 256 42 hard,normal` C87C46C4EA726A82 "WINNER: Player (Hard) after 12:00" -> 31A42EB6FA4BA170 "after
+  16:01"; bench `2000 300` hash 2F09CD7D01AF287E unchanged (only radius < 0.75 units: same cells as before), avg
+  2.16 -> 2.06 ms/tick; nav build 1024: setup 483 -> 518 ms, first tick 150.2 -> 150.6 ms (Path 51.3 -> 53.3);
+  savebench 8 256 2: file 714 -> 754 KB, load cold 522 -> 493 / warm 169 -> 127 ms. Map pack: 10 written, 0 refused.
 - Tests: `PathClearanceTests` (requirement values and cap, gaps, Fatboy/battleship not pushed into a cliff/shore,
   slope walker vs tank, slope classes, nav-format reset, save/load 1 + 4 threads), `NavalChannelTests` (5 channels).
   `AiTechTests.AiReachesTech2OnFixedSeed` moved to seed 4 (games diverge; measured: no builder stuck).
