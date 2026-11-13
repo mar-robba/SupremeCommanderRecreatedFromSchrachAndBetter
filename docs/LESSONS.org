@@ -254,6 +254,53 @@ e ogni scopo.
   appena fatto come "di un'altra versione". Per i giocatori il rifiuto è voluto; per chi fa i controlli è una trappola.
 - Soluzione: aperto; nota in DEV_GUIDE "Multiplayer checks" (ricompilare il client prima di provare un caricamento).
 
+** L'ingombro era controllato con due regole diverse
+- Errore: la ricerca del percorso usava le classi di ingombro dell'unità, ma il movimento locale (11a-1,
+  2026-11-13) accettava qualunque cella libera, qualunque fosse la taglia. La spinta delle altre unità poteva
+  quindi portare una corazzata o un Fatboy a mezzo passo da una riva o da una struttura. In più c'era un solo
+  controllo "qui ci devo stare": un'unità già ferma dove non ci stava restava intrappolata oppure non veniva
+  controllata affatto.
+- Soluzione: una sola funzione, ~Fits~, usata da ricerca del percorso, movimento, ricerca della cella libera più
+  vicina e atterraggio del teletrasporto (~bcdeeb5~); un passo è accettato se non peggiora la situazione, così
+  un'unità che non ci sta può sempre uscire (~c9edda5~). Regola: una domanda sulla mappa ha una sola funzione che
+  risponde, per tutti i sistemi.
+
+** Il brief indicava una causa che nessuno aveva misurato
+- Errore: il brief di 11a-1 diceva che le unità grandi sfioravano scogliere e rive perché le classi di ingombro
+  si fermano a 4. Nessun blueprint supera quella classe (raggio massimo 3.0): la causa vera era il movimento locale
+  (voce precedente). L'orchestratore l'ha misurato solo scrivendo il prompt, un minuto prima di lanciare l'agente.
+- Soluzione: il prompt ha riportato il dato e chiesto di scrivere prima il test che fallisce, poi la correzione.
+  Regola per i brief: la causa di un difetto si scrive solo dopo averla misurata, altrimenti si scrive il sintomo.
+
+** Un valore nei blueprint che nessun codice leggeva
+- Errore: ~Movement.MaxSlope~ esisteva nel blueprint ed era impostato su tre unità (Fatboy, Scathis, Monkeylord),
+  ma nessun sistema lo leggeva: la pendenza massima era una costante uguale per tutti.
+- Soluzione: classi di pendenza ricavate dai blueprint (0.75 e 1.2 per bot, comandanti e Monkeylord, ~bcdeeb5~);
+  i tre valori più bassi di 0.75 sono stati tolti, perché il generatore di mappe garantisce i collegamenti solo
+  a 0.75. Aperto: nessun test segnala un campo dei blueprint che il codice non usa.
+
+** Le navi che si incrociano non avevano una regola
+- Errore: la separazione tra navi non prevedeva due gruppi che si vengono incontro: gli scafi si attraversavano
+  (centri a 0.03-0.86 di distanza) o si bloccavano nei canali.
+- Soluzione: chi viene incontro sterza alla propria destra e l'unità con indice più alto frena e aspetta
+  (~bfb52c4~, 11a-1); i centri restano a 1.5-3.9. Aperto: in un canale a una sola corsia le navi si stringono
+  ancora con gli scafi sovrapposti, nessuna arretra.
+
+** I test dell'IA a seme fisso cambiano esito a ogni modifica del movimento
+- Errore: ~AiReachesTech2OnFixedSeed~ chiede che entrambe le IA arrivino al T2 terrestre entro il minuto 17 con un
+  seme fisso. Con il nuovo movimento (11a-1) la partita prende un'altra strada e un'IA non ci arriva più. Nessuna
+  unità è bloccata (tempo di stallo dei costruttori sotto l'1.1 %, come prima); su 12 semi ora 5 soddisfano la
+  condizione, prima 3.
+- Soluzione: il test usa il seme 4, con il motivo nel commento (~c9edda5~). Aperto: un test su un solo seme
+  misura la fortuna di quella partita; servirebbe una soglia su più semi.
+
+** Il pacchetto di mappe non si rigenera più uguale
+- Errore: i file in ~data/maps~ sono stati scritti dal modulo 8b-2, prima che 10a-1 cambiasse la matematica del
+  generatore. Da allora ~mapexport --pack~ produce file diversi da quelli distribuiti, e nessuno se n'è accorto
+  fino al controllo di 11a-1 (2026-11-13), perché nessun test confronta l'elenco del pacchetto con i file.
+- Soluzione: aperto. I file distribuiti restano validi (contengono il terreno). Riesportarli cambierebbe il loro
+  hash, e i salvataggi e i replay fatti su quelle mappe verrebbero rifiutati.
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa

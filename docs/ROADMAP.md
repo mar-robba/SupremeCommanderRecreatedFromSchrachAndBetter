@@ -21,7 +21,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
 | 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12), (10a-3) multiplayer save/load ✅ 2026-11-13 | ✅ 2026-11-13 |
-| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing, (11a-2) save migration, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | in progress |
+| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing ✅ 2026-11-13, (11a-2) save migration, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | in progress |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
@@ -35,35 +35,43 @@ pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and 
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
 (10b-1) keybinding editor, (10a-1) deterministic math, (10b-2) selection overlays and (10a-2) observers + vote to
 drop merged 2026-11-12, (10a-3) multiplayer save/load merged 2026-11-13: **wave 10 is complete**. Wave 11: (11b-1)
-voice announcer merged 2026-11-13; left: (11a-1) pathing, (11a-2) save migration.
-Tests: 615 sim + 371 client + 43 net.
-Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 12:00", hash
-**C87C46C4EA726A82** (agents that must not change sim results compare against it; before 10a-1, which made the sim
-math software-deterministic, it was "after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
-Bench `2000 300` hash **2F09CD7D01AF287E** (6A8312040EFA67F2 before 10a-1). Replays made before 10a-1 and saves on
+voice announcer and (11a-1) pathing merged 2026-11-13; left: (11a-2) save migration.
+Tests: 630 sim + 371 client + 43 net.
+Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 16:01", hash
+**31A42EB6FA4BA170** (agents that must not change sim results compare against it; before 11a-1, which changed
+movement, it was "after 12:00", C87C46C4EA726A82; before 10a-1, which made the sim math software-deterministic,
+"after 12:18", FB269C29202773C1; before 8b-1 "after 15:35", BBD1FF3C4E116A4A).
+Bench `2000 300` hash **2F09CD7D01AF287E** (unchanged by 11a-1: only small units; 6A8312040EFA67F2 before 10a-1).
+`CrossOsDeterminismTests.GoldenStateHash` 0xED3AD081E0A9502E (0xD273E007297C55F1 before 11a-1). Replays made before 10a-1 and saves on
 generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.MathVersion`); `Msg.ProtocolVersion` 6 (10a-3; 5 = 10a-2).
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
 **ON RESUME** (2026-11-13 04:15, written by orchestrator session 5473885b on Fable 5.2, at 250k of context, for the next session):
-- **The wave 11 pair is running since 2026-11-13 09:58** (orchestrator session 84a8eb5c; the owner said "continua" at
-  04:12 and again about 09:55, probably a fresh usage window): (11a-1) pathing in
-  `.claude/worktrees/agent-a1cfe2a85950cb38b`, (11a-2) save migration in `.claude/worktrees/agent-a3aed1e9bdbb580ce`
-  (folder name = agent id, branch `worktree-agent-<id>`), one module agent each on Opus 5.5, cap 200k, watcher at 162k.
-  Their prompts are files that survive a reboot, in the main checkout (ignored by git): `.claude/prompts/11a-1.md`,
-  `11a-2.md` and the shared `rules-wave11.md`; a successor gets the same files plus "continue from
-  `.claude/handoff.md`". Found while writing them: no blueprint is above clearance class 4 today (largest radius 3.0),
-  `Movement.MaxSlope` is read nowhere in the sim, and any blueprint edit refuses every older save (hash check), so
-  11a-2 also has to record a blueprint id table and remap. **Merge 11a-2 first, then 11a-1**, and at 11a-1's merge run
-  the fixture test of 11a-2 (a save written before 11a-1 must load after it; 11a-1 was told to give its saved nav
-  state a version and to rebuild it when it does not fit).
-  Both first agents stopped by themselves at their checkpoint (11a-2 at 163k after 12 minutes: design + core read
-  plans, no test run; 11a-1 at 170k after 14 minutes: clearance field + slope classes + `Fits` in movement, sim tests
-  613/615). Second agents started 10:12 and 10:15 in the same worktrees (ids ae776a28a65768b6e for 11a-2,
-  a9de212776f657d3a for 11a-1). Open in 11a-1: `AiTechTests.AiReachesTech2OnFixedSeed` fails (army 1 never gets a T2
-  land factory; hypothesis: the ACU and builders are refused the cells next to structures by the new fit check);
-  agent 2 diagnoses it first, time-boxed to 120k of context, else a diagnosis agent with a larger cap.
+- **(11a-1) pathing is merged and verified** (2cf82f8, 2026-11-13 10:34; HISTORY report, six design errors in
+  LESSONS, fragmentation row, worktree and branch removed): two agents, 638 lines. Merge checks: 630 sim + 371
+  client + 43 net green, reference match "Player (Hard) after 16:01" 31A42EB6FA4BA170, bench 2F09CD7D01AF287E, both
+  `mp ... save=` runs in sync, savebench file 754 KB. Left open by its report: in a one-lane channel ships still
+  squeeze past with overlapping hulls; `AiReachesTech2OnFixedSeed` moved from seed 6 to seed 4 (the games diverge,
+  no unit is stuck).
+- **The map pack no longer regenerates to the shipped files** (found 2026-11-13, older than 11a-1: since 10a-1
+  changed the generator's math, `mapexport --pack tools/maps/pack.txt` gives other bytes than `data/maps`, written
+  by 8b-2). The shipped files stay valid. Not touched: re-exporting changes every pack map's hash, so saves and
+  replays on those maps would refuse. Ask the owner before doing it (HISTORY 11a-1, LESSONS).
+- **(11a-2) save migration is running** (started 2026-11-13 09:58 with 11a-1, orchestrator session 84a8eb5c) in
+  `.claude/worktrees/agent-a3aed1e9bdbb580ce` (branch `worktree-agent-a3aed1e9bdbb580ce`), one module agent at a time
+  on Opus 5.5, cap 200k, watcher at 162k. Prompts are files in the main checkout (ignored by git, they survive a
+  reboot): `.claude/prompts/11a-2.md` and the shared `rules-wave11.md`; a successor gets them plus "continue from
+  `.claude/handoff.md`", and the order "do not read the Persistence files whole" (agents 1 and 2 each spent
+  105-110k reading and stopped at their checkpoint: agent 1 at 163k after 12 minutes with the design and the read
+  plans, agent 2 at 160k after 14 minutes with state format 2, the blueprint id table and index remap, the migration
+  report and the replay-log restart; 1,302 lines by then). Agent 3 (id ae363bcafa3f9da6c, started 10:27) proves it:
+  full suites, synthetic layout tests, blueprint tests, a real fixture save, the client quickload pre-check
+  (`InGameSaveUi.cs:83`, which still refused any blueprint change), measurements, then docs. It was told that main
+  has 11a-1: its fixture, written before its final `git merge main`, must load after it (the real case of the
+  module). When it is merged: `bash <scratchpad>/check-11a.sh <log>` is `tools/agents/merge-check.sh` + the two
+  `mp ... save=` runs + savebench + nav build; then **wave 11 is complete** and LESSONS "Costi" is due.
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
