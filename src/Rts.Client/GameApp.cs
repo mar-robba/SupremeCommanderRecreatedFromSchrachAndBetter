@@ -106,6 +106,8 @@ public sealed class ClientOptions
     /// <summary>Multiplayer (Menus/MultiplayerScreen.cs): --host [port] (0 = not hosting), --join address, --name.</summary>
     public int HostPort;
     public string? JoinAddress, PlayerName;
+    /// <summary>(10a-3) --load-mp FILE: with --host, open the load lobby of that multiplayer save (a path, or a name in saves/).</summary>
+    public string? LoadMpSave;
     /// <summary>(10a-2) --observe: join (--join) as an observer; --net-vote-demo: the in-game "Waiting for…" banner with
     /// the Drop button and a fake tally (screenshots).</summary>
     public bool Observe, NetVoteDemo;
@@ -217,6 +219,7 @@ public sealed class ClientOptions
                 case "--name": o.PlayerName = Next(); break;
                 case "--observe": o.Observe = true; break;
                 case "--net-vote-demo": o.NetVoteDemo = true; break;
+                case "--load-mp": o.LoadMpSave = Next(); screen = StartScreen.Multiplayer; break; // (10a-3)
                 case "--multiplayer": screen = StartScreen.Multiplayer; break;
                 case "--help-overlay": o.HelpOverlay = true; gameArg = true; break;
                 case "--diplomacy": o.Diplomacy = true; gameArg = true; break;

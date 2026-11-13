@@ -56,6 +56,7 @@ public static class SaveText
         if (e.Info is not GameInfo i) return tags;
         if (i.Sandbox) tags.Add("SANDBOX");
         if (i.Scene != null) tags.Add("SCENE");
+        if (i.Multiplayer != null) tags.Add(i.Multiplayer.Auto ? "MULTIPLAYER AUTOSAVE" : "MULTIPLAYER"); // (10a-3)
         if (replay && i.WinningTeam >= 0)
         {
             var winners = i.Players.Where(p => p.Team == i.WinningTeam).Select(p => p.IsAI ? $"AI {p.Difficulty}" : p.Name).ToList();

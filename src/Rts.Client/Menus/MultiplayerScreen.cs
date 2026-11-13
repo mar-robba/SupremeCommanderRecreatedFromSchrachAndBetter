@@ -11,7 +11,7 @@ namespace Rts.Client.Menus;
 /// (<see cref="LanBrowser"/>). Hosting or joining opens the <see cref="LobbyScreen"/>, which then owns the session.
 /// Joining runs on a worker (it blocks until the host answers). CLI: --host [port], --join address, --name N.
 /// </summary>
-public sealed class MultiplayerScreen : IScreen
+public sealed partial class MultiplayerScreen : IScreen
 {
     private readonly AppHost _app;
     private readonly NetTextField _name, _address, _port;
@@ -58,7 +58,10 @@ public sealed class MultiplayerScreen : IScreen
             string? join = _app.Options.JoinAddress;
             _app.Options.HostPort = 0;
             _app.Options.JoinAddress = null;
-            if (hostPort > 0) Host(hostPort);
+            string? loadMp = _app.Options.LoadMpSave; // (10a-3) --host [port] --load-mp FILE
+            _app.Options.LoadMpSave = null;
+            if (hostPort > 0 && loadMp != null) HostLoad(hostPort, ResolveMpSave(loadMp));
+            else if (hostPort > 0) Host(hostPort);
             else if (join != null) Join(join);
         }
         PollJoin();
@@ -118,6 +121,7 @@ public sealed class MultiplayerScreen : IScreen
             Host(int.TryParse(_port.Text, out int port) && port is > 0 and < 65536 ? port : NetSession.DefaultPort);
         y += rowH + Ui.P(6);
         Ui.Text("Internet: forward this TCP port on your router.", x, y, Ui.F(10.5f), Ui.TextFaint);
+        DrawLoadButton(Ui.R(x + w - Ui.P(150), y - Ui.P(2), Ui.P(150), Ui.P(24)), busy); // (10a-3) MultiplayerScreen.Saves.cs
         y += Ui.P(28);
 
         Ui.Text("JOIN BY ADDRESS", x, y, ls, Ui.TextFaint, true);
@@ -183,6 +187,7 @@ public sealed class MultiplayerScreen : IScreen
         {
             var host = HostSession.Start(PlayerName, port);
             host.FactionKnown = id => _app.Db.Factions.Get(id) != null;
+            host.Autosave = AppSettings.Current.Autosave; // (10a-3) the host's setting: mp_autosave_1..3 on every peer
             _app.Go(new LobbyScreen(_app, host, newHost: true));
         }
         catch (Exception e)
