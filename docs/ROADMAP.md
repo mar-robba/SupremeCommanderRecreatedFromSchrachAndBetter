@@ -73,12 +73,15 @@ bullets below the first four are older, by sessions 5473885b and 84a8eb5c):
 - **A race in the load lobby was found by those merge checks and fixed** (37fcf13; HISTORY 11a-2 "A race in the
   load lobby", DEV_GUIDE "Multiplayer checks" last bullet): one net test timed out in 2 of 19 runs because the
   client published "save present" before it told the host, and the host drops a Ready that comes first. It was in
-  10a-3 and, for maps, in 8b-3. The LESSONS entry for it is still to write (after the "Costi" agent, next bullet).
-- **LESSONS "Costi" is being brought up to date** (due after wave 11): an Opus 5.5 agent, started 21:00 with the
-  prompt file `.claude/prompts/costi-onda11.md`, edits only the chapter "Costi" of `docs/LESSONS.org` in the main
-  checkout and does not commit. If this session ended before it finished: look at `git diff docs/LESSONS.org`; a
-  complete chapter is committed, a half-written one is finished by a fresh agent with the same prompt file (or
-  dropped with `git checkout docs/LESSONS.org` and redone).
+  10a-3 and, for maps, in 8b-3. LESSONS has its entry.
+- **LESSONS "Costi" is up to date with wave 11** (2026-11-14 21:20; an Opus 5.5 agent, 36 calls, 11.5 minutes;
+  prompt file `.claude/prompts/costi-onda11.md`, a model for the next time): totals 1,770M tokens, about 953 $ at
+  list price, 110,013 lines; two new lessons (a module that outgrows its brief costs agents, not dollars per line;
+  a closing task on Sonnet 5.5 cost a quarter). Next update: after wave 13, or when the owner asks. Its numbers say
+  the orchestrator on Fable 5.2 was 45-51 % of the spend of waves 10 and 11 (about 38 % if it ran on Opus 5.5): the
+  choice is the owner's, tell them. Left unexplained by the agent: ROADMAP "History of usage limits" gives the
+  weekly reset of 2026-11-12 as "2026-11-17 15:00", WORKFLOW "Usage limits" says the weekly limit resets on
+  Thursday 10:00 (2026-11-17 is a Tuesday), and Opus 5.5 calls worked again 6 minutes after that message.
 - **(11a-1) pathing is merged and verified** (2cf82f8, 2026-11-13 10:34; HISTORY report, six design errors in
   LESSONS, fragmentation row, worktree and branch removed): two agents, 638 lines. Merge checks: 630 sim + 371
   client + 43 net green, reference match "Player (Hard) after 16:01" 31A42EB6FA4BA170, bench 2F09CD7D01AF287E, both

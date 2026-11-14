@@ -355,17 +355,31 @@ e ogni scopo.
   (~AiView~, ~Systems.IntelService~) e nessuno se ne accorgeva: un nome che non corrisponde a niente non fa nulla.
 - Soluzione: un test di copertura risolve ogni nome dell'elenco e fallisce se non esiste (~56e639a~).
 
+** Il client mostrava "ho il salvataggio" prima di averlo detto all'host
+- Errore: nella lobby di caricamento di una partita multiplayer (10a-3) il client segnava il proprio salvataggio
+  come presente un'istruzione prima di mettere in coda il messaggio per l'host, e la richiesta "pronto" non passa
+  per lo stesso lucchetto. Chi vedeva il salvataggio presente poteva quindi mandare "pronto" per primo; l'host
+  scarta il "pronto" di un giocatore di cui non sa ancora che ha il salvataggio, e nessuno lo rimandava: la lobby
+  non diventava mai pronta. Lo stesso ordine c'era per le mappe (8b-3). Un test di rete falliva per questo circa
+  una volta su dieci, e nessuno l'aveva visto fallire fino ai controlli dopo l'unione di 11a-2 (2026-11-14).
+- Soluzione: prima il messaggio all'host, poi lo stato che gli altri thread leggono, nei due punti dei
+  salvataggi e nei due delle mappe (~37fcf13~). La causa è stata dimostrata prima di correggere: con un'attesa
+  di 40 ms tra le due istruzioni il test fallisce sempre con l'ordine vecchio e passa sempre con quello nuovo.
+  Regola (DEV_GUIDE "Multiplayer checks"): un test di rete che fallisce ogni tanto con "tempo scaduto" è un
+  difetto di ordine finché non si dimostra il contrario, e si dimostra allargando l'intervallo sospetto.
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa
-insegnano questi numeri. Dati dal 2026-10-10 al 2026-11-12 alle 12:00 (dal 24 ottobre al 10 novembre non si è
-lavorato). Tutti i moduli lanciati fin qui sono fusi in ~main~, fino a 9b-2 (2026-11-12); resta da fare 8b-3. La
-taratura dell'IA (9a) è stata tolta dal programma il 2026-11-11.
+insegnano questi numeri. Dati dal 2026-10-10 al 2026-11-14 alle 21:10 (dal 24 ottobre al 10 novembre non si è
+lavorato). Tutti i moduli lanciati fin qui sono fusi in ~main~, fino a 11a-2 (2026-11-14): le onde 8, 10 e 11 sono
+complete e non c'è niente in corso. La taratura dell'IA (9a) è stata tolta dal programma il 2026-11-11.
 
 Le tabelle di questo capitolo sono una fotografia. Quelle sempre aggiornate (per area, per onda, per modulo, per
 giorno) le genera il registro dei token in [[file:tokens/summary.org][tokens/summary.org]]. Questo capitolo va riallineato ogni 2-3 onde, o
 quando il proprietario lo chiede (decisione del 2026-11-10; prima era dopo ogni onda: WORKFLOW "Lifecycle of a
-wave", punto 7). Prossimo riallineamento: dopo l'onda 11, o quando il proprietario lo chiede.
+wave", punto 7). Prossimo riallineamento: dopo l'onda 13, o quando il proprietario lo chiede (l'onda 12 non è
+ancora pianificata: che cosa viene dopo lo decide il proprietario).
 
 ** Cos'è la cache
 - Il modello non ricorda niente tra una chiamata e l'altra. A ogni passo (leggere un file, lanciare un build,
@@ -387,36 +401,43 @@ wave", punto 7). Prossimo riallineamento: dopo l'onda 11, o quando il proprietar
 
 ** Come sono stati misurati
 - Fonte: il registro dei token ([[file:tokens/README.org][tokens/README.org]]), che legge le trascrizioni di Claude Code di questo progetto:
-  32 sessioni principali (orchestratore, documentazione) e 169 agenti (sub-agenti e sub-sub-agenti),
-  12.258 chiamate al modello. Ogni chiamata è contata una volta sola. Ogni agente è assegnato a un modulo
+  40 sessioni principali (orchestratore, documentazione) e 196 agenti (sub-agenti e sub-sub-agenti),
+  14.356 chiamate al modello. Ogni chiamata è contata una volta sola. Ogni agente è assegnato a un modulo
   dall'etichetta ~[scopo]~ all'inizio della sua descrizione (dal 2026-10-16) o da una regola sulla descrizione
   (prima). La sessione principale conta come "Fondazione" fino al lancio dei primi agenti (2026-10-10 19:24), poi
-  come orchestrazione.
+  come orchestrazione. Un'eccezione: il primo agente di 8b-3 l'ha avviato un lavoro programmato in una sessione
+  sua, che il registro conta nel modulo (3,4 $).
 - Claude Code cancella le trascrizioni dopo 30 giorni: quelle della prima sessione (fondazione, onde 1 e 2) non ci
   sono più. Le loro righe restano nel registro con token e dollari; su quei giorni non si possono più fare analisi
   chiamata per chiamata.
 - Token di input (scritture in cache, letture dalla cache, input normale): esatti.
-- Token di output: esatti per gli agenti dal 2026-10-23 (fine dell'onda 5, onde da 6 a 9) e per quasi tutte le
+- Token di output: esatti per gli agenti dal 2026-10-23 (fine dell'onda 5, onde da 6 a 11) e per quasi tutte le
   sessioni principali; *stimati* per gli agenti fino al 2026-10-22, perché lì la trascrizione registra solo il
   conteggio parziale dell'inizio dello stream. La stima è (caratteri del testo e delle chiamate agli strumenti / 4)
-  × 3,16, il rapporto misurato sulle chiamate con il conteggio completo (comprende il ragionamento nascosto). In
-  tutto 103 righe del registro su 229 sono esatte. Errore plausibile: ±30 % sull'output, circa ±7 % sul
-  costo delle onde da 1 a 5.
+  × 3,18, il rapporto misurato sulle chiamate con il conteggio completo (comprende il ragionamento nascosto; il
+  rapporto si ricalcola a ogni aggiornamento, quindi i numeri delle prime onde cambiano di qualche decimo). In
+  tutto 141 righe del registro su 267 sono esatte. Errore plausibile: ±30 % sull'output, circa ±7 % sul costo
+  delle onde da 1 a 5.
 - Dollari: equivalente a listino API. Fino al 2026-10-24 tutto ha girato su Claude Opus 5.5 (per milione di token:
   input 4 $, scrittura in cache 5 $ (5 minuti) o 8 $ (1 ora), lettura dalla cache 0,20 $, output 20 $). Dal
-  2026-11-10 l'orchestratore ha girato su Claude Fable 5.2, che costa il doppio (input 8 $, scrittura in cache 10 $
-  o 16 $, output 40 $; la lettura dalla cache resta 0,20 $), fino al mattino del 2026-11-12, quando il suo uso di
-  Fable 5.2 è finito; poi su Opus 5.5. Gli agenti hanno girato su Fable 5.2 solo il 10 novembre (18 $), poi su
-  Opus 5.5. Il proprietario usa un abbonamento e non paga questa cifra: i dollari servono a confrontare moduli e
-  onde tra loro. Il vincolo reale dell'abbonamento sono i limiti di sessione (vedi [[*Costo del processo][Costo del processo]]).
+  2026-11-10 l'orchestratore gira su Claude Fable 5.2, che costa il doppio (input 8 $, scrittura in cache 10 $
+  o 16 $, output 40 $; la lettura dalla cache resta 0,20 $), come ha deciso il proprietario; il 12 novembre, dalla
+  mattina alle 21:10, ha girato su Opus 5.5 (il suo uso di Fable 5.2 era finito), poi di nuovo su Fable 5.2. Gli
+  agenti hanno girato su Fable 5.2 solo il 10 novembre (18 $), poi su Opus 5.5. In tutto Fable 5.2 pesa 124 $
+  (13 % del totale). Claude Sonnet 5.5 (input 2 $, scrittura in cache 2,5 $ o 4 $, lettura 0,10 $, output 10 $: la
+  metà di Opus 5.5) ha fatto un solo agente, quello che ha finito 11a-2 il 14 novembre (0,34 $); poche sessioni
+  brevi di domande sono su Claude Haiku 5.5 (1,5 $). Il proprietario usa un abbonamento e non paga questa cifra: i
+  dollari servono a confrontare moduli e onde tra loro. Il vincolo reale dell'abbonamento sono i limiti di sessione
+  (vedi [[*Costo del processo][Costo del processo]]).
 - Righe: righe aggiunte in ~src/~, ~tests/~, ~tools/~, ~data/~ dal merge del modulo in ~main~ (diff rispetto al
   primo genitore; tabella ~righe~ di ~tools/token-ledger/purposes.json~).
 - Onde: i moduli sono raggruppati come in HISTORY. L'IA "d", lanciata con l'onda 3 e finita e fusa con la 4, è
   contata nell'onda 4, come l'infrastruttura delle fazioni (j, "pre-onda 5"). 7b e 8a, cominciati il 24 ottobre
-  sotto coordinatori e finiti l'11 novembre da agenti di modulo, sono nelle onde 7 e 8.
-- Riprese: dal 2026-11-11 un modulo passa per una catena di agenti di modulo (il secondo e il terzo continuano da
-  una nota di handoff quando il primo arriva al tetto). Il registro conta i successori come riprese, come faceva
-  con i coordinatori successivi.
+  sotto coordinatori e finiti l'11 novembre da agenti di modulo, sono nelle onde 7 e 8. L'onda 9 ha solo 9b (9a è
+  stata tolta).
+- Riprese: dall'11 novembre un modulo passa per una catena di 1-4 agenti di modulo (ognuno dopo il primo continua
+  da una nota di handoff quando il precedente arriva al tetto). Il registro conta i successori come riprese, come
+  faceva con i coordinatori successivi.
 - Correzioni al registro del 2026-11-10, che cambiano alcuni numeri rispetto alle versioni precedenti di questo
   capitolo: (1) il lavoro del 10 novembre su Fable 5.2 era contato al prezzo di Opus 5.5, cioè la metà; (2) gli
   scopi delle onde 6, 7 e 8 non avevano un'area e nel riepilogo comparivano come "Da classificare" (37 agenti,
@@ -426,16 +447,16 @@ wave", punto 7). Prossimo riallineamento: dopo l'onda 11, o quando il proprietar
   è divisa in due moduli, quello dell'onda 2 e quello "3d-4d".
 
 ** Totale
-In 13 giorni di lavoro: *1.523 milioni di token, circa 816 $* (in media 63 $ al giorno), per 98.821 righe fuse in
+In 15 giorni di lavoro: *1.770 milioni di token, circa 950 $* (in media 63 $ al giorno), per 110.013 righe fuse in
 ~main~.
 
 | Componente          | Token (M) | % token | $   | % costo |
 |---------------------+-----------+---------+-----+---------|
-| Lettura dalla cache | 1.459,7   | 95,8    | 292 | 36      |
-| Scrittura in cache  | 53,2      | 3,5     | 308 | 38      |
-| Output              | 10,1      | 0,7     | 216 | 26      |
+| Lettura dalla cache | 1.698,5   | 96,0    | 339 | 36      |
+| Scrittura in cache  | 59,0      | 3,3     | 353 | 37      |
+| Output              | 12,0      | 0,7     | 261 | 27      |
 
-L'input fuori cache è trascurabile (25.000 token).
+L'input fuori cache è trascurabile (29.000 token).
 
 | Giorno        | Token (M) | $   | Chiamate | Agenti attivi |
 |---------------+-----------+-----+----------+---------------|
@@ -451,13 +472,17 @@ L'input fuori cache è trascurabile (25.000 token).
 | 10-24         | 174,9     | 92  | 1.775    | 27            |
 | 11-10         | 33,2      | 44  | 317      | 8             |
 | 11-11         | 53,3      | 41  | 499      | 5             |
-| 11-12 (12:00) | 97,2      | 50  | 828      | 12            |
+| 11-12         | 238,4     | 123 | 2.110    | 29            |
+| 11-13         | 84,0      | 46  | 664      | 8             |
+| 11-14 (21:10) | 21,4      | 16  | 152      | 2             |
 
 Il picco del 12 ottobre è l'onda 3: cinque agenti in parallelo, ciascuno con i propri sub-agenti, più le loro
 riprese. Il 24 ottobre sono finiti l'IA dell'onda 5, l'onda 6 e 7a, e sono partiti 7b e 8a. Il 10 e l'11
 novembre hanno pochi token e molti dollari: l'orchestratore su Fable 5.2 e pochi agenti, che hanno finito 7b e 8a
-([[*Fable 5.2 costa il doppio per passo][Fable 5.2 costa il doppio per passo]]). Il 12 novembre, fino alle 12, quattro moduli fusi (8b-1, 8b-2, 9b-1, 9b-2)
-con 50 $.
+([[*Fable 5.2 costa il doppio per passo][Fable 5.2 costa il doppio per passo]]). Il 12 novembre è il giorno più caro (123 $): nove moduli fusi
+(8b-1, 9b-1, 8b-2, 9b-2, 8b-3, 10b-1, 10a-1, 10b-2, 10a-2), 10.544 righe, sempre due agenti alla volta. Il 13
+novembre sono stati fusi 10a-3, 11b-1 e 11a-1 e scritto quasi tutto 11a-2; il 14 l'agente su Sonnet 5.5 ha finito
+11a-2 e il resto è l'orchestratore (merge, docs) e questo capitolo.
 
 ** Per onda
 Risponde alla domanda "il costo aumenta man mano che si va avanti?". Ogni riga è il lavoro degli agenti dei moduli
@@ -470,187 +495,230 @@ contesto medio riletto a ogni passo.
 | Fondazione | 1      | —      | 5,1   | 5.113  | 1,0            | 7                     | 102                | 0,134        | —                    |
 | Onda 1     | 5      | 5      | 38,7  | 11.735 | 3,3            | 28                    | 209                | 0,117        | —                    |
 | Onda 2     | 4      | 9      | 59,6  | 10.407 | 5,7            | 62                    | 221                | 0,093        | —                    |
-| Onda 3     | 4      | 17     | 81,3  | 14.636 | 5,6            | 79                    | 136                | 0,070        | 35                   |
-| Onda 4     | 6      | 28     | 139,0 | 17.518 | 7,9            | 128                   | 117                | 0,062        | 33                   |
-| Onda 5     | 5      | 56     | 181,2 | 21.889 | 8,3            | 158                   | 112                | 0,052        | 57                   |
+| Onda 3     | 4      | 17     | 81,4  | 14.636 | 5,6            | 79                    | 136                | 0,070        | 35                   |
+| Onda 4     | 6      | 28     | 139,2 | 17.518 | 7,9            | 128                   | 117                | 0,062        | 33                   |
+| Onda 5     | 5      | 56     | 181,4 | 21.889 | 8,3            | 158                   | 112                | 0,052        | 57                   |
 | Onda 6     | 2      | 18     | 52,1  | 6.041  | 8,6            | 177                   | 93                 | 0,049        | 28                   |
 | Onda 7     | 2      | 13     | 32,3  | 4.163  | 7,8            | 133                   | 89                 | 0,058        | 14                   |
-| Onda 8     | 3      | 15     | 39,0  | 4.680  | 8,3            | 162                   | 98                 | 0,051        | 28                   |
+| Onda 8     | 4      | 20     | 56,3  | 6.243  | 9,0            | 179                   | 99                 | 0,050        | 32                   |
 | Onda 9     | 2      | 6      | 19,6  | 2.639  | 7,4            | 150                   | 113                | 0,049        | 59                   |
+| Onda 10    | 5      | 14     | 38,2  | 6.053  | 6,3            | 129                   | 106                | 0,049        | 51                   |
+| Onda 11    | 3      | 7      | 21,3  | 3.576  | 6,0            | 118                   | 113                | 0,051        | 54                   |
 
-- *Per riga il costo è salito per quattro onde, poi si è fermato.* 3,3 $ ogni 1000 righe nell'onda 1, 5,7 e 5,6
-  nelle onde 2 e 3, 7,9 nella 4, poi tra 7,4 e 8,6 in tutte le onde dalla 5 alla 9. Dall'onda 1 alla 4 è cresciuto
-  di 2,4 volte; dalla 4 alla 9 non è più cresciuto.
+- *Per riga il costo è salito per quattro onde, poi si è fermato, e nelle onde 10 e 11 è sceso.* 3,3 $ ogni 1000
+  righe nell'onda 1, 5,7 e 5,6 nelle onde 2 e 3, 7,9 nella 4, tra 7,4 e 9,0 nelle onde dalla 5 alla 9, poi 6,3 e
+  6,0 nelle onde 10 e 11, il valore più basso dall'onda 3.
 - *Non è salito il prezzo di un passo: è salito il numero di passi.* Una chiamata costava 0,117 $ nell'onda 1 e
-  0,049 $ nelle onde 6 e 9, perché il contesto riletto a ogni passo si è dimezzato (da 209k a 93k token, con i
-  tetti di contesto del 12 e del 16 ottobre; 113k nell'onda 9, con agenti di modulo a 200k senza sub-agenti). Ma per
-  1000 righe servivano 28 chiamate nell'onda 1 e 150-177 nelle onde dalla 6 alla 9, da 5 a 6 volte tanto.
+  0,049-0,051 $ dalla 6 alla 11, perché il contesto riletto a ogni passo si è dimezzato (da 209k a 89-113k token,
+  con i tetti di contesto del 12 e del 16 ottobre e poi gli agenti di modulo a 200k). Ma per 1000 righe servivano
+  28 chiamate nell'onda 1 e 150-179 nelle onde dalla 6 alla 9. Nelle onde 10 e 11 ne sono servite 129 e 118: il
+  calo del costo per riga viene tutto da qui, perché il prezzo di un passo non è cambiato.
 - Perché servono più passi (spiegazione probabile, non misurata causa per causa): c'è più codice esistente da
   leggere prima di toccarlo; le verifiche sono cresciute con il progetto (test, partita di riferimento, screenshot,
   salvataggi); il lavoro di un modulo passa per più mani (1 agente per modulo nell'onda 1, 4-5 nelle onde 3 e 4,
-  9-11 nelle onde 5 e 6, 2-3 nell'onda 9) e ogni agente in più rilegge prima di scrivere. Anche l'output per riga è
-  cresciuto: da 48k token ogni 1000 righe (onda 1) a 119k (onda 6) e 126k (onda 9), cioè note di handoff, rapporti e
-  messaggi oltre al codice.
+  9-11 nelle onde 5 e 6, 1-4 nelle onde dalla 9 alla 11) e ogni agente in più rilegge prima di scrivere. Anche
+  l'output per riga è cresciuto: da 48k token ogni 1000 righe (onda 1) a 119k (onda 6) e 134k (onda 8), cioè note
+  di handoff, rapporti e messaggi oltre al codice; nelle onde 10 e 11 è tornato a 106k.
 - *Il costo totale di un'onda segue la sua dimensione.* 39, 60, 81, 139 e 181 $ dalle onde 1 alla 5, perché ogni
-  onda era più grande (da 5 a 56 agenti, da 12.000 a 22.000 righe). Dalla 6 le onde sono piccole per scelta (2-3
-  moduli): 52 $ l'onda 6, 32 $ la 7, 39 $ la 8, 20 $ la 9.
+  onda era più grande (da 5 a 56 agenti, da 12.000 a 22.000 righe). Dalla 6 le onde sono piccole per scelta (2-5
+  moduli): 52 $ l'onda 6, 32 $ la 7, 56 $ la 8 (con 8b-3), 20 $ la 9, 38 $ la 10, 21 $ la 11.
 - *La parte che continua a salire è l'IA*: 4,4 $ ogni 1000 righe nell'onda 2, 14,9 $ nel modulo 3d-4d, 19,7 $ in
   5k. Senza l'IA le onde 2, 4 e 5 costano 6,2, 7,0 e 5,8 $ ogni 1000 righe: l'onda 5 senza IA costa meno della 4,
   grazie a Cybran (5,0 $) e multigiocatore (3,6 $). Dopo l'onda 5 non c'è stato altro lavoro sull'IA.
 - *Le riprese pesano*: un terzo del costo delle onde 3 e 4, il 57 % dell'onda 5 (limiti d'uso e 11 coordinatori
-  uno dopo l'altro in 5k), il 28 % dell'onda 6. Nell'onda 9 sono il 59 %, ma con un significato diverso: sono i
-  successori previsti della catena di agenti di modulo, non interruzioni ([[*Le riprese costano più di un quarto del totale][Le riprese costano più di un quarto del totale]]).
+  uno dopo l'altro in 5k), il 28 % dell'onda 6. Nelle onde 9, 10 e 11 sono il 51-59 %, ma con un significato
+  diverso: sono i successori previsti della catena di agenti di modulo, non interruzioni ([[*Le riprese costano più di un quarto del totale][Le riprese costano più di un quarto del totale]]).
 - *7b e 8a sono costati 8,3 e 10,9 $ ogni 1000 righe*, sopra la media delle onde 7 e 8: il 39 % della loro spesa
   (18 $ su 46) è del 10 novembre, su Fable 5.2 e in due finestre d'uso finite dopo 8-10 minuti. Li hanno finiti
   l'11 novembre gli agenti di modulo su Opus 5.5 (4 $ per 7b, 12 $ per 8a).
+- *8b-3 è costato 11,0 $ ogni 1000 righe*, il modulo più caro per riga dopo l'onda 5: cinque agenti (tre di
+  modulo e due sub-agenti per l'aspetto dei biomi) più la sessione del lavoro programmato, e il primo agente
+  tagliato da un limite d'uso a 162k, perché il lavoro programmato era partito nella coda della finestra
+  precedente. Tocca protocollo di rete, lobby e renderer.
 
 ** Per modulo
 Ordinati per costo. "$ / 1000 righe" confronta l'impegno con il risultato.
 
-| Modulo                                                | Onda | Agenti | Token (M) | Output (k) | $     | % costo | Righe  | $ / 1000 righe |
-|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+--------+----------------|
-| IA usa tutto (5k)                                     | 5    | 18     | 170,2     | 926        | 76,8  | 9,4     | 3.905  | 19,7           |
-| Fazione Cybran (5l)                                   | 5    | 20     | 88,7      | 631        | 46,9  | 5,7     | 9.466  | 5,0            |
-| Rifinitura SupCom (4f)                                | 4    | 9      | 79,6      | 489        | 43,0  | 5,3     | 3.793  | 11,3           |
-| Comandante e ingegneri (6a)                           | 6    | 13     | 65,9      | 470        | 34,3  | 4,2     | 3.576  | 9,6            |
-| Navale (3c)                                           | 3    | 4      | 61,1      | 266        | 32,2  | 4,0     | 3.143  | 10,3           |
-| IA schermaglie (3d-4d)                                | 4    | 5      | 64,7      | 305        | 29,4  | 3,6     | 1.975  | 14,9           |
-| Mappe, menu, flusso (onda 2)                          | 2    | 3      | 64,8      | 257        | 25,1  | 3,1     | 3.807  | 6,6            |
-| Unità mancanti e mura (8a)                            | 8    | 10     | 41,1      | 334        | 24,6  | 3,0     | 2.250  | 10,9           |
-| Armi strategiche (3b)                                 | 3    | 6      | 45,7      | 297        | 23,1  | 2,8     | 4.343  | 5,3            |
-| Sperimentali e comandanti (4g)                        | 4    | 5      | 38,4      | 275        | 22,9  | 2,8     | 3.006  | 7,6            |
-| Ordini e selezione (7b)                               | 7    | 9      | 31,9      | 311        | 21,9  | 2,7     | 2.648  | 8,3            |
-| Scala e prestazioni (5m)                              | 5    | 6      | 50,0      | 260        | 21,7  | 2,7     | 1.657  | 13,1           |
-| Trasporti (4h)                                        | 4    | 4      | 37,9      | 263        | 20,9  | 2,6     | 3.350  | 6,2            |
-| UX (5n)                                               | 5    | 7      | 42,8      | 271        | 19,6  | 2,4     | 2.339  | 8,4            |
-| Opzioni partita e squadra (6b)                        | 6    | 5      | 33,7      | 249        | 17,8  | 2,2     | 2.465  | 7,2            |
-| Salvataggi e replay (4i)                              | 4    | 3      | 31,0      | 239        | 17,4  | 2,1     | 4.473  | 3,9            |
-| Multigiocatore lockstep (5o)                          | 5    | 5      | 35,2      | 231        | 16,2  | 2,0     | 4.522  | 3,6            |
-| Sandbox (3e)                                          | 3    | 5      | 28,2      | 249        | 15,2  | 1,9     | 4.025  | 3,8            |
-| Nebbia di guerra e intel (onda 2)                     | 2    | 2      | 30,9      | 147        | 12,9  | 1,6     | 1.332  | 9,7            |
-| IA schermaglie (onda 2)                               | 2    | 2      | 25,9      | 147        | 11,6  | 1,4     | 2.646  | 4,4            |
-| Ombre terreno, LOD, minimappa (9b-2)                  | 9    | 4      | 26,0      | 179        | 11,2  | 1,4     | 1.082  | 10,3           |
-| Tecnologia T2/T3 (3a)                                 | 3    | 2      | 22,2      | 136        | 10,8  | 1,3     | 3.125  | 3,4            |
-| Rilascio e impostazioni (7a)                          | 7    | 4      | 17,5      | 169        | 10,4  | 1,3     | 1.515  | 6,9            |
-| Grafica client (onda 1)                               | 1    | 1      | 20,7      | 170        | 10,1  | 1,2     | 3.361  | 3,0            |
-| Audio e rifinitura (onda 2)                           | 2    | 2      | 20,6      | 115        | 9,9   | 1,2     | 2.622  | 3,8            |
-| Pathfinding e movimento (onda 1)                      | 1    | 1      | 18,1      | 135        | 9,0   | 1,1     | 2.428  | 3,7            |
-| Animazioni di morte e warp-in (9b-1)                  | 9    | 2      | 18,7      | 153        | 8,5   | 1,0     | 1.557  | 5,4            |
-| Alberi e rocce (8b-1)                                 | 8    | 2      | 19,7      | 140        | 8,3   | 1,0     | 1.393  | 6,0            |
-| Combattimento (onda 1)                                | 1    | 1      | 12,0      | 72         | 7,4   | 0,9     | 1.628  | 4,5            |
-| UI e HUD (onda 1)                                     | 1    | 1      | 12,0      | 103        | 6,7   | 0,8     | 2.674  | 2,5            |
-| File mappa e scelta mappa (8b-2)                      | 8    | 3      | 13,4      | 98         | 6,1   | 0,7     | 1.037  | 5,8            |
-| Economia e costruzione (onda 1)                       | 1    | 1      | 6,7       | 82         | 5,6   | 0,7     | 1.644  | 3,4            |
-| Infrastruttura fazioni (j)                            | 4    | 2      | 11,0      | 95         | 5,4   | 0,7     | 921    | 5,9            |
-| Fondazione (sessione principale)                      | —    | —      | 3,9       | 156        | 5,1   | 0,6     | 5.113  | 1,0            |
-| Orchestrazione e pianificazione (sessioni principali) | —    | 1      | 190,4     | 1.228      | 135,2 | 16,6    | —      | —              |
-| Documentazione e analisi dei costi (sessioni)         | —    | 1      | 42,4      | 410        | 32,6  | 4,0     | —      | —              |
-|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+--------+----------------|
-| *Totale*                                              | —    | 169    | 1.523,0   | 10.060     | 815,9 | 100,0   | 98.821 | —              |
+| Modulo                                                | Onda | Agenti | Token (M) | Output (k) | $     | % costo | Righe   | $ / 1000 righe |
+|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+---------+----------------|
+| IA usa tutto (5k)                                     | 5    | 18     | 170,2     | 928        | 76,8  | 8,1     | 3.905   | 19,7           |
+| Fazione Cybran (5l)                                   | 5    | 20     | 88,7      | 633        | 47,0  | 4,9     | 9.466   | 5,0            |
+| Rifinitura SupCom (4f)                                | 4    | 9      | 79,6      | 492        | 43,1  | 4,5     | 3.793   | 11,4           |
+| Comandante e ingegneri (6a)                           | 6    | 13     | 65,9      | 470        | 34,3  | 3,6     | 3.576   | 9,6            |
+| Navale (3c)                                           | 3    | 4      | 61,1      | 268        | 32,3  | 3,4     | 3.143   | 10,3           |
+| IA schermaglie (3d-4d)                                | 4    | 5      | 64,7      | 307        | 29,4  | 3,1     | 1.975   | 14,9           |
+| Mappe, menu, flusso (onda 2)                          | 2    | 3      | 64,8      | 258        | 25,1  | 2,6     | 3.807   | 6,6            |
+| Unità mancanti e mura (8a)                            | 8    | 10     | 41,1      | 334        | 24,6  | 2,6     | 2.250   | 10,9           |
+| Armi strategiche (3b)                                 | 3    | 6      | 45,7      | 299        | 23,2  | 2,4     | 4.343   | 5,3            |
+| Sperimentali e comandanti (4g)                        | 4    | 5      | 38,4      | 276        | 22,9  | 2,4     | 3.006   | 7,6            |
+| Ordini e selezione (7b)                               | 7    | 9      | 31,9      | 311        | 21,9  | 2,3     | 2.648   | 8,3            |
+| Scala e prestazioni (5m)                              | 5    | 6      | 50,0      | 262        | 21,7  | 2,3     | 1.657   | 13,1           |
+| Trasporti (4h)                                        | 4    | 4      | 37,9      | 264        | 20,9  | 2,2     | 3.350   | 6,2            |
+| UX (5n)                                               | 5    | 7      | 42,8      | 273        | 19,7  | 2,1     | 2.339   | 8,4            |
+| Opzioni partita e squadra (6b)                        | 6    | 5      | 33,7      | 249        | 17,8  | 1,9     | 2.465   | 7,2            |
+| Salvataggi e replay (4i)                              | 4    | 3      | 31,0      | 240        | 17,4  | 1,8     | 4.473   | 3,9            |
+| Mappe in rete e biomi (8b-3)                          | 8    | 5      | 36,4      | 261        | 17,2  | 1,8     | 1.563   | 11,0           |
+| Multigiocatore lockstep (5o)                          | 5    | 5      | 35,2      | 232        | 16,2  | 1,7     | 4.522   | 3,6            |
+| Sandbox (3e)                                          | 3    | 5      | 28,2      | 250        | 15,2  | 1,6     | 4.025   | 3,8            |
+| Nebbia di guerra e intel (onda 2)                     | 2    | 2      | 30,9      | 147        | 12,9  | 1,4     | 1.332   | 9,7            |
+| IA schermaglie (onda 2)                               | 2    | 2      | 25,9      | 147        | 11,6  | 1,2     | 2.646   | 4,4            |
+| Salvataggi in multiplayer (10a-3)                     | 10   | 4      | 23,5      | 183        | 11,2  | 1,2     | 2.141   | 5,2            |
+| Ombre terreno, LOD, minimappa (9b-2)                  | 9    | 4      | 26,0      | 179        | 11,2  | 1,2     | 1.082   | 10,3           |
+| Tecnologia T2/T3 (3a)                                 | 3    | 2      | 22,2      | 137        | 10,8  | 1,1     | 3.125   | 3,5            |
+| Migrazione dei salvataggi (11a-2)                     | 11   | 4      | 23,3      | 197        | 10,7  | 1,1     | 1.946   | 5,5            |
+| Rilascio e impostazioni (7a)                          | 7    | 4      | 17,5      | 169        | 10,4  | 1,1     | 1.515   | 6,9            |
+| Grafica client (onda 1)                               | 1    | 1      | 20,7      | 170        | 10,1  | 1,1     | 3.361   | 3,0            |
+| Audio e rifinitura (onda 2)                           | 2    | 2      | 20,6      | 115        | 9,9   | 1,0     | 2.622   | 3,8            |
+| Pathfinding e movimento (onda 1)                      | 1    | 1      | 18,1      | 135        | 9,0   | 0,9     | 2.428   | 3,7            |
+| Animazioni di morte e warp-in (9b-1)                  | 9    | 2      | 18,7      | 153        | 8,5   | 0,9     | 1.557   | 5,4            |
+| Alberi e rocce (8b-1)                                 | 8    | 2      | 19,7      | 140        | 8,3   | 0,9     | 1.393   | 6,0            |
+| Overlay di portata e rifiniture client (10b-2)        | 10   | 3      | 17,8      | 111        | 7,4   | 0,8     | 1.019   | 7,3            |
+| Combattimento (onda 1)                                | 1    | 1      | 12,0      | 72         | 7,4   | 0,8     | 1.628   | 4,5            |
+| Osservatori e voto di espulsione (10a-2)              | 10   | 3      | 15,9      | 118        | 7,3   | 0,8     | 1.035   | 7,1            |
+| Matematica deterministica (10a-1)                     | 10   | 2      | 15,0      | 137        | 7,1   | 0,7     | 1.104   | 6,5            |
+| UI e HUD (onda 1)                                     | 1    | 1      | 12,0      | 103        | 6,7   | 0,7     | 2.674   | 2,5            |
+| Pathing preciso (11a-1)                               | 11   | 2      | 14,3      | 115        | 6,6   | 0,7     | 638     | 10,3           |
+| File mappa e scelta mappa (8b-2)                      | 8    | 3      | 13,4      | 98         | 6,1   | 0,6     | 1.037   | 5,8            |
+| Economia e costruzione (onda 1)                       | 1    | 1      | 6,7       | 82         | 5,6   | 0,6     | 1.644   | 3,4            |
+| Infrastruttura fazioni (j)                            | 4    | 2      | 11,0      | 95         | 5,4   | 0,6     | 921     | 5,9            |
+| Editor dei tasti (10b-1)                              | 10   | 2      | 10,5      | 93         | 5,1   | 0,5     | 754     | 6,8            |
+| Fondazione (sessione principale)                      | —    | —      | 3,9       | 156        | 5,1   | 0,5     | 5.113   | 1,0            |
+| Annunciatore vocale (11b-1)                           | 11   | 1      | 9,9       | 69         | 4,1   | 0,4     | 992     | 4,1            |
+| Orchestrazione e pianificazione (sessioni principali) | —    | 1      | 263,8     | 1.728      | 190,1 | 20,0    | —       | —              |
+| Documentazione e analisi dei costi (sessioni)         | —    | 2      | 49,0      | 538        | 37,2  | 3,9     | —       | —              |
+|-------------------------------------------------------+------+--------+-----------+------------+-------+---------+---------+----------------|
+| *Totale*                                              | —    | 196    | 1.769,6   | 11.994     | 952,5 | 100,0   | 110.013 | —              |
 
 Gli agenti di 8b-2 e 9b-2 comprendono un avvio morto alla prima chiamata per un errore di rete (0,20 $ ciascuno).
+Quelli di 10b-2, 10a-2 e 10a-3 comprendono un agente tagliato da un limite d'uso dopo uno o due minuti, senza
+modifiche (0,11 $, 0,65 $ e 0,74 $).
 
 ** Per scopo
 Gli stessi moduli raggruppati per lo scopo che servono.
 
 | Scopo                                                                        | Token (M) | $   | % costo | Righe fuse | $ / 1000 righe |
 |------------------------------------------------------------------------------+-----------+-----+---------+------------+----------------|
-| Gameplay SupCom (unità e sistemi)                                            | 613       | 325 | 40      | 47.863     | 6,8            |
-| Coordinamento (orchestratore, pianificazione)                                | 190       | 135 | 17      | —          | —              |
-| Esperienza client (grafica, UI, audio, menu, sandbox)                        | 279       | 134 | 16      | 25.152     | 5,3            |
-| Avversario IA                                                                | 261       | 118 | 14      | 8.526      | 13,8           |
-| Infrastruttura tecnica (fondazione, salvataggi, rete, prestazioni, rilascio) | 138       | 71  | 9       | 17.280     | 4,1            |
-| Documentazione e analisi dei costi                                           | 42        | 33  | 4       | —          | —              |
+| Gameplay SupCom (unità e sistemi)                                            | 627       | 332 | 35      | 48.501     | 6,8            |
+| Coordinamento (orchestratore, pianificazione)                                | 264       | 190 | 20      | —          | —              |
+| Esperienza client (grafica, UI, audio, menu, sandbox)                        | 354       | 168 | 18      | 29.480     | 5,7            |
+| Avversario IA                                                                | 261       | 118 | 12      | 8.526      | 13,8           |
+| Infrastruttura tecnica (fondazione, salvataggi, rete, prestazioni, rilascio) | 215       | 107 | 11      | 23.506     | 4,6            |
+| Documentazione e analisi dei costi                                           | 49        | 37  | 4       | —          | —              |
 
 Gameplay: economia, combattimento, pathfinding, nebbia, T2/T3, strategiche, navale, sperimentali, trasporti,
 rifinitura 4f, fazioni, Cybran, comandante e ingegneri (6a), opzioni partita e squadra (6b), unità mancanti e mura
-(8a), alberi e rocce (8b-1). Client: grafica, UI e HUD, audio, sandbox, UX, mappe e menu, ordini e selezione (7b),
-file mappa (8b-2), animazioni di morte (9b-1), ombre del terreno, LOD e minimappa (9b-2). Infrastruttura:
-fondazione, salvataggi e replay, multigiocatore, scala e prestazioni, rilascio e impostazioni (7a).
+(8a), alberi e rocce (8b-1), pathing preciso (11a-1). Client: grafica, UI e HUD, audio, sandbox, UX, mappe e menu,
+ordini e selezione (7b), file mappa (8b-2), mappe in rete e biomi (8b-3), animazioni di morte (9b-1), ombre del
+terreno, LOD e minimappa (9b-2), editor dei tasti (10b-1), overlay di selezione (10b-2), annunciatore vocale
+(11b-1). Infrastruttura: fondazione, salvataggi e replay, multigiocatore, scala e prestazioni, rilascio e
+impostazioni (7a), matematica deterministica (10a-1), osservatori e voto di espulsione (10a-2), salvataggi in
+multigiocatore (10a-3), migrazione dei salvataggi (11a-2). La sessione del lavoro programmato di 8b-3 (3,4 $) è
+contata nel client, con il suo modulo.
 
-Il 40 % della spesa è andato al gameplay. L'avversario IA è lo scopo più caro per riga (13,8 $ ogni 1000 righe),
-l'infrastruttura il più economico (4,1 $): è quasi tutto codice nuovo e separato dal resto. Il coordinamento è
-passato dal 13 al 17 % del totale: dal 10 novembre l'orchestratore fa il lavoro che prima facevano i coordinatori
-di modulo, e fino al 12 mattina su Fable 5.2.
+Il 35 % della spesa è andato al gameplay. L'avversario IA è lo scopo più caro per riga (13,8 $ ogni 1000 righe),
+l'infrastruttura il più economico (4,6 $): è quasi tutto codice nuovo e separato dal resto, e le onde 10 e 11 sono
+state soprattutto infrastruttura di rete e di salvataggio (6.226 righe a 5,8 $). Il coordinamento è passato dal 13 %
+del totale (fino all'onda 6) al 17 % (12 novembre) e al 20 % di oggi: dal 10 novembre l'orchestratore fa il lavoro
+che prima facevano i coordinatori di modulo, e quasi sempre su Fable 5.2.
 
 ** Costo del processo
 Quanto è costato il lavoro per tipo di agente.
 
-| Voce                                                                                    | Quanti      | Token (M) | $   | % costo |
-|-----------------------------------------------------------------------------------------+-------------+-----------+-----+---------|
-| Agenti al primo lancio                                                                  | 114 agenti  | 795,2     | 413 | 50,6    |
-| Riprese e successori (fresh, resume, finish, part 2-4, coordinator 2-11, module agent 2-3) | 52 agenti   | 461,7     | 219 | 26,9    |
-| Sessioni principali (orchestratore, fondazione, documentazione)                         | 32 sessioni | 231,7     | 170 | 20,8    |
-| Agenti di solo merge                                                                    | 3 agenti    | 34,3      | 14  | 1,7     |
+| Voce                                                                                      | Quanti      | Token (M) | $   | % costo |
+|-------------------------------------------------------------------------------------------+-------------+-----------+-----+---------|
+| Agenti al primo lancio                                                                    | 126 agenti  | 869,7     | 453 | 47,5    |
+| Riprese e successori (fresh, resume, finish, part 2-4, coordinator 2-11, module agent 2-4) | 67 agenti   | 552,2     | 258 | 27,0    |
+| Sessioni principali (orchestratore, fondazione, documentazione)                           | 40 sessioni | 313,5     | 228 | 24,0    |
+| Agenti di solo merge                                                                      | 3 agenti    | 34,3      | 14  | 1,5     |
 
 - Riprese e successori: agenti ripartiti dopo un limite d'uso e agenti nuovi che continuano il lavoro di un altro da
-  una nota di handoff (al tetto di contesto). Ognuno riparte da zero e rilegge nota, docs e codice. Dei 52, 5 sono i
-  successori delle catene di agenti di modulo di 8b e 9b (18 $).
+  una nota di handoff (al tetto di contesto). Ognuno riparte da zero e rilegge nota, docs e codice. Dei 67, 20 sono
+  i successori delle catene di agenti di modulo dalle onde 8b alla 11 (56 $, in media 2,8 $ l'uno, lavoro
+  compreso).
 - Avvio di un agente (misura del 2026-10-15 sulle prime onde, non ripetibile: mancano le trascrizioni dei primi
   giorni): in mediana 24 chiamate, circa 1 $, prima della prima modifica a un file (lettura di CLAUDE.md, dei docs
   e del codice). Gli agenti di modulo del 12 novembre partono da 37k token di contesto e arrivano a circa 124k dopo
   6 minuti di lettura (WORKFLOW "How fast a module agent fills its cap").
-- Sub-sub-agenti (lanciati da un agente): 72 agenti, 190 $, il 23 % del totale. Dall'11 novembre solo i due sub-agenti client di 8a.
+- Sub-sub-agenti (lanciati da un agente): 73 agenti, 193 $, il 20 % del totale. Dall'11 novembre solo i due
+  sub-agenti client di 8a e quello dei biomi di 8b-3.
 - Coordinatori di modulo: dall'onda 5 al 10 novembre l'agente di un modulo lanciava sotto-agenti con contesti
-  piccoli e ne integrava i pezzi. Sono 22 agenti, 82 $ (10 % del totale). Nei moduli 6a, 6b e 7a il coordinatore è
+  piccoli e ne integrava i pezzi. Sono 22 agenti, 82 $ (9 % del totale). Nei moduli 6a, 6b e 7a il coordinatore è
   un terzo del costo del modulo (35, 33 e 38 %). Dall'11 novembre non ce ne sono più (decisione del proprietario
   del 2026-11-10).
-- Limiti dell'abbonamento: almeno 28 limiti di sessione e 1 limite settimanale (elenco in ROADMAP "NEXT STEPS"), più
-  la fine dell'uso di Fable 5.2 il 12 novembre mattina, che ha fatto perdere un avvio programmato alle 06:07. Il
-  limite vale per tutto l'account, quindi tutti gli agenti in parallelo si fermano insieme; quasi tutte le riprese
-  fino all'11 novembre vengono da qui o dal tetto di contesto. Gli agenti di modulo del 12 novembre non hanno
-  incontrato limiti.
-- Errori di rete: il 12 novembre due avvii sono morti alla prima chiamata (0,20 $ ciascuno); il costo è nullo, il
-  tempo perso è di qualche minuto.
+- Limiti dell'abbonamento: almeno 33 limiti di sessione e 2 limiti settimanali (2026-10-14 e 2026-11-12 alle 21:02;
+  elenco in ROADMAP "NEXT STEPS"), più la fine dell'uso di Fable 5.2 il 12 novembre mattina, che ha fatto perdere
+  un avvio programmato alle 06:07. Il limite vale per tutto l'account, quindi tutti gli agenti in parallelo si
+  fermano insieme. Dal 12 novembre i limiti hanno tagliato cinque agenti di modulo (il primo di 8b-3, il secondo
+  di 10b-2, 10a-2 e 10a-3, il terzo di 11a-2), ma sono costati poco: i tre fermati dopo un minuto o due 1,5 $ in
+  tutto, e il lavoro degli altri due era già in un commit WIP. Dopo il limite settimanale del 12 novembre le chiamate sono tornate
+  a funzionare dopo 6 minuti.
+- Errori di rete: il 12 novembre due avvii sono morti alla prima chiamata (0,20 $ ciascuno) e due agenti di 8b-3
+  hanno perso la connessione e sono ripresi; il costo è nullo, il tempo perso è di qualche minuto.
 
 ** Cosa insegnano i numeri
 
 *** Il contesto costa più del codice
-- Dato: il 95,8 % dei token sono riletture dalla cache; l'output, cioè il codice e il testo scritti, è il 26 % del
+- Dato: il 96,0 % dei token sono riletture dalla cache; l'output, cioè il codice e il testo scritti, è il 27 % del
   costo. Ogni chiamata rilegge tutto il contesto dell'agente, quindi il costo segue la dimensione del contesto per il
   numero di turni, non le righe scritte.
 - Lezione: contesti piccoli e pochi turni costano meno. I tetti di contesto (300k dal 12 ottobre, 150k di base dal
   16; WORKFLOW) hanno portato il contesto medio riletto a ogni passo da 209k token (onda 1) a 93k (onda 6) e il
-  costo di un passo da 0,117 a 0,049 $. Con il tetto a 200k e un solo agente per volta su ogni modulo (onda 9) il
-  contesto medio è 113k e il passo costa ancora 0,049 $.
+  costo di un passo da 0,117 a 0,049 $. Con il tetto a 200k e un solo agente per volta su ogni modulo (onde dalla
+  9 alla 11) il contesto medio è 106-113k e il passo costa ancora 0,049-0,051 $. Confermata: nelle onde 10 e 11 il
+  costo per riga è sceso perché sono calati i passi, non il loro prezzo.
 
-*** Il costo per riga è salito fino all'onda 4, poi si è fermato
-- Dato: 3,3, 5,7, 5,6 e 7,9 $ ogni 1000 righe dalle onde 1 alla 4, poi tra 7,4 e 8,6 $ nelle onde dalla 5 alla 9
-  ([[*Per onda][Per onda]]). I passi per 1000 righe sono passati da 28 a 150-177 mentre il costo di un passo si dimezzava.
-- Lezione: il costo per riga non cresce da solo con l'età del progetto: in cinque onde, con il progetto passato da
-  60.000 a 99.000 righe, non è cresciuto. Cresce con i passi che ogni riga richiede: codice da leggere, verifiche,
-  passaggi di mano tra agenti. Le leve sono brief che indicano già file e contratti, meno agenti per modulo, meno
-  riprese.
+*** Il costo per riga è salito fino all'onda 4, poi si è fermato, e nelle onde 10 e 11 è sceso
+- Dato: 3,3, 5,7, 5,6 e 7,9 $ ogni 1000 righe dalle onde 1 alla 4, poi tra 7,4 e 9,0 $ nelle onde dalla 5 alla 9,
+  6,3 e 6,0 nelle onde 10 e 11 ([[*Per onda][Per onda]]). I passi per 1000 righe sono passati da 28 a 150-179 mentre il costo
+  di un passo si dimezzava, e nelle onde 10 e 11 sono scesi a 118-129.
+- Lezione: il costo per riga non cresce da solo con l'età del progetto: in sette onde, con il progetto passato da
+  60.000 a 110.000 righe, non è cresciuto, e nelle ultime due è sceso. Cresce con i passi che ogni riga richiede:
+  codice da leggere, verifiche, passaggi di mano tra agenti. Le leve sono brief che indicano già file, contratti e
+  verifiche con i valori attesi, meno agenti per modulo, meno riprese: è quello che è cambiato nelle onde 10 e 11.
 
 *** Il codice nuovo costa meno del codice che tocca sistemi esistenti
 - Dato: fondazione 1,0 $ ogni 1000 righe, onda 1 da 2,5 a 4,5 $. Funzioni che toccano molti sistemi esistenti
-  costano da 2 a 4 volte tanto: rifinitura 4f 11,3 $, navale 10,3 $, nebbia 9,7 $. Vale anche a progetto avanzato:
+  costano da 2 a 4 volte tanto: rifinitura 4f 11,4 $, navale 10,3 $, nebbia 9,7 $. Vale anche a progetto avanzato:
   nell'onda 5 i Cybran (80 blueprint e modelli, pezzi separabili con un contratto scritto) costano 5,0 $ con 20
   agenti, il multigiocatore (codice nuovo in un progetto suo) 3,6 $; nell'onda 4 salvataggi e replay 3,9 $.
-  Nell'onda 9, con lo stesso modo di lavorare, le animazioni di morte (per lo più file nuovi) costano 5,4 $, le ombre del
-  terreno, il LOD e la minimappa (renderer e minimappa esistenti, misure di prestazioni) 10,3 $.
+  Nell'onda 9, con lo stesso modo di lavorare, le animazioni di morte (per lo più file nuovi) costano 5,4 $, le
+  ombre del terreno, il LOD e la minimappa (renderer e minimappa esistenti, misure di prestazioni) 10,3 $. Nelle
+  onde 10 e 11 l'annunciatore vocale (file nuovi, un generatore) costa 4,1 $, i salvataggi in multigiocatore e la
+  migrazione dei salvataggi 5,2 e 5,5 $; il pathing preciso (dentro il movimento, che tutto il gioco usa, con una
+  partita di riferimento da diagnosticare) 10,3 $, mappe in rete e biomi (protocollo, lobby e renderer) 11,0 $.
 - Lezione: ogni agente deve prima leggere i sistemi che tocca. Un brief che indica già i file e i contratti
   (ARCHITECTURE) fa risparmiare lettura. Il contenuto nuovo e separabile regge bene molti agenti piccoli.
+  Confermata dalle onde 10 e 11.
 
 *** Ogni agente in più ha un costo fisso
 - Dato: circa 1 $ di avvio per agente nelle prime onde. La rifinitura 4f ha usato 9 agenti (sub-agenti, ripresa
-  f2, merge) per 3.793 righe: 11,3 $ ogni 1000 righe. Nelle onde 6 e 7: 6a 13 agenti per 3.576 righe (9,6 $), 6b 5
+  f2, merge) per 3.793 righe: 11,4 $ ogni 1000 righe. Nelle onde 6 e 7: 6a 13 agenti per 3.576 righe (9,6 $), 6b 5
   agenti per 2.465 righe (7,2 $), 7a 4 agenti per 1.515 righe (6,9 $). Un agente di modulo del 12 novembre spende
   in lettura quasi metà del suo tetto (da 37k a 124k in 6 minuti) e lo riempie in 15-20 minuti.
+- Dato: nelle catene di agenti di modulo (onde dalla 8b alla 11, senza 8b-3) un modulo fatto da un solo agente
+  (11b-1, 992 righe) costa 4,1 $ ogni 1000 righe con 87 chiamate; i cinque moduli fatti da due agenti 6,5 $ (129
+  chiamate); i tre fatti da tre 6,7 $ (147); i tre fatti da quattro 6,4 $ (127), perché due sono i più grandi
+  (agenti contati come nella tabella, avvii morti compresi) ([[*Un modulo che supera il brief costa in agenti, non per riga][Un modulo che supera il brief costa in agenti, non per riga]]).
 - Lezione: spezzare un lavoro in sub-agenti conviene solo se ogni pezzo è grande e indipendente. I lavori piccoli
-  conviene farli fare all'agente che ha già il contesto. Meno agenti per modulo resta la scelta più economica.
+  conviene farli fare all'agente che ha già il contesto. Meno agenti per modulo resta la scelta più economica: a
+  parità di dimensione, ogni passaggio di mano costa la rilettura del successore. Un modulo piccolo con un brief
+  che dà file, strumenti e verifiche con i numeri attesi sta in un agente solo (11b-1, 4 $).
 
 *** Le riprese costano più di un quarto del totale
-- Dato: 52 agenti di ripresa e successori, 219 $ (27 %). Nell'onda 5 sono il 57 % del costo dell'onda. Ogni ripresa
+- Dato: 67 agenti di ripresa e successori, 258 $ (27 %). Nell'onda 5 sono il 57 % del costo dell'onda. Ogni ripresa
   riparte da zero e rilegge handoff, docs e codice.
-- Dato: nei quattro moduli di 8b e 9b i successori sono il 53 % della spesa (18 $ su 34), ma sono previsti: con il
-  tetto a 200k un modulo di circa 1.500 righe passa per 2 agenti (3 in 9b-2). Nessuno si è fermato per un limite
-  d'uso, e il danno al risultato è nullo o basso in tutti e quattro (WORKFLOW "Fragmentation"). Nessun agente si è
-  fermato da solo al suo checkpoint: li ha fermati il messaggio dell'orchestratore, e uno è arrivato a 213k.
+- Dato: nelle onde dalla 9 alla 11 i successori sono il 51-59 % della spesa, ma sono previsti: con il tetto a 200k
+  un modulo di circa 1.000-1.500 righe passa per 2 agenti, uno da 2.000 righe per 4 (20 successori, 56 $). Il
+  danno al risultato è nullo, basso o piccolo in tutti i moduli (WORKFLOW "Fragmentation"). Prima dell'onda 11
+  nessun agente si era fermato da solo al suo checkpoint (li fermava il messaggio dell'orchestratore, e uno era
+  arrivato a 213k); in 11a-1 e 11a-2 tre agenti si sono fermati da soli a 161-170k.
+- Dato: le riprese non previste costano ora poco. Dal 12 novembre i limiti d'uso hanno tagliato cinque agenti di
+  modulo: i tre fermati dopo un minuto o due sono costati 1,5 $ in tutto, gli altri due avevano il lavoro in un
+  commit WIP e il successore ha continuato senza rifare niente.
 - Lezione: brief dimensionati per finire dentro una finestra di sessione; handoff scritti prima del limite (regola
-  già in WORKFLOW); non lanciare un'onda intera poco prima di un limite di sessione. Una catena prevista costa la rilettura
-  di ogni successore (2-4 $ per successore in 8b e 9b, lavoro compreso); le riprese care sono quelle non previste,
-  dopo un limite d'uso, con la cache scaduta e il lavoro a metà.
+  già in WORKFLOW); non lanciare un'onda intera poco prima di un limite di sessione. Una catena prevista costa la
+  rilettura di ogni successore (in media 2,8 $ per successore dall'onda 8b alla 11, lavoro compreso); le riprese
+  care erano quelle non previste con agenti lunghi e il lavoro a metà, e con agenti di 10-23 minuti non lo sono più.
 
 *** L'IA costa in turni, non in righe
 - Dato: l'IA è costata 118 $ per 8.526 righe (13,8 $ ogni 1000 righe) e sale a ogni giro: 4,4 $ nell'onda 2, 14,9 $
@@ -665,17 +733,22 @@ Quanto è costato il lavoro per tipo di agente.
   altri giri con le stesse regole non hanno chiuso gli stalli.
 
 *** Coordinamento
-- Dato: orchestratore e pianificazione 135 $ (16,6 %), agenti di solo merge 14 $ (1,7 %): il 18 % del totale per
-  coordinare 169 agenti. Documentazione e analisi dei costi: 33 $ (4 %). Sulla spesa di un giorno per
+- Dato: orchestratore e pianificazione 190 $ (20,0 %), agenti di solo merge 14 $ (1,5 %): il 21,5 % del totale per
+  coordinare 196 agenti. Documentazione e analisi dei costi: 37 $ (4 %). Sulla spesa di un giorno per
   orchestratore e moduli, l'orchestratore pesa dal 6 al 16 % nei giorni normali di ottobre, il 20-22 % nei giorni
-  con molte riprese (16 e 23 ottobre), il 45 % il 10 novembre, il 60 % l'11 e il 31 % il 12.
-- Dato: per 8b-1, 8b-2, 9b-1 e 9b-2 l'orchestratore ha speso 20 $ (avvio, sorveglianza dei contesti, verifica dei
-  merge, HISTORY, registro), i moduli 34 $: il 37 % del totale. 12 $ di quei 20 sono la sessione di avvio di 8b-1 e
-  9b-1, su Fable 5.2 (0,21 $ a passo).
+  con molte riprese (16 e 23 ottobre), il 45 % il 10 novembre, il 60 % l'11, il 32 % il 12 e il 39 % il 13 (il 14 è
+  quasi solo orchestratore: merge e docs di 11a-2).
+- Dato: per 8b-1, 8b-2, 9b-1 e 9b-2 l'orchestratore ha speso 20 $, i moduli 34 $: il 37 % del totale. Per l'onda 10
+  ha speso circa 31 $ (7 $ di pianificazione compresi) contro 38 $ dei moduli, il 45 %; per l'onda 11 circa 22 $
+  contro 21 $, il 51 % (avvio, sorveglianza dei contesti, WIP dopo i limiti, verifica dei merge, HISTORY,
+  LESSONS, registro). Di quei 54 $, 42 $ sono su Fable 5.2; su Opus 5.5 sarebbero stati circa 26 $ (stima), e la
+  quota dell'orchestratore sarebbe rimasta intorno al 38 %, come in 8b e 9b.
 - Lezione: è un costo fisso del lavoro a onde. Senza coordinatori di modulo il lavoro di integrazione passa
   all'orchestratore, che quindi pesa di più: conviene che giri sullo stesso modello degli agenti e che i report
   degli agenti restino brevi, con docs che l'orchestratore non deve rileggere ogni volta. Una finestra d'uso troppo
-  corta lo fa salire: l'orchestratore spende comunque per fermare, annotare e far ripartire gli agenti.
+  corta lo fa salire: l'orchestratore spende comunque per fermare, annotare e far ripartire gli agenti. Anche una
+  pausa lunga lo fa salire: il 14 novembre, dopo 34 ore di fermo, la cache dell'orchestratore era scaduta e 5
+  chiamate sono costate 3,9 $ per riscrivere il suo contesto a prezzo di Fable 5.2.
 
 *** Il tetto di contesto più basso non ha fatto salire il costo per riga
 - Dato: con il tetto a 150-200k l'onda 6 costa per riga quasi quanto l'onda 5 (8,6 contro 8,3 $) e 7a meno (6,9 $).
@@ -685,34 +758,41 @@ Quanto è costato il lavoro per tipo di agente.
   riprese e successori al 27 % del totale. Quanti di quei passi in più vengano dalla staffetta e quanti dal
   progetto che cresce non è misurato.
 - Dato: ridurre le mani lo ha fatto scendere. Con un agente di modulo alla volta, senza coordinatore (decisione del
-  2026-11-10), i moduli costano circa un quinto in meno per riga:
+  2026-11-10), i moduli costano da un quinto a un quarto in meno per riga:
 
   | Modo di lavorare (Opus 5.5)                               | Moduli | $    | Righe | $ / 1000 righe | Chiamate / 1000 righe | k token / chiamata | $ / chiamata |
   |-----------------------------------------------------------+--------+------+-------+----------------+-----------------------+--------------------+--------------|
   | Coordinatore e sub-agenti, tetto 150-200k (6a, 6b, 7a)    | 3      | 62,5 | 7.556 | 8,3            | 169                   | 92                 | 0,049        |
-  | Catena di 2-3 agenti di modulo, tetto 200k (8b, 9b)       | 4      | 34,1 | 5.069 | 6,7            | 138                   | 111                | 0,049        |
+  | Catena di 2-3 agenti di modulo, tetto 200k (8b, 9b)       | 4      | 34,0 | 5.069 | 6,7            | 138                   | 111                | 0,049        |
+  | Catena di 1-4 agenti di modulo, tetto 200k (onde 10, 11)  | 8      | 59,5 | 9.629 | 6,2            | 125                   | 109                | 0,050        |
 
-  Tutto compreso (orchestratore e successori) 8b e 9b costano 10,7 $ ogni 1000 righe; con l'orchestratore su
-  Opus 5.5 per tutto il tempo sarebbero stati circa 9 $ (stima).
+  8b-3 (con due sub-agenti) non è nella tabella: 11,0 $ ogni 1000 righe. Tutto compreso (orchestratore e
+  successori) 8b e 9b costano 10,7 $ ogni 1000 righe, le onde 10 e 11 11,8 $; con l'orchestratore su Opus 5.5
+  sarebbero stati circa 9 e 10 $ (stima).
 - Lezione: il tetto si giustifica con la qualità del risultato e con interruzioni meno care, non con un risparmio.
-  Per spendere meno bisogna ridurre le mani per modulo, e i numeri delle onde 8b e 9b lo confermano. Il danno al
-  risultato è seguito a parte (WORKFLOW "Fragmentation"). Il giudizio complessivo sulle regole di lavoro e le
-  modifiche che il proprietario ha approvato il 2026-11-10 sono in WORKFLOW "Review of the process rules
+  Per spendere meno bisogna ridurre le mani per modulo, e i numeri delle onde dalla 8b alla 11 lo confermano. Il
+  danno al risultato è seguito a parte (WORKFLOW "Fragmentation"). Il giudizio complessivo sulle regole di lavoro e
+  le modifiche che il proprietario ha approvato il 2026-11-10 sono in WORKFLOW "Review of the process rules
   (2026-11-10)".
 
-*** Due agenti alla volta: due moduli per finestra d'uso
+*** Due agenti alla volta: due o tre moduli per finestra d'uso
 - Dato (misurato con ~tools/token-ledger/windows.py~; righe = righe fuse dei moduli fatti nella finestra): le
-  finestre su Opus 5.5 di ottobre (23 e 24 ottobre) sono arrivate al limite dopo 480-670 chiamate, circa 30 $ di listino
-  e da 800 a 4.000 righe ciascuna (2.500 in media). Il 12 novembre, con due catene di agenti di modulo e
-  l'orchestratore, la finestra delle 00:00 ha fatto 8b-1 e 9b-1 (369 chiamate, 26 $, 2.950 righe, circa 45 minuti di
-  lavoro degli agenti) e quella delle 10:00 8b-2 e 9b-2 (475 chiamate, 24 $ fino alle 12, 2.119 righe, circa 60
-  minuti), senza arrivare al limite.
+  finestre su Opus 5.5 di ottobre (23 e 24 ottobre) sono arrivate al limite dopo 480-670 chiamate, circa 30 $ di
+  listino e da 800 a 4.000 righe ciascuna (2.500 in media). Il 12 novembre, con due catene di agenti di modulo e
+  l'orchestratore, la finestra delle 00:00 ha fatto 8b-1 e 9b-1 (369 chiamate, 26 $, 2.950 righe, circa 45 minuti
+  di lavoro degli agenti) senza arrivare al limite.
+- Dato: le finestre del 12 e del 13 novembre arrivate al limite. Quella delle 10:40 (563 chiamate, 29,6 $) ha fatto
+  8b-2 e 9b-2 (2.119 righe) e l'inizio di 8b-3; quella delle 15:40 (627 chiamate, 31,5 $, orchestratore su Opus 5.5)
+  il resto di 8b-3 e la coppia 10b-1 e 10a-1, cioè 3.421 righe; le tre con l'orchestratore su Fable 5.2 (21:00 del
+  12, 03:30 e 09:50 del 13) si sono chiuse dopo 44-60 minuti a 22-24 $, con 300-360 chiamate e circa due moduli
+  ciascuna (10b-2 e 10a-2; la fine di 10a-3 e 11b-1; 11a-1 e quasi tutto 11a-2), e l'orchestratore ne ha spesi
+  7-11.
 - Dato: nelle finestre miste dell'11 novembre (orchestratore su Fable 5.2, agenti su Opus 5.5) il limite è
   arrivato a 20-21 $, e l'orchestratore ne aveva spesi 10,6 e 13,9. Il limite non corrisponde a una cifra fissa di
   dollari di listino: conta anche il modello, e lo condividono gli altri progetti del proprietario.
-- Lezione: con 2 agenti alla volta su Opus 5.5 una finestra porta a termine circa due moduli da 1.000-1.500 righe,
-  quanto le finestre di ottobre con molti più agenti in parallelo. Il passo successivo da misurare è se una
-  finestra regge una seconda coppia di moduli.
+- Lezione: con 2 agenti alla volta su Opus 5.5 una finestra porta a termine due moduli da 1.000-1.500 righe, tre
+  quando anche l'orchestratore gira su Opus 5.5: una seconda coppia ci sta solo se l'orchestratore non consuma un
+  terzo della finestra. Per pianificare un'onda: circa 2.000-3.400 righe per finestra.
 
 *** Fable 5.2 costa il doppio per passo
 - Dato: il 10 novembre orchestratore e agenti hanno girato su Fable 5.2 (la scelta ~/model~ del proprietario, che
@@ -731,10 +811,35 @@ Quanto è costato il lavoro per tipo di agente.
   dei ping scritto su Fable 5.2 è andato perso (sub-agente fermato senza commit né nota) ed è stato rifatto da zero;
   l'agente di modulo su Opus 5.5 ha finito 7b in 19 minuti con 4 $, e 8a con 12 $ (WORKFLOW
   "Fragmentation"). L'orchestratore su Fable 5.2 ha speso 0,10-0,25 $ a passo, su Opus 5.5 0,07 $.
+- Dato dal 12 novembre sera: l'orchestratore è tornato su Fable 5.2 alle 21:10 e da allora ha speso 42 $ (da 0,09
+  a 0,17 $ a passo, contro 0,06-0,08 $ delle sue sessioni su Opus 5.5 dello stesso giorno), cioè il 30-46 % delle
+  finestre in cui ha girato ([[*Due agenti alla volta: due o tre moduli per finestra d'uso][Due agenti alla volta: due o tre moduli per finestra d'uso]]).
 - Lezione: il modello pesa sul costo più di ogni altra scelta misurata qui, e con l'abbonamento ancora di più del
   prezzo: a parità di finestre il lavoro avanza circa 5 volte più piano su Fable 5.2. Le finestre corte peggiorano
   anche il resto: ogni ripresa rilegge i contesti degli agenti, e in 8-11 minuti quella rilettura è una parte grande
   della finestra (le riprese sono il 46 % della spesa di 7b e 8a del 10 novembre). Il proprietario ha deciso il
-  2026-11-10: agenti su Opus 5.5, Fable 5.2 per l'orchestratore (WORKFLOW "Owner decisions"). I numeri dell'11 e
-  del 12 novembre confermano la scelta per gli agenti e indicano Opus 5.5 anche per l'orchestratore: su Fable 5.2
-  ha speso più di metà delle finestre miste dell'11 novembre, e il suo uso di Fable 5.2 è finito il 12 mattina.
+  2026-11-10: agenti su Opus 5.5, Fable 5.2 per l'orchestratore (WORKFLOW "Owner decisions"). I numeri dall'11 al
+  14 novembre confermano la scelta per gli agenti e indicano Opus 5.5 anche per l'orchestratore: su Fable 5.2 costa
+  circa il 65 % in più a parità di lavoro, e le finestre in cui gira si sono chiuse con circa un modulo in meno
+  (due invece di tre). La scelta resta del proprietario.
+
+*** Un modulo che supera il brief costa in agenti, non per riga
+- Dato: 10a-3 (2.141 righe) e 11a-2 (1.946 righe) sono usciti il 30-40 % sopra le 1.500 righe del brief. Hanno
+  usato quattro agenti ciascuno (tre di lavoro più uno tagliato o di chiusura), 11,2 e 10,7 $, ma per riga sono
+  costati 5,2 e 5,5 $ ogni 1000 righe, meno dei moduli da 1.000 righe fatti da due agenti (6,5 $). Entrambi hanno
+  attraversato un limite di 5 ore, e il danno al risultato è piccolo o basso (WORKFLOW "Fragmentation").
+- Dato: il brief di 11a-2 vedeva i campi da salvare ma non il lato dei blueprint (indici, dati derivati, oggetti
+  condivisi): è da lì che sono venute le righe e l'agente in più.
+- Lezione: per la spesa le 1.500 righe non sono un limite: il costo fisso di ogni agente si spalma su più righe.
+  Lo sono per il tempo e per il rischio: un agente in più per ogni 500 righe oltre il brief, e più probabilità di
+  attraversare un limite d'uso. Sono solo due moduli: abbastanza per pianificare un agente in più quando un brief
+  tocca un sistema che non ha visto per intero, non per allungare i moduli.
+
+*** Un modello più economico per i compiti di chiusura
+- Dato: l'ultimo agente di 11a-2 (merge di ~main~, verifiche finali, revisione dei docs, rapporto) ha girato su
+  Sonnet 5.5: 18 chiamate, 1,0 milioni di token, 55k di contesto medio, 5 minuti, 0,34 $. Il lavoro più simile su
+  Opus 5.5, il secondo agente di 10b-1 (verifiche e rapporto), ha fatto 45 chiamate, 3,1 milioni di token, 68k di
+  contesto medio, 6 minuti, 1,30 $: quasi 4 volte tanto. Metà della differenza è il prezzo, il resto sono le
+  chiamate in meno, perché l'agente su Sonnet 5.5 aveva un file di istruzioni con il valore atteso di ogni verifica.
+- Lezione: un compito di chiusura scritto come lista di verifiche con i risultati attesi sta su Sonnet 5.5 e costa
+  un quarto. È un solo caso: il numero dice che conviene, non quanto regge su compiti meno meccanici.
