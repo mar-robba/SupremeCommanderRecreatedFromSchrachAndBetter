@@ -109,8 +109,9 @@ public sealed partial class ClientSession
         var t = SaveTransfer;
         if (path != null)
         {
-            if (t != null) SaveTransfer = t with { State = MapTransferState.Present, Received = size, Path = path };
+            // Report first, publish second: a caller that sees the file Present may send Ready at once, and the host drops a Ready that arrives before this status.
             SendSaveStatus(1, size);
+            if (t != null) SaveTransfer = t with { State = MapTransferState.Present, Received = size, Path = path };
             return;
         }
         if (size <= 0 || size > MaxSaveBytes)
@@ -182,8 +183,8 @@ public sealed partial class ClientSession
                 SystemChat("Save download failed: " + error);
                 return;
             }
-            if (t != null) SaveTransfer = t with { State = MapTransferState.Present, Path = path, Received = bytes.Length };
             SendSaveStatus(1, bytes.Length);
+            if (t != null) SaveTransfer = t with { State = MapTransferState.Present, Path = path, Received = bytes.Length };
             SystemChat("Save received");
         }
     }

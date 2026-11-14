@@ -40,8 +40,9 @@ public sealed partial class ClientSession
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { }
         if (path != null)
         {
-            MapTransfer = new MapTransferStatus(o.MapFile, o.MapName, o.MapHash, MapTransferState.Present, o.MapBytes, o.MapBytes, path);
+            // Report first, publish second: a caller that sees the file Present may send Ready at once, and the host drops a Ready that arrives before this status.
             SendMapStatus(1, o.MapBytes);
+            MapTransfer = new MapTransferStatus(o.MapFile, o.MapName, o.MapHash, MapTransferState.Present, o.MapBytes, o.MapBytes, path);
             return;
         }
         if (o.MapBytes <= 0 || o.MapBytes > MaxMapBytes)
@@ -110,8 +111,8 @@ public sealed partial class ClientSession
                 SystemChat("Map download failed: " + error);
                 return;
             }
-            if (t != null) MapTransfer = t with { State = MapTransferState.Present, Path = path, Received = bytes.Length };
             SendMapStatus(1, bytes.Length);
+            if (t != null) MapTransfer = t with { State = MapTransferState.Present, Path = path, Received = bytes.Length };
             SystemChat("Map received");
         }
     }
