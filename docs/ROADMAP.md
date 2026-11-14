@@ -26,7 +26,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-13 10:00 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-14 20:40 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -59,19 +59,44 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   changed the generator's math, `mapexport --pack tools/maps/pack.txt` gives other bytes than `data/maps`, written
   by 8b-2). The shipped files stay valid. Not touched: re-exporting changes every pack map's hash, so saves and
   replays on those maps would refuse. Ask the owner before doing it (HISTORY 11a-1, LESSONS).
-- **(11a-2) save migration is running** (started 2026-11-13 09:58 with 11a-1, orchestrator session 84a8eb5c) in
-  `.claude/worktrees/agent-a3aed1e9bdbb580ce` (branch `worktree-agent-a3aed1e9bdbb580ce`), one module agent at a time
-  on Opus 5.5, cap 200k, watcher at 162k. Prompts are files in the main checkout (ignored by git, they survive a
-  reboot): `.claude/prompts/11a-2.md` and the shared `rules-wave11.md`; a successor gets them plus "continue from
-  `.claude/handoff.md`", and the order "do not read the Persistence files whole" (agents 1 and 2 each spent
-  105-110k reading and stopped at their checkpoint: agent 1 at 163k after 12 minutes with the design and the read
-  plans, agent 2 at 160k after 14 minutes with state format 2, the blueprint id table and index remap, the migration
-  report and the replay-log restart; 1,302 lines by then). Agent 3 (id ae363bcafa3f9da6c, started 10:27) proves it:
-  full suites, synthetic layout tests, blueprint tests, a real fixture save, the client quickload pre-check
-  (`InGameSaveUi.cs:83`, which still refused any blueprint change), measurements, then docs. It was told that main
-  has 11a-1: its fixture, written before its final `git merge main`, must load after it (the real case of the
-  module). When it is merged: `bash <scratchpad>/check-11a.sh <log>` is `tools/agents/merge-check.sh` + the two
-  `mp ... save=` runs + savebench + nav build; then **wave 11 is complete** and LESSONS "Costi" is due.
+- **(11a-2) save migration: code and tests done, NOT merged; one finishing agent is left** (state of 2026-11-14
+  20:40, orchestrator session 84a8eb5c, which the owner then cleared). Worktree
+  `.claude/worktrees/agent-a3aed1e9bdbb580ce`, branch `worktree-agent-a3aed1e9bdbb580ce`, head d4a98ef, clean tree,
+  main with 11a-1 already merged in (e3a65b6). Three agents on Opus 5.5: agent 1 stopped at its checkpoint (163k,
+  12 minutes: design, read plans), agent 2 too (160k, 14 minutes: state format 2, blueprint id table and index
+  remap, migration report, replay-log restart), agent 3 (started 10:27) did the proofs (11 synthetic layout tests,
+  6 blueprint tests, a real fixture save of 395 KB with its test, the client quickload pre-check, the measurements:
+  file +1.4 %, hashes unchanged, both `mp ... save=` runs in sync), merged main, found that a save written before
+  11a-1 crashed after it and fixed it (8c55e7f: a field added since the save takes its initializer's value, so
+  `PathService.NavFormat` looked current; two small edits in `Pathfinding`), and was **cut by the 5-hour limit at
+  about 10:50 on 2026-11-13 (reset 14:50) at 169k while writing the docs**. The orchestrator committed its half-written
+  docs as WIP (d4a98ef: ARCHITECTURE "Save migration", DEV_GUIDE "How to change a saved type", ROADMAP G41), not
+  reviewed. **Not done:** the runs after the merge of main (three suites, AI match, bench, both `mp ... save=` runs,
+  savebench: none recorded), the docs review, `.claude/agent-report.md`.
+  **Next step:** one fresh agent in that worktree (no isolation flag; do not resume agent 3 by SendMessage, it is at
+  169k) with the ready prompt `.claude/prompts/11a-2-finish.md` (main checkout, ignored by git; it holds the checks
+  with the expected values, the docs checklist, the seven design errors of the three agents and the handoff reviews,
+  which exist nowhere else): the Agent prompt is a `CTX-TAG: 11a-2-agent4` line + "read
+  `/run/media/marco/RTS/.claude/prompts/11a-2-finish.md` whole and follow it", description
+  `[Migrazione dei salvataggi (11a-2)] module agent 4`. It is the "run the final checks and write the report" kind
+  of task: `model: "sonnet"`, `effort: "high"`, cap 150k (WORKFLOW "Lifecycle of a wave" step 3); if a check fails
+  for a cause that is not obvious it stops, and an Opus 5.5 agent takes over. Then the merge: `git merge --no-ff`,
+  the checks of `tools/agents/merge-check.sh <log>` + `Rts.Bench -- mp 3 600 256 1 0 save=300` + `... mp 3 600 256 0
+  0 obs=1 save=250` + `savebench 8 256 2` (expected on main: 630 sim + about 20 new, 371 client, 43 net; "Player
+  (Hard) after 16:01" 31A42EB6FA4BA170; bench 2F09CD7D01AF287E; savebench file about 754 KB + 1-2 %), a manual
+  check that a save made on main before the merge loads after it, then step 7 of the lifecycle (HISTORY report,
+  LESSONS entries from the seven design errors, fragmentation row: 4 agents, 1 cut by a usage limit, lines into
+  `purposes.json`, worktree and branch removed). Then **wave 11 is complete**: update the "Waves at a glance" row,
+  bring LESSONS "Costi" up to date (due after wave 11), and ask the owner what comes next: every gap G1-G45 that was
+  not cut or parked is then done (parked: tutorial, mod support, FA units, split screen, reconnect).
+- **What worked on 2026-11-13 (wave 11 pair):** prompts as files (`.claude/prompts/<module>.md` + a shared
+  `rules-wave11.md`; the Agent prompt only names them and carries the CTX-TAG) cost the orchestrator little and
+  survive a clear; with the line "write the first handoff note right after your reading phase" both first agents
+  stopped **by themselves** at their checkpoint with a usable note, for the first time. What did not: a successor
+  still spends 105-110k reading the code its predecessor wrote, even when told not to (11a-2 agent 2); telling it
+  exactly which files it may not read whole and to work from `grep "public "` (agent 3) brought it to the tests
+  in a few minutes. A module that turns out bigger than its brief (11a-2: 1,300 lines before tests and docs) needs
+  a third and a fourth agent whatever the notes say.
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding
@@ -178,6 +203,7 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   `Rts.Bench -- ai 30 256 42 hard,normal` as the regression check of every merge).
 - Worktrees: git trusts every folder under `.claude/worktrees/` since 2026-11-12 (one `safe.directory` entry with `/*`, WORKFLOW "Incidents"); a worktree elsewhere still needs its own entry.
   History of usage limits: weekly 2026-10-14 08:14 and 2026-11-12 ~21:05 (reset 2026-11-17 15:00, after ~17 min of pair 2); sessions
+  2026-11-13 ~10:50 (reset 14:50; the window began about 09:50 and held about 82 agent-minutes on Opus 5.5, five module agents two at a time, plus the orchestrator on Fable 5.2 at 60-190k),
   2026-11-12 22:01 (reset 02:00; the window began about 20:45 and held about 65 agent-minutes on Opus 5.5 plus two orchestrator sessions on Fable 5.2), 2026-10-15 11:21 and 15:09, 2026-10-16 11:43 and 16:26,
   2026-10-22 ~23:00, 2026-10-23 14:05 and 20:14, 2026-10-24 ~01:53 (reset 05:30) and ~06:30 (reset 10:30; 6b and 7a resumed by SendMessage).
   2026-10-24 11:25 (reset 15:30; 7b and 8a cut; at 16:35 the account answered "subscription access disabled", work resumed 2026-11-10).
