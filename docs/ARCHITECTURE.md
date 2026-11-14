@@ -571,15 +571,16 @@ interpolates prev/cur by time
   regenerated from `GameInfo.Map` (embedded in the file when there are no generator settings). `WorldState.Restore`
   rebuilds the identical graph: save → load → continue gives the same `StateHash` and the same bytes as the
   uninterrupted game (`PersistenceTests`, 1 and 4 threads).
-- Compatibility: every type is written once with its name + field-layout signature; a different layout, blueprint
-  set or terrain → `IncompatibleSaveException`; damaged files → `SaveFormatException` (magic, version, payload length
+- Compatibility: every type is written once with its name + field-layout signature; a different layout or changed
+  blueprints are migrated field by field (section "Save migration (11a-2: files)"), a different terrain or a change
+  that cannot be migrated → `IncompatibleSaveException` naming the type / field / blueprint id; damaged files → `SaveFormatException` (magic, version, payload length
   + hash, bounds-checked reads); another math version (`GameInfo.MathVersion`, 10a-1) → replays refused, see
   "Deterministic math (cross-OS)". Migrations (`SaveMigrations.cs`): the container version (`SaveContainer.Version`,
   now 2; files ≥ `MinVersion` load) is upgraded on load one step at a time: a header-JSON step (also for file lists)
   and a payload step per version (v1→v2: players without a faction get `FactionDb.DefaultFaction`); `GameInfo.FileVersion`
   = the version read. To change the format: bump the version, add a `Steps` entry + a `case`, extend
-  `SaveMigrationTests` (writes old-version files from a current game with `SaveContainer.EncodeRaw`). Limit: the
-  payload is still checked against this build's field layouts (no field-level migration yet).
+  `SaveMigrationTests` (writes old-version files from a current game with `SaveContainer.EncodeRaw`). The payload's
+  field layouts are migrated per type (11a-2, next section); replays still need the exact sim build and blueprints.
 - Files (`SaveFiles.cs`, `SaveStore.cs`): magic + version + JSON header (`GameInfo`: map settings, players, local
   army, sandbox, opaque client config, length, winner, build) + Brotli payload. `saves/*.rtssave` = state + the replay
   so far; `replays/*.rtsreplay` (newest 50 kept). Menu lists read only the headers.
@@ -653,6 +654,48 @@ numbers"; how to measure: DEV_GUIDE "Perf check" and "Profiling".
 - **Maps**: 6–8 players on 512/1024 for every preset are rotationally symmetric (non-quarter-turn counts carve one
   corridor profile and rasterize every rotated copy with it) and fair: `MapScaleTests` checks plateau heights,
   terrain symmetry, the nearest deposits of each start and the ground distances between starts.
+
+## Save migration (11a-2: files `Persistence/SaveLayout.cs`, `SaveMigrationCodecs.cs`, `SaveBlueprintIndices.cs`, `WorldState.cs`)
+Saves survive sim layout changes and blueprint edits; replays do not (they stay bound to the exact build).
+- **Format.** The graph stream is unchanged: each type is written once as (stable name, signature); the signature
+  already lists every saved field as `name:type` (structs inline, `#rawN` for raw blocks), so `SaveLayout` parses it,
+  no extra table. `WorldState.FormatVersion` 2 adds after the old header: the blueprint table (count, then id +
+  per-blueprint hash `WorldState.BlueprintHashes`) and the offset of an external-key table written after the graph
+  (saved external id → stable path, `ExternalSet.PathOf`: `#0` db, `#1` terrain, `bp:ID/Field[i]…`, `empty:T[]` for
+  `Array.Empty` shared by the sim's `= []` fields). File size +1.4 % (714 → 724 KB on `savebench 8 256 2`).
+- **Fast path.** `GraphReader.ReadType`: a type whose saved signature equals this build's (and holds no blueprint index
+  to translate) reads through the generated codecs, at today's speed. Any other type gets a read plan
+  (`MigrationContext.CodecFor`): saved field → current field by name (then `SaveRenames.Fields`), field gone → its
+  bytes skipped (`SkipPlan`; a gone class/array is read as a `DroppedObject` so object numbering stays right), field new
+  → the parameterless constructor's / initializer's value, retyped → `SaveLayout.CanConvert` (integer widening,
+  float → double, enum ↔ its underlying integer) else refused `Type.Field: saved X, now Y`. Structs in arrays, lists and
+  dictionary values are read element by element. Type renames: `SaveRenames.Types` (old stable name → new), also
+  inside generic arguments. After loading, `ISaveMigrated.OnMigrated(info)` runs on every migrated object
+  (`info.Defaulted` / `Dropped`), before `IAfterLoad`.
+- **Gone types.** An object of a type that no longer exists may only land where a plan drops it (a dropped field, or a
+  reference field read by a plan → null, reported); anywhere else (inside an unchanged container) the load is refused
+  naming the type (`GraphReader.ReadRef` + `AcceptDropped`).
+- **Per-world state** (`WorldState.Tables`): a saved key this build lacks is read with `Skipping` and dropped
+  (reported); a new key starts fresh.
+- **Blueprints.** Ids differ → every saved blueprint index is translated by id (`MigrationContext.SetBlueprintMap`).
+  Chosen way: a central field table, not a typed wrapper: `BlueprintIndexFields.Indices` (34 fields incl.
+  `FactoryState.Queue`) + `IndexTypes` (every int field of `AiRoster`); `RemapPlan` translates them. A blueprint the
+  save uses that is gone → refused with its id; an unused gone id is fine. Any blueprint differs: `Derived` types
+  (`CombatCatalog`) are rebuilt from the new db, `DerivedTables` (torpedo `DefenseTable`) dropped and rebuilt on use,
+  `PerBlueprint` arrays (`AiView.Count/Complete/Queued`, `AiPlacement._failUntil`, `IntelService._canSubmerge`)
+  reordered by id. Health above the new maximum (veterancy included) is clamped and reported. A weapon count change is
+  safe (per-unit weapon state is `MaxWeapons` wide, loops bound by `bp.Weapons.Length`). `SaveCoverageTests`:
+  `EveryBlueprintIndexFieldIsRemapped` (name heuristic `Bp`/`Blueprint` on int-like fields: list it in `Indices` or
+  `NotIndices`) and `BlueprintDerivedStateNamesStillExist` (every name in the tables resolves).
+- **Report.** `LoadedGame.Migration` (`SaveMigrationReport.Lines`): renames, dropped / defaulted fields, conversions,
+  blueprints changed, rebuilt state, clamps. `Migrated` → the replay log restarts at the loaded tick (`Replay = null`),
+  like an old-math save; `ReplayPlayer` refuses a migrated initial state. Menus check a file header with
+  `SaveGame.BlueprintMismatch` (replays only), the loader decides for saves.
+- **Older saves** (state format 1, before 11a-2): field layouts migrate the same way, but they have no blueprint table:
+  any blueprint change refuses them ("older save without a blueprint table").
+- **Proof.** `SaveLayoutMigrationTests` (synthetic old/new types through a temporary rename), `SaveBlueprintMigrationTests`
+  (reordered / removed / changed blueprints on the rich scenario), `SaveFixtureTests` (a real save of 2026-11-13,
+  written before 11a-1, loads and plays 200 ticks after 11a-1 changed `Pathfinding` and 11 blueprints).
 
 ## Multiplayer (`src/Rts.Net`, no raylib; client screens in `Rts.Client/Menus`)
 - **Model**: deterministic lockstep on top of the replay machinery. Every peer runs the full sim; only commands

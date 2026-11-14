@@ -258,7 +258,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G38 | cut 2026-11-13 (owner Q6: online only on the LAN; NAT traversal and relay server out of the plan) | SC1 | — | — | owner Q6 | — |
 | G39 | [x] 2026-11-12 (10a-2) Vote to drop, per-player lobby pings, chat sounds (host migration: later, below) | — | S-M | `Rts.Net`, Net menus | — | 3 |
 | G40 | [x] 2026-10-24 (7a) Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
-| G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
+| G41 | [x] 2026-11-13 (11a-2) Saves survive sim layout changes (field-level migration, blueprint remap by id) | — | M | Persistence | — | 3 |
 | G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages): parked, not answered (owner Q1) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | parked |
 | G43 | cut 2026-11-13 (owner Q1: no campaign / story) | SC1 | — | — | — | — |
 | G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash): parked, estimate S-M (owner Q3 asked how hard it is) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | parked |
