@@ -684,7 +684,12 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
       capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
       - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
             the replay view selector
-      - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
+      - [ ] later: saves don't survive sim LAYOUT changes (done in 11a-2: field-level migration, see G41);
+      - [ ] later: (11a-2) saves made before 11a-2 (state format 1, no blueprint table) keep the strict blueprint rule: any blueprint
+            change refuses them; replays stay bound to the exact build (a migrated save restarts its replay log)
+      - [ ] later: (11a-2) blueprint indices are still plain ints kept in a central field table (`BlueprintIndexFields`) guarded by a name
+            heuristic; a typed `BlueprintId` would make a missed field a compile error. A removed blueprint id used by the save refuses it
+            (no replacement mapping); no UI shows the migration report (only `LoadedGame.Migration`)
             seek checkpoints cost a short hitch every 60 s of game time; multiplayer reuse (autosave: done wave 7a)
 - [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
       relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),

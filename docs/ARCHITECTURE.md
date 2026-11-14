@@ -689,13 +689,15 @@ Saves survive sim layout changes and blueprint edits; replays do not (they stay 
   `NotIndices`) and `BlueprintDerivedStateNamesStillExist` (every name in the tables resolves).
 - **Report.** `LoadedGame.Migration` (`SaveMigrationReport.Lines`): renames, dropped / defaulted fields, conversions,
   blueprints changed, rebuilt state, clamps. `Migrated` → the replay log restarts at the loaded tick (`Replay = null`),
-  like an old-math save; `ReplayPlayer` refuses a migrated initial state. Menus check a file header with
+  like an old-math save; replays stay strict (exact sim build and blueprints; `ReplayPlayer` refuses a migrated
+  initial state, the replay menus keep the blueprint-hash check). Menus check a file header with
   `SaveGame.BlueprintMismatch` (replays only), the loader decides for saves.
 - **Older saves** (state format 1, before 11a-2): field layouts migrate the same way, but they have no blueprint table:
   any blueprint change refuses them ("older save without a blueprint table").
 - **Proof.** `SaveLayoutMigrationTests` (synthetic old/new types through a temporary rename), `SaveBlueprintMigrationTests`
   (reordered / removed / changed blueprints on the rich scenario), `SaveFixtureTests` (a real save of 2026-11-13,
   written before 11a-1, loads and plays 200 ticks after 11a-1 changed `Pathfinding` and 11 blueprints).
+  Its load needed an `ISaveMigrated` hook: a new version field takes its initializer's value on an old save (`PathService.NavFormat`).
 
 ## Multiplayer (`src/Rts.Net`, no raylib; client screens in `Rts.Client/Menus`)
 - **Model**: deterministic lockstep on top of the replay machinery. Every peer runs the full sim; only commands
