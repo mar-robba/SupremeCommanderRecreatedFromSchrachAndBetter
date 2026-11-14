@@ -30,12 +30,21 @@ public sealed class GraphWriter
     /// <summary>Debug aid: when set, (byte offset, object type) of every object body written, in order.</summary>
     public List<(int Offset, Type Type)>? BodyMap;
 
+    /// <summary>(11a-2) When set, collects the external ids written (WorldState stores a stable key for each).</summary>
+    public HashSet<int>? UsedExternals;
+
     public void WriteRef(object? o)
     {
         if (o == null) { Out.U8(Tag.Null); return; }
         if (o is string s) { Out.U8(Tag.String); Out.Str(s); return; }
         if (_ids.TryGetValue(o, out int id)) { Out.U8(Tag.Ref); Out.VarU((ulong)id); return; }
-        if (_ext != null && _ext.TryGetId(o, out int ext)) { Out.U8(Tag.External); Out.VarU((ulong)ext); return; }
+        if (_ext != null && _ext.TryGetId(o, out int ext))
+        {
+            Out.U8(Tag.External);
+            Out.VarU((ulong)ext);
+            UsedExternals?.Add(ext);
+            return;
+        }
         var codec = RefCodec.For(o.GetType());
         Out.U8(Tag.New);
         WriteType(codec);
@@ -101,6 +110,18 @@ public sealed class GraphReader
 
     public object? ReadRef()
     {
+        var o = ReadRefCore();
+        // (11a-2) An object whose type is gone may only land where a read plan drops it (a dropped field / type, or a
+        // reference field read by a plan, which turns it into null); anywhere else (e.g. inside a container whose
+        // layout did not change) it would be stored in the sim as a foreign object: refuse with the type's name.
+        if (o is DroppedObject d && Skipping == 0 && AcceptDropped == 0)
+            throw new IncompatibleSaveException($"This game holds a {SaveLayout.Short(d.TypeName)}, a type that no longer exists in this " +
+                "version, where it cannot be dropped (add a rename to SaveRenames.Types, DEV_GUIDE \"How to change a saved type\")");
+        return o;
+    }
+
+    private object? ReadRefCore()
+    {
         byte tag = In.U8();
         switch (tag)
         {
@@ -115,6 +136,13 @@ public sealed class GraphReader
             case Tag.External:
             {
                 ulong id = In.VarU();
+                if (ExternalMap != null)
+                {
+                    if (id >= (ulong)ExternalMap.Length || ExternalPaths![id] == null) throw ByteReader.Corrupt("bad external reference");
+                    if (ExternalMap[id] is { } mapped) return mapped;
+                    if (Skipping > 0) return new DroppedObject("external " + ExternalPaths[id]);
+                    throw new IncompatibleSaveException($"This game uses the shared blueprint data '{ExternalPaths[id]}', which does not exist in this version");
+                }
                 if (_ext == null || id >= (ulong)_ext.Count) throw ByteReader.Corrupt("bad external reference");
                 return _ext.Get((int)id);
             }
@@ -144,24 +172,38 @@ public sealed class GraphReader
         if (tid != (ulong)_types.Count) throw ByteReader.Corrupt("bad type id");
         string name = In.Str() ?? throw ByteReader.Corrupt("type name");
         string sig = In.Str() ?? throw ByteReader.Corrupt("type signature");
-        var type = TypeNames.Resolve(name);
-        RefCodec codec;
-        try { codec = RefCodec.For(type); }
-        catch (NotSupportedException e) { throw new IncompatibleSaveException(e.Message); }
-        if (codec.Signature != sig) throw new IncompatibleSaveException(DescribeMismatch(type, codec.Signature, sig));
+        // (11a-2) Fast path: the layout this build has (the normal case) reads through the generated codecs. Any other
+        // layout (or a type that is gone / renamed, or one holding blueprint indices to translate) gets a read plan.
+        var type = _mig == null ? TypeNames.TryResolve(name) : _mig.Resolve(name);
+        if (_mig == null && type != null && TypeNames.Of(type) != name) type = Migration.Resolve(name); // renamed: report it
+        RefCodec? codec = null;
+        if (type != null)
+        {
+            try { codec = RefCodec.For(type); }
+            catch (NotSupportedException e) { throw new IncompatibleSaveException(e.Message); }
+        }
+        if (codec == null || codec.Signature != sig || (_mig != null && _mig.Forced(type!)))
+            codec = Migration.CodecFor(name, sig, type);
         _types.Add(codec);
         return codec;
     }
 
-    private static string DescribeMismatch(Type t, string now, string saved)
-    {
-        int i = 0;
-        while (i < now.Length && i < saved.Length && now[i] == saved[i]) i++;
-        int from = Math.Max(0, now.LastIndexOf(';', Math.Max(0, Math.Min(i, now.Length - 1))) + 1);
-        string Snip(string s) => s.Substring(Math.Min(from, s.Length), Math.Min(80, s.Length - Math.Min(from, s.Length)));
-        return $"The saved state layout of {t.Name} differs from this build (saved: '{Snip(saved)}…', now: '{Snip(now)}…'). " +
-               "The file was made by a different version of the game.";
-    }
+    private MigrationContext? _mig;
+    internal MigrationContext Migration => _mig ??= new MigrationContext();
+
+    /// <summary>(11a-2) What this read had to migrate (null or empty = the data matched this build exactly).</summary>
+    public SaveMigrationReport? MigrationReport => _mig?.Report;
+
+    /// <summary>(11a-2) Saved external id → the object in this build (null entry = gone; null map = same ids), and the
+    /// saved stable path of each id the save uses (null entry = not used by the save).</summary>
+    internal object?[]? ExternalMap;
+    internal string?[]? ExternalPaths;
+
+    /// <summary>(11a-2) &gt; 0 while bytes of a dropped field / type are skipped (a gone external then reads as dropped).</summary>
+    internal int Skipping;
+
+    /// <summary>(11a-2) &gt; 0 while a read plan reads a reference it turns into null when its type is gone.</summary>
+    internal int AcceptDropped;
 
     internal void AddFixup(Action a) => _fixups.Add(a);
     internal void AddAfterLoad(IAfterLoad o) => _afterLoad.Add(o);
@@ -172,11 +214,17 @@ public sealed class GraphReader
         while (_pending.TryDequeue(out var p)) p.codec.ReadBody(this, p.obj);
         foreach (var f in _fixups) f();
         _fixups.Clear();
+        if (_mig != null)
+        {
+            foreach (var f in _mig.PostFixups) f();
+            _mig.PostFixups.Clear();
+        }
     }
 
     /// <summary>Calls <see cref="IAfterLoad.AfterLoad"/> on the loaded objects (in load order).</summary>
     public void RunAfterLoad()
     {
+        _mig?.RunMigratedHooks();
         foreach (var o in _afterLoad) o.AfterLoad();
         _afterLoad.Clear();
     }

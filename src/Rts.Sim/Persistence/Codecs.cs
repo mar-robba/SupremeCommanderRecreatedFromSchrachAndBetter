@@ -114,14 +114,20 @@ internal sealed class ClassCodec : RefCodec
     public override void ReadBody(GraphReader r, object o)
     {
         (_r ??= FieldCodegen.ClassReader(_t))(r, o);
-        foreach (var f in _skipped)
+        ResetSkipped(o, _skipped);
+        if (_afterLoad) r.AddAfterLoad((IAfterLoad)o);
+    }
+
+    /// <summary>[NoSave] reference fields get a fresh instance (parameterless constructor) when the type has one.</summary>
+    internal static void ResetSkipped(object o, FieldInfo[] skipped)
+    {
+        foreach (var f in skipped)
         {
             var ft = f.FieldType;
             if (ft.IsValueType || ft.IsAbstract || ft.IsInterface || ft.IsArray || ft == typeof(string)) continue;
             if (ft.GetConstructor(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, Type.EmptyTypes) == null) continue;
             f.SetValue(o, Activator.CreateInstance(ft, nonPublic: true));
         }
-        if (_afterLoad) r.AddAfterLoad((IAfterLoad)o);
     }
 }
 

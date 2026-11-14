@@ -123,6 +123,31 @@ Things learned while building the project that are not about how a system works 
 - (11a-1) Changing pathing changes AI games: fixed-seed AI tests are knife-edge (one ACU step changes a T2 time by
   minutes). Measure stalls of builders before blaming the change; move to a seed that passes and say why in the test.
 
+## How to change a saved type (11a-2, ARCHITECTURE "Save migration")
+Older saves keep loading if you follow this; `SaveFixtureTests` (an old real save) fails when you do not.
+- **Add a field:** just add it. An old save gives it the constructor's / initializer's value. If that value is wrong
+  for old data, implement `ISaveMigrated.OnMigrated(info)` and fix it when `!info.Has(nameof(Field))`.
+  **A version / format field needs that hook**: `public int Format = Current;` reads as `Current` from a save without
+  it (pitfall hit by `PathService.NavFormat`, fixed with `OnMigrated` → `NavFormat = 0`).
+- **Remove a field** (or make it `[NoSave]`): nothing to do, its bytes are skipped and reported.
+- **Rename a field:** add `SaveRenames.Fields[("<current stable type name>", "OldName")] = "NewName"` in
+  `Persistence/SaveLayout.cs`; **rename a type:** `SaveRenames.Types["Asm:Old.Full+Name"] = "Asm:New.Full+Name"`.
+  Never remove an entry while saves with the old name may exist. Without it: field dropped + new field defaulted.
+- **Retype a field:** int → long, byte/short → int, float → double, enum ↔ its integer convert by themselves; any other
+  change is refused (`Type.Field: saved X, now Y`): rename the field instead (old data dropped) or add a converter
+  in `SaveLayout.CanConvert` / `Convert`.
+- **Remove a type:** fine where its objects sit in a removed / changed field; inside an unchanged container (e.g. a
+  `List<Base>` holding the removed subclass) the load is refused naming it: add a type rename to a replacement.
+- **Scratch arrays sized by a constant** are saved too: if you change the size, resize after load (e.g.
+  `PathSystem.State.GraphNeeded`).
+- **Change blueprints:** stats, order, new ids: free. Removing an id refuses saves that use it (message names the id).
+- **Add a blueprint-index field** (an int into `BlueprintDb.All`): add it to `BlueprintIndexFields.Indices`
+  (`Persistence/SaveBlueprintIndices.cs`); an array INDEXED by blueprint → `PerBlueprint`; a cache computed from
+  blueprints → `Derived` / `DerivedTables`. `SaveCoverageTests` flags fields named like `Bp` / `Blueprint`.
+- **Regenerate the fixture** only when the format breaks on purpose (the point is that it stays old):
+  `RTS_WRITE_FIXTURE=1 bash tools/agents/dn.sh test tests/Rts.Sim.Tests --filter WriteFixture` → 
+  `tests/Rts.Sim.Tests/Fixtures/skirmish_2ai_256.rtssave` (2 AIs, 256, 3 min, ~400 KB).
+
 ## Client pitfalls
 - (10b-1) Keys: read game keys only through `Hotkeys.X.Pressed()` / `PressedIndex()` / `Down(i)` (never
   `IsKeyPressed(Hotkeys.X.Key)`: that ignores the modifiers and the second key of a rebound row). Tests that rebind

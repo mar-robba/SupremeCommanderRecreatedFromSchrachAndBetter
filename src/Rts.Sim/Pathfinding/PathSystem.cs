@@ -63,7 +63,7 @@ public static class PathSystem
         public PathResult[] Results = [];
         public PathResult[] FollowerResults = [];
         public bool[] FollowerOk = [];
-        public readonly bool[] GraphNeeded = new bool[PathService.GridSlots * PathService.GraphStride];
+        public bool[] GraphNeeded = new bool[PathService.GridSlots * PathService.GraphStride];
     }
 
     private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<SimWorld, State> States = new();
@@ -127,6 +127,9 @@ public static class PathSystem
         st.SolveOfGroup.Clear();
         st.SolveRequest.Clear();
         st.Followers.Clear();
+        // (11a-2) A save of another nav layout carries this scratch array with its old size.
+        if (st.GraphNeeded.Length != PathService.GridSlots * PathService.GraphStride)
+            st.GraphNeeded = new bool[PathService.GridSlots * PathService.GraphStride];
         Array.Clear(st.GraphNeeded);
         if (st.AssignOf.Length < reqs.Count) st.AssignOf = new int[Math.Max(reqs.Count, st.AssignOf.Length * 2)];
         int cap = Math.Max(1, svc.MaxSolvesPerTick);

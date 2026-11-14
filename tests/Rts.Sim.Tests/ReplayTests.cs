@@ -157,11 +157,13 @@ public class ReplayTests
         }
         Assert.Throws<SaveFormatException>(() => WorldState.Restore(state[..(state.Length / 3)], TestUtil.Db, sim.World.Terrain));
 
-        // Incompatible: different blueprints / different map.
+        // (11a-2) Changed blueprint stats: loads, migrated, the replay log restarts. A different map: refused.
         var other = Rts.Sim.Data.BlueprintDb.LoadDirectory(Rts.Sim.Data.DataPaths.UnitBlueprintDir);
         other[0].MaxHealth += 1;
-        var e = Assert.Throws<IncompatibleSaveException>(() => SaveGame.Decode(file, other));
-        Assert.Contains("blueprints", e.Message);
+        var migrated = SaveGame.Decode(file, other);
+        Assert.True(migrated.Migration.Migrated);
+        Assert.Contains(migrated.Migration.Lines, l => l.Contains("blueprints changed") && l.Contains(other[0].Id));
+        Assert.Null(migrated.Replay);
         Assert.Throws<IncompatibleSaveException>(() => WorldState.Restore(state, TestUtil.Db, TestUtil.NewSkirmish(seed: 6, players: 3).World.Terrain));
         Assert.Throws<IncompatibleSaveException>(() => TypeNames.Resolve("Rts.Sim:Rts.Sim.World.NoSuchType"));
     }

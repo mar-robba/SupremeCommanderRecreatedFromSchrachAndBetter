@@ -284,7 +284,7 @@ experience, 2 = part of SupCom1 but the game is playable without it, 3 = nice to
 | G38 | cut 2026-11-13 (owner Q6: online only on the LAN; NAT traversal and relay server out of the plan) | SC1 | — | — | owner Q6 | — |
 | G39 | [x] 2026-11-12 (10a-2) Vote to drop, per-player lobby pings, chat sounds (host migration: later, below) | — | S-M | `Rts.Net`, Net menus | — | 3 |
 | G40 | [x] 2026-10-24 (7a) Autosave (every 5 min, rolling 3) | SC1 | S | client Persistence | — | 2 |
-| G41 | Saves survive sim layout changes (field-level migration) | — | M | Persistence | — | 3 |
+| G41 | [x] 2026-11-13 (11a-2) Saves survive sim layout changes (field-level migration, blueprint remap by id) | — | M | Persistence | — | 3 |
 | G42 | Interactive tutorial (on a small scripted-scenario system: triggers, objectives, messages): parked, not answered (owner Q1) | SC1 | M | new `Rts.Sim/Scenario`, client | owner Q1 | parked |
 | G43 | cut 2026-11-13 (owner Q1: no campaign / story) | SC1 | — | — | — | — |
 | G44 | Mod support (`mods/<name>/` blueprint/faction overlays, enable list, MP mod hash): parked, estimate S-M (owner Q3 asked how hard it is) | SC1 | S-M | BlueprintDb loader, menus, lobby | G45 | parked |
@@ -684,7 +684,12 @@ Agents that change sim results document the new reference hash of `Rts.Bench -- 
       capture 86 ms + background encode 99 ms, load 0.3 s; replay 165 KB, headless verify ≈150× real time.
       - [x] wave 5n: container version + migration steps (`SaveMigrations`, v2), pause menu "Load Game", F7 updates
             the replay view selector
-      - [ ] later: saves don't survive sim LAYOUT changes (no field-level migration: the layout check refuses them);
+      - [ ] later: saves don't survive sim LAYOUT changes (done in 11a-2: field-level migration, see G41);
+      - [ ] later: (11a-2) saves made before 11a-2 (state format 1, no blueprint table) keep the strict blueprint rule: any blueprint
+            change refuses them; replays stay bound to the exact build (a migrated save restarts its replay log)
+      - [ ] later: (11a-2) blueprint indices are still plain ints kept in a central field table (`BlueprintIndexFields`) guarded by a name
+            heuristic; a typed `BlueprintId` would make a missed field a compile error. A removed blueprint id used by the save refuses it
+            (no replacement mapping); no UI shows the migration report (only `LoadedGame.Migration`)
             seek checkpoints cost a short hitch every 60 s of game time; multiplayer reuse (autosave: done wave 7a)
 - [x] Lockstep multiplayer (2026-10-16, wave 5 o): new `src/Rts.Net` (no raylib). TCP length-framed protocol, host
       relays turns (star), LAN discovery (UDP 47625), join by ip:port; lobby with 8 slots (human/AI/open/closed),

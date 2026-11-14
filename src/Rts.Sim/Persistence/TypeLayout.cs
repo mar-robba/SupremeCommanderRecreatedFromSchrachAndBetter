@@ -38,6 +38,9 @@ public static class TypeNames
     public static Type Resolve(string name) =>
         Types.GetOrAdd(name, static n => TryBuild(n)) ?? throw new IncompatibleSaveException($"Type '{name}' does not exist in this build");
 
+    /// <summary>(11a-2) Like <see cref="Resolve"/> but null for an unknown type; old names go through <see cref="SaveRenames.Types"/>.</summary>
+    public static Type? TryResolve(string name) => Types.GetOrAdd(name, static n => TryBuild(n));
+
     private static Type? TryBuild(string n)
     {
         try
@@ -61,6 +64,7 @@ public static class TypeNames
             }
             int colon = n.IndexOf(':');
             if (colon <= 0) return null;
+            if (SaveRenames.Types.TryGetValue(n, out var renamed) && renamed != n) return TryBuild(renamed); // (11a-2)
             var asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == n[..colon])
                       ?? Assembly.Load(new AssemblyName(n[..colon]));
             return asm.GetType(n[(colon + 1)..], throwOnError: false);
