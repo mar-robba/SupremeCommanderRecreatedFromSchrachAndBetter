@@ -301,6 +301,60 @@ e ogni scopo.
 - Soluzione: aperto. I file distribuiti restano validi (contengono il terreno). Riesportarli cambierebbe il loro
   hash, e i salvataggi e i replay fatti su quelle mappe verrebbero rifiutati.
 
+* 2026-11-14
+
+** Gli indici dei blueprint sono interi sparsi in tutta la simulazione
+- Errore: unità, code di fabbrica e memoria dell'IA ricordano un blueprint come il suo numero d'ordine nel
+  database, un ~int~ qualunque, in 34 campi di tipi diversi. Se i blueprint cambiano ordine o se ne aggiunge uno,
+  ogni numero salvato indica un'altra unità. È emerso con la migrazione dei salvataggi (11a-2).
+- Soluzione: il salvataggio scrive la tabella degli id dei blueprint e al caricamento gli indici sono rimappati
+  per id, attraverso una tabella centrale dei campi (~BlueprintIndexFields~); il test
+  ~EveryBlueprintIndexFieldIsRemapped~ cerca per nome i campi che sembrano indici e non sono in tabella
+  (~bb57015~). Aperto: la tabella resta completa solo grazie a un controllo sui nomi; un tipo apposito al posto
+  di ~int~ lo farebbe garantire al compilatore.
+
+** Dati calcolati dai blueprint salvati come stato della partita
+- Errore: ~CombatCatalog~, la ~DefenseTable~ dei siluri e gli array con una voce per blueprint di
+  ~AiPerception~, ~AiPlacement~ e ~IntelService~ finivano nel salvataggio. Quando i blueprint cambiano, quei dati
+  restano vecchi o nell'ordine sbagliato. Il primo agente di 11a-2 non li aveva visti: li ha trovati il secondo.
+- Soluzione: in un caricamento migrato sono ricostruiti da capo o riordinati per id (~bb57015~), e un test
+  controlla che i nomi elencati esistano ancora (~56e639a~). Regola: ciò che si ricava dai blueprint non è stato
+  della partita; se viene salvato, va elencato tra i dati da ricostruire.
+
+** Gli oggetti condivisi erano numerati in ordine di visita
+- Errore: il salvataggio non scrive gli oggetti immutabili condivisi (blueprint, terreno): li indica con un
+  numero, assegnato da ~ExternalSet~ nell'ordine in cui li incontra. Bastava una modifica alla forma dei dati dei
+  blueprint per spostare tutti i numeri.
+- Soluzione: ogni oggetto condiviso ha un nome stabile (~bp:ID/Campo[i]~), scritto in una tabella del
+  salvataggio e usato quando l'impronta non coincide (~bb57015~). Un salvataggio ricco ne usa solo 3.
+
+** Gli array vuoti ~= []~ sono lo stesso oggetto per tutti
+- Errore: un campo inizializzato con ~= []~ riceve l'unico array vuoto di .NET, lo stesso che usa il database dei
+  blueprint. Il salvataggio lo contava quindi tra gli oggetti condivisi con i blueprint, anche per i campi della
+  simulazione.
+- Soluzione: sono salvati con un nome a parte, ~empty:Tipo[]~ (~bb57015~).
+
+** Un campo di versione aggiunto dopo il salvataggio sembra aggiornato
+- Errore: un campo che il salvataggio non contiene prende il valore del suo inizializzatore. Per
+  ~PathService.NavFormat~ (aggiunto da 11a-1) l'inizializzatore è la versione corrente: un salvataggio più
+  vecchio risultava già nel formato nuovo, lo stato di navigazione vecchio restava al suo posto e
+  ~PathSystem.AddSolve~ usciva dall'array. È stato il primo caso reale della migrazione, e l'ha fermato il
+  salvataggio di prova fatto prima di unire 11a-1.
+- Soluzione: ~PathService~ implementa ~ISaveMigrated.OnMigrated~ e, se il campo mancava, segna lo stato come
+  vecchio e lo ricostruisce (~8c55e7f~). Regola (DEV_GUIDE "How to change a saved type"): un campo di versione
+  ha sempre il suo ~OnMigrated~.
+
+** Il client ripeteva la regola del caricatore sui blueprint
+- Errore: il caricamento rapido controllava per conto suo l'impronta dei blueprint prima di chiamare il
+  caricatore, quindi rifiutava ancora i salvataggi che il caricatore ora accetta.
+- Soluzione: una sola funzione nella simulazione, ~SaveGame.BlueprintMismatch~, usata da entrambi (~6206481~).
+  È la stessa regola di "L'ingombro era controllato con due regole diverse": una domanda, una funzione.
+
+** Nomi di campi scritti a mano e mai controllati
+- Errore: l'elenco dei dati per blueprint indicava tipi e campi per nome, come testo. Due erano sbagliati
+  (~AiView~, ~Systems.IntelService~) e nessuno se ne accorgeva: un nome che non corrisponde a niente non fa nulla.
+- Soluzione: un test di copertura risolve ogni nome dell'elenco e fallisce se non esiste (~56e639a~).
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa

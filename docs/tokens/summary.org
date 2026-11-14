@@ -3,20 +3,20 @@
 #+STARTUP: showall
 
 Generato da ~tools/token-ledger/ledger.py~ (non modificare a mano). Come funziona: [[file:README.org][README.org]].
-Dati fino al 2026-11-14 19:39 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
+Dati fino al 2026-11-14 19:58 UTC. Dollari = equivalente a listino API, non quanto paga l'abbonamento.
 
 * Totale
-1.749,1 milioni di token, 939,8 $, 39 sessioni e 194 agenti.
-Output: 138 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,17).
+1.758,1 milioni di token, 946,0 $, 40 sessioni e 195 agenti.
+Output: 140 righe esatte, 0 calibrate sul contatore di Claude Code, 126 stimate (testo visibile / 4 × 3,17).
 
 * Per area
 | Area                   | Agenti | Token (M) | Output (k) | $     | % costo | Ultima attività |
 |------------------------+--------+-----------+------------+-------+---------+-----------------|
-| Gameplay SupCom        | 89     | 627,0     | 4.201      | 331,9 | 35,3    | 2026-11-13      |
-| Coordinamento          | 1      | 254,6     | 1.699      | 183,9 | 19,6    | 2026-11-14      |
-| Esperienza client      | 48     | 346,5     | 2.397      | 164,7 | 17,5    | 2026-11-13      |
+| Gameplay SupCom        | 89     | 627,0     | 4.204      | 332,0 | 35,1    | 2026-11-13      |
+| Coordinamento          | 1      | 262,7     | 1.745      | 189,7 | 20,1    | 2026-11-14      |
+| Esperienza client      | 48     | 346,5     | 2.397      | 164,7 | 17,4    | 2026-11-13      |
 | Avversario IA          | 25     | 260,8     | 1.381      | 117,9 | 12,5    | 2026-10-24      |
-| Infrastruttura tecnica | 30     | 214,2     | 1.683      | 106,8 | 11,4    | 2026-11-13      |
+| Infrastruttura tecnica | 31     | 215,2     | 1.693      | 107,2 | 11,3    | 2026-11-14      |
 | Documentazione         | 1      | 45,9      | 478        | 34,6  | 3,7     | 2026-11-13      |
 
 * Per onda
@@ -27,68 +27,68 @@ Righe = righe aggiunte in ~src/~, ~tests/~, ~tools/~, ~data/~ dal merge del modu
 ~purposes.json~); "in corso" = almeno un modulo dell'onda non è ancora fuso in ~main~. Lettura dei numeri:
 capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 
-| Onda       | Moduli | Agenti | Chiamate | Token (M) | k token / chiamata | $ / chiamata | $     | % costo | Righe    | $ / 1000 righe | Chiamate / 1000 righe | Ultima attività |
-|------------+--------+--------+----------+-----------+--------------------+--------------+-------+---------+----------+----------------+-----------------------+-----------------|
-| Fondazione | 1      | 0      | 38       | 3,9       | 102                | 0,134        | 5,1   | 0,5     | 5.113    | 1,0            | 7                     | 2026-10-10      |
-| Onda 1     | 5      | 5      | 332      | 69,5      | 209                | 0,117        | 38,7  | 4,1     | 11.735   | 3,3            | 28                    | 2026-10-10      |
-| Onda 2     | 4      | 9      | 644      | 142,2     | 221                | 0,093        | 59,6  | 6,3     | 10.407   | 5,7            | 62                    | 2026-10-11      |
-| Onda 3     | 4      | 17     | 1.158    | 157,2     | 136                | 0,070        | 81,4  | 8,7     | 14.636   | 5,6            | 79                    | 2026-10-12      |
-| Onda 4     | 6      | 28     | 2.248    | 262,6     | 117                | 0,062        | 139,1 | 14,8    | 17.518   | 7,9            | 128                   | 2026-10-14      |
-| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,3 | 19,3    | 21.889   | 8,3            | 158                   | 2026-10-24      |
-| Onda 6     | 2      | 18     | 1.070    | 99,6      | 93                 | 0,049        | 52,1  | 5,5     | 6.041    | 8,6            | 177                   | 2026-10-24      |
-| Onda 7     | 2      | 13     | 554      | 49,4      | 89                 | 0,058        | 32,3  | 3,4     | 4.163    | 7,8            | 133                   | 2026-11-11      |
-| Onda 8     | 4      | 20     | 1.117    | 110,6     | 99                 | 0,050        | 56,3  | 6,0     | 6.243    | 9,0            | 179                   | 2026-11-12      |
-| Onda 9     | 2      | 6      | 397      | 44,7      | 113                | 0,049        | 19,6  | 2,1     | 2.639    | 7,4            | 150                   | 2026-11-12      |
-| Onda 10    | 5      | 14     | 778      | 82,7      | 106                | 0,049        | 38,2  | 4,1     | 6.053    | 6,3            | 129                   | 2026-11-13      |
-| Onda 11    | 3      | 6      | 403      | 46,5      | 115                | 0,052        | 21,0  | 2,2     | in corso | —              | —                     | 2026-11-13      |
-| Fuori onda | —      | 2      | 2.009    | 293,4     | 146                | 0,107        | 215,1 | 22,9    | —        | —              | —                     | 2026-11-14      |
+| Onda       | Moduli | Agenti | Chiamate | Token (M) | k token / chiamata | $ / chiamata | $     | % costo | Righe  | $ / 1000 righe | Chiamate / 1000 righe | Ultima attività |
+|------------+--------+--------+----------+-----------+--------------------+--------------+-------+---------+--------+----------------+-----------------------+-----------------|
+| Fondazione | 1      | 0      | 38       | 3,9       | 102                | 0,134        | 5,1   | 0,5     | 5.113  | 1,0            | 7                     | 2026-10-10      |
+| Onda 1     | 5      | 5      | 332      | 69,5      | 209                | 0,117        | 38,7  | 4,1     | 11.735 | 3,3            | 28                    | 2026-10-10      |
+| Onda 2     | 4      | 9      | 644      | 142,2     | 221                | 0,093        | 59,6  | 6,3     | 10.407 | 5,7            | 62                    | 2026-10-11      |
+| Onda 3     | 4      | 17     | 1.158    | 157,2     | 136                | 0,070        | 81,4  | 8,6     | 14.636 | 5,6            | 79                    | 2026-10-12      |
+| Onda 4     | 6      | 28     | 2.248    | 262,6     | 117                | 0,062        | 139,1 | 14,7    | 17.518 | 7,9            | 128                   | 2026-10-14      |
+| Onda 5     | 5      | 56     | 3.460    | 386,9     | 112                | 0,052        | 181,3 | 19,2    | 21.889 | 8,3            | 158                   | 2026-10-24      |
+| Onda 6     | 2      | 18     | 1.070    | 99,6      | 93                 | 0,049        | 52,1  | 5,5     | 6.041  | 8,6            | 177                   | 2026-10-24      |
+| Onda 7     | 2      | 13     | 554      | 49,4      | 89                 | 0,058        | 32,3  | 3,4     | 4.163  | 7,8            | 133                   | 2026-11-11      |
+| Onda 8     | 4      | 20     | 1.117    | 110,6     | 99                 | 0,050        | 56,3  | 5,9     | 6.243  | 9,0            | 179                   | 2026-11-12      |
+| Onda 9     | 2      | 6      | 397      | 44,7      | 113                | 0,049        | 19,6  | 2,1     | 2.639  | 7,4            | 150                   | 2026-11-12      |
+| Onda 10    | 5      | 14     | 778      | 82,7      | 106                | 0,049        | 38,2  | 4,0     | 6.053  | 6,3            | 129                   | 2026-11-13      |
+| Onda 11    | 3      | 7      | 421      | 47,5      | 113                | 0,051        | 21,3  | 2,3     | 3.576  | 6,0            | 118                   | 2026-11-14      |
+| Fuori onda | —      | 2      | 2.071    | 301,4     | 146                | 0,107        | 220,9 | 23,4    | —      | —              | —                     | 2026-11-14      |
 
 * Per scopo
 | Scopo                                                                | Agenti | Token (M) | Output (k) | $    | % costo | Onda | Righe | $ / 1000 righe | Ultima attività |
 |----------------------------------------------------------------------+--------+-----------+------------+------+---------+------+-------+----------------+-----------------|
-| IA usa tutto (5k)                                                    | 18     | 170,2     | 927        | 76,8 | 8,2     | 5    | 3.905 | 19,7           | 2026-10-24      |
-| Fazione Cybran (5l)                                                  | 20     | 88,7      | 632        | 46,9 | 5,0     | 5    | 9.466 | 5,0            | 2026-10-23      |
+| IA usa tutto (5k)                                                    | 18     | 170,2     | 927        | 76,8 | 8,1     | 5    | 3.905 | 19,7           | 2026-10-24      |
+| Fazione Cybran (5l)                                                  | 20     | 88,7      | 633        | 46,9 | 5,0     | 5    | 9.466 | 5,0            | 2026-10-23      |
 | Orchestrazione (sessioni principali)                                 | 0      | 69,5      | 396        | 46,0 | 4,9     | —    | —     | —              | 2026-10-16      |
-| Rifinitura SupCom (4f)                                               | 9      | 79,6      | 491        | 43,1 | 4,6     | 4    | 3.793 | 11,3           | 2026-10-14      |
+| Rifinitura SupCom (4f)                                               | 9      | 79,6      | 491        | 43,1 | 4,6     | 4    | 3.793 | 11,4           | 2026-10-14      |
 | Comandante e ingegneri (6a)                                          | 13     | 65,9      | 470        | 34,3 | 3,6     | 6    | 3.576 | 9,6            | 2026-10-24      |
 | Navale (3c)                                                          | 4      | 61,1      | 267        | 32,3 | 3,4     | 3    | 3.143 | 10,3           | 2026-10-12      |
 | IA schermaglie (3d-4d)                                               | 5      | 64,7      | 306        | 29,4 | 3,1     | 4    | 1.975 | 14,9           | 2026-10-14      |
 | Mappe, menu, flusso (onda 2)                                         | 3      | 64,8      | 258        | 25,1 | 2,7     | 2    | 3.807 | 6,6            | 2026-10-11      |
 | Unità mancanti e mura (8a)                                           | 10     | 41,1      | 334        | 24,6 | 2,6     | 8    | 2.250 | 10,9           | 2026-11-11      |
-| Armi strategiche (3b)                                                | 6      | 45,7      | 298        | 23,1 | 2,5     | 3    | 4.343 | 5,3            | 2026-10-12      |
-| Sperimentali e comandanti (4g)                                       | 5      | 38,4      | 275        | 22,9 | 2,4     | 4    | 3.006 | 7,6            | 2026-10-13      |
+| Armi strategiche (3b)                                                | 6      | 45,7      | 298        | 23,1 | 2,4     | 3    | 4.343 | 5,3            | 2026-10-12      |
+| Sperimentali e comandanti (4g)                                       | 5      | 38,4      | 276        | 22,9 | 2,4     | 4    | 3.006 | 7,6            | 2026-10-13      |
 | Ordini e selezione (7b)                                              | 9      | 31,9      | 311        | 21,9 | 2,3     | 7    | 2.648 | 8,3            | 2026-11-11      |
 | Scala e prestazioni (5m)                                             | 6      | 50,0      | 261        | 21,7 | 2,3     | 5    | 1.657 | 13,1           | 2026-10-16      |
 | Documentazione e analisi costi                                       | 1      | 28,0      | 289        | 21,7 | 2,3     | —    | —     | —              | 2026-11-12      |
 | Trasporti (4h)                                                       | 4      | 37,9      | 263        | 20,9 | 2,2     | 4    | 3.350 | 6,2            | 2026-10-14      |
-| UX (5n)                                                              | 7      | 42,8      | 272        | 19,6 | 2,1     | 5    | 2.339 | 8,4            | 2026-10-16      |
+| UX (5n)                                                              | 7      | 42,8      | 272        | 19,7 | 2,1     | 5    | 2.339 | 8,4            | 2026-10-16      |
 | Opzioni partita e squadra (6b)                                       | 5      | 33,7      | 249        | 17,8 | 1,9     | 6    | 2.465 | 7,2            | 2026-10-24      |
-| Salvataggi e replay (4i)                                             | 3      | 31,0      | 239        | 17,4 | 1,9     | 4    | 4.473 | 3,9            | 2026-10-14      |
+| Salvataggi e replay (4i)                                             | 3      | 31,0      | 239        | 17,4 | 1,8     | 4    | 4.473 | 3,9            | 2026-10-14      |
 | Mappe in rete e biomi (8b-3)                                         | 5      | 36,4      | 261        | 17,2 | 1,8     | 8    | 1.563 | 11,0           | 2026-11-12      |
 | Multigiocatore lockstep (5o)                                         | 5      | 35,2      | 232        | 16,2 | 1,7     | 5    | 4.522 | 3,6            | 2026-10-16      |
 | Sandbox (3e)                                                         | 5      | 28,2      | 250        | 15,2 | 1,6     | 3    | 4.025 | 3,8            | 2026-10-12      |
+| Orchestrazione onda 11 (11a-1, 11a-2)                                | 0      | 10,0      | 81         | 13,0 | 1,4     | —    | —     | —              | 2026-11-14      |
 | Orchestrazione onda 10                                               | 0      | 14,5      | 111        | 13,0 | 1,4     | —    | —     | —              | 2026-11-13      |
 | Nebbia di guerra e intel (onda 2)                                    | 2      | 30,9      | 147        | 12,9 | 1,4     | 2    | 1.332 | 9,7            | 2026-10-11      |
-| Orchestrazione onda 11 (11a-1, 11a-2)                                | 0      | 9,7       | 81         | 12,9 | 1,4     | —    | —     | —              | 2026-11-14      |
 | Orchestrazione: avvio 8b-1 e 9b-1                                    | 0      | 8,5       | 101        | 12,4 | 1,3     | —    | —     | —              | 2026-11-12      |
 | IA schermaglie (onda 2)                                              | 2      | 25,9      | 147        | 11,6 | 1,2     | 2    | 2.646 | 4,4            | 2026-10-11      |
 | Documentazione                                                       | 0      | 15,2      | 156        | 11,4 | 1,2     | —    | —     | —              | 2026-10-15      |
 | Salvataggi in multiplayer (10a-3)                                    | 4      | 23,5      | 183        | 11,2 | 1,2     | 10   | 2.141 | 5,2            | 2026-11-13      |
 | Ombre terreno, LOD, minimappa (9b-2)                                 | 4      | 26,0      | 179        | 11,2 | 1,2     | 9    | 1.082 | 10,3           | 2026-11-12      |
 | Tecnologia T2/T3 (3a)                                                | 2      | 22,2      | 137        | 10,8 | 1,1     | 3    | 3.125 | 3,5            | 2026-10-12      |
+| Migrazione dei salvataggi (11a-2)                                    | 4      | 23,3      | 197        | 10,7 | 1,1     | 11   | 1.946 | 5,5            | 2026-11-14      |
 | Rilascio e impostazioni (7a)                                         | 4      | 17,5      | 169        | 10,4 | 1,1     | 7    | 1.515 | 6,9            | 2026-10-24      |
-| Migrazione dei salvataggi (11a-2)                                    | 3      | 22,3      | 188        | 10,4 | 1,1     | 11   | —     | —              | 2026-11-13      |
 | Orchestrazione: ripresa di 7b e 8a                                   | 0      | 7,9       | 77         | 10,2 | 1,1     | —    | —     | —              | 2026-11-11      |
 | Grafica client (onda 1)                                              | 1      | 20,7      | 170        | 10,1 | 1,1     | 1    | 3.361 | 3,0            | 2026-10-10      |
-| Audio e rifinitura (onda 2)                                          | 2      | 20,6      | 115        | 9,9  | 1,1     | 2    | 2.622 | 3,8            | 2026-10-11      |
-| Orchestrazione wave 5 (ripresa 23/10)                                | 0      | 24,6      | 96         | 9,9  | 1,1     | —    | —     | —              | 2026-10-23      |
+| Audio e rifinitura (onda 2)                                          | 2      | 20,6      | 115        | 9,9  | 1,0     | 2    | 2.622 | 3,8            | 2026-10-11      |
+| Orchestrazione wave 5 (ripresa 23/10)                                | 0      | 24,6      | 96         | 9,9  | 1,0     | —    | —     | —              | 2026-10-23      |
 | Orchestrazione wave 5k/6a                                            | 0      | 22,1      | 89         | 9,8  | 1,0     | —    | —     | —              | 2026-10-24      |
 | Orchestrazione wave 7b/8a (ripresa 10/11)                            | 0      | 4,4       | 56         | 9,1  | 1,0     | —    | —     | —              | 2026-11-10      |
 | Pathfinding e movimento (onda 1)                                     | 1      | 18,1      | 135        | 9,0  | 1,0     | 1    | 2.428 | 3,7            | 2026-10-10      |
 | Orchestrazione wave 5 (ripresa 16/10)                                | 0      | 19,1      | 93         | 8,7  | 0,9     | —    | —     | —              | 2026-10-16      |
 | Animazioni di morte e warp-in (9b-1)                                 | 2      | 18,7      | 153        | 8,5  | 0,9     | 9    | 1.557 | 5,4            | 2026-11-12      |
 | Alberi e rocce (8b-1)                                                | 2      | 19,7      | 140        | 8,3  | 0,9     | 8    | 1.393 | 6,0            | 2026-11-12      |
-| Giudizio sulle regole di orchestrazione e uso token                  | 0      | 2,3       | 61         | 8,0  | 0,9     | —    | —     | —              | 2026-11-11      |
+| Giudizio sulle regole di orchestrazione e uso token                  | 0      | 2,3       | 61         | 8,0  | 0,8     | —    | —     | —              | 2026-11-11      |
 | Overlay di portata e rifiniture client (10b-2)                       | 3      | 17,8      | 111        | 7,4  | 0,8     | 10   | 1.019 | 7,3            | 2026-11-12      |
 | Combattimento (onda 1)                                               | 1      | 12,0      | 72         | 7,4  | 0,8     | 1    | 1.628 | 4,5            | 2026-10-10      |
 | Osservatori e voto di espulsione (10a-2)                             | 3      | 15,9      | 118        | 7,3  | 0,8     | 10   | 1.035 | 7,1            | 2026-11-12      |
@@ -99,6 +99,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Orchestrazione onda 10 coppia 2                                      | 0      | 7,2       | 65         | 6,6  | 0,7     | —    | —     | —              | 2026-11-12      |
 | Pathing preciso (11a-1)                                              | 2      | 14,3      | 115        | 6,6  | 0,7     | 11   | 638   | 10,3           | 2026-11-13      |
 | File mappa e scelta mappa (8b-2)                                     | 3      | 13,4      | 98         | 6,1  | 0,6     | 8    | 1.037 | 5,8            | 2026-11-12      |
+| Orchestrazione onda 11                                               | 0      | 7,8       | 46         | 5,8  | 0,6     | —    | —     | —              | 2026-11-14      |
 | Economia e costruzione (onda 1)                                      | 1      | 6,7       | 82         | 5,6  | 0,6     | 1    | 1.644 | 3,4            | 2026-10-10      |
 | Infrastruttura fazioni (j)                                           | 2      | 11,0      | 95         | 5,4  | 0,6     | 4    | 921   | 5,9            | 2026-10-14      |
 | Editor dei tasti (10b-1)                                             | 2      | 10,5      | 93         | 5,1  | 0,5     | 10   | 754   | 6,8            | 2026-11-12      |
@@ -110,7 +111,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | Orchestrazione wave 5 (ripresa l Cybran + k IA)                      | 0      | 5,5       | 30         | 2,6  | 0,3     | —    | —     | —              | 2026-10-22      |
 | Orchestrazione onde 8b e 9b                                          | 0      | 1,3       | 18         | 2,1  | 0,2     | —    | —     | —              | 2026-11-11      |
 | Analisi costo/progresso Fable 5.2 vs Opus 5.5                        | 0      | 2,8       | 26         | 2,1  | 0,2     | —    | —     | —              | 2026-11-10      |
-| Domanda: rapporto output / cache                                     | 0      | 1,3       | 16         | 1,4  | 0,2     | —    | —     | —              | 2026-11-10      |
+| Domanda: rapporto output / cache                                     | 0      | 1,3       | 16         | 1,4  | 0,1     | —    | —     | —              | 2026-11-10      |
 | Orchestratore ondata 5-6                                             | 0      | 0,8       | 9          | 0,8  | 0,1     | —    | —     | —              | 2026-10-23      |
 | Giudizio su regole orchestrazione e token                            | 0      | 0,0       | 0          | 0,2  | 0,0     | —    | —     | —              | 2026-11-10      |
 | Documentazione: roadmap onda 11 dopo le risposte del proprietario    | 0      | 1,2       | 16         | 0,0  | 0,0     | —    | —     | —              | 2026-11-13      |
@@ -121,7 +122,7 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 |------------+-----------+-------+--------|
 | 2026-10-10 | 89,9      | 52,8  | 9      |
 | 2026-10-11 | 192,1     | 85,2  | 9      |
-| 2026-10-12 | 204,5     | 108,7 | 29     |
+| 2026-10-12 | 204,5     | 108,8 | 29     |
 | 2026-10-13 | 142,6     | 85,3  | 20     |
 | 2026-10-14 | 91,8      | 47,3  | 14     |
 | 2026-10-15 | 115,5     | 62,8  | 18     |
@@ -133,28 +134,28 @@ capitolo "Costi" di [[file:../LESSONS.org][LESSONS.org]].
 | 2026-11-11 | 53,3      | 41,3  | 5      |
 | 2026-11-12 | 238,4     | 123,0 | 29     |
 | 2026-11-13 | 84,0      | 46,3  | 8      |
-| 2026-11-14 | 0,9       | 3,8   | 0      |
+| 2026-11-14 | 10,0      | 10,0  | 1      |
 
 * Ultime attività
-| Fine (UTC)       | Tipo     | Scopo                                                                | Descrizione                                        | Token (M) | $    | Output |
-|------------------+----------+----------------------------------------------------------------------+----------------------------------------------------+-----------+------+--------|
-| 2026-11-14 19:39 | sessione | Orchestrazione onda 11 (11a-1, 11a-2)                                | continua                                           | 0,9       | 3.83 | esatto |
-| 2026-11-13 09:49 | ripresa  | Migrazione dei salvataggi (11a-2)                                    | [Migrazione dei salvataggi (11a-2)] module agent 3 | 11,4      | 4.30 | esatto |
-| 2026-11-13 09:46 | sessione | Orchestrazione onda 11 (11a-1, 11a-2)                                | continua                                           | 8,8       | 9.11 | esatto |
-| 2026-11-13 09:33 | ripresa  | Pathing preciso (11a-1)                                              | [Pathing preciso (11a-1)] module agent 2           | 8,7       | 3.58 | esatto |
-| 2026-11-13 09:25 | ripresa  | Migrazione dei salvataggi (11a-2)                                    | [Migrazione dei salvataggi (11a-2)] module agent 2 | 7,5       | 3.34 | esatto |
-| 2026-11-13 09:13 | agente   | Pathing preciso (11a-1)                                              | [Pathing preciso (11a-1)] module agent 1           | 5,6       | 2.98 | esatto |
-| 2026-11-13 09:11 | agente   | Migrazione dei salvataggi (11a-2)                                    | [Migrazione dei salvataggi (11a-2)] module agent 1 | 3,4       | 2.73 | esatto |
-| 2026-11-13 03:12 | sessione | Orchestrazione onda 10                                               | continua                                           | 11,4      | 8.87 | esatto |
-| 2026-11-13 03:06 | ripresa  | Salvataggi in multiplayer (10a-3)                                    | [Salvataggi in multiplayer (10a-3)] module agent 4 | 11,4      | 4.26 | esatto |
-| 2026-11-13 02:59 | agente   | Annunciatore vocale (11b-1)                                          | [Annunciatore vocale (11b-1)] module agent 1       | 9,9       | 4.07 | esatto |
-| 2026-11-13 02:49 | ripresa  | Salvataggi in multiplayer (10a-3)                                    | [Salvataggi in multiplayer (10a-3)] module agent 3 | 4,9       | 3.03 | esatto |
-| 2026-11-13 02:36 | sessione | Documentazione: roadmap onda 11 dopo le risposte del proprietario    | ma il multiplaier è solo lan o anche in internet?  | 0,9       | 0.03 | esatto |
-| 2026-11-12 21:01 | ripresa  | Salvataggi in multiplayer (10a-3)                                    | [Salvataggi in multiplayer (10a-3)] module agent 2 | 1,1       | 0.74 | esatto |
-| 2026-11-12 20:59 | sessione | Orchestrazione onda 10                                               | continua                                           | 3,1       | 4.11 | esatto |
-| 2026-11-12 20:58 | agente   | Salvataggi in multiplayer (10a-3)                                    | [Salvataggi in multiplayer (10a-3)] module agent 1 | 6,1       | 3.14 | esatto |
-| 2026-11-12 20:55 | sessione | Documentazione: roadmap onda 11 dopo le risposte del proprietario    | ma il multiplaier è solo lan o anche in internet?  | 0,3       | 0.01 | esatto |
-| 2026-11-12 20:43 | sessione | Orchestrazione onda 10 coppia 2                                      | continua                                           | 7,2       | 6.62 | esatto |
-| 2026-11-12 20:30 | ripresa  | Osservatori e voto di espulsione (10a-2)                             | [Osservatori e voto di espulsione (10a-2)] module  | 8,6       | 3.44 | esatto |
-| 2026-11-12 20:26 | ripresa  | Overlay di portata e rifiniture client (10b-2)                       | [Overlay di portata e rifiniture client (10b-2)] m | 7,4       | 3.08 | esatto |
-| 2026-11-12 20:09 | sessione | Orchestrazione onda 10 coppia 2 (10a-2, 10b-2) e risposta su LESSONS | continua                                           | 9,4       | 4.36 | esatto |
+| Fine (UTC)       | Tipo     | Scopo                                                             | Descrizione                                        | Token (M) | $    | Output |
+|------------------+----------+-------------------------------------------------------------------+----------------------------------------------------+-----------+------+--------|
+| 2026-11-14 19:58 | sessione | Orchestrazione onda 11                                            | continua                                           | 7,8       | 5.75 | esatto |
+| 2026-11-14 19:46 | ripresa  | Migrazione dei salvataggi (11a-2)                                 | [Migrazione dei salvataggi (11a-2)] module agent 4 | 1,0       | 0.34 | esatto |
+| 2026-11-14 19:40 | sessione | Orchestrazione onda 11 (11a-1, 11a-2)                             | continua                                           | 1,2       | 3.94 | esatto |
+| 2026-11-13 09:49 | ripresa  | Migrazione dei salvataggi (11a-2)                                 | [Migrazione dei salvataggi (11a-2)] module agent 3 | 11,4      | 4.30 | esatto |
+| 2026-11-13 09:46 | sessione | Orchestrazione onda 11 (11a-1, 11a-2)                             | continua                                           | 8,8       | 9.11 | esatto |
+| 2026-11-13 09:33 | ripresa  | Pathing preciso (11a-1)                                           | [Pathing preciso (11a-1)] module agent 2           | 8,7       | 3.58 | esatto |
+| 2026-11-13 09:25 | ripresa  | Migrazione dei salvataggi (11a-2)                                 | [Migrazione dei salvataggi (11a-2)] module agent 2 | 7,5       | 3.34 | esatto |
+| 2026-11-13 09:13 | agente   | Pathing preciso (11a-1)                                           | [Pathing preciso (11a-1)] module agent 1           | 5,6       | 2.98 | esatto |
+| 2026-11-13 09:11 | agente   | Migrazione dei salvataggi (11a-2)                                 | [Migrazione dei salvataggi (11a-2)] module agent 1 | 3,4       | 2.73 | esatto |
+| 2026-11-13 03:12 | sessione | Orchestrazione onda 10                                            | continua                                           | 11,4      | 8.87 | esatto |
+| 2026-11-13 03:06 | ripresa  | Salvataggi in multiplayer (10a-3)                                 | [Salvataggi in multiplayer (10a-3)] module agent 4 | 11,4      | 4.26 | esatto |
+| 2026-11-13 02:59 | agente   | Annunciatore vocale (11b-1)                                       | [Annunciatore vocale (11b-1)] module agent 1       | 9,9       | 4.07 | esatto |
+| 2026-11-13 02:49 | ripresa  | Salvataggi in multiplayer (10a-3)                                 | [Salvataggi in multiplayer (10a-3)] module agent 3 | 4,9       | 3.03 | esatto |
+| 2026-11-13 02:36 | sessione | Documentazione: roadmap onda 11 dopo le risposte del proprietario | ma il multiplaier è solo lan o anche in internet?  | 0,9       | 0.03 | esatto |
+| 2026-11-12 21:01 | ripresa  | Salvataggi in multiplayer (10a-3)                                 | [Salvataggi in multiplayer (10a-3)] module agent 2 | 1,1       | 0.74 | esatto |
+| 2026-11-12 20:59 | sessione | Orchestrazione onda 10                                            | continua                                           | 3,1       | 4.11 | esatto |
+| 2026-11-12 20:58 | agente   | Salvataggi in multiplayer (10a-3)                                 | [Salvataggi in multiplayer (10a-3)] module agent 1 | 6,1       | 3.14 | esatto |
+| 2026-11-12 20:55 | sessione | Documentazione: roadmap onda 11 dopo le risposte del proprietario | ma il multiplaier è solo lan o anche in internet?  | 0,3       | 0.01 | esatto |
+| 2026-11-12 20:43 | sessione | Orchestrazione onda 10 coppia 2                                   | continua                                           | 7,2       | 6.62 | esatto |
+| 2026-11-12 20:30 | ripresa  | Osservatori e voto di espulsione (10a-2)                          | [Osservatori e voto di espulsione (10a-2)] module  | 8,6       | 3.44 | esatto |

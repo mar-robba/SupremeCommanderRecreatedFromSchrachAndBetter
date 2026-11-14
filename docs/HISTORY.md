@@ -1581,3 +1581,56 @@ load cold 523 ms, warm 183 ms; `200 20 0 1024` setup 502 ms, first tick with nav
 building at the same time). Nobody has looked at it in a game yet: no screenshot was taken (the module has no
 client part); the owner can watch big units and ships with `--scene experimental` and `--scene units8a:naval`.
 
+### (11a-2) Saves that survive sim layout changes — report (merged 2026-11-14, 6c4b850)
+Four agents, 1,946 lines. Agent 1 stopped by itself at its checkpoint (164k, 12 minutes) with the design and the
+first three files committed (40d88d3: the layout parser `SaveLayout.cs`, the read plans and codecs
+`SaveMigrationCodecs.cs`, `SaveBlueprintIndices.cs`); agent 2 too (161k, 14 minutes; bb57015: state format 2, the
+blueprint id table and the index remap, stable names for shared objects, the migration report, the replay-log
+restart); agent 3 wrote the proofs (17 synthetic tests, a real fixture save, the quickload pre-check, the
+measurements), merged 11a-1, fixed the crash of a pre-11a-1 save (8c55e7f) and was cut by the 5-hour limit at 169k
+after about 23 minutes, while writing the docs; the orchestrator committed them as WIP (d4a98ef). Agent 4, the
+first module agent on Sonnet 5.5 (effort high), merged main, ran the final checks, reviewed the docs and wrote the
+report (66k, 5 minutes, 18 calls). What the brief got wrong: it described the field layouts and left blueprint
+changes as "decide and document what is safe". The blueprint side turned out to be the larger half: blueprint
+indices saved as plain ints in 34 fields, data computed from blueprints saved as state, shared objects numbered in
+walk order. The module came to 1,946 lines against a target of 1,500.
+
+**(11a-2) Save migration — report (agent 4)**
+
+**What works**
+- A save loads after fields are added, removed, renamed or widened, after types are renamed, and after blueprints are reordered, added or stat-changed. Blueprint indices are remapped by id, per-blueprint caches are rebuilt or reordered, shared objects are found by stable name.
+- A removed blueprint that the save uses, or an incompatible retype, is refused with the id or the field named.
+- The migration report is in `LoadedGame.Migration`; no UI shows it yet. A migrated save restarts its replay log. Replays stay strict.
+- Format-1 saves (made before this module) keep the strict blueprint rule.
+
+**Try it**: `dotnet test tests/Rts.Sim.Tests --filter "SaveLayoutMigrationTests|SaveBlueprintMigrationTests|SaveFixtureTests|SaveCoverageTests"`, or load the fixture made before 11a-1 in the game: `dotnet run --project src/Rts.Client -- --load tests/Rts.Sim.Tests/Fixtures/skirmish_2ai_256.rtssave`.
+
+**Tests added**: `SaveLayoutMigrationTests` (11), `SaveBlueprintMigrationTests` (6), `SaveFixtureTests`, and two coverage tests (`EveryBlueprintIndexFieldIsRemapped`, `BlueprintDerivedStateNamesStillExist`).
+
+**Shared-file edits**: `src/Rts.Client/Menus/InGameSaveUi.cs` (the quickload pre-check uses `SaveGame.BlueprintMismatch`); `Pathfinding/PathService*` and `PathSystem` (8c55e7f, so that pre-11a-1 saves load). Docs: ARCHITECTURE "Save migration", DEV_GUIDE "How to change a saved type", ROADMAP G41 and three "later" lines.
+
+**Numbers (old -> new)**
+- Before the merge of 11a-1 (agent 3, three runs each): savebench file 714 -> 724 KB (+1.4 %), load cold 506-527 -> 514-528 ms, warm 179-182 -> 152-185 ms; AI match and bench hashes unchanged.
+- After the merge of main (agent 4, Release): sim tests 651 green (main had 630), client 371, net 43.
+- AI match `ai 30 256 42 hard,normal`: "WINNER: Player (Hard) after 16:01", 31A42EB6FA4BA170 (unchanged). Bench `2000 300`: 2F09CD7D01AF287E (unchanged).
+- `mp 3 600 256 1 0 save=300` and `mp 3 600 256 0 0 obs=1 save=250`: exit 0, no desync.
+- `savebench 8 256 2`: file 754 -> 766 KB (+1.6 %), load cold 523 -> 421 ms, warm 183 -> 122 ms (one run each); capture warm 48 ms, encode warm 48 ms.
+
+**Migration report of the pre-11a-1 fixture**: blueprints changed (183); `DefenseTable` and `CombatCatalog` rebuilt; new fields `PathService.NavFormat`, `NavGrid.MaxSlope`, `MaxReq`, `Reach`, `NavGraph.Slot`. It loads and plays 200 ticks.
+
+**Known issues / follow-ups**
+- No UI shows the migration report.
+- Blueprint indices are still plain ints in a central table guarded by a name heuristic.
+- A removed blueprint that a save uses has no replacement mapping: the save is refused.
+- Saves made before 11a-2 keep the strict rule: any blueprint change refuses them.
+
+**Design errors found**
+1. Blueprint indices are plain ints spread over many sim types: a central field table, kept complete by a name check in the coverage test (bb57015).
+2. Saved data computed from or indexed by blueprints (`CombatCatalog`, the torpedo `DefenseTable`, arrays in `AiPerception`, `AiPlacement`, `IntelService`) goes stale: rebuilt or reordered on a migrated load (bb57015).
+3. `ExternalSet` numbered shared objects in walk order, so any change in the shape of blueprint data shifted them: stable-name table (bb57015).
+4. Sim fields initialized with `= []` share .NET's single empty array with the blueprint db and counted as shared objects: saved under "empty:" names (bb57015).
+5. "A field added since the save takes its initializer's value" makes a version field useless: `PathService.NavFormat` looked current on a pre-11a-1 save and `PathSystem.AddSolve` threw IndexOutOfRange. Fixed with an `OnMigrated` hook and a resized `GraphNeeded` (8c55e7f).
+6. The client's quickload repeated the loader's blueprint rule and refused what the loader accepts: one helper, `SaveGame.BlueprintMismatch` (6206481).
+7. Two hand-written per-blueprint field names were wrong (`AiView`, `Systems.IntelService`) until a coverage check resolved the names (56e639a).
+
+**Handoff review**: agent 2 wrote that the first note lacked three things it had to work out again (data computed from blueprints, arrays with one entry per blueprint, index fields that fail the name check) and that reading the new files cost 110k. Agent 3 was cut before writing its review. Agent 4: agent 3's note was enough to finish; the design, the numbers and the open runs were all in it.
