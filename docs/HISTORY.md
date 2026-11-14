@@ -1634,3 +1634,23 @@ walk order. The module came to 1,946 lines against a target of 1,500.
 7. Two hand-written per-blueprint field names were wrong (`AiView`, `Systems.IntelService`) until a coverage check resolved the names (56e639a).
 
 **Handoff review**: agent 2 wrote that the first note lacked three things it had to work out again (data computed from blueprints, arrays with one entry per blueprint, index fields that fail the name check) and that reading the new files cost 110k. Agent 3 was cut before writing its review. Agent 4: agent 3's note was enough to finish; the design, the numbers and the open runs were all in it.
+
+**Merge checks on main** (orchestrator, 2026-11-14 20:47-20:52): build and tests 651 sim + 371 client green; net 42
+of 43 in the first run (next paragraph), 43 green afterwards; reference match "WINNER: Player (Hard) after 16:01",
+31A42EB6FA4BA170; bench `2000 300` 2F09CD7D01AF287E; `mp 3 600 256 1 0 save=300` and `mp 3 600 256 0 0 obs=1
+save=250` in sync; savebench file 766 KB, load cold 476 ms, warm 153 ms, capture warm 51 ms, encode warm 49 ms.
+Loaded in the client after the merge (screenshots looked at): a quicksave and the `savebench` save, both made on
+main before the merge (state format 1), and the pre-11a-1 fixture (tick 1836, 40 units, it plays on).
+
+**A race in the load lobby, found by the merge checks** (orchestrator, 2026-11-14; older than this module: 10a-3 and
+8b-3). `SaveLoadTests.PlayersClaimSavedSlotsByNameAndAMissingOneCanBeAi` failed with "timed out waiting for ready" in
+2 of 19 runs of the net suite. Cause: the client published its copy of the save as present (`SaveTransfer`, read by
+`SavePath`) one statement before it queued the status message for the host, and `ClientSession.Request` takes no
+lock. A caller that saw the save present could therefore send Ready first; the host drops a Ready from a player
+whose save it has not heard of (`HostSession.Saves.cs`), and nothing sent it again, so the lobby never became ready.
+Proved both ways with a 40 ms sleep between the two statements: old order, the test fails every time; new order, it
+passes. Fix (37fcf13): the status is queued first, then the state is published, in the two save paths and in the
+two map paths of `ClientSession` (the map transfer of 8b-3 had the same order). After it: net suite 8 of 8 green
+(two right after a full rebuild), client 371 green, both `mp ... save=` runs and `mp 3 400 256 1 0 map=badlands` in
+sync. A player could hit it only by pressing Ready in the same millisecond the save was found; `--autostart` clients
+could.

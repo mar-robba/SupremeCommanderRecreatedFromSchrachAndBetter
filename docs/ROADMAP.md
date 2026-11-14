@@ -21,12 +21,12 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 8 | (8a) missing units & walls, (8b-1) map props, (8b-2) map files + map pack + map picker, (8b-3) maps in multiplayer + biomes | ✅ 2026-11-11 (8a), 2026-11-12 (8b) |
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
 | 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12), (10a-3) multiplayer save/load ✅ 2026-11-13 | ✅ 2026-11-13 |
-| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing ✅ 2026-11-13, (11a-2) save migration, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | in progress |
+| 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing ✅ 2026-11-13, (11a-2) save migration ✅ 2026-11-14, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN. Parked: tutorial, mod support, FA units, split screen, reconnect | ✅ 2026-11-14 |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-14 20:40 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-14 21:10 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -35,8 +35,10 @@ pack + map picker, (9b-2) terrain self-shadows + unit LOD + minimap options and 
 biomes (all five merged 2026-11-12). **Waves 8 and 9 are complete** (9a was removed by the owner). Wave 10:
 (10b-1) keybinding editor, (10a-1) deterministic math, (10b-2) selection overlays and (10a-2) observers + vote to
 drop merged 2026-11-12, (10a-3) multiplayer save/load merged 2026-11-13: **wave 10 is complete**. Wave 11: (11b-1)
-voice announcer and (11a-1) pathing merged 2026-11-13; left: (11a-2) save migration.
-Tests: 630 sim + 371 client + 43 net.
+voice announcer and (11a-1) pathing merged 2026-11-13, (11a-2) save migration merged 2026-11-14: **wave 11 is
+complete**, and with it the planned modules of the gap table G1-G45 (what was not cut or parked; the small sim
+leftovers of G11 remain as "later" lines). No module is in progress, no worktree is open.
+Tests: 651 sim + 371 client + 43 net.
 Reference match `Rts.Bench -- ai 30 256 42 hard,normal` on main = "WINNER: Player (Hard) after 16:01", hash
 **31A42EB6FA4BA170** (agents that must not change sim results compare against it; before 11a-1, which changed
 movement, it was "after 12:00", C87C46C4EA726A82; before 10a-1, which made the sim math software-deterministic,
@@ -48,7 +50,35 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-13 04:15, written by orchestrator session 5473885b on Fable 5.2, at 250k of context, for the next session):
+**ON RESUME** (2026-11-14 21:10, written by orchestrator session 8f8363bc on Fable 5.2 for the next session; the
+bullets below the first four are older, by sessions 5473885b and 84a8eb5c):
+- **Wave 11 is complete and nothing is running: what comes next is the owner's choice.** Every module launched so
+  far is merged; `git worktree list` shows only main. The gap table G1-G45 has no planned module left: the rest is
+  cut (campaign, map editor, Italian localization, online outside the LAN) or parked (tutorial, mod support, FA
+  units, split screen, reconnect). Still open: the leftovers of G11 that 10b-2 did not deliver (mobile TML moves
+  into range, shield HP kept on an enhancement swap, Mavor arc/priority, crush animation, emergency drop, staging
+  repair cost; read from the row and the "later" lines on 2026-11-14, not checked one by one in the code), the other
+  "later" lines of the Phase sections and of "Wave 6+ plan", and the points below. Ask the owner what comes next
+  and start no module before the answer.
+- **(11a-2) save migration is merged and verified** (6c4b850, 2026-11-14 20:47; HISTORY report, seven design errors
+  in LESSONS, fragmentation row, 1,946 lines in `purposes.json`, worktree and branch removed): four agents, the last
+  one on Sonnet 5.5 (final checks, docs review, report: 5 minutes, 66k, 0.34 $ at list price). Merge checks: 651 sim
+  + 371 client + 43 net, reference match "Player (Hard) after 16:01" 31A42EB6FA4BA170, bench 2F09CD7D01AF287E (all
+  unchanged, as the module must), both `mp ... save=` runs in sync, savebench file 766 KB (+1.6 %), load cold 476 ms,
+  warm 153 ms; a quicksave and the savebench save made on main before the merge, and the pre-11a-1 fixture, load in
+  the client. Left open by its report (ROADMAP "later" lines next to the save lines): no UI shows the migration
+  report (`LoadedGame.Migration`); blueprint indices are still plain ints in a table kept complete by a name check;
+  a save that uses a removed blueprint is refused (no replacement mapping); saves made before 11a-2 keep the strict
+  blueprint rule.
+- **A race in the load lobby was found by those merge checks and fixed** (37fcf13; HISTORY 11a-2 "A race in the
+  load lobby", DEV_GUIDE "Multiplayer checks" last bullet): one net test timed out in 2 of 19 runs because the
+  client published "save present" before it told the host, and the host drops a Ready that comes first. It was in
+  10a-3 and, for maps, in 8b-3. The LESSONS entry for it is still to write (after the "Costi" agent, next bullet).
+- **LESSONS "Costi" is being brought up to date** (due after wave 11): an Opus 5.5 agent, started 21:00 with the
+  prompt file `.claude/prompts/costi-onda11.md`, edits only the chapter "Costi" of `docs/LESSONS.org` in the main
+  checkout and does not commit. If this session ended before it finished: look at `git diff docs/LESSONS.org`; a
+  complete chapter is committed, a half-written one is finished by a fresh agent with the same prompt file (or
+  dropped with `git checkout docs/LESSONS.org` and redone).
 - **(11a-1) pathing is merged and verified** (2cf82f8, 2026-11-13 10:34; HISTORY report, six design errors in
   LESSONS, fragmentation row, worktree and branch removed): two agents, 638 lines. Merge checks: 630 sim + 371
   client + 43 net green, reference match "Player (Hard) after 16:01" 31A42EB6FA4BA170, bench 2F09CD7D01AF287E, both
@@ -59,36 +89,6 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   changed the generator's math, `mapexport --pack tools/maps/pack.txt` gives other bytes than `data/maps`, written
   by 8b-2). The shipped files stay valid. Not touched: re-exporting changes every pack map's hash, so saves and
   replays on those maps would refuse. Ask the owner before doing it (HISTORY 11a-1, LESSONS).
-- **(11a-2) save migration: code and tests done, NOT merged; one finishing agent is left** (state of 2026-11-14
-  20:40, orchestrator session 84a8eb5c, which the owner then cleared). Worktree
-  `.claude/worktrees/agent-a3aed1e9bdbb580ce`, branch `worktree-agent-a3aed1e9bdbb580ce`, head d4a98ef, clean tree,
-  main with 11a-1 already merged in (e3a65b6). Three agents on Opus 5.5: agent 1 stopped at its checkpoint (163k,
-  12 minutes: design, read plans), agent 2 too (160k, 14 minutes: state format 2, blueprint id table and index
-  remap, migration report, replay-log restart), agent 3 (started 10:27) did the proofs (11 synthetic layout tests,
-  6 blueprint tests, a real fixture save of 395 KB with its test, the client quickload pre-check, the measurements:
-  file +1.4 %, hashes unchanged, both `mp ... save=` runs in sync), merged main, found that a save written before
-  11a-1 crashed after it and fixed it (8c55e7f: a field added since the save takes its initializer's value, so
-  `PathService.NavFormat` looked current; two small edits in `Pathfinding`), and was **cut by the 5-hour limit at
-  about 10:50 on 2026-11-13 (reset 14:50) at 169k while writing the docs**. The orchestrator committed its half-written
-  docs as WIP (d4a98ef: ARCHITECTURE "Save migration", DEV_GUIDE "How to change a saved type", ROADMAP G41), not
-  reviewed. **Not done:** the runs after the merge of main (three suites, AI match, bench, both `mp ... save=` runs,
-  savebench: none recorded), the docs review, `.claude/agent-report.md`.
-  **Next step:** one fresh agent in that worktree (no isolation flag; do not resume agent 3 by SendMessage, it is at
-  169k) with the ready prompt `.claude/prompts/11a-2-finish.md` (main checkout, ignored by git; it holds the checks
-  with the expected values, the docs checklist, the seven design errors of the three agents and the handoff reviews,
-  which exist nowhere else): the Agent prompt is a `CTX-TAG: 11a-2-agent4` line + "read
-  `/run/media/marco/RTS/.claude/prompts/11a-2-finish.md` whole and follow it", description
-  `[Migrazione dei salvataggi (11a-2)] module agent 4`. It is the "run the final checks and write the report" kind
-  of task: `model: "sonnet"`, `effort: "high"`, cap 150k (WORKFLOW "Lifecycle of a wave" step 3); if a check fails
-  for a cause that is not obvious it stops, and an Opus 5.5 agent takes over. Then the merge: `git merge --no-ff`,
-  the checks of `tools/agents/merge-check.sh <log>` + `Rts.Bench -- mp 3 600 256 1 0 save=300` + `... mp 3 600 256 0
-  0 obs=1 save=250` + `savebench 8 256 2` (expected on main: 630 sim + about 20 new, 371 client, 43 net; "Player
-  (Hard) after 16:01" 31A42EB6FA4BA170; bench 2F09CD7D01AF287E; savebench file about 754 KB + 1-2 %), a manual
-  check that a save made on main before the merge loads after it, then step 7 of the lifecycle (HISTORY report,
-  LESSONS entries from the seven design errors, fragmentation row: 4 agents, 1 cut by a usage limit, lines into
-  `purposes.json`, worktree and branch removed). Then **wave 11 is complete**: update the "Waves at a glance" row,
-  bring LESSONS "Costi" up to date (due after wave 11), and ask the owner what comes next: every gap G1-G45 that was
-  not cut or parked is then done (parked: tutorial, mod support, FA units, split screen, reconnect).
 - **What worked on 2026-11-13 (wave 11 pair):** prompts as files (`.claude/prompts/<module>.md` + a shared
   `rules-wave11.md`; the Agent prompt only names them and carries the CTX-TAG) cost the orchestrator little and
   survive a clear; with the line "write the first handoff note right after your reading phase" both first agents
@@ -96,7 +96,10 @@ Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every promp
   still spends 105-110k reading the code its predecessor wrote, even when told not to (11a-2 agent 2); telling it
   exactly which files it may not read whole and to work from `grep "public "` (agent 3) brought it to the tests
   in a few minutes. A module that turns out bigger than its brief (11a-2: 1,300 lines before tests and docs) needs
-  a third and a fourth agent whatever the notes say.
+  a third and a fourth agent whatever the notes say. **2026-11-14:** the finishing agent of 11a-2 ran on Sonnet 5.5
+  (effort high) from a prompt file that held every check with its expected value and the docs checklist: 18 calls,
+  5 minutes, all values right (the orchestrator's merge checks gave the same). It put two ROADMAP lines in the
+  middle of another item (fixed at the merge): tell such an agent where a new line goes, not only what it says.
 - **(8b-3) is merged and verified** (e4371c2, 2026-11-12; HISTORY report). Waves 8 and 9 are complete.
 - **Wave 10 is re-cut into five modules** (HISTORY "Wave 10": briefs, order and pairs; purposes and waves are in
   `purposes.json`): pair 1 = **10a-1** deterministic math (G34, changes the reference hashes) + **10b-1** keybinding

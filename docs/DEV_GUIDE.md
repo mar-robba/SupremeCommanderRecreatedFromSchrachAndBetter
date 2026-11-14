@@ -243,6 +243,11 @@ Older saves keep loading if you follow this; `SaveFixtureTests` (an old real sav
   rebuild the client before a `--load-mp` screenshot (its bin may hold a stale copy). GUI checks:
   `--host 47699 --load-mp FILE --name Host` (load lobby), `--host --players 2 --autostart --save-at 5` (toasts),
   `--autosave-every 30` (mp_autosave_N); delete those files from the worktree's `saves/` by full path afterwards.
+- A net test that fails once in ten runs with "timed out waiting for ..." is an ordering bug until shown otherwise
+  (2026-11-14, HISTORY 11a-2 "A race in the load lobby"). To prove a suspected gap, put a `Thread.Sleep(40)` in it:
+  the failure becomes certain, and with the fixed order and the same sleep the test passes. Rule for `Rts.Net`
+  sessions: queue the message the host needs **before** publishing the state that other threads act on (a client
+  that shows "save present" must already have told the host), because requests such as Ready take no lock.
 
 ## Perf check (before finishing a branch)
 
