@@ -17,6 +17,7 @@ orchestrator session), it belongs here.
 | [DEV_GUIDE.md](DEV_GUIDE.md) | Practical know-how: building/testing when agents share a worktree, shell quirks, sim pitfalls learned the hard way, perf checks and reference numbers, the tools in `tools/`. | Before your first build in a worktree; when something behaves strangely. |
 | [AI_TUNING.md](AI_TUNING.md) | How the skirmish AI is measured (hundreds of headless games), the standard test matrices, and every tuning result so far. | Before touching the AI or game balance. |
 | [tokens/](tokens/README.org) | (Org mode, in Italian) The token ledger: how many tokens each session and agent used and for which purpose, by area, wave, purpose (with cost per 1000 lines) and day. Filled automatically by project hooks. | Before planning a wave or sizing a brief; when the owner asks what something cost. |
+| [research/](research/README.md) | Papers, talks and web references (35 PDFs: pathing, crowds, lockstep determinism, skirmish AI, terrain LOD) with a "why it matters here" line each, plus [EXTERNAL.md](research/EXTERNAL.md): reference source code (BAR, FAF, OpenRA), tools and Claude Code skills reviewed, with verdicts. | Before designing a pathing, steering, AI or netcode change; when asked "how does another RTS do this". |
 | [LESSONS.org](LESSONS.org) | (Org mode, in Italian) The design and architecture errors made so far, in order, each with the solution that held and its commit; and the "Costi" chapter: token cost per wave, per module, per goal and per kind of work, with what it teaches. | Before a design choice, to see whether it already failed; before planning a wave, to size it. |
 
 The repo root has [CLAUDE.md](../CLAUDE.md): commands and the hard rules every agent must follow. It is loaded
@@ -43,6 +44,7 @@ Put each thing in exactly one place and link to it from elsewhere. Don't copy th
 | Rules every agent prompt must contain | AGENT_RULES.md |
 | A pitfall, a tool, a build trick, a reference benchmark number | DEV_GUIDE.md |
 | AI/balance experiments and their results | AI_TUNING.md |
+| A paper, talk, article, reference game/engine, tool or skill found outside the project (and the verdict on it) | `research/` (README.md for documents, EXTERNAL.md for code, tools, skills) |
 | Token cost of sessions and agents (automatic), purpose tags | `tokens/` (`ledger.py tag`, see tokens/README.org) |
 | A command or a hard rule every agent needs at all times | CLAUDE.md (keep it short) |
 
