@@ -66,6 +66,27 @@ scratch folder and their `SKILL.md` files listed; none was installed. Counts are
 Other directories seen in the search results (claudepluginhub.com, claudemarketplaces.com, mdskills.ai) are aggregators of
 the same kind of repos; the Unity plugin is the only game-engine one from an official marketplace, and we do not use Unity.
 
+### 3b. Token-saving skills and plugins (verdict 2026-11-15, nothing installed)
+
+Question asked by the owner: do ponytail or similar skills that save tokens hurt or help this project? Measured on the
+project's own transcripts (94 sub-agents, 5,437 calls, 30 days): output is about 68 % hidden reasoning, 16 % shell
+commands, 9 % written code, 2 % docs, 0.1 % prose. The output is 27 % of the agents' cost (LESSONS "Costi"); the
+rest is re-reading context (96 % of tokens), which none of these skills touches.
+
+| Tool | What it cuts | Share of cost here | Verdict |
+|---|---|---|---|
+| **ponytail** (github.com/DietrichGebert/ponytail, MIT) | Code volume: a ladder "reuse, stdlib, minimum code"; three Node hooks inject the rules into every session and sub-agent | About 1 % of total cost, at best (written code is about 2.4 % of agent cost) | **Do not adopt.** Independent test (JetBrains, 80 tasks): −15 % lines, −10 % cost, not significant; a community test saw cost from −13 % to +55 % by model. Its "small test for logic" is weaker than this project's rules (determinism, saves, thread counts). It asks for the smallest solution, while LESSONS shows most errors were shortcuts (ids in code, shared static lists, blueprint indices). Two rule sets would compete with AGENT_RULES without a stated priority. Its good parts (reuse first, say what was skipped) are already in AGENT_RULES. |
+| **caveman** (JuliusBrussee/caveman) | Prose of replies | 0.1 % of agent output, about 4 % of the orchestrator | **No.** Almost no saving, and terse replies are harder for the owner to read. |
+| **rtk** (Rust proxy for shell output) | Output of build, test, git | Build, test and bench are about 7 % of shell output; most is code read with grep/sed | **No.** Agents already filter with tail/grep; the rewrite hook would also touch `tools/agents/dn.sh`. |
+| **headroom** (API proxy, compresses context) | Tool output, files, history | Context is the cost, but it is code the agent must see exactly | **No.** Lossy for code and numbers; the project's checks are hashes and bench numbers. |
+| **pxpipe** (context rendered as images) | Large context | Same as headroom | **No.** Exact recall of hashes and ids fails (0 of 15 in a reported test). |
+
+Levers that do matter, already in LESSONS "Costi": model and reasoning effort (about two thirds of output is reasoning),
+and the number of agents per module. Re-check this verdict only if the cost structure changes (e.g. output share
+rises), or if a skill is measured on a session with tests and shell in the loop, which none of the public numbers are.
+Limits of this verdict: ponytail was read from its source, not run on the project; the JetBrains article returned 403, so
+its figures come from a third-party summary; token figures in the transcripts are estimates from characters.
+
 ## 4. What to do next (proposal, nothing started)
 
 1. Try Slopwatch in a worktree and report its false-positive rate (small, concrete, uses the main weakness of agent-written code).

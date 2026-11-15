@@ -22,12 +22,12 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 | 9 | (9b-1) death animations + ACU warp-in, (9b-2) terrain self-shadows + unit LOD + minimap options; (9a) AI tuning removed by the owner 2026-11-11 | ✅ 2026-11-12 |
 | 10 | (10a-1) deterministic math ✅, (10b-1) keybinding editor ✅, (10b-2) selection overlays + client leftovers ✅, (10a-2) observers + vote to drop + lobby pings + chat sounds ✅ (all 2026-11-12), (10a-3) multiplayer save/load ✅ 2026-11-13 | ✅ 2026-11-13 |
 | 11 | Planned after the owner's answers of 2026-11-13 ("Questions for the owner"): pathing (G12) + save migration (G41) as one pair, voice announcer (G24); modules (11a-1) pathing ✅ 2026-11-13, (11a-2) save migration ✅ 2026-11-14, (11b-1) voice announcer ✅ 2026-11-13, briefs in HISTORY "Wave 11". Cut: campaign, map editor, Italian localization, online outside the LAN, tutorial, mod support, split screen. Yes, owner 2026-11-14, planned and not started: FA units (G13), reconnect (G37) | ✅ 2026-11-14 |
-| 12 | Reconnect (G37) and FA units (G13), owner yes 2026-11-14: modules (12a-1) reconnect to a running game, (12b-1) FA units: gunships, transport, bots, Megalith, then (12b-2) FA units: engineering stations + Novax; briefs in HISTORY "Wave 12" | ▶ started 2026-11-15 (12a-1 + 12b-1) |
+| 12 | Reconnect (G37) and FA units (G13), owner yes 2026-11-14: modules (12a-1) reconnect to a running game, (12b-1) FA units: gunships, transport, bots, Megalith, then (12b-2) FA units: engineering stations + Novax; briefs in HISTORY "Wave 12" | ▶ started 2026-11-15 (12a-1 + 12b-1: reading phase done, stopped by the owner, no code yet) |
 
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-15 02:15 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-15 02:10 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -51,17 +51,29 @@ Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
 
-**ON RESUME** (2026-11-15 02:15, written by orchestrator session 193800fc on Fable 5.2; the bullets below the
+**ON RESUME** (2026-11-15 02:10, written by orchestrator session 193800fc on Fable 5.2; the bullets below the
 first one are older, by sessions 8f8363bc, 5473885b and 84a8eb5c):
-- **Wave 12 is running** (owner: FA units and reconnect yes on 2026-11-14, "continua" on 2026-11-15 01:54). Briefs
-  in HISTORY "Wave 12", purposes in `purposes.json`, prompts as files in `.claude/prompts/` (`12a-1.md`, `12b-1.md`,
-  shared `rules-wave12.md`). Pair 1, started 2026-11-15 about 02:15, one module agent each (`model: "opus"`,
-  worktree, cap 200k, CHECKPOINT 170k): **(12a-1) reconnect** (changes no sim result: check it against the values
-  on main at its merge) and **(12b-1) FA combat units** (new blueprint files: it records old → new reference
-  hashes). Then **(12b-2) engineering stations + Novax**, alone, after 12b-1 is merged (re-cut its brief from the
-  12b-1 report). If this session was cut: `git worktree list`, read each worktree's `.claude/handoff.md`, commit its
-  WIP, start a fresh agent there from the prompt file + "continue from the handoff note". The sentence "Ask the
-  owner what comes next" in the next bullet is answered by this one.
+- **Wave 12 is started and stopped by the owner** ("ferma il lavoro e salvalo, per oggi basta così", 2026-11-15
+  02:02, seven minutes after the start; FA units and reconnect: owner yes on 2026-11-14, "continua" on 2026-11-15).
+  Briefs in HISTORY "Wave 12", purposes in `purposes.json`. Pair 1 = **(12a-1) reconnect** (changes no sim result:
+  check it against the values on main at its merge) + **(12b-1) FA combat units** (new blueprint files: it records
+  old → new reference hashes); then **(12b-2) engineering stations + Novax**, alone, after 12b-1 is merged (re-cut
+  its brief from the 12b-1 report). **No code is written:** both first agents finished only their reading phase
+  (5 minutes, 142k and 116k of context) and wrote their handoff note with findings, design and plan; both worktrees
+  (`.claude/worktrees/agent-a396a5ccd94d28c44` = 12a-1, `agent-acfde4f81797dd4b0` = 12b-1) equal main dd5c3c3,
+  clean, no commit. **To resume, when the owner says so:** one fresh agent per module (`model: "opus"`, cap 200k,
+  CHECKPOINT 170k, a new `CTX-TAG`), either in the same worktree (absolute path, no isolation flag) or in a new
+  one, with the prompt file `.claude/prompts/12a-1.md` / `12b-1.md` (shared rules `rules-wave12.md`) + "continue
+  from the handoff note, do not repeat the reading phase": the notes are in each worktree's `.claude/handoff.md`
+  and copied to `.claude/prompts/12a-1-handoff.md` / `12b-1-handoff.md` (the worktree copy may vanish with the
+  worktree). Don't resume the two stopped agents by SendMessage (above 100k). Watcher: `agent_ctx.py --watch 999999
+  <id1>=162000 <id2>=162000`. Found by the 12b-1 reading: torpedoes held on dry ground, radar stealth and a shield
+  on an aircraft need only blueprint data; the Megalith building on the sea bed needs one hook; a faction test wants
+  a role for every unit, so three new optional roles go into `FactionDb.cs` (`transport_t3`, `rocket_bot_t2`,
+  `armored_assault_t3`), the others reuse `gunship_t3` and `exp_land_2`, which the AI looks up but never builds
+  from. Chosen by the orchestrator, told to the owner, not answered: 120 s of grace time before the army of a
+  disconnected player is destroyed in Defeat mode. The sentence "Ask the owner what comes next" in the next bullet
+  is answered by this one.
 
 **ON RESUME** (2026-11-14 21:10, written by orchestrator session 8f8363bc on Fable 5.2 for the next session; the
 bullets below the first four are older, by sessions 5473885b and 84a8eb5c):
