@@ -1,0 +1,10 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area game-options: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Economy/DiplomacySystem.cs: DiplomacySystem -- (6b) Team play commands (SupCom diplomacy), applied by CommandSystem (SEQUENTIAL, so replays and lockstep carry them):
+src/Rts.Sim/Economy/EconomyShare.cs: EconomyShare -- (6b) Team economy, run by EconomySystem after its per-army storage update (SEQUENTIAL):
+src/Rts.Sim/GameOptions.cs: VictoryCondition{Assassination Supremacy Annihilation Sandbox}, StartResources{Normal Low High}, FogMode{Normal Explored None}, GameSpeedMode{Adjustable Normal Fast}, GameOptions -- When an army is defeated (SupCom lobby "Victory Condition").
+src/Rts.Sim/Orders/DiplomacyCommands.cs: GiveUnitsCommand, GiveResourcesCommand, EnableCheatToolsCommand -- Team play (SupCom diplomacy):
+src/Rts.Sim/PrebuiltBase.cs: PrebuiltBase -- (6b) GameOptions.Prebuilt:
+src/Rts.Sim/Systems/CleanupSystem.cs: CleanupSystem -- End of tick:
+src/Rts.Sim/World/ArmyStats.cs: ArmyStats, ScoreSample -- Per-army game statistics for the end-of-game screen.

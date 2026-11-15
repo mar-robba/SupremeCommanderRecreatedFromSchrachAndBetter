@@ -1,0 +1,14 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area factions: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Data/BlueprintDb.cs: BlueprintDb, Vector3ArrayConverter, DataPaths -- All unit blueprints, indexed by runtime index and by string id.
+src/Rts.Sim/Data/DeathBlastBlueprint.cs: DeathBlastBlueprint -- SupCom commander death explosion (UnitBlueprint.DeathBlast;
+src/Rts.Sim/Data/FactionDb.cs: FactionRoles, FactionBlueprint, FactionDb -- The role names a faction file (data/factions/<id>.json, "Roles") may map to blueprint ids.
+src/Rts.Sim/Data/OverchargeBlueprint.cs: OverchargeBlueprint -- SupCom ACU Overcharge mode of a weapon (WeaponBlueprint.Overcharge;
+src/Rts.Sim/Data/TeleportBlueprint.cs: TeleportBlueprint -- SupCom ACU Personal Teleporter (UnitBlueprint.Teleport, granted by an enhancement:
+src/Rts.Sim/Data/UnitBlueprint.DeathBlast.cs: UnitBlueprint
+src/Rts.Sim/Data/UnitBlueprint.Experimental.cs: UnitBlueprint, ExperimentalBlueprint, EnhancementSlot{LeftArm RightArm Back}, EnhancementSlots, EnhancementBlueprint, EnhancementEffects, WeaponModifier -- Experimental-scale mechanics and commander enhancements (see Rts.Sim/Experimental, Rts.Sim/Commander).
+src/Rts.Sim/Data/UnitBlueprint.Strategic.cs: UnitBlueprint, ShieldBlueprint, SiloKind{Tactical Strategic AntiNuke}, SiloBlueprint, InterceptKind{Tactical Strategic}, MissileDefenseBlueprint -- Strategic / defensive modules of a blueprint (shields, missile silos, missile defense).
+src/Rts.Sim/Data/UnitBlueprint.Teleport.cs: UnitBlueprint
+src/Rts.Sim/Data/UnitBlueprint.Transport.cs: UnitBlueprint, CargoLayer{Land Air}, CargoBlueprint -- Cargo / transport data of a blueprint (see Rts.Sim/Transport and docs/ARCHITECTURE.md "Transports & cargo").
+src/Rts.Sim/Data/UnitBlueprint.cs: MotionLayer{None Land Hover Amphibious Water Sub Air}, LayerMask{None Land Water Sub Air All}, UnitCategory{None Structure Mobile Land Air Naval Commander Engineer Factory MassExtractor MassFabricator PowerGenerator MassStorage EnergyStorage Defense DirectFire IndirectFire AntiAir AntiNaval Scout Radar Sonar Shield Wall Bomber Fighter Gunship Transport Tech1 Tech2 Tech3 Experimental Economy Intel Artillery Strategic HydroCarbon}, UnitBlueprint, EconomyBlueprint, MovementBlueprint, IntelBlueprint, WeaponBlueprint, VisualBlueprint -- How a unit moves.

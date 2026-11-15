@@ -1,0 +1,15 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area tools: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+tools/Rts.Bench/AiMatch.cs: AiMatch -- Headless skirmish AI match:
+tools/Rts.Bench/AiRoster.cs: AiRoster -- AI match diagnostics (env AI_ROSTER=1):
+tools/Rts.Bench/Duel.cs: Duel -- Headless unit duels for balance work (docs/AI_TUNING.md "Unit balance").
+tools/Rts.Bench/KillTracker.cs: KillTracker -- Diagnostics for AI matches:
+tools/Rts.Bench/MapExport.cs: MapExport -- (8b-2) mapexport:
+tools/Rts.Bench/MpSelfTest.Save.cs: MpSelfTest -- (10a-3) The "save=TICK" step of the multiplayer self-test:
+tools/Rts.Bench/MpSelfTest.cs: MpSelfTest -- Multiplayer self-test:
+tools/Rts.Bench/ParBench.cs: ParBench -- Rts.Bench parbench [threads] [calls]:
+tools/Rts.Bench/Program.cs: 
+tools/Rts.Bench/ReplayBench.cs: ReplayBench -- Save/replay tools:
+tools/Rts.Bench/SpendTracker.cs: SpendTracker -- Diagnostics for AI matches:
+tools/Rts.Bench/StageStats.cs: StageStats -- Per-stage tick cost (from Simulation.Profile) and managed allocations per tick, for the bench output.

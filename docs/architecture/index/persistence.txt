@@ -1,0 +1,27 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area persistence: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Persistence/Autosave.cs: Autosave -- Autosave (wave 7a, pure logic, unit tested):
+src/Rts.Client/Persistence/ClientGameData.cs: ClientGameData -- The client's game config stored as JSON in GameInfo.ClientData of saves and replays, so a loaded game (or a replay) rebuilds its session:
+src/Rts.Client/Persistence/GameRecording.cs: GameRecording -- Replay recording and saving of one game (the runner's SimRunner.Hooks, wraps a ReplayRecorder).
+src/Rts.Client/Persistence/ReplaySeeker.cs: ReplaySeeker -- Seeking in a replay played by a SimRunner:
+src/Rts.Client/Persistence/SaveText.cs: SaveText -- Texts of the save/load and replay menus (pure helpers, unit tested).
+src/Rts.Client/Persistence/Toasts.cs: Toasts -- Short notifications ("Game saved") at the top of the screen.
+src/Rts.Sim/Persistence/Attributes.cs: NoSaveAttribute, IAfterLoad, SaveFormatException, IncompatibleSaveException -- Excludes a field (or every field of a type) from save games and from the state-equality checks of the save/load tests.
+src/Rts.Sim/Persistence/ByteBuffers.cs: ByteWriter, ByteReader, Hash64 -- Growable little-endian byte buffer (fixed-size primitives, LEB128 varints, UTF-8 strings).
+src/Rts.Sim/Persistence/Codecs.cs: RefCodec, ClassCodec, PlainCodec, ArrayCodec, ListCodec, StackCodec, QueueCodec, Comparers, DictionaryCodec, HashSetCodec, ConcurrentDictionaryCodec, LazyCodec, BoxedCodec, DelegateCodec -- How objects of one runtime type are stored.
+src/Rts.Sim/Persistence/ExternalSet.cs: ExternalSet -- Immutable shared objects that are NOT stored in a save (the BlueprintDb and the Terrain):
+src/Rts.Sim/Persistence/GameInfo.cs: PlayerInfo, GameInfo
+src/Rts.Sim/Persistence/GraphIO.cs: Tag, GraphWriter, GraphReader
+src/Rts.Sim/Persistence/Replay.cs: ITickHooks, ReplayLog, ReplayRecorder -- Hooks the SimRunner calls around every tick (sim thread).
+src/Rts.Sim/Persistence/ReplayPlayer.cs: ReplayPlayer -- Re-simulates a replay:
+src/Rts.Sim/Persistence/SaveBlueprintIndices.cs: BlueprintIndexFields -- (11a-2) Every saved field that holds a unit blueprint INDEX (position in BlueprintDb.All).
+src/Rts.Sim/Persistence/SaveCoverage.cs: SaveCoverage -- Static guard for the save system (run by the test SaveCoverageTests):
+src/Rts.Sim/Persistence/SaveFiles.cs: SaveFileKind{Save Replay}, SaveContainer, LoadedGame, SaveGame
+src/Rts.Sim/Persistence/SaveLayout.cs: SaveRenames, ISaveMigrated, SaveMigrationInfo, SaveMigrationReport, NodeKind{Prim Enum Struct Ref}, SavedNode, SaveLayout -- (11a-2) Renames since older saves were written (ARCHITECTURE "Save migration"):
+src/Rts.Sim/Persistence/SaveMigrationCodecs.cs: DroppedObject, Plan, SamePlan, ConvPlan, RefPlan, SkipPlan, StructPlan, RemapPlan, PermutePlan, MigrationContext, MigClassCodec, SeqKind{Array List Stack Queue HashSet Lazy Boxed}, MigSeqCodec, MigMapCodec, DroppedKind{Class Array List Stack HashSet Dictionary Inline Delegate}, DroppedCodec -- Placeholder for an object whose type no longer exists (its bytes were skipped;
+src/Rts.Sim/Persistence/SaveMigrations.cs: SaveMigrations -- Upgrades files written with an older container version (SaveContainer.Version) on load, one version step at a time:
+src/Rts.Sim/Persistence/SaveStore.cs: SaveEntry, SaveStore -- An entry of a save/replay folder listing (header only;
+src/Rts.Sim/Persistence/TypeLayout.cs: TypeNames, TypeLayout -- Stable, assembly-version independent type names:
+src/Rts.Sim/Persistence/Val.cs: Val, FieldCodegen -- Writes/reads one value of static type T in place:
+src/Rts.Sim/Persistence/WorldState.cs: WorldState -- Full simulation state as bytes.

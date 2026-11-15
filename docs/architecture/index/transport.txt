@@ -1,0 +1,9 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area transport: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Snapshot/TransportViews.cs: CargoView, CargoUnitView, FerryView -- A carrier in the snapshot (transport / air staging / Atlantis) and its cargo.
+src/Rts.Sim/Systems/MovementSystem.Vtol.cs: MovementSystem -- VTOL flight for air transports (UnitBlueprint.IsVtol):
+src/Rts.Sim/Transport/CargoState.cs: CargoState, AirModes -- Per-world transport/cargo state (SimWorld.Cargo), indexed by unit slot.
+src/Rts.Sim/Transport/TransportOrders.cs: TransportOrders -- Issuing transport orders (called by CommandSystem for Load / Unload / TransportTo / Ferry / Dock IssueOrderCommands, after ownership validation).
+src/Rts.Sim/Transport/TransportSnapshotWriter.cs: TransportSnapshotWriter -- Writes the transport part of a snapshot (called by SnapshotWriter after the units):
+src/Rts.Sim/Transport/TransportSystem.cs: TransportSystem -- Generic cargo mechanic (data-driven by CargoBlueprint / UnitBlueprint.CargoSize):

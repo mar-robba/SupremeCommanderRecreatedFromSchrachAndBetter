@@ -1,0 +1,20 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area combat: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Combat/Ballistics.cs: Ballistics -- Projectile math:
+src/Rts.Sim/Combat/CombatCatalog.cs: WeaponKind{Direct Homing Ballistic Bomb Beam Manual Torpedo AntiTorpedo}, WeaponInfo, UnitCombatInfo, CombatCatalog -- How a weapon delivers damage (derived from the weapon blueprint).
+src/Rts.Sim/Combat/CombatState.cs: ShotRequest, ImpactKind{Expire Unit Ground Burst Shield Intercept Detonation}, ProjectileImpact, CombatState, CombatFx -- A shot decided in parallel by WeaponSystem, executed sequentially in chunk order.
+src/Rts.Sim/Combat/EmpStun.cs: EmpStun, EmpStunState -- EMP stun (SupCom 1 Cybran), data-driven from WeaponBlueprint:
+src/Rts.Sim/Combat/FireStates.cs: FireStates -- Fire states (Fire at will / Return fire / Hold fire, SetFireStateCommand) and the "don't shoot what we are capturing" rule, both read by TargetingSystem (parallel, rea...
+src/Rts.Sim/Combat/LineOfFire.cs: LineOfFire -- Terrain line-of-fire checks used by target acquisition (Systems.TargetingSystem):
+src/Rts.Sim/Combat/OverchargeSystem.cs: OverchargeState, OverchargeSystem -- Per-world state of OverchargeSystem (plain data, saved with the world).
+src/Rts.Sim/Combat/ProjectileSystem.cs: ProjectileSystem -- Moves projectiles, detects impacts and emits damage events.
+src/Rts.Sim/Combat/TargetingSystem.cs: TargetingSystem -- Weapons acquire targets.
+src/Rts.Sim/Combat/Veterancy.cs: Veterancy -- SupCom1-style veterancy.
+src/Rts.Sim/Combat/Walls.cs: Walls -- Wall sections (category UnitCategory.Wall, ARCHITECTURE "Missing units & walls (8a)"):
+src/Rts.Sim/Combat/WeaponSystem.cs: WeaponSystem -- Turret aiming and firing.
+src/Rts.Sim/Orders/FireStateCommands.cs: FireState{FireAtWill ReturnFire HoldFire}, SetFireStateCommand -- SupCom fire states (per unit, World.UnitStore.FireStates).
+src/Rts.Sim/Orders/OverchargeCommands.cs: SetOverchargeCommand -- ACU Overcharge toggle (SupCom):
+src/Rts.Sim/Systems/DamageSystem.cs: DamageSystem -- Applies queued damage events in deterministic order and kills units at 0 HP.
+src/Rts.Sim/Systems/IdleAirEngage.cs: IdleAirEngage -- Idle aircraft (no orders, orbiting) engage what their weapons acquire (SupCom):
+src/Rts.Sim/World/ProjectileStore.cs: ProjectileFlags{None Homing Ballistic ProximityFuse Bomb Torpedo Overcharge}, ProjectileStore -- Projectile behaviour bits (set by WeaponSystem, read by ProjectileSystem and the client).

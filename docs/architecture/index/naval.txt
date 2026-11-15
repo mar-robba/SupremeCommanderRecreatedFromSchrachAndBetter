@@ -1,0 +1,8 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area naval: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Naval/NavalMotion.cs: NavalMotion -- Naval movement helpers used by MovementSystem:
+src/Rts.Sim/Naval/NavalRules.cs: NavalRules -- Terrain rules for water structures (blueprints with Structure + Naval, e.g.
+src/Rts.Sim/Naval/Submarines.cs: Submarines -- Submarine dive/surface toggle (SupCom).
+src/Rts.Sim/Naval/Torpedoes.cs: Torpedoes -- Torpedoes and torpedo defense (SupCom-like naval combat).
+src/Rts.Sim/Naval/WalkingShips.cs: WalkingShips -- Ships that also walk on land (the Cybran Salem destroyer):

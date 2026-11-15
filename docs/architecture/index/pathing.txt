@@ -1,0 +1,10 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area pathing: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Pathfinding/NavGraph.cs: NavGraph, GoalField -- Hierarchical abstraction (HPA*-style) of a NavGrid for one clearance class.
+src/Rts.Sim/Pathfinding/NavGrid.cs: NavGrid -- Clearance grid of one surface motion layer (Land, Hover, Amphibious, Water;
+src/Rts.Sim/Pathfinding/PathService.Classes.cs: PathService -- (11a-1) Slope classes, grid/graph slots, the "may this unit stand here" question and the saved nav format.
+src/Rts.Sim/Pathfinding/PathService.cs: PathService, PathStats -- Pathfinding service (one per world).
+src/Rts.Sim/Pathfinding/PathSolver.cs: PathResult, PathSolver -- Output of one path solve (reused buffer).
+src/Rts.Sim/Pathfinding/PathSystem.cs: PathSystem -- Resolves path requests each tick:
+src/Rts.Sim/Systems/MovementSystem.cs: MovementSystem -- Moves mobile units.

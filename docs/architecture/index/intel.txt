@@ -1,0 +1,8 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area intel: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Intel/IntelService.cs: GhostInfo, IntelService, TeamIntel -- A structure an army has seen and still believes is there ("ghost" in the fog, SupCom-style).
+src/Rts.Sim/Intel/IntelSnapshotWriter.cs: BlipView, GhostView, IntelSnapshotWriter -- A radar/sonar contact:
+src/Rts.Sim/Intel/IntelSystem.cs: IntelSystem -- Recomputes the intel grids of every team (see IntelService).
+src/Rts.Sim/Intel/StealthState.cs: StealthState -- Per-world state of StealthSystem:
+src/Rts.Sim/Intel/StealthSystem.cs: StealthSystem -- Stealth, cloak and stealth fields (SupCom 1 Cybran), data-driven from IntelBlueprint (RadarStealth, SonarStealth, Cloak, StealthFieldRadius;

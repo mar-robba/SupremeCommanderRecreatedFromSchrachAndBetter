@@ -1,0 +1,5 @@
+#!/bin/sh
+# Architecture docs gate (docs/ARCHITECTURE.md "Keeping these docs true"): a commit that changes source files must
+# change the doc that describes them or carry an `Arch: <area> - <reason>` line. Enabled by
+# `python3 -I tools/arch/arch.py install` (git config core.hooksPath tools/git-hooks).
+exec python3 -I "$(git rev-parse --show-toplevel)/tools/arch/arch.py" hook commit-msg "$1"

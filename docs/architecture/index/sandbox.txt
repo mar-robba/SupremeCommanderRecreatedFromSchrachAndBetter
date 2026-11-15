@@ -1,0 +1,15 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area sandbox: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Sandbox/BlueprintMatcher.cs: BlueprintMatcher -- Fuzzy lookup of a unit blueprint from what the player typed (case-insensitive).
+src/Rts.Client/Sandbox/ConsoleActions.cs: ConsoleContext, ConsoleAction, SpawnAction, NukeAction, ToggleAction, FogAction, AiAction, UnitActionAction, ClearAction, SpeedAction, PauseAction, VictoryAction, CameraAction, WaitAction, HelpAction, PanelAction, ShowConsoleAction, ClearLogAction, ParseResult -- What the console parser needs to know about the game (read-only, filled by the client).
+src/Rts.Client/Sandbox/SandboxConsole.cs: SandboxConsole -- Drop-down text console of the sandbox (F10 / the key left of 1):
+src/Rts.Client/Sandbox/SandboxConsoleParser.Commander.cs: OverchargeAction, KillAreaAction, TeleportAction, SandboxConsoleParser -- Arm / disarm the Overcharge of every commander of Army (-1 = all armies).
+src/Rts.Client/Sandbox/SandboxConsoleParser.cs: SandboxConsoleParser -- Pure parser for the sandbox console (no raylib, no sim access):
+src/Rts.Client/Sandbox/SandboxController.Commander.cs: SandboxController -- Sandbox console actions for commander tests (SandboxConsoleParser.Commander.cs):
+src/Rts.Client/Sandbox/SandboxController.cs: SandboxTool{None Spawn Nuke Clear}, SandboxController -- Map tool armed by the panel or the console:
+src/Rts.Client/Sandbox/SandboxPanel.cs: SandboxPanel -- Sandbox side panel (F9), right side under the top bar:
+src/Rts.Client/Sandbox/SandboxTextField.cs: SandboxTextField -- Minimal single-line text input for the sandbox console and the panel's search box:
+src/Rts.Sim/Orders/SandboxCommands.cs: SandboxCommand, SandboxSpawnCommand, SandboxToggle{InfiniteResources InstantBuild BuildAnywhere}, SandboxToggleCommand, SandboxSetAiCommand, SandboxSetVictoryCommand, SandboxUnitAction{Kill Delete Heal Damage ChangeOwner Complete}, SandboxUnitActionCommand, SandboxClearAreaCommand, SandboxNukeCommand -- Sandbox cheats.
+src/Rts.Sim/Systems/SandboxState.cs: SandboxStatus, SandboxState, SpawnJob, SquareSpiral -- Sandbox settings published to the client in Snapshot.SimSnapshot.Sandbox.
+src/Rts.Sim/Systems/SandboxSystem.cs: SandboxSystem -- Sandbox mode:

@@ -1,0 +1,3 @@
+# Words the architecture docs write in `code style` that are not identifiers of the code or data (one per line).
+# A name of the code that the docs still use after it was renamed or removed does NOT go here: fix the text.
+HashCode

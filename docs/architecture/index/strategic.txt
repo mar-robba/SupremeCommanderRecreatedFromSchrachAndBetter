@@ -1,0 +1,12 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area strategic: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Snapshot/StrategicViews.cs: ShieldView, SiloView, LaunchView -- A shield dome of a unit present in the snapshot (up or recharging).
+src/Rts.Sim/Strategic/MissileSystem.cs: MissileSystem -- Strategic missiles and missile defense.
+src/Rts.Sim/Strategic/ShieldIndex.cs: ShieldEntry, ShieldIndex -- An active (up) shield dome for this tick.
+src/Rts.Sim/Strategic/ShieldSystem.cs: ShieldSystem -- Shield domes (SupCom bubbles).
+src/Rts.Sim/Strategic/SiloSystem.cs: SiloSystem -- Missile silos (TML, nuke launcher, anti-nuke).
+src/Rts.Sim/Strategic/StrategicApi.cs: StrategicApi -- Public entry points of the strategic module for other sim code (sandbox cheats, scripted scenarios, tests).
+src/Rts.Sim/Strategic/StrategicSnapshotWriter.cs: StrategicSnapshotWriter -- Writes the strategic part of a snapshot (called by SnapshotWriter after the units):
+src/Rts.Sim/Strategic/StrategicState.cs: ShieldState, SiloState, DefenseState, MissileRole{None Tactical Strategic Interceptor}, LaunchRecord, PendingDetonation, StrategicState -- Runtime state of a unit's shield (see ShieldSystem).
+src/Rts.Sim/Strategic/StrategicSystem.cs: StrategicSystem -- Strategic & defensive structures:

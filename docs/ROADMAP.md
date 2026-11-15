@@ -27,7 +27,7 @@ step 7). Briefs and reports of every module: [HISTORY.md](HISTORY.md).
 Where each wave is written: waves 6-11 with their gaps and "later" items in "Wave 6+ plan" → "Proposed waves" below;
 what waves 1-5 delivered, feature by feature, in the Phase sections.
 
-## ▶ NEXT STEPS (updated 2026-11-15 02:10 — read this first in a new session)
+## ▶ NEXT STEPS (updated 2026-11-15 13:55 — read this first in a new session)
 main has waves 1-9: (j) factions, (l) Cybran, (m) scale/perf, (n) UX polish, (o) lockstep MP, (k) AI
 uses everything + (k-navy), (6a) commander & engineers, (6b) game options & team play, (7a) release + settings +
 autosave (all merged by 2026-10-24), (7b) orders & selection UX and (8a) missing units & walls (both merged
@@ -50,6 +50,17 @@ generated maps made before 10a-1 refuse to open with a clear message (`GameInfo.
 Each agent keeps `<worktree>/.claude/handoff.md` and
 writes `<worktree>/.claude/agent-report.md` when done (never `git add -f` them: `.claude/` is ignored on purpose).
 Briefs and reports: HISTORY "Wave 7", "Wave 8", "Wave 9", "Wave 10". Every prompt carries a `CTX-TAG:` line (AGENT_RULES).
+
+**Architecture docs on levels** (2026-11-15 13:55, session 75cd917b, asked by the owner; WORKFLOW "Owner
+decisions" 2026-11-15): ARCHITECTURE.md is a one-page map, `docs/architecture/` holds 22 area files (the 37 old
+sections moved into their areas word for word, a "Contracts of this area" list on top of each) and generated indexes.
+`tools/arch/arch.py` checks them. A git hook (`core.hooksPath tools/git-hooks`) refuses a code commit without its
+docs or an `Arch:` line, and `ArchitectureDocsTests` runs in all three suites. Before each merge the orchestrator
+reads `arch.py review main <branch>` (WORKFLOW "Lifecycle of a wave" step 6). The wave 12 prompts must carry the
+current AGENT_RULES block (new "Architecture docs" bullet). Left to do, by whoever next touches an area: 55 source
+files no doc names yet (`docs/architecture/index/undocumented.txt`, a list that may only shrink), and area files that
+still read as wave sections glued together (rendering, input-ui, multiplayer, map): rewrite each into one description
+of the system as it is.
 
 **ON RESUME** (2026-11-15 02:10, written by orchestrator session 193800fc on Fable 5.2; the bullets below the
 first one are older, by sessions 8f8363bc, 5473885b and 84a8eb5c):

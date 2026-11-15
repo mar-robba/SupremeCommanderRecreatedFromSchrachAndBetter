@@ -1,0 +1,46 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area multiplayer: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Menus/LobbyScreen.Load.cs: LobbyScreen -- (10a-3) The players panel of a load lobby (a multiplayer save the host opened):
+src/Rts.Client/Menus/LobbyScreen.Maps.cs: LobbyScreen -- (8b-3) Lobby map file + biome:
+src/Rts.Client/Menus/LobbyScreen.Observers.cs: LobbyScreen -- (10a-2) Lobby observers, pings and sounds.
+src/Rts.Client/Menus/LobbyScreen.cs: LobbyScreen -- Multiplayer lobby (host or client):
+src/Rts.Client/Menus/MultiplayerScreen.Saves.cs: MultiplayerScreen -- (10a-3) Multiplayer → "Load Saved Game":
+src/Rts.Client/Menus/MultiplayerScreen.cs: MultiplayerScreen -- Multiplayer menu:
+src/Rts.Client/Menus/NetGameConfig.cs: NetGameConfig -- Client config + replay recording of a multiplayer game, derived from the host's GameStart.
+src/Rts.Client/Menus/NetInGameScreen.Observers.cs: NetInGameScreen -- (10a-2) Observers and the vote to drop a stalled player.
+src/Rts.Client/Menus/NetInGameScreen.Saves.cs: NetInGameScreen -- (10a-3) Saving a multiplayer game:
+src/Rts.Client/Menus/NetInGameScreen.cs: NetInGameScreen -- In-game state of a multiplayer game:
+src/Rts.Client/Menus/NetLoadListScreen.cs: NetLoadListScreen -- (10a-3) Multiplayer → Load Saved Game:
+src/Rts.Client/Menus/NetLoadingScreen.Saves.cs: NetLoadingScreen -- (10a-3) Loading a multiplayer save:
+src/Rts.Client/Menus/NetLoadingScreen.cs: NetLoadingScreen -- Multiplayer loading:
+src/Rts.Client/Menus/NetTextField.cs: NetTextField -- Single-line text input for the multiplayer screens (player name, address, port, lobby/in-game chat):
+src/Rts.Net/Headless/HeadlessPeer.cs: HeadlessPeer -- A multiplayer peer without a client (tests, Rts.Bench -- mp):
+src/Rts.Net/Lobby/LoadLobby.cs: LoadInfo, LobbySave, LobbyState, GameStart -- (10a-3) The multiplayer save a load lobby resumes (LobbyState.Load, on the wire since protocol 6).
+src/Rts.Net/Lobby/LobbyState.cs: NetSlotKind{Open Human AI Closed Observer}, NetSlot, LobbyOptions, LobbyState, LobbyRequest, GameStart -- Lobby slot state.
+src/Rts.Net/Lockstep/LockstepHooks.Saves.cs: LockstepHooks -- (10a-3) Saves at the same tick on every peer, and commands injected by the game start (AI takeovers of a loaded game).
+src/Rts.Net/Lockstep/LockstepHooks.cs: ITurnSink, LockstepHooks -- Where the local player's turns and hashes go (the host broadcasts them, a client sends them to the host).
+src/Rts.Net/Lockstep/TurnCodec.cs: TurnCodec, TurnEncoder, TurnDecoder -- Turn payloads:
+src/Rts.Net/Session/ClientSession.Maps.cs: ClientSession -- (8b-3) The client's side of map files:
+src/Rts.Net/Session/ClientSession.Saves.cs: ClientSession -- (10a-3) The client's side of multiplayer save/load.
+src/Rts.Net/Session/ClientSession.cs: ClientSession -- A joined player:
+src/Rts.Net/Session/HostSession.Maps.cs: HostSession -- (8b-3) The host's side of map files in the lobby:
+src/Rts.Net/Session/HostSession.Observers.cs: HostSession -- (10a-2) Host side of observers (lobby moves, joins, loading and hash checks), resigning players, drop votes and the ping list.
+src/Rts.Net/Session/HostSession.Saves.cs: HostSession -- (10a-3) The host's side of multiplayer save/load.
+src/Rts.Net/Session/HostSession.cs: HostSession -- The host:
+src/Rts.Net/Session/NetEvents.cs: NetEvent, LobbyChangedEvent, ChatEvent, GameStartingEvent, GameGoEvent, StartAbortedEvent, PlayerDroppedEvent, DesyncEvent, SpeedChangedEvent, DisconnectedEvent, ChatLine, NetPhase{Lobby Loading Playing Closed}, NetPlayerStatus, LobbyExtensions -- What a session tells its UI (queued by network threads, drained by the UI:
+src/Rts.Net/Session/NetGame.Saves.cs: NetSaveOrder, NetGame -- (10a-3) A save the host ordered:
+src/Rts.Net/Session/NetGame.cs: NetGame, DropVoteTally -- One multiplayer game of a session (created when the host starts).
+src/Rts.Net/Session/NetGameSetup.cs: NetGameSetup -- Builds the identical starting simulation on every peer from the GameStart (army slots in slot order are armies 0..n-1).
+src/Rts.Net/Session/NetSession.Maps.cs: MapTransferState{Present Downloading Verifying Failed}, MapTransferStatus, NetSession -- (8b-3) State of the lobby's map file on this peer.
+src/Rts.Net/Session/NetSession.Observers.cs: NetSession -- (10a-2) Observers, drop votes and per-player pings (shared by host and client).
+src/Rts.Net/Session/NetSession.Saves.cs: SaveOrderedEvent, SaveResultEvent, SaveRefusedEvent, NetSession -- (10a-3) The host ordered a save:
+src/Rts.Net/Session/NetSession.cs: NetSession, NetJoinException, NetAddress -- A multiplayer session (lobby + game), host or client.
+src/Rts.Net/Transport/LanDiscovery.cs: LanGame, LanDiscovery, LanAnnouncer, LanBrowser -- A game announced on the LAN (see LanAnnouncer).
+src/Rts.Net/Transport/NetConnection.cs: NetConnection -- One TCP connection:
+src/Rts.Net/Transport/NetListener.cs: NetListener -- TCP accept loop on its own thread:
+src/Rts.Net/Wire/Framing.cs: Frame, ProtocolException, FrameDecoder -- Length-framed binary protocol over TCP:
+src/Rts.Net/Wire/Messages.cs: MsgType{None Hello Welcome Reject Lobby LobbyRequest Chat Start Loaded Go Turn Hash Desync Drop Speed Delay Ping Pong Leave Abort Pings MapRequest MapChunk MapStatus DropVote LobbyPings Resign SaveRequest SaveOrder SaveDone SaveResult SaveFileRequest SaveChunk SaveStatus}, Msg -- Message types (first payload byte).
+src/Rts.Sim/Orders/MultiplayerCommands.cs: DropAction{AiTakeover Defeat}, PlayerLeftCommand -- What happens to the army of a player who left a multiplayer game (lobby option of the host).
+src/Rts.Sim/Persistence/MultiplayerSaveInfo.cs: MultiplayerSaveInfo -- (10a-3) Header part of a multiplayer save (GameInfo.Multiplayer;
+src/Rts.Sim/Systems/MultiplayerSystem.cs: MultiplayerSystem -- Sim side of multiplayer:

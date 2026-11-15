@@ -1,0 +1,28 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area core: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Core/DMath.ExpLog.cs: DMath
+src/Rts.Sim/Core/DMath.Inverse.cs: DMath
+src/Rts.Sim/Core/DMath.Trig.cs: DMath
+src/Rts.Sim/Core/DMath.cs: DMath -- Math helpers used by the simulation.
+src/Rts.Sim/Core/DetRandom.cs: DetRandom -- Deterministic RNG (SplitMix64).
+src/Rts.Sim/Core/Par.cs: Par, ParBody, ChunkedBuffer -- Deterministic data-parallel helpers for simulation systems.
+src/Rts.Sim/Core/ParPool.cs: ParPool -- The worker pool behind Par:
+src/Rts.Sim/Core/SimProfile.cs: SimProfile -- Wall-clock milliseconds of each stage of the last Simulation.Step (diagnostics only, never read by the simulation, not saved).
+src/Rts.Sim/Core/UnitHandle.cs: UnitHandle -- Stable reference to a unit slot.
+src/Rts.Sim/GameSetup.cs: SkirmishSettings, GameSetup
+src/Rts.Sim/SimRunner.cs: SimRunner -- Runs a Simulation on a dedicated thread at SimWorld.TicksPerSecond * Speed.
+src/Rts.Sim/SimWarmup.cs: SimWarmup -- JIT warm-up (wave 5m):
+src/Rts.Sim/Simulation.cs: Simulation -- The fixed-order tick pipeline.
+src/Rts.Sim/Snapshot/PingViews.cs: MapPingView -- (7b) A live map ping (SimSnapshot.Pings, written by Orders/PingSystem.WriteSnapshot).
+src/Rts.Sim/Snapshot/SimSnapshot.cs: UnitView, OrderView, ProjectileView, PropView, ArmyView, SimSnapshot
+src/Rts.Sim/Snapshot/SnapshotWriter.cs: SnapshotWriter -- Copies the world into a snapshot (on the sim thread, between ticks).
+src/Rts.Sim/Snapshot/UnitStatus.cs: UnitStatus{None RadarStealth SonarStealth Cloaked Stunned StealthField} -- Live intel/combat status of a unit for the client (UnitView.Status):
+src/Rts.Sim/Systems/UnitLifecycle.cs: UnitLifecycle -- Hooks called when units spawn/die.
+src/Rts.Sim/World/Army.cs: EconomyState, AiDifficulty{Easy Normal Hard}, Army -- Per-army resource state.
+src/Rts.Sim/World/Components.cs: UnitFlags{None Dead UnderConstruction Moving Firing Building Paused RadarOnly Surfaced Carried Stunned Overcharge}, MoveState, WeaponState, BuilderMode{None Build Repair Reclaim Assist Capture Upgrade}, BuilderState, FactoryState, EconState
+src/Rts.Sim/World/OccupancyGrid.cs: OccupancyGrid -- Which structure occupies each terrain cell (-1 = free).
+src/Rts.Sim/World/SimEvents.cs: DamageEvent, AreaDamageEvent, EffectKind{MuzzleFlash Impact Explosion UnitDeath BuildStarted BuildComplete Reclaim ShieldHit ShieldDown ShieldUp MissileLaunch MissileIntercepted Nuke Captured Overcharge OverchargeHit TeleportCharge TeleportOut TeleportIn}, EffectEvent, SimEvents
+src/Rts.Sim/World/SimWorld.cs: SimWorld -- The complete simulation state.
+src/Rts.Sim/World/SpatialGrid.cs: IUnitVisitor, SpatialGrid -- Callback for allocation-free spatial queries.
+src/Rts.Sim/World/UnitStore.cs: UnitStore -- Structure-of-arrays storage for all units, fixed capacity, slot reuse via free list with generations.

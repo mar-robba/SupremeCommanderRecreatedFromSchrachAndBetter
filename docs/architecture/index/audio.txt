@@ -1,0 +1,27 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area audio: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Audio/AmbientSynth.cs: AmbientSynth -- Real-time generator for the continuous layers (pure C#, rendered in blocks into a raylib AudioStream):
+src/Rts.Client/Audio/AudioEngine.cs: AudioEngine -- Thin raylib audio layer:
+src/Rts.Client/Audio/AudioSystem.cs: AudioSystem -- App-wide audio:
+src/Rts.Client/Audio/GameAudio.Alerts.cs: GameAudio -- (7b) Notification sounds + toasts raised by AlertMonitor and the map pings.
+src/Rts.Client/Audio/GameAudio.Commander.cs: GameAudio -- Commander sounds:
+src/Rts.Client/Audio/GameAudio.Death.cs: GameAudio -- (9b) Plays the sounds the client-side death sequences and the ACU warp-in queue in UnitFxSounds (Rendering.DeathAnimator);
+src/Rts.Client/Audio/GameAudio.Experimental.cs: GameAudio -- Experimental-scale sounds:
+src/Rts.Client/Audio/GameAudio.Strategic.cs: GameAudio -- Strategic sounds:
+src/Rts.Client/Audio/GameAudio.Voice.cs: GameAudio -- (11b-1) The game events that the voice announcer speaks (VoiceAnnouncer, lines in data/audio/voice/lines.json).
+src/Rts.Client/Audio/GameAudio.cs: AudioSettings, GameAudio -- Volume settings and audio command-line options.
+src/Rts.Client/Audio/SoundBank.Alerts.cs: SoundBank -- (7b) Notification sounds:
+src/Rts.Client/Audio/SoundBank.Commander.cs: SoundBank -- Commander sound recipes:
+src/Rts.Client/Audio/SoundBank.Death.cs: SoundBank -- (9b) Death sequence and ACU warp-in recipes (Rendering.DeathAnimator):
+src/Rts.Client/Audio/SoundBank.Experimental.cs: SoundBank -- Experimental-scale sound recipes:
+src/Rts.Client/Audio/SoundBank.Strategic.cs: SoundBank -- Strategic sound recipes:
+src/Rts.Client/Audio/SoundBank.cs: SoundId{GunLight Cannon CannonHeavy Artillery MissileLaunch FlakFire Laser BombWhistle Impact ImpactLaser FlakBurst ExplosionSmall ExplosionLarge UnitDeath AirDeath BuildingCollapse BuildStart BuildComplete UnitReady ReclaimDone UiClick UiConfirm UiError WarnMass WarnEnergy UnderAttack CommanderAlert ShieldHit ShieldDown ShieldUp TacticalLaunch NukeLaunch NukeExplosion Intercept StrategicAlert ExperimentalAlert SuperHeavyFire ExplosionHuge OverchargeFire OverchargeHit CommanderBlast TeleportCharge TeleportOut TeleportIn AlertPing AlertNotice AlertStructureLost AircraftFall AircraftCrash ShipSink StructureCrumble WarpIn}, SoundInfo, SoundBank -- Every procedurally generated one-shot sound.
+src/Rts.Client/Audio/Synth.cs: SynthRng, Svf, OnePole, Synth -- Small xorshift RNG for sound synthesis (client-side, deterministic per seed so tests are stable).
+src/Rts.Client/Audio/UiSounds.cs: UiSounds -- Fire-and-forget UI sound requests from widgets and input code (main thread).
+src/Rts.Client/Audio/UnitFxSounds.cs: UnitFxSounds -- (9b) Positional sound requests raised by client-side sequences that have no sim event of their own (aircraft crash, ship sinking, structure collapse, ACU warp-in:
+src/Rts.Client/Audio/VoiceAnnouncer.cs: VoiceAnnouncer -- (11b-1) The voice announcer:
+src/Rts.Client/Audio/VoiceLines.cs: VoiceLine, VoiceIds, VoiceLineTable -- One spoken line of data/audio/voice/lines.json (the generator tools/voice/generate.py reads the same file).
+src/Rts.Client/Audio/VoiceQueue.cs: VoiceQueue -- (11b-1) The announcer's queue:
+src/Rts.Client/Audio/VoiceTest.cs: VoiceTest -- (11b-1) --voice-test [--voice-only id,id] [--voice-lang it] [--volume F] [--nosound]:
+src/Rts.Client/Audio/VoiceWav.cs: VoiceWav -- A decoded 16-bit PCM WAV file (interleaved samples).

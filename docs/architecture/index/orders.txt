@@ -1,0 +1,10 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area orders: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Orders/Commands.cs: Command, IssueOrderCommand, StopCommand, FactoryEnqueueCommand, FactoryDequeueCommand, FactoryRepeatCommand, SelfDestructCommand, DebugSpawnCommand -- Player input to the simulation.
+src/Rts.Sim/Orders/GameplayCommands.cs: SetPausedCommand, SetSubmergedCommand -- SupCom pause button:
+src/Rts.Sim/Orders/Order.cs: OrderType{None Move AttackMove Attack Patrol Guard Build Repair Reclaim Capture Launch Load Unload TransportTo Ferry Dock Teleport}, Order, OrderQueue
+src/Rts.Sim/Orders/PingCommands.cs: PingKind{Alert Move Attack}, MapPingCommand, MapPing, PingState, PingSystem -- (7b) Map ping kinds (SupCom:
+src/Rts.Sim/Orders/QueueEditCommands.cs: MoveWaypointCommand, DeleteWaypointCommand, FormationMoveCommand, QueueEditSystem -- (7b) Drag a waypoint of the selected units' order queues from to (SupCom waypoint editing).
+src/Rts.Sim/Systems/CommandSystem.cs: CommandSystem -- Applies validated player commands at the start of a tick.
+src/Rts.Sim/Systems/OrderSystem.cs: OrderSystem -- Executes the front order of each mobile unit:

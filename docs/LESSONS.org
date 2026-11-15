@@ -368,6 +368,21 @@ e ogni scopo.
   Regola (DEV_GUIDE "Multiplayer checks"): un test di rete che fallisce ogni tanto con "tempo scaduto" è un
   difetto di ordine finché non si dimostra il contrario, e si dimostra allargando l'intervallo sospetto.
 
+* 2026-11-15
+
+** La descrizione dell'architettura si allontanava dal codice
+- Errore: ARCHITECTURE.md era un file unico (140 KB, 37 sezioni) cresciuto con una sezione per ogni onda. Un sistema
+  era descritto in tre o quattro sezioni (il combattimento in "Combat model", "Cybran", "Commander kit" e "Missing
+  units"); la pipeline del tick non nominava 8 delle 28 chiamate di ~Simulation.Step~ (tra queste ~StrategicSystem~
+  e ~OverchargeSystem~); due nomi citati non esistevano più nel codice (~SyncFactoryUnit~ e il parametro ~maxRtt~ di
+  ~DelayFor~). Nessuno lo controllava: la regola "scrivi la tua sezione" non diceva cosa fare quando il codice di
+  un'altra area cambiava, e per non perdere un contratto un agente doveva leggere quasi tutto il file.
+- Soluzione: una mappa di una pagina e un file per area con i contratti in testa, più indici dei file generati dal
+  codice. Un controllo (~tools/arch/arch.py~) gira come test in ogni suite; un hook di git rifiuta un commit che
+  cambia il codice senza il suo documento, o senza una riga ~Arch:~ che spieghi perché il documento resta vero; un
+  hook di Claude Code blocca ~--no-verify~ (ARCHITECTURE "Keeping these docs true", DEV_GUIDE "Architecture docs
+  gate").
+
 * Costi
 
 Quanti token è costato costruire il gioco fin qui: per onda, per modulo, per scopo e per tipo di lavoro, e che cosa

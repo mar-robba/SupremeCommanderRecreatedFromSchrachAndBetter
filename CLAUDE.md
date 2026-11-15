@@ -1,20 +1,24 @@
 # RTS — a Supreme Commander 1–like game (C# / .NET 10 / raylib)
 
 The owner does not write code: AI agents build everything. Talk to the owner in **Italian**.
-Read `docs/ARCHITECTURE.md` before changing the sim, and `docs/ROADMAP.md` to see what is done / in progress.
+Before changing code read `docs/ARCHITECTURE.md` (the map, one page) and the `docs/architecture/<area>.md` files of
+the code you change; `docs/ROADMAP.md` says what is done / in progress.
 Docs index: `docs/README.md` (orchestrators: `docs/WORKFLOW.md`). All durable knowledge (design, decisions, lessons,
 numbers, plans) goes in `docs/`, organized as that index says, never only in private agent memory or scratch files.
 
 ## Commands (run from repo root)
 - Build all: `dotnet build Rts.slnx`
 - Tests: `dotnet test tests/Rts.Sim.Tests`, `dotnet test tests/Rts.Client.Tests` and `dotnet test tests/Rts.Net.Tests` (headless, must stay green)
+- Architecture docs (hard rule 11, DEV_GUIDE "Architecture docs gate"): `python3 -I tools/arch/arch.py check` (also a
+  test in every suite) | `sync` (regenerate the indexes after adding/renaming files, types, enum values) | `where FILE`
+  (which doc describes it) | `review [main] [branch]` (a branch against its docs, before a merge)
 - Benchmark (headless sim, Release): `dotnet run -c Release --project tools/Rts.Bench -- <unitsPerSide> <ticks> [threads] [mapSize] [armies]`
   (env `BENCH_WARMUP=1` = JIT warm-up first, `BENCH_ALLOC=1` = allocations per stage; DEV_GUIDE "Profiling")
 - Unit duels (balance, AI_TUNING "Unit balance"): `dotnet run -c Release --project tools/Rts.Bench -- duel <unitA> <unitB> [mass=2000] [seed] [mapSize]`
   (unit = blueprint id or `faction:role`, e.g. `uef:tank_t1`); grids: `... -- duelmatrix <factionA> [factionB] [masses=600,2000,6000] [seeds=3]`
 - AI vs AI match (headless): `dotnet run -c Release --project tools/Rts.Bench -- ai [maxMinutes] [mapSize] [seed] [normal,hard] [threads] [players] [preset] [factions] [options]`
   (`options` = a game options spec as `--options` below, e.g. `victory=supremacy,prebuilt=on,cap=250`)
-- Map files (ARCHITECTURE "Map files"): `dotnet run -c Release --project tools/Rts.Bench -- mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc T] [--biome B]`;
+- Map files (architecture/map.md "Map files"): `dotnet run -c Release --project tools/Rts.Bench -- mapexport <out.rtsmap> <mapSize> <seed> <players> [preset] [name] [--water X] [--exact] [--desc T] [--biome B]`;
   the pack: `... -- mapexport --pack tools/maps/pack.txt data/maps`; which seeds pass the checks: `... -- mapexport --scan <size> <players> <preset> <seed0> <count>`
 - Play: `dotnet run --project src/Rts.Client` (main menu), or straight into a game:
   `dotnet run --project src/Rts.Client -- [--demo] [--map 256|512|1024] [--seed N] [--players N] [--preset plains|lakes|highlands|canyon|archipelago] [--water 0..1]`
@@ -35,7 +39,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   e.g. after `--exec` spawns; `everything` = units + structures); I = range/intel rings, Ctrl+= / Ctrl+- = minimap zoom;
   keys: Alt+left/right / Alt+Shift+left = map pings, Y = alert ping, Backspace = last alert, Ctrl+C = commander, Alt+1-5 bookmarks;
   visual test scenes: `--tech-demo`, `--scene strategic[:shields|:tml|:nuke]`, `--scene experimental[:mavor|:fog]` (Fatboy, Mavor, gateway+SCUs, enhanced commanders), `--scene transport` (C-6/C-14 loading, ferry, air staging, Atlantis), `--scene cybran[:land|:air|:naval|:structures1|:structures2|:structures3|:experimental]` (every Cybran unit laid out by group), `--scene units8a[:land|:walls|:naval|:salem]` (wave 8a units: Mech Marine, stealth field gen, missile subs, Cybran carrier with docked aircraft, T3 sonars, wall lines under fire, Salem on land), `--scene props[:fire|:rocks]` (8b map props: densest forest with fallen/burning/burnt trees and a tank column, rock field), `--scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]` (9b death sequences and ACU warp-in; pauses N ticks after the kill) (scene positions are printed; aim with `--camera`))
-- Voice announcer (11b-1, Italian, ARCHITECTURE "Voice announcer"): `dotnet run --project src/Rts.Client -- --voice-test [--voice-only id,id] [--nosound]`
+- Voice announcer (11b-1, Italian, architecture/audio.md): `dotnet run --project src/Rts.Client -- --voice-test [--voice-only id,id] [--nosound]`
   plays every line (id + text printed) and exits; change a wording in `data/audio/voice/lines.json`, then `python3 -I tools/voice/generate.py` (DEV_GUIDE "Voice announcer")
 - Sandbox (spawn anything, cheats, nukes; panel F9, console F10): `dotnet run --project src/Rts.Client -- --sandbox [--exec "spawn tank 100 enemy at 140,128; wait 30; nuke 140,128"]`
   (`--exec` runs console commands at start and implies `--sandbox`; combine with the screenshot options below;
@@ -43,7 +47,7 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
   `overcharge [army|all] [on|off]` arms ACU Overcharge, `kill [radius] at x,z` kills an area, `teleport [army|all] x,z`
   jumps teleporter ACUs (spawn `uef_commander+PersonalTeleporter`); keys: O = Overcharge, J = teleport mode;
   multi-word unit names use `_`, e.g. `spawn strategic_missile_launcher me at 100,128`)
-- Multiplayer (lockstep, ARCHITECTURE "Multiplayer"): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
+- Multiplayer (lockstep, architecture/multiplayer.md): main menu → Multiplayer, or `dotnet run --project src/Rts.Client --
   --host [port] | --join ip[:port] [--name N] [--autostart] [--observe]` (default port 47624; (10a-2) `--observe` = join as an observer, `--net-vote-demo` = the in-game drop-vote banner for screenshots; (10a-3) `--host [port] --load-mp FILE` = open the load lobby of a multiplayer save (path or name in saves/; F5 / Esc → Save Game in a net game save for everybody); `--autostart`: clients Ready, host
   starts with 2+ humans or with `--players N` AI slots). Headless self-test: `dotnet run -c Release --project
   tools/Rts.Bench -- mp [peers] [ticks] [mapSize] [aiSlots] [threads] [drop] [map=ID] [biome=X] [obs=N]` (exit 1 = desync; `obs=N` = N observers;
@@ -86,8 +90,13 @@ numbers, plans) goes in `docs/`, organized as that index says, never only in pri
    `SimSnapshot.cs`, `Simulation.cs`) minimal and additive.
 7. Every feature: build, run tests, add tests for sim logic, screenshot for visuals. Update `docs/ROADMAP.md`.
 8. Don't install system packages/toolchains (the owner refused a rustup install). NuGet packages are fine.
-9. **Saveable state** (save/load + replays, see ARCHITECTURE "Save/load & replays"): sim state = plain fields, arrays,
+9. **Saveable state** (save/load + replays, see architecture/persistence.md): sim state = plain fields, arrays,
    List/Dictionary/HashSet, per-world `ConditionalWeakTable<SimWorld,T>`; no static mutable state, no stored lambdas/delegates.
    Caches/timings get `[NoSave]` (rebuild lazily or in `IAfterLoad`). `SaveCoverageTests` + `PersistenceTests` must pass.
 10. **Factions**: sim/AI code never hard-codes unit ids (`"uef_..."`); use faction roles
-   (`db.Factions.RoleBlueprint(army.Faction, FactionRoles.X)`, -1 = none). Contract: ARCHITECTURE "Factions".
+   (`db.Factions.RoleBlueprint(army.Faction, FactionRoles.X)`, -1 = none). Contract: architecture/factions.md.
+11. **Architecture docs match the code** (owner, 2026-11-15; ARCHITECTURE "Keeping these docs true"): a code change
+   that alters what the architecture docs describe updates them in the same commit; a code commit that alters nothing
+   they describe says so in a line `Arch: <area> - <why the docs still hold>`. A git hook refuses other commits
+   (`WIP` ones pass and are checked at the merge) and `ArchitectureDocsTests` is red while the docs are stale. Never
+   `--no-verify`, `git commit -n` or a change of `core.hooksPath`.

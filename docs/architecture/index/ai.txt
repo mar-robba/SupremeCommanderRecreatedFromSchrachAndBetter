@@ -1,0 +1,22 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area ai: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/AI/AiBrain.cs: AiBrain -- One AI player.
+src/Rts.Sim/AI/AiCommands.cs: AiCommands -- Builds ordinary player commands for one AI army (the AI has no other way to act on the world).
+src/Rts.Sim/AI/AiConfig.Navy.cs: AiConfig -- Navy knobs (AiNavy).
+src/Rts.Sim/AI/AiConfig.cs: AiConfig -- Tuning knobs of the skirmish AI, derived from AiDifficulty.
+src/Rts.Sim/AI/AiEconomy.Budget.cs: AiEconomy -- Army-first mass budget (wave 5k):
+src/Rts.Sim/AI/AiEconomy.Tech.cs: AiEconomy -- Tech side of the economy (wave 5k):
+src/Rts.Sim/AI/AiEconomy.cs: AiEconomy -- Economy side of a brain:
+src/Rts.Sim/AI/AiMilitary.Advance.cs: AiMilitary
+src/Rts.Sim/AI/AiMilitary.cs: AiGroupState{Assemble Attack Retreat}, AiGroupKind{Army Raid Clear Reinforce}, AiGroup, AiMilitary
+src/Rts.Sim/AI/AiNavy.Fleet.cs: AiNavy -- The fleet:
+src/Rts.Sim/AI/AiNavy.cs: AiNavy -- Naval side of a brain:
+src/Rts.Sim/AI/AiPerception.cs: KnownStructure, AiView, AiPerception -- An enemy structure the AI knows about (a ghost of one it has seen, or one in sight now).
+src/Rts.Sim/AI/AiPlacement.cs: AiPlacement -- Structure placement for one AI:
+src/Rts.Sim/AI/AiRoster.cs: AiRoster -- Blueprint indices of every unit an AI army can use, resolved once per brain from its faction's roles (FactionDb.RoleBlueprint;
+src/Rts.Sim/AI/AiScouting.cs: AiScouting -- Intel gathering of one AI (it plays with fog of war, so it must look):
+src/Rts.Sim/AI/AiStrategic.cs: AiStrategic -- Missile launchers of a brain (military think):
+src/Rts.Sim/AI/AiSystem.cs: AiSystem, AiState, AiRole{None Builder Pool Attack Defend Scout AirDefense Bomber AirScout Home Factory Transport Naval Silo}, AiTask{None Build Finish Reclaim Assist Repair Return}, AiUnitInfo, AiStats -- Skirmish AI entry point.
+src/Rts.Sim/AI/AiTransport.Drop.cs: AiTransport -- Drop target, landing zone and the landed group (see AiTransport).
+src/Rts.Sim/AI/AiTransport.cs: AiTransport -- Air transport side of a brain:

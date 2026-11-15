@@ -32,6 +32,7 @@ These are the owner's instructions so far. They are binding. Add new ones here, 
 | 2026-11-14 | **Owner decisions on the parked items**: interactive tutorial (G42), mod support (G44) and split screen (G21) cut. FA units (G13) and reconnect (G37) explained to the owner, then yes: planned, not started. |
 | 2026-11-13 | **Answers to the "Questions for the owner" (Wave 6+ plan)**: campaign/story cut (G43), map editor cut (G29), Italian localization cut (G28, G25), online outside the LAN / relay server cut (G38, LAN only), release step: no further work. Voice announcer yes (G24, Wave 11), with pathing G12 + save migration G41 as the pair. Parked until asked: tutorial (G42), mod support (G44, estimate S-M), FA units (G13, after G1-G45), split screen / second monitor (G21, the owner asked what it means), reconnect (G37). |
 | 2026-11-13 | **Voice announcer (G24, module 11b-1): the `espeak` voice, in Italian** ("usa espeak", then "e la lingua italiano", answers to the orchestrator's two questions: language, and `espeak` (already installed, robotic) or a neural voice that needs a download). The spoken lines are Italian; the on-screen texts stay English (localization was cut the same day). The voice files are generated once and committed, so the game needs no speech tool at run time. |
+| 2026-11-15 | **Architecture docs on levels, kept true by tools** ("giudica se forse non è meglio aggiornare l'architettura attuale tenedo, in qualche maniera, una versione astratta del progetto ache su vari livelli così da distaccarsi da dover dedurre da ciò che è maggiormente particolare: il codice"; after the orchestrator's judgment: "procedi, inoltre considera che mantenere la documentazione aggiornata e che non si discosti da ciò che viene fatto nel codice è importante fai di modo che nessun agente possa fare modifiche al codice che richiederebbero una modifica all'architettura e che non modifichi questultima"). ARCHITECTURE.md is now a one-page map (projects, threads, tick pipeline, cross-area contracts, the table of areas) and `docs/architecture/` has one file per area (its contracts first) plus indexes generated from the code. A git commit hook, a Claude Code hook and a test in every suite enforce the match (ARCHITECTURE "Keeping these docs true", DEV_GUIDE "Architecture docs gate"); the orchestrator reads `arch.py review` before every merge ("Lifecycle of a wave" step 6). |
 | always | Talk to the owner in Italian. Code, comments and docs are in English. |
 
 ## Waves
@@ -60,7 +61,7 @@ state: ROADMAP "NEXT STEPS".
    finish within one usage window. Cut the work into modules of about 1,500 lines (the size of 7a), each for one
    agent with a 200k cap and no coordinator (owner, 2026-11-10); what needs more becomes two modules, one after the
    other. Choose areas whose files barely overlap. Write the contracts they share (they
-   become ARCHITECTURE sections): enums are append-only; `BuiltBy` / `UpgradesTo` in blueprints; faction roles
+   go into the "Contracts of this area" list of the area files, or the map's "Contracts between areas"): enums are append-only; `BuiltBy` / `UpgradesTo` in blueprints; faction roles
    instead of hard-coded `uef_*` ids; all sim state saveable.
 2. **Prompt.** Each agent gets its area brief (goal, must-haves, files it owns, what to leave to others) plus the
    rules block from [AGENT_RULES.md](AGENT_RULES.md), with the wave's agent list filled in. Write the briefs
@@ -94,9 +95,14 @@ state: ROADMAP "NEXT STEPS".
    so the agent's first step is `git merge main` (the local branch).
 4. **While they run.** Watch their context size (below) and handle usage limits (below). Answer questions; don't
    do their work in the orchestrator's context.
-5. **Finish.** The agent merges main again, builds, runs both test projects, benchmarks, takes screenshots, writes
-   its ARCHITECTURE section and ROADMAP lines, commits (clean tree) and writes `<worktree>/.claude/agent-report.md`.
-6. **Merge**, one branch at a time, in main: `git merge --no-ff <branch>`, then build, both test projects (including
+5. **Finish.** The agent merges main again, builds, runs both test projects, benchmarks, takes screenshots, updates
+   the architecture area files of its systems and its ROADMAP lines, commits (clean tree) and writes `<worktree>/.claude/agent-report.md`.
+6. **Merge**, one branch at a time, in main. First `python3 -I tools/arch/arch.py review main <branch>`: one row per
+   area the branch changed, with the docs it changed or its `Arch:` reasons. The tool cannot judge them, so read
+   each reason and the doc diffs (`git diff main...<branch> -- docs/ARCHITECTURE.md docs/architecture`), and send the
+   branch back when a doc no longer says what the code does or an `Arch:` reason hides a change the docs describe
+   (owner, 2026-11-15). The merge commit runs the same check through the git hook, plus `arch.py check`. Then
+   `git merge --no-ff <branch>`, then build, both test projects (including
    `SimulationIsDeterministicAcrossThreadCounts`, `SaveCoverageTests`, `PersistenceTests`) and a screenshot of the
    feature. If the merge has many conflicts, don't resolve them in the orchestrator: start a **merge agent** in the
    branch's worktree. It merges main into the branch there and resolves the conflicts. Then main merges the
@@ -122,7 +128,9 @@ state: ROADMAP "NEXT STEPS".
 These files conflicted in almost every wave:
 - `GameApp.cs` and `GameSession.cs`: CLI options and scene wiring. Keep both sides.
 - `OrderSystem.cs`, `Army.cs`, the HUD help lines.
-- `ARCHITECTURE.md`: each agent adds its own section.
+- `docs/architecture/*.md`: two agents edit the same area file. Keep both sides. The generated
+  `docs/architecture/index/*.txt` are not merged by hand: run `python3 -I tools/arch/arch.py sync`. (Until
+  2026-11-15 every agent appended its own section to a single ARCHITECTURE.md.)
 - Hotkeys: two agents pick the same free key. In wave 4, (f) used D = dive and E = capture, while (h) used
   D = dock and E = transport-to. The merge made them context-dependent (`Input/SharedHotkeys.cs`). Agents should
   list their new hotkeys in their report.
@@ -386,6 +394,7 @@ order of effect:
 |---|---|---|
 | Documentation (all of it) | `docs/` (this folder), `CLAUDE.md` | yes, in git |
 | Agent/orchestrator tools | `tools/agents/` (build lock, context monitor), `tools/ai-lab/` (AI test matrices) | yes, in git |
+| Architecture docs gate | `tools/arch/arch.py`, `tools/git-hooks/commit-msg`, `tests/Shared/ArchitectureDocsTests.cs`; the Claude Code hooks in `.claude/settings.json` (DEV_GUIDE "Architecture docs gate") | yes, in git (the hooks file is local) |
 | An agent's working notes and final report | `<worktree>/.claude/handoff.md`, `<worktree>/.claude/agent-report.md` | until the merge; then the report goes into HISTORY.md |
 | Screenshots, saves, replays | `screenshots/`, `saves/`, `replays/` | local only (gitignored) |
 | AI matrix logs | `<worktree>/.claude/ai-lab/runs/<tag>/` | local only |

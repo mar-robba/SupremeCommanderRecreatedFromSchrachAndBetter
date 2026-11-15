@@ -1,0 +1,17 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area economy: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Economy/AdjacencyRules.cs: AdjacencyEffect, AdjacencyRules -- Bonus one structure gives another (fractions, see EconState.AdjMassProd).
+src/Rts.Sim/Economy/AdjacencySystem.cs: AdjacencySystem -- SupCom adjacency bonus (rules in AdjacencyRules):
+src/Rts.Sim/Economy/AssistChain.cs: AssistChain -- Engineer assist chains (SupCom):
+src/Rts.Sim/Economy/CaptureSystem.cs: CaptureSystem -- SupCom capture:
+src/Rts.Sim/Economy/ConstructionSystem.cs: ConstructionSystem -- Engineers/commanders:
+src/Rts.Sim/Economy/EconomySystem.cs: EconomySystem -- Mass/energy flow economy (SupCom style).
+src/Rts.Sim/Economy/EngineerPatrol.cs: EngineerPatrol -- Engineer patrol automation (SupCom):
+src/Rts.Sim/Economy/FactoryExitMotion.cs: FactoryExitMotion -- Units leaving their factory (SupCom roll-off):
+src/Rts.Sim/Economy/FactorySystem.cs: FactorySystem -- Factory build queues (SEQUENTIAL, runs right after ConstructionSystem).
+src/Rts.Sim/Economy/PauseSystem.cs: PauseSystem -- SupCom pause toggle (SetPausedCommand):
+src/Rts.Sim/Economy/UnitTransfer.cs: UnitTransfer -- Changing a unit's army (capture, sandbox "give").
+src/Rts.Sim/Economy/UpgradeSystem.cs: UpgradeSystem -- SupCom-style in-place structure upgrades (T1→T2→T3 factories, mass extractors, radars), driven by the blueprint's UpgradesTo.
+src/Rts.Sim/Orders/UpgradeCommands.cs: UpgradeCommand, CancelUpgradeCommand -- Start the in-place upgrade (blueprint UpgradesTo) of the given own, complete structures.
+src/Rts.Sim/World/UpgradeState.cs: UpgradeState -- In-place structure upgrade in progress (SupCom T1→T2→T3 factories/mexes/radars), owned by Systems.UpgradeSystem.

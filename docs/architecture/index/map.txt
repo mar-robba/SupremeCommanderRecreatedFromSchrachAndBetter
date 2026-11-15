@@ -1,0 +1,19 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area map: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Map/Biome.cs: Biome{Temperate Desert Tundra Lava Tropical}, Biomes -- (8b-3) Visual climate of a map:
+src/Rts.Sim/Map/MapBuilder.Archipelago.cs: MapBuilder -- Archipelago sea lanes:
+src/Rts.Sim/Map/MapBuilder.Canyon.cs: MapBuilder -- Canyon preset:
+src/Rts.Sim/Map/MapBuilder.Deposits.cs: MapBuilder -- Deposit placement:
+src/Rts.Sim/Map/MapBuilder.cs: MapBuilder -- One map generation run (see MapGenerator).
+src/Rts.Sim/Map/MapChecks.cs: MapChecks -- (8b-2) The map generator's guarantees as a check for any terrain (map files, Rts.Bench -- mapexport):
+src/Rts.Sim/Map/MapConnectivity.cs: MapConnectivity, CarveScratch -- Land connectivity analysis and repair for the map generator, working directly on the vertex height array ((n+1)² vertices, n² cells).
+src/Rts.Sim/Map/MapFile.cs: MapFileException, MapFileInfo, MapFile -- A map file that cannot be read (bad magic/version, damaged payload, hash mismatch).
+src/Rts.Sim/Map/MapGenerator.cs: MapPreset{Plains Lakes Highlands Canyon Archipelago}, MapPresets, MapGenSettings, MapGenerator -- Map generator presets (terrain style).
+src/Rts.Sim/Map/MapLibrary.cs: MapLibrary -- (8b-2) The installed map files:
+src/Rts.Sim/Map/MapNoise.cs: MapNoise, MapMath -- Deterministic 2D gradient (Perlin-style) noise for the map generator.
+src/Rts.Sim/Map/MapProps.cs: MapProp, MapProps -- A tree or rock placed by the map generator (spawned into PropStore at game start).
+src/Rts.Sim/Map/MapSymmetry.cs: MapSymmetry -- N-fold rotational symmetry about the map center (N = player count).
+src/Rts.Sim/Map/Terrain.cs: DepositType{Mass Hydrocarbon}, Deposit, PassFlags{None Land DeepWater WaterSurface Seabed}, Terrain
+src/Rts.Sim/World/PropStore.cs: PropKind{Wreck Tree Rock}, PropFlags{None Fallen Burning Burnt}, PropStore -- What a prop is (append-only).
+src/Rts.Sim/World/PropSystem.cs: PropSystem -- Trees react to the battle (wave 8b).

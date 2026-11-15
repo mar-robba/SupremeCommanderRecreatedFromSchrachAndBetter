@@ -1,0 +1,58 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area input-ui: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Input/AdjacencyPreview.cs: AdjacencyLink, AdjacencyPreviewResult, AdjacencyPreview -- One touching structure of the placement preview:
+src/Rts.Client/Input/ArmyCommands.cs: ArmyCommands -- Sends unit commands for a selection.
+src/Rts.Client/Input/BuildPlacement.cs: BuildPlacement -- Structure placement mode (SupCom-like):
+src/Rts.Client/Input/CameraBookmarks.cs: CameraView, CameraBookmarks -- A saved camera view:
+src/Rts.Client/Input/ContextOrders.cs: ContextKind{None Move Attack Guard Assist Repair Finish Reclaim Capture Load PickUp Dock Unload}, ContextAction, ContextOrders
+src/Rts.Client/Input/FireStateToggle.cs: UnitToggles -- Fire state toggle (SupCom):
+src/Rts.Client/Input/FormationDrag.cs: FormationDrag -- (7b) Right-drag line formation (SupCom):
+src/Rts.Client/Input/Hotkeys.Bindings.cs: BindResult{Ok Clash Fixed Invalid}, Hotkeys -- Outcome of Hotkeys.TryBind.
+src/Rts.Client/Input/Hotkeys.cs: HotkeyScope{Game Play Units BuildMenu Factory Placement Dialog Replay Sandbox Debug}, KeyMods{None Shift Ctrl Alt}, Hotkey, IKeyState, RaylibKeyState, MouseHelp, Hotkeys -- Where a hotkey is active.
+src/Rts.Client/Input/OrderEditMath.cs: OrderEditMath -- (7b) Pure helpers of the formation drag and waypoint editing (Input/FormationDrag.cs, Input/WaypointEditor.cs), kept free of raylib so they are unit-tested (tests/Rts....
+src/Rts.Client/Input/OrdersUiDemo.cs: OrdersUiDemo -- (7b) Screenshot hooks for the order-editing UI (cheats on, e.g.
+src/Rts.Client/Input/PingInput.cs: PingInput -- (7b) Map pings and the alert jump.
+src/Rts.Client/Input/PlacementGrid.cs: PlacementError{None OutOfMap Blocked Planned Terrain NeedsMassDeposit NeedsHydroDeposit NeedsDeepWater}, PlacementGrid -- Why a structure cannot be placed (None = OK).
+src/Rts.Client/Input/PlacementLine.cs: PlacementLine -- Pure layout math of Shift+drag structure lines (SupCom):
+src/Rts.Client/Input/SelectionController.cs: SelectionController -- Selection (click / box / double-click same type), control groups, right-click orders, order modes (move / attack-move / patrol / guard / launch / capture) and structur...
+src/Rts.Client/Input/SelectionFilters.cs: SelectionFilter{SameTypes Land Air Naval Engineers Combat}, SelectionFilters -- Which units a selection key picks (see SelectionFilters.Matches).
+src/Rts.Client/Input/SelectionMath.cs: SelectionMath -- Pure selection helpers (unit-tested):
+src/Rts.Client/Input/SharedHotkeys.cs: SharedHotkeys -- D and E are shared by the unit toggles (UnitToggles:
+src/Rts.Client/Input/StrategicOrders.cs: StrategicOrders -- Launch orders for tactical/strategic missile launchers (CommandMode.Launch, hotkey L):
+src/Rts.Client/Input/TeleportInput.cs: TeleportInput -- ACU Personal Teleporter order (SelectionController.CommandMode.Teleport, hotkey Hotkeys.Teleport, orders panel button):
+src/Rts.Client/Input/TransportInput.cs: CargoSelection, TransportButtons{None Unload Launch TransportTo Ferry Dock}, TransportInput -- What the selection holds, as far as transports are concerned (own, finished units only).
+src/Rts.Client/Input/UnitToggles.Overcharge.cs: UnitToggles -- ACU Overcharge toggle (OverchargeHotkey, orders panel button):
+src/Rts.Client/Input/UnitToggles.cs: UnitToggles -- Toggle orders for the selection:
+src/Rts.Client/Input/WaypointEditor.cs: WaypointEditor -- (7b) Waypoint editing (SupCom):
+src/Rts.Client/UI/AlertLog.cs: AlertKind{UnderAttack CommanderUnderAttack AllyUnderAttack StructureLost ConstructionDone UpgradeDone UnitCapReached Ping}, AlertEntry, AlertLog -- (7b) Kinds of game notifications (client side).
+src/Rts.Client/UI/AlertMonitor.cs: AlertMonitor -- (7b) Notification pass:
+src/Rts.Client/UI/BuildMenu.cs: BuildMenu -- Engineer / commander construction menu:
+src/Rts.Client/UI/CargoPanel.cs: CargoPanel, TransportGlyphs -- Cargo / fuel rows of the unit panel:
+src/Rts.Client/UI/CursorHint.cs: CursorHint -- Cursor hint for context orders (SelectionController.HoverAction):
+src/Rts.Client/UI/DiplomacyPanel.cs: DiplomacyRow, DiplomacyRules, DiplomacyPanel -- One player row of the diplomacy panel (testable, no raylib).
+src/Rts.Client/UI/EnhancementChain.cs: EnhancementChain -- (10b-2) One-click enhancement swap / chain.
+src/Rts.Client/UI/EnhancementPanel.cs: EnhancementPanel -- Commander / SCU enhancement strip, drawn just above the build panel when the selection has own enhanceable units (all of the same base blueprint as the first one).
+src/Rts.Client/UI/ExperimentalAlert.cs: ExperimentalAlert -- SupCom-style "WARNING:
+src/Rts.Client/UI/FactoryPanel.cs: FactoryPanel -- Factory panel:
+src/Rts.Client/UI/HelpOverlay.cs: HelpOverlay -- F1 help overlay (also the "?" button of the top bar):
+src/Rts.Client/UI/Hud.cs: Hud -- SupCom-like HUD:
+src/Rts.Client/UI/IdleButtons.cs: IdleButtons -- SupCom idle buttons above the minimap:
+src/Rts.Client/UI/Minimap.Options.cs: Minimap -- (9b-2) Minimap options:
+src/Rts.Client/UI/Minimap.cs: Minimap -- Corner minimap:
+src/Rts.Client/UI/MinimapView.cs: MinimapView -- (9b-2) Minimap size and zoom maths (pure, no GL;
+src/Rts.Client/UI/OrdersPanel.cs: OrdersPanel -- Order buttons with SupCom-like hotkeys:
+src/Rts.Client/UI/OverchargeButton.cs: OverchargeButton -- Glyph and tooltip of the Overcharge order button (OrdersPanel, state from UnitToggles.OverchargeState):
+src/Rts.Client/UI/PingMarkers.cs: PingMarkers -- (7b) Draws the snapshot's map pings (already only the viewer's team, all of them for observers / replays) on the map (screen-space glyph at the ground point:
+src/Rts.Client/UI/ResourceBar.cs: ResourceBar -- Top resource bar (SupCom-style):
+src/Rts.Client/UI/StrategicHud.cs: StrategicHud -- Strategic HUD:
+src/Rts.Client/UI/TechDemo.cs: TechDemo -- --tech-demo:
+src/Rts.Client/UI/TeleportButton.cs: TeleportButton -- Glyph and tooltip of the Teleport order button (OrdersPanel, state from TeleportInput.State):
+src/Rts.Client/UI/TeleportHud.cs: TeleportHud -- Personal Teleporter overlay (TeleportInput):
+src/Rts.Client/UI/Ui.cs: TipLine, ButtonState, Ui -- One line of a tooltip.
+src/Rts.Client/UI/UiStartup.cs: UiStartup -- Command-line helpers for automated UI screenshots:
+src/Rts.Client/UI/UnitCapCounter.cs: UnitCapCounter -- (6b) Top-bar unit counter "units 123/500" of the local army (game option GameOptions.UnitCap), right of the resource bar:
+src/Rts.Client/UI/UnitIcons.cs: BuildTab{Economy Factory Defense Intel Misc}, UnitIcons -- Build-menu category tabs for structures (SupCom-like grouping).
+src/Rts.Client/UI/UnitPanel.cs: UnitPanel -- Unit info panel.
+src/Rts.Client/UI/UpgradePanel.cs: UpgradePanel -- Build-panel slot for selected upgradable structures that are not factories (mass extractors, radars):
+src/Rts.Client/UI/UpgradeUi.cs: UpgradeUi -- Shared UI for SupCom-style in-place structure upgrades (blueprint UpgradesTo):

@@ -1,0 +1,46 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area client: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/AppIcon.cs: AppIcon -- The game icon, drawn procedurally (no asset file):
+src/Rts.Client/AppVersion.cs: AppVersion -- The client's version label, e.g.
+src/Rts.Client/CameraSettings.cs: CameraSettings -- User camera options (Settings → Gameplay, applied by Menus.GraphicsSettings), read by RtsCamera every frame.
+src/Rts.Client/ColorUtil.cs: ColorUtil
+src/Rts.Client/CrashLog.cs: CrashLog -- Crash log:
+src/Rts.Client/CybranScene.cs: CybranScene -- --scene cybran[:land|:air|:naval|:structures1|:structures2|:structures3|:experimental]:
+src/Rts.Client/DeathScene.cs: DeathScene -- --scene deaths[:air|:naval|:structures|:big|:acu|:warp][:N]:
+src/Rts.Client/ExperimentalScene.cs: ExperimentalScene -- --scene experimental[:mavor|:fog]:
+src/Rts.Client/GameApp.cs: StartScreen{Game MainMenu Setup Settings Saves Replays LoadFile ReplayFile Multiplayer}, ClientOptions, GameApp -- Which client state the app starts in.
+src/Rts.Client/GameContext.cs: GameContext, FeedbackMarkers -- Shared client-side services passed to UI/input/render modules.
+src/Rts.Client/GameSession.cs: GameSession -- One running game:
+src/Rts.Client/Menus/AppHost.cs: IScreen, AppHost -- A client state (main menu, setup, loading, in-game).
+src/Rts.Client/Menus/AppSettings.cs: AppSettings -- User settings (persisted as JSON in the user's config folder):
+src/Rts.Client/Menus/EndScreen.cs: EndScreen -- End-of-game statistics overlay:
+src/Rts.Client/Menus/FileLoadingScreen.cs: FileLoadingScreen -- Opens a save game or a replay file on a worker thread (decode, terrain regeneration, world restore), then creates the GameSession on the main thread:
+src/Rts.Client/Menus/GameConfig.cs: SlotKind{Human AI Closed}, PlayerSlot, GameConfig
+src/Rts.Client/Menus/GameOptionsBlock.cs: GameOptionsBlock -- The GAME OPTIONS panel of the skirmish setup screen and the multiplayer lobby:
+src/Rts.Client/Menus/GraphicsSettings.cs: GraphicsSettings -- Applies the graphics and gameplay options of AppSettings (wave 7a) to the static switches read by the renderers, the UI and the camera:
+src/Rts.Client/Menus/InGameSaveUi.cs: InGameSaveUi -- Saving and loading inside a game (owned by InGameScreen):
+src/Rts.Client/Menus/InGameScreen.cs: InGameScreen -- In-game state:
+src/Rts.Client/Menus/KeyBindingsScreen.cs: KeyBindingsScreen -- (10b-1) The "Keys" tab of SettingsScreen:
+src/Rts.Client/Menus/LoadingScreen.cs: LoadingScreen -- Builds the simulation (map generation, armies) on a worker thread while showing progress, then creates the GameSession (GPU resources) on the main thread and switches...
+src/Rts.Client/Menus/MainMenuScreen.cs: MainMenuScreen -- Main menu:
+src/Rts.Client/Menus/MapFileCache.cs: MapFileCache -- (8b-2) Client-side cache of the installed map files (MapLibrary, data/maps):
+src/Rts.Client/Menus/MapPreview.cs: MapPreview -- Live map thumbnail for the skirmish setup:
+src/Rts.Client/Menus/MenuBackdrop.cs: MenuBackdrop -- Animated 3D background of the menus:
+src/Rts.Client/Menus/MenuUi.cs: MenuUi -- Menu widgets on top of the HUD toolkit (Ui):
+src/Rts.Client/Menus/MessageBox.cs: MessageBox -- Modal message box (errors, confirmations) drawn over the current screen.
+src/Rts.Client/Menus/ReplayScreen.cs: ReplayScreen -- Replay viewer:
+src/Rts.Client/Menus/SaveListScreen.cs: SaveListScreen -- Main menu → "Load Game" / "Replays":
+src/Rts.Client/Menus/ScoreGraph.cs: ScoreGraph -- (6b, G6) End-screen line chart:
+src/Rts.Client/Menus/SettingsScreen.Voice.cs: SettingsScreen -- (11b-1) The voice announcer rows of the Audio tab:
+src/Rts.Client/Menus/SettingsScreen.cs: SettingsScreen -- Settings, three tabs:
+src/Rts.Client/Menus/SkirmishSetupScreen.cs: SkirmishSetupScreen -- Skirmish setup:
+src/Rts.Client/NavalScene.cs: NavalScene -- --scene naval:
+src/Rts.Client/Program.cs: 
+src/Rts.Client/PropsScene.cs: PropsScene -- --scene props[:fire|:rocks] (8b map props):
+src/Rts.Client/RtsCamera.cs: RtsCamera -- SupCom-style camera:
+src/Rts.Client/SnapshotInterpolator.cs: SnapshotInterpolator -- Holds the previous and current sim snapshots and computes the interpolation factor so units move smoothly at any framerate even though the sim ticks at 10 Hz (renderin...
+src/Rts.Client/StrategicScene.cs: StrategicScene -- --scene strategic[:shields|:tml|:nuke]:
+src/Rts.Client/TransportScene.cs: TransportScene -- --scene transport:
+src/Rts.Client/Units8aScene.cs: Units8aScene -- --scene units8a[:land|:walls|:naval|:salem]:
+src/Rts.Sim/Persistence/UserDirs.cs: UserDirLayout, UserDirs -- Where the game keeps the player's files (see UserDirs).

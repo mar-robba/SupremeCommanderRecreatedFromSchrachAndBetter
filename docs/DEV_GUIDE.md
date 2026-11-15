@@ -322,10 +322,53 @@ integrated GPU.
   `ESPEAK_VOICE` entry, generate (the game still speaks `VoiceLineTable.DefaultLanguage`; a language setting is a later item).
 - Needs `espeak` and `ffmpeg` only when generating (both on this machine); the game reads the files.
 
+## Architecture docs gate
+
+The architecture docs (`docs/ARCHITECTURE.md` = the map, `docs/architecture/<area>.md` = one file per area) are kept
+true by `tools/arch/arch.py` (Python standard library only, no build). Why and the rules: ARCHITECTURE "Keeping these
+docs true".
+- Commands (`python3 -I tools/arch/arch.py ...`):
+  - `check`: the checks on the working tree (~0.7 s). `ArchitectureDocsTests` runs it in each of the three test
+    projects (`tests/Shared/ArchitectureDocsTests.cs`, linked from every test csproj), so the usual way to find out is
+    a red test that lists the problems.
+  - `sync`: rewrites the generated files: `docs/architecture/index/<area>.txt` (each source file of the area, its
+    top-level types, an enum with its values, the first sentence of its doc comment) and the project list in the map.
+    Run it after adding, removing or renaming a source file, a type or an enum value, and commit the result. At a
+    merge conflict in an index file, don't merge it by hand: run `sync`.
+  - `where <file>`: a file's area and the docs that name it, i.e. which doc to update.
+  - `review [base] [head]`: a branch against its docs (default `main HEAD`), the table the orchestrator reads before a
+    merge; exit 1 = an area changed with neither a doc change nor an `Arch:` line.
+  - `install`: `git config core.hooksPath tools/git-hooks` (the project's SessionStart hook runs it too).
+- Enforcement, three layers:
+  1. git `commit-msg` hook (`tools/git-hooks/commit-msg` → `arch.py hook commit-msg`): refuses a commit that changes
+     `.cs` files under `src/` or `tools/Rts.Bench/` unless an architecture doc that describes them (their area file,
+     or any doc that names the file) changed in this commit, or earlier in the same branch, or the message (or an
+     earlier commit message of the branch) has a line `Arch: <area>[, <area>] - <reason>` with a reason of 15+
+     characters. Whitespace-only or blank-line doc edits don't count. A message that starts with `WIP` passes (the
+     merge checks it). On main a commit with code also runs `check`. A merge into main is checked as a whole branch;
+     taking main into a branch is not checked again.
+  2. Claude Code `PreToolUse` hook on Bash (`.claude/settings.json`, a local file: `.claude/` is not in git;
+     `arch.py hook pretool`): refuses git commands with `--no-verify` or `commit -n`, `-c core.hooksPath=...`, and
+     changes of `core.hooksPath` (reading it with `--get` is fine). It sees the whole command text, so even an `echo`
+     that contains `git commit --no-verify` is refused: put such text in a file.
+  3. `check` in every test suite, and so in `merge-check.sh`.
+- `core.hooksPath` is relative (`tools/git-hooks`): in a worktree git runs that worktree's hook, with that worktree's
+  `arch.py`. A worktree made from a main older than 2026-11-15 has no hook until its `git merge main` (AGENT_RULES
+  "FIRST STEP").
+- False alarms of `check`:
+  - a word in `code style` that is not code (a math term, a field of a file format): add it to
+    `docs/architecture/index/not-code.txt`. Never put a renamed or removed identifier there: fix the text;
+  - a cited path that does not resolve: write it as `Folder/File.cs`, the bare file name, or `Folder/Type.Member`.
+- What the tool cannot judge: whether an `Arch:` reason is true, or whether a doc edit really describes the change.
+  The orchestrator's review at the merge does (WORKFLOW "Lifecycle of a wave" step 6).
+- The identifier check looks a name up as a word anywhere in `src/`, `tools/`, `tests/` (.cs), `data/` (.json) and
+  the project files, so a name that is gone from the sim but still used by a test is not caught.
+
 ## Tools
 
 | Tool | What for |
 |---|---|
+| `tools/arch/arch.py` | Architecture docs gate: checks, generated indexes, git commit hook, branch review (section above). |
 | `tools/Rts.Bench` | Headless benchmark, AI matches, replay verification, save/load timings (commands in CLAUDE.md). AI debug switches: ARCHITECTURE "Skirmish AI". |
 | `Rts.Bench -- duel` / `duelmatrix` | Unit balance: equal-mass duels of two unit types on flat ground (real sim), and role x role grids of the surviving-mass share per faction pair, ~5 s per matrix on 16 threads (`Duel.cs`; method and BEFORE grids in [AI_TUNING.md](AI_TUNING.md) "Unit balance"). |
 | `Rts.Bench -- mp` | Headless lockstep self-test: host + clients over TCP loopback in one process (DEV_GUIDE "Multiplayer checks"). |

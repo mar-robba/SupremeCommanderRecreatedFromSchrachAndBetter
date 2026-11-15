@@ -26,4 +26,9 @@
     <ProjectReference Include="..\..\src\Rts.Sim\Rts.Sim.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The architecture docs check runs in every test project (docs/ARCHITECTURE.md "Keeping these docs true"). -->
+    <Compile Include="..\Shared\ArchitectureDocsTests.cs" Link="ArchitectureDocsTests.cs" />
+  </ItemGroup>
+
 </Project>

@@ -1,0 +1,10 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area commander: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Sim/Commander/CommanderDeathBlast.cs: PendingDeathBlast, CommanderDeathBlastState, CommanderDeathBlast -- A commander death explosion waiting for its delay (CommanderDeathBlast.Run at DueTick).
+src/Rts.Sim/Commander/EnhancementCatalog.cs: EnhancementCatalog -- Enhancement variants.
+src/Rts.Sim/Commander/EnhancementSystem.cs: EnhancementSystem -- Commander / SCU enhancements (SupCom ACU style), data-driven by UnitBlueprint.Enhancements.
+src/Rts.Sim/Commander/TeleportSystem.cs: TeleportState, TeleportSystem -- Per-world state of TeleportSystem (plain data, saved with the world).
+src/Rts.Sim/Experimental/ExperimentalState.cs: PendingBlast, ExperimentalState -- A delayed experimental death explosion (applied by ExperimentalSystem.Run at DueTick).
+src/Rts.Sim/Experimental/ExperimentalSystem.cs: ExperimentalSystem, WeaponEnergy -- Generic experimental mechanics (data:
+src/Rts.Sim/Orders/EnhancementCommands.cs: EnhanceCommand, RemoveEnhancementCommand -- Commander/SCU enhancement:

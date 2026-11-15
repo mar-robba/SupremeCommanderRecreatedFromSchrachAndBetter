@@ -10,7 +10,7 @@ orchestrator session), it belongs here.
 | File | Answers | Read it when |
 |---|---|---|
 | [ROADMAP.md](ROADMAP.md) | What is done, what is in progress, what comes next. The "▶ NEXT STEPS" section at the top is the current state. | Always first. |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | How the code works: threads, tick pipeline, data model, each game system, the client, the contracts between modules. | Before changing code in an area: read that area's section. |
+| [ARCHITECTURE.md](ARCHITECTURE.md) + [architecture/](architecture/) | How the code works, on levels. The map (one page): projects, threads, tick pipeline, contracts between areas, which area file covers which code. One file per area: its contracts first, then each system. Generated indexes: every source file, its types, enum values and summary. Kept true by checks and a commit hook (ARCHITECTURE "Keeping these docs true"). | Read the map whole before changing code, then the area files of the code you touch. |
 | [HISTORY.md](HISTORY.md) | Each development wave: what each agent was asked to build (the briefs of the current wave) and what it delivered: features, how to try them, tests, measured numbers, known issues at merge time. | To see what is being built now, where a feature came from, or what was already tried. |
 | [WORKFLOW.md](WORKFLOW.md) | How the project is built by AI agents: owner decisions, orchestrator, waves, worktrees, merges, context limits, usage limits, how to resume. | If you orchestrate agents, or want to know how the work is organized. |
 | [AGENT_RULES.md](AGENT_RULES.md) | The rules block that goes into every agent prompt. | When writing an agent prompt. |
@@ -26,7 +26,8 @@ automatically into every agent session, so it stays short and points here.
 ## Reading order
 
 - **Owner**: this page → ROADMAP "NEXT STEPS" → HISTORY (latest wave) → WORKFLOW "Owner decisions".
-- **New agent working on one area**: CLAUDE.md → ROADMAP → ARCHITECTURE (your area in full, skim the rest) →
+- **New agent working on one area**: CLAUDE.md → ROADMAP → ARCHITECTURE (the map) → the architecture/ files of the
+  areas you change →
   DEV_GUIDE. AI agents also read AI_TUNING.
 - **Orchestrator (a new session)**: CLAUDE.md → ROADMAP "NEXT STEPS" → WORKFLOW (especially "Resuming") →
   AGENT_RULES.
@@ -38,7 +39,7 @@ Put each thing in exactly one place and link to it from elsewhere. Don't copy th
 | Kind of knowledge | Goes in |
 |---|---|
 | Current state, next steps, todo items, "later" follow-ups | ROADMAP.md |
-| How a system works, its data, its contract with other modules | ARCHITECTURE.md (the section of that area) |
+| How a system works, its data, its contract with other modules | `architecture/<area>.md`: the section of that system, its contracts in the list at the top. The map ARCHITECTURE.md only for projects, threads, pipeline, contracts between areas and the areas table. Never a new section per wave. |
 | An agent's brief, what it delivered, numbers measured at merge time, known issues at merge time | HISTORY.md (one section per agent) |
 | A decision by the owner, a change to how agents work | WORKFLOW.md |
 | Rules every agent prompt must contain | AGENT_RULES.md |

@@ -1,0 +1,71 @@
+# Generated from the code by `python3 -I tools/arch/arch.py sync`. Do not edit.
+# Area rendering: each source file, its top-level types (an enum with its values) and the first sentence
+# of its doc comment.
+src/Rts.Client/Rendering/DeathAnim.cs: DeathKind{None AirCrash ShipSink Collapse BigFall CommanderFall}, DeathStart, DeathPose, DeathPlan, DeathAnim -- Death sequence of a unit that left the snapshot (DeathAnimator).
+src/Rts.Client/Rendering/DeathAnimator.Fx.cs: DeathAnimator -- (9b) Particles and sound cues of the death sequences:
+src/Rts.Client/Rendering/DeathAnimator.WarpIn.cs: DeathAnimator -- (9b) ACU warp-in at the start of a game:
+src/Rts.Client/Rendering/DeathAnimator.cs: DeathAnimator -- (9b) Client-side death sequences and the ACU warp-in (DeathAnimator.WarpIn.cs).
+src/Rts.Client/Rendering/EffectsRenderer.Death.cs: EffectsRenderer -- (9b) Death sequences (DeathAnimator):
+src/Rts.Client/Rendering/EffectsRenderer.Naval.cs: EffectsRenderer -- Naval effects:
+src/Rts.Client/Rendering/EffectsRenderer.Overcharge.cs: EffectsRenderer -- Commander visuals:
+src/Rts.Client/Rendering/EffectsRenderer.Strategic.cs: EffectsRenderer -- Strategic weapon visuals:
+src/Rts.Client/Rendering/EffectsRenderer.Teleport.cs: EffectsRenderer -- Personal Teleporter visuals (Commander enhancement, sim TeleportSystem).
+src/Rts.Client/Rendering/EffectsRenderer.cs: EffectsRenderer -- Projectiles (from snapshots, interpolated as pos - vel * (1 - alpha) * tick so they stay in sync with the one-tick-behind unit interpolation) and particle effects for...
+src/Rts.Client/Rendering/FogRenderer.cs: FogRenderer -- Client side of the fog of war (sim:
+src/Rts.Client/Rendering/FrameProfiler.cs: FrameProfiler -- CPU time per stage of the in-game frame (laps between Begin and successive Lap calls), averaged after a warm-up, plus managed allocations per frame.
+src/Rts.Client/Rendering/FrameView.cs: FrameView -- Camera matrices of the current frame (captured inside BeginMode3D from rlgl, so they always match raylib), frustum planes for culling and world-to-screen projection fo...
+src/Rts.Client/Rendering/GpuTimer.cs: GpuTimer -- GPU timestamps (GL_ARB_timer_query, core in GL 3.3) for FrameProfiler stages.
+src/Rts.Client/Rendering/IconAtlas.cs: IconAtlas -- Procedural strategic-icon atlas rasterized on the CPU from signed distance functions (anti-aliased, mipmapped).
+src/Rts.Client/Rendering/IconRenderer.cs: IconRenderer -- SupCom strategic zoom:
+src/Rts.Client/Rendering/InstancedMesh.cs: InstanceData, InstancedMesh -- Per-instance vertex data:
+src/Rts.Client/Rendering/MeshBuilder.cs: Mat, Station, Axis{X Y Z}, MeshBuilder -- Material tags stored in the vertex color ALPHA channel of unit meshes;
+src/Rts.Client/Rendering/MeshLod.cs: LodMeshData, MeshLod -- Simplified mesh arrays (16-bit indices, the vertex layout of MeshBuilder).
+src/Rts.Client/Rendering/NukeFx.cs: NukeFx -- Strategic nuke detonation (sim EffectKind.Nuke, Size = outer damage radius S), SupCom-style, ~10 s of action scaled by S:
+src/Rts.Client/Rendering/OrderMarkers.cs: OrderMarkers -- (7b) Draws the order-editing overlays:
+src/Rts.Client/Rendering/ParticleInstances.cs: ParticleInstance, ParticleInstances -- One particle quad for ParticleInstances:
+src/Rts.Client/Rendering/Particles.cs: PShape, PMode{Billboard Flat Streak}, PBlend{Additive Alpha Decal}, Particle, ParticleSystem -- Particle shapes understood by the particle fragment shader.
+src/Rts.Client/Rendering/PerfLog.cs: PerfLog -- --perf-log:
+src/Rts.Client/Rendering/PerfOverlay.cs: PerfOverlay -- Frame-time statistics shown under the HUD top bar (frame time incl.
+src/Rts.Client/Rendering/PropRenderer.Biome.cs: NatureLook, PropRenderer -- (8b-3) Per-biome look of the map props:
+src/Rts.Client/Rendering/PropRenderer.DeathFx.cs: PropRenderer -- (9b) A wreck stays hidden (falling aircraft, commanders, ships sinking in deep water) or fades in (collapsing structures, experimentals, ships in shallow water) while...
+src/Rts.Client/Rendering/PropRenderer.Nature.cs: PropRenderer -- Map props (8b):
+src/Rts.Client/Rendering/PropRenderer.Naval.cs: PropRenderer -- Wrecks over deep water (sea floor at least SinkMinDepth below the surface) don't lie on the sea floor:
+src/Rts.Client/Rendering/PropRenderer.cs: PropRenderer -- Wrecks (SimSnapshot.Props):
+src/Rts.Client/Rendering/QuadBatch.cs: QuadBatch -- Dynamic quad buffer drawn with one DrawMesh per 16k-quad page.
+src/Rts.Client/Rendering/RangeRingSet.cs: RingKind{Weapon AntiAir MinRange Radar Sonar Omni Shield StealthField MissileDefense}, RangeRing, RangeRingSet -- (10b-2) What a range / intel ring shows.
+src/Rts.Client/Rendering/SelectionRangeOverlay.cs: SelectionRangeOverlay -- (10b-2, G20) Range and intel rings of the selected units and structures:
+src/Rts.Client/Rendering/Shaders.cs: ShaderProgram, Atmosphere, Shaders -- A loaded shader with cached uniform locations.
+src/Rts.Client/Rendering/ShadowMap.cs: ShadowMap -- Directional sun shadow map (depth-only FBO) fitted to the ground area visible by the camera.
+src/Rts.Client/Rendering/ShieldRenderer.cs: ShieldRenderer -- Shield domes from SimSnapshot.Shields:
+src/Rts.Client/Rendering/StatusFx.cs: StatusVisual{None Cloak Stun Field}, StatusFx -- Which status visuals a unit gets this frame (see StatusFx.VisualsFor).
+src/Rts.Client/Rendering/TerrainRenderer.Biome.cs: BiomePalette, BiomePalettes, MinimapPalette, TerrainRenderer -- (8b-3) Look of one Biome (client only):
+src/Rts.Client/Rendering/TerrainRenderer.Lod.cs: TerrainRenderer -- Terrain chunk LOD (wave 5m):
+src/Rts.Client/Rendering/TerrainRenderer.Shadow.cs: TerrainRenderer -- (9b-2) Terrain self-shadows:
+src/Rts.Client/Rendering/TerrainRenderer.cs: TerrainRenderer -- Terrain as 64x64-cell chunk meshes (16-bit indices) shaded per pixel (height/slope/noise material blend, baked cavity AO in vertex colors, sun + sky lighting, unit sha...
+src/Rts.Client/Rendering/TerrainShadowBake.cs: TerrainShadowBake -- (9b-2) Terrain self-shadows baked from the heightmap (pure, no GL;
+src/Rts.Client/Rendering/TransportOverlay.cs: TransportOverlay -- 3D overlay for the cargo mechanic (inside BeginMode3D):
+src/Rts.Client/Rendering/UnitLod.cs: UnitLod -- (9b-2) Which units use the low-poly mesh:
+src/Rts.Client/Rendering/UnitModels.Cybran.cs: UnitModels -- Cybran faction models (every "cy_*" Visual.Shape):
+src/Rts.Client/Rendering/UnitModels.CybranAir.cs: UnitModels -- Cybran aircraft and the air staging facility (shapes "cy_air_scout" … "cy_air_staging", dispatched by CybranShape in UnitModels.Cybran.cs):
+src/Rts.Client/Rendering/UnitModels.CybranDefense.cs: UnitModels -- Cybran defensive and strategic structures (shapes "cy_pd" … "cy_artillery_structure", dispatched by CybranShape in UnitModels.Cybran.cs):
+src/Rts.Client/Rendering/UnitModels.CybranExperimental.cs: UnitModels -- Cybran experimentals (shapes "cy_monkeylord", "cy_soul_ripper", "cy_scathis", dispatched by CybranShape in UnitModels.Cybran.cs):
+src/Rts.Client/Rendering/UnitModels.CybranNaval.cs: UnitModels -- Cybran ships and water structures (shapes "cy_frigate" … "cy_torpedo_launcher", dispatched by CybranShape in UnitModels.Cybran.cs):
+src/Rts.Client/Rendering/UnitModels.CybranStructures.cs: UnitModels -- Cybran economy, factory and intel structures (shapes "cy_factory" … "cy_stealth_field", dispatched by CybranShape in UnitModels.Cybran.cs):
+src/Rts.Client/Rendering/UnitModels.CybranUnits8a.cs: UnitModels -- (8a) Cybran shapes:
+src/Rts.Client/Rendering/UnitModels.Experimental.cs: UnitModels -- Models of the experimental-tier units (Fatboy mobile factory, Mavor artillery), the quantum gateway, the support commander, and the commander enhancement attachments (...
+src/Rts.Client/Rendering/UnitModels.Naval.cs: UnitModels -- Naval wave shapes:
+src/Rts.Client/Rendering/UnitModels.Strategic.cs: UnitModels -- Models of the strategic/defensive structures:
+src/Rts.Client/Rendering/UnitModels.Tech.cs: UnitModels -- T2/T3 shapes (wave 3, tech tiers).
+src/Rts.Client/Rendering/UnitModels.Teleport.cs: UnitModels
+src/Rts.Client/Rendering/UnitModels.Transport.cs: UnitModels -- Cargo wave shapes:
+src/Rts.Client/Rendering/UnitModels.Units8a.cs: UnitModels -- (8a) UEF shapes:
+src/Rts.Client/Rendering/UnitModels.cs: TurretMode{None Weapon Spin}, UnitModel, UnitModels
+src/Rts.Client/Rendering/UnitRenderer.Cargo.cs: UnitRenderer -- Carried units (SimSnapshot.CargoViews / SimSnapshot.CargoUnits):
+src/Rts.Client/Rendering/UnitRenderer.Death.cs: UnitRenderer -- (9b) Dying units (DeathAnimator):
+src/Rts.Client/Rendering/UnitRenderer.Lod.cs: UnitRenderer -- (9b-2) Low-poly LOD for far units:
+src/Rts.Client/Rendering/UnitRenderer.Status.cs: UnitRenderer -- Stealth/cloak/EMP status visuals (UnitView.Status, logic in StatusFx), drawn by DrawStatus right after the water:
+src/Rts.Client/Rendering/UnitRenderer.Submerged.cs: UnitRenderer -- Submerged units (subs below the surface, amphibious units on the sea bed):
+src/Rts.Client/Rendering/UnitRenderer.WalkingShip.cs: UnitRenderer -- Ships that walk ashore (the Cybran Salem, Rts.Sim.Naval.WalkingShips.IsWalkingShip).
+src/Rts.Client/Rendering/UnitRenderer.cs: UnitRenderer -- Draws units from interpolated snapshots with GPU instancing:
+src/Rts.Client/Rendering/UpgradeOverlay.cs: UpgradeOverlay -- Screen-space cue for structures upgrading in place (UnitView.UpgradeBp >= 0):
+src/Rts.Client/Rendering/WreckFogMemory.cs: WreckFogMemory -- (10b-2, G11) Fog memory of wrecks (pure, no raylib;
