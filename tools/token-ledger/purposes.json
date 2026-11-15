@@ -110,6 +110,9 @@
     "Pathing preciso (11a-1)": "Gameplay SupCom",
     "Annunciatore vocale (11b-1)": "Esperienza client",
     "Migrazione dei salvataggi (11a-2)": "Infrastruttura tecnica",
+    "Riconnessione (12a-1)": "Infrastruttura tecnica",
+    "Unità FA: combattimento (12b-1)": "Gameplay SupCom",
+    "Unità FA: stazioni e Novax (12b-2)": "Gameplay SupCom",
     "UI e HUD (onda 1)": "Esperienza client",
     "Audio e rifinitura (onda 2)": "Esperienza client",
     "Mappe, menu, flusso (onda 2)": "Esperienza client",
@@ -170,7 +173,10 @@
     "Salvataggi in multiplayer (10a-3)": "10",
     "Pathing preciso (11a-1)": "11",
     "Annunciatore vocale (11b-1)": "11",
-    "Migrazione dei salvataggi (11a-2)": "11"
+    "Migrazione dei salvataggi (11a-2)": "11",
+    "Riconnessione (12a-1)": "12",
+    "Unità FA: combattimento (12b-1)": "12",
+    "Unità FA: stazioni e Novax (12b-2)": "12"
   },
   "righe": {
     "Fondazione (sessione principale)": 5113,

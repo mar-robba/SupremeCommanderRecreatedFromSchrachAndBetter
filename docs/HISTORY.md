@@ -1654,3 +1654,65 @@ two map paths of `ClientSession` (the map transfer of 8b-3 had the same order). 
 (two right after a full rebuild), client 371 green, both `mp ... save=` runs and `mp 3 400 256 1 0 map=badlands` in
 sync. A player could hit it only by pressing Ready in the same millisecond the save was found; `--autostart` clients
 could.
+
+## Wave 12: reconnect and FA units (briefs cut 2026-11-15)
+The owner said yes to reconnect (G37) and to the FA units (G13) on 2026-11-14 (WORKFLOW "Owner decisions") and
+"continua" on 2026-11-15. Three modules of up to about 1,500 lines, one module agent each on Opus 5.5 (cap 200k, no
+coordinator), at most 2 at a time:
+1. **12a-1** reconnect: `Rts.Net`, the net menus, two small sim files. Changes no sim result.
+2. **12b-1** FA units, the combat ones: data, models, small sim hooks. Runs next to 12a-1 (disjoint files).
+3. **12b-2** FA units with new mechanics (engineering stations, Novax): after 12b-1 is merged (both edit the
+   faction files, `UnitModels.cs`, the scene list).
+Sizes measured before the cut: `src/Rts.Net` is 4,735 lines in 26 files (`HostSession.cs` 620, `HostSession.Saves.cs`
+378, `LobbyState.cs` 357, `ClientSession.cs` 292, `LockstepHooks.cs` 289, `NetGame.cs` 234); a drop is the sim
+command `PlayerLeftCommand(army, DropAction)` (`AiTakeover` or `Defeat`); an observer that joined the lobby may load
+late and catch up (10a-2), but nobody can join after the start. 167 unit blueprints; no drone, satellite or
+engineering-station code exists; Percival, Janus and Ravager (FA units) are already in. 8a (9 units + walls) was
+2,250 lines.
+
+*brief (12a-1) Reconnect to a running game* (G37; purpose "Riconnessione (12a-1)"): a player whose connection or
+program died rejoins the running game and gets its army back; anybody else may join a running game as an observer.
+The host keeps accepting connections in game; a joiner whose name matches a dropped human slot is that player, any
+other joiner is an observer. The host captures the state at a tick (the 10a-3 capture), sends it in chunks with a
+progress, then the turns after that tick; the joiner loads, reports its state hash, runs the sim as fast as it can
+until it has caught up, and watches as an observer meanwhile. Then the host announces the tick from which that turn
+player is live again: every peer waits for its turns from that tick, and a new sim command gives the army back
+(with On drop = AI takeover the AI stops playing it; a defeated army stays defeated and its player stays an
+observer). In Defeat mode a lost connection (not a Leave, a resign or a vote) gets a grace time before the army is
+destroyed. Client: the LAN list and the join screen show a game in progress and let the player rejoin or observe;
+the loading screen shows download and catch-up progress; a "Connection lost" screen offers Reconnect; chat lines
+tell the others. Protocol 7. Owns `src/Rts.Net`, `Rts.Sim/Orders/MultiplayerCommands.cs` +
+`Systems/MultiplayerSystem.cs` (the return command), the net screens in `Rts.Client/Menus`, the `mp` step of
+`tools/Rts.Bench`, `tests/Rts.Net.Tests`. Leaves alone: blueprints, factions, unit models, the rest of the sim,
+`Persistence` beyond calling it. Tests: a player drops and rejoins, all peers keep the same hashes and the army
+obeys the player again; a late observer joins a running game in sync; a rejoin while another save or rejoin is
+pending; a wrong sim build or a name that fits no slot; a multiplayer save after a rejoin loads. Bench
+`mp ... rejoin=TICK` and `late=N`. Hashes unchanged (no sim result changes without a rejoin).
+
+*brief (12b-1) FA units: gunships, transport, bots, Megalith* (G13 first half; purpose "Unità FA: combattimento
+(12b-1)"): six Forged Alliance units that need no new game mechanic. UEF: Broadsword (T3 heavy gunship),
+Continental (T3 heavy air transport with a personal shield and guns, bigger hold than the C-14). Cybran: Wailer (T3
+heavy gunship with radar stealth), Hoplite (T2 fast rocket bot), Brick (T3 armored assault bot, amphibious,
+torpedoes under water), Megalith (experimental megabot: amphibious, two long-range proton cannons, torpedoes,
+anti-air; it builds land units like the Fatboy if the mobile-factory code allows it cheaply). Blueprints with
+`BuiltBy`, optional faction roles (the AI ignores them), models for every new shape, icons, death and LOD behaviour
+like their kin, a `--scene fa` group, balance against the existing units with the `duel` tool. Owns
+`data/blueprints/units` (new files), `data/factions/*.json` (new optional roles), new `Rendering/UnitModels.Fa*.cs`,
+a new scene file, small hooks in `Combat` / `Transport` / `Experimental` where a unit needs one. Leaves alone:
+`Rts.Net`, the net menus, `Persistence`, the AI. Tests: roster (every unit is built by its factory or engineer),
+Continental hold and shield, Wailer stealth, Brick fires torpedoes only in water, Megalith weapons and build list;
+determinism on 1 and 4 threads; a save made on main before the module loads after it (11a-2). New blueprint files
+shift the blueprint indices: the module records old → new reference hashes and shows the AI match still ends with
+a winner.
+
+*brief (12b-2) FA units: engineering stations and Novax* (G13 second half; purpose "Unità FA: stazioni e Novax
+(12b-2)"; after 12b-1): the three FA units that need a new mechanic. UEF Kennel (T2 engineering station, upgrade
+to T3: drones that assist, repair and reclaim inside its radius) and Cybran Hive (engineering station with two
+upgrades: build beams inside its radius): a structure that helps every construction, repair and factory inside
+its range without orders, can be told to assist or reclaim, and adds no pathing unit unless the drones need one.
+UEF Novax Center (experimental structure): it launches one satellite, an orbiting unit with a beam weapon that
+anti-air cannot reach, ordered like a unit; the satellite dies with its center and is rebuilt by it. Owns new
+files in `Rts.Sim/Economy` (stations) and `Rts.Sim/Experimental` (satellite), blueprints, models, scene group.
+Tests: a station speeds a build in range and not out of range, respects the economy stall, upgrades; the satellite
+is not targeted by anti-air, obeys move and attack, dies with the center; saves; determinism. The brief is re-cut
+when 12b-1 is merged (its report will say what the unit pipeline costs today).
